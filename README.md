@@ -6,15 +6,18 @@ Repository: https://github.com/tvangaalen/viomi-w1-controller (publiek).
 
 ## Installatie op Windows
 
-Gebruik een lokale Python-installatie. De bron is syntactisch gecontroleerd met Python 3.12. Werking met de wasmachine en compatibiliteit met nieuwere Python-versies zijn hier niet getest. Afhankelijkheden zijn nog niet op vaste versies vastgezet.
+Gebruik een lokale Python-installatie, versie 3.12 of 3.13. De installatie en de webinterface zijn op Windows met beide versies getest zonder wasmachine; de werking met de wasmachine is hier niet getest. Python 3.14 is niet getest.
 
 Voer in PowerShell vanuit deze projectmap uit:
 
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install --no-deps -r requirements-miio.txt
 Copy-Item viomi_config.example.json viomi_config.json
 ```
+
+Alle afhankelijkheden staan op vaste versies. `python-miio` 0.5.12 vereist `netifaces`, dat op Windows voor Python 3.12 en nieuwer alleen met een C-compiler te bouwen is. De controller gebruikt `netifaces` niet (alleen de firmware-updater van `python-miio` doet dat). Daarom worden `python-miio` en `micloud` met de tweede `pip`-opdracht zonder afhankelijkheden geïnstalleerd; hun overige afhankelijkheden staan in `requirements.txt`. `pip check` meldt daardoor dat `netifaces` ontbreekt; dat is verwacht.
 
 Vul in `viomi_config.json` het lokale IP-adres van je wasmachine en je eigen MIoT-token van 32 hexadecimale tekens in. Het voorbeeldadres `192.0.2.10` is een documentatieadres en moet worden vervangen. `expected_pc_ip` is optioneel; laat dit op `null` of vul het verwachte lokale IP-adres van de computer in.
 
