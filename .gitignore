@@ -1,0 +1,47 @@
+# Local configuration and credentials
+viomi_config*.json
+!viomi_config.example.json
+.env
+.env.*
+!.env.example
+*token*
+*secret*
+*credentials*
+*.pem
+*.key
+
+# Runtime data: ignore JSON by default; explicitly permit the example
+*.json
+!viomi_config.example.json
+*.log
+*.log.*
+logs/
+runtime/
+state/
+data/
+*state*
+*schedule*.json
+*.db
+*.sqlite*
+*.pid
+*.lock
+*.tmp
+*.bak
+
+# Python environments and generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
