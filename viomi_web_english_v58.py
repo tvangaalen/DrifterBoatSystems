@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, render_template_string, request, send_file, Response
+import ipaddress
 import socket
 import threading
 import os
@@ -7,6 +8,7 @@ import time
 from collections import deque
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlsplit
 try:
     from miio.miot_device import MiotDevice
     MIIO_IMPORT_ERROR = None
@@ -16,7 +18,8 @@ except Exception as exc:
 
 CONFIG_PATH = Path(__file__).with_name("viomi_config.json")
 EXPECTED_MODEL = "viomi.washer.w1"
-CONTROLLER_VERSION = "3.7-v57"
+CONTROLLER_VERSION = "3.7-v58"
+REQUEST_MARKER_HEADER = "X-Viomi-Request"
 
 CONFIG = {}
 CONFIG_ERROR = None
@@ -1428,6 +1431,9 @@ let userEditingProgram = false;
 let userEditingTemperature = false;
 let userEditingRinses = false;
 
+// Every POST must carry this header; the server rejects POSTs without it.
+const POST_OPTIONS = {method:"POST", headers:{"X-Viomi-Request":"1"}};
+
 const PROGRAM_CAPABILITIES = {
   0:{temperatures:[40],spin:700,rinses:[2]},
   16:{temperatures:[60],spin:700,rinses:[1,2,3,4]},
@@ -1540,7 +1546,7 @@ async function post(url, body=null) {
   const msg = document.getElementById("msg");
   msg.textContent = "Sending command…";
   try {
-    const options = {method:"POST", headers:{"Content-Type":"application/json"}};
+    const options = {method:"POST", headers:{...POST_OPTIONS.headers, "Content-Type":"application/json"}};
     if (body !== null) options.body = JSON.stringify(body);
     const r = await fetch(url, options);
     const d = await r.json();
@@ -1901,7 +1907,7 @@ async function createSchedule() {
   try {
     const r = await fetch("/api/schedule", {
       method:"POST",
-      headers:{"Content-Type":"application/json"},
+      headers:{...POST_OPTIONS.headers, "Content-Type":"application/json"},
       body:JSON.stringify({mode:mode, time:timeValue})
     });
     const d = await r.json();
@@ -1924,7 +1930,7 @@ async function cancelSchedule() {
   busy = true;
   setCommandPending(true);
   try {
-    const r = await fetch("/api/schedule/cancel", {method:"POST"});
+    const r = await fetch("/api/schedule/cancel", POST_OPTIONS);
     const d = await r.json();
     if (!r.ok || d.ok === false) throw new Error(d.error || "Could not cancel schedule");
     renderSchedule(null);
@@ -2011,20 +2017,20 @@ async function applySettings() {
     busy = true;
 
     // Program first: selecting it reloads the washer's default profile.
-    let r = await fetch("/api/program/" + program, {method:"POST"});
+    let r = await fetch("/api/program/" + program, POST_OPTIONS);
     let j = await r.json();
     if (!r.ok || j.ok === false) throw new Error(j.error || "Program setting failed");
 
     await new Promise(resolve => setTimeout(resolve, 800));
 
     if (cap.temperatures.length > 1) {
-      r = await fetch("/api/temperature/" + temperature, {method:"POST"});
+      r = await fetch("/api/temperature/" + temperature, POST_OPTIONS);
       j = await r.json();
       if (!r.ok || j.ok === false) throw new Error(j.error || "Temperature setting failed");
     }
 
     if (cap.rinses.length > 1) {
-      r = await fetch("/api/rinses/" + rinses, {method:"POST"});
+      r = await fetch("/api/rinses/" + rinses, POST_OPTIONS);
       j = await r.json();
       if (!r.ok || j.ok === false) throw new Error(j.error || "Rinse setting failed");
     }
@@ -2075,6 +2081,46 @@ loop();
 </html>
 """
 
+
+def _request_hostname():
+    host = (request.host or "").lower()
+    if host.startswith("["):
+        return host[1:host.find("]")]
+    return host.rsplit(":", 1)[0]
+
+def _host_allowed(hostname):
+    # Reject DNS-rebinding names: only IP literals, this PC's own names and
+    # explicitly configured names may address the controller.
+    try:
+        ipaddress.ip_address(hostname)
+        return True
+    except ValueError:
+        pass
+    own = socket.gethostname().lower()
+    allowed = {"localhost", own, own + ".local"}
+    allowed.update(str(h).lower() for h in (CONFIG.get("allowed_hosts") or []))
+    return hostname in allowed
+
+@app.before_request
+def reject_foreign_requests():
+    hostname = _request_hostname()
+    if not _host_allowed(hostname):
+        log_event("BLOCKED", f"Host {hostname} · {request.path}")
+        return jsonify({"ok": False, "error": "Host not allowed"}), 403
+
+    if request.method != "POST":
+        return None
+
+    # A custom header cannot be sent cross-site without a CORS preflight,
+    # which this server never approves; the Origin check is a second line.
+    origin = request.headers.get("Origin")
+    if origin and urlsplit(origin).netloc.lower() != (request.host or "").lower():
+        log_event("BLOCKED", f"Origin {origin} · {request.path}")
+        return jsonify({"ok": False, "error": "Cross-origin request rejected"}), 403
+    if request.headers.get(REQUEST_MARKER_HEADER) != "1":
+        log_event("BLOCKED", f"Missing {REQUEST_MARKER_HEADER} · {request.path}")
+        return jsonify({"ok": False, "error": "Request not sent by the controller page"}), 403
+    return None
 
 @app.after_request
 def disable_browser_cache(response):
