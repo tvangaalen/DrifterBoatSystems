@@ -1,13 +1,25 @@
 # Drifter Boat Systems
 
-Version 0.1.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer):
+Version 0.2.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+every system behind it in one repository:
 
-| Module | System | Server it talks to |
-|---|---|---|
-| **Energy** | Mastervolt (MasterBus), DALY BMS and balancers | MasterVolt YMS, `:8000` |
-| **Anchor watch** | Orca Core 2 anchor alarm, GPS, AIS, tide | Anchor watch, `:8766` |
-| **BoatGuard** | EZVIZ camera armed when the iPhone leaves the boat | BoatGuard, `:8095` |
-| **Washer** | VIOMI W1 washing machine and its schedule | VIOMI controller, `:8080` |
+| Module | System | Server it talks to | Code |
+|---|---|---|---|
+| **Energy** | Mastervolt (MasterBus), DALY BMS and balancers | MasterVolt YMS, `:8000` | `modules/energy` |
+| **Anchor watch** | Orca Core 2 anchor alarm, GPS, AIS, tide | Anchor watch, `:8766` | `modules/anchor` |
+| **BoatGuard** | EZVIZ camera armed when the iPhone leaves the boat | BoatGuard, `:8095` | `modules/guard` |
+| **Washer** | VIOMI W1 washing machine and its schedule | VIOMI controller, `:8080` | `modules/washer` |
+
+The modules were separate repositories until 2026-11-01 (MasterVolt-YMS, OrcaCore2-AnchorWatch, BoatGuard,
+viomi-w1-controller, now archived on GitHub); their full history and release tags are kept here (`energy/v2.1.2` etc.).
+
+```
+drifter.py        gateway: serves web/ and passes the app's requests on to the module servers
+web/              the app (HTML/CSS/JS, no build step)
+modules/<name>/   each system's server, with its own README, CLAUDE.md, tests and changelog
+tests/run_all.py  every hardware-free test of the gateway and all modules
+tools/            mock servers for testing the app without the boat
+```
 
 The four existing servers keep running unchanged and keep all their own logic: Float protection, the anchor alarm and
 its push alerts, arming the camera and the washer schedule all keep working when Drifter is closed or stopped.
@@ -43,7 +55,7 @@ Requirements: Windows, Python 3.12+ (stdlib only, no packages), OpenSSL for the 
 ```powershell
 copy config.example.json config.json        # check the addresses: bind = this PC's LAN address
 powershell -NoProfile -ExecutionPolicy Bypass -File setup_https.ps1   # certificate from the existing Mastervolt Local CA
-py tests/test_gateway.py                          # gateway tests (fake servers, nothing on the boat is touched)
+py tests/run_all.py quick                   # all tests (fake servers and hardware; nothing on the boat is touched)
 start_drifter.cmd                           # or: py drifter.py
 ```
 
