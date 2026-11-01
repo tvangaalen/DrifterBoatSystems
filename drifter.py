@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-VERSION = "0.5.0"
+VERSION = "0.5.1"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")

@@ -91,6 +91,7 @@ class Supervisor:
         now = self.clock()
         for n in self.names:
             s = self.mods[n]
+            if s["busy"]: continue                     # a restart is running: it sets the state itself
             if self.ports[n] in up:
                 if s["state"] != "running":
                     self.event(n, "running" + (f" ({now - s['last_start']:.0f} s after start)" if s["state"] == "starting" else
@@ -98,7 +99,7 @@ class Supervisor:
                     s.update(state="running", since=now, down_since=None)
                 if s["attempts"] and now - s["since"] > STABLE_S: s["attempts"] = 0
                 continue
-            if self.held(n):
+            if (self.data / "hold" / n).exists():
                 if s["state"] != "held": self.event(n, "on hold: not started by the supervisor"); s.update(state="held", down_since=None)
                 continue
             if s["state"] == "starting":

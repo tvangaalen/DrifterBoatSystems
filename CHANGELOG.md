@@ -2,6 +2,10 @@
 
 ## 0.5
 
+### 0.5.1 — 2026-11-01
+
+- Supervisor: a tick during a restart from the app no longer marks the module "on hold" and starts a new 30 s grace period; a slow server (MasterVolt) could otherwise get a second start while the first was still coming up. Test added.
+
 ### 0.5.0 — 2026-11-01
 
 Washer: everything is in Drifter now; the controller has no page of its own.

@@ -81,6 +81,17 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(r.state("washer"), "starting")
         r.up.add(8080); r.tick(5); self.assertEqual(r.state("washer"), "running")
 
+    def test_slow_server_after_restart_is_not_started_twice(self):
+        r = Rig(); r.tick()
+        gate = threading.Event()
+        def slow_start(n): r.started.append(n); r.sup.tick(); gate.wait(2)   # a tick while the restart is still busy
+        r.sup.start_fn = slow_start
+        r.sup.restart("energy"); time.sleep(0.05); gate.set(); self.wait_idle(r, "energy")
+        self.assertEqual(r.state("energy"), "starting")
+        for _ in range(int((S.START_WAIT_S - 10) / 5)): r.tick(5)             # MasterVolt takes a while before it listens
+        self.assertEqual(r.started, ["energy"])
+        r.up.add(8000); r.tick(5); self.assertEqual(r.state("energy"), "running")
+
     def test_restart_refused_without_stopping(self):
         def pre(n):
             if n == "energy": raise ValueError("Float is latched: do not restart now")
