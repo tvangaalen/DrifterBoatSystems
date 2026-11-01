@@ -102,6 +102,12 @@ class GatewayTest(unittest.TestCase):
         self.req("GET", "/api/anchor/api/track?since=5&gen=2")   # anchor is down here
         self.req("GET", "/api/guard/api/log?n=50"); self.assertEqual(Recorder.seen[-1]["path"], "/api/log?n=50")
 
+    def test_gzip_passed_through(self):
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        c.request("GET", "/api/power/api/energy", headers={"Host": f"127.0.0.1:{self.port}", "Accept-Encoding": "gzip, br"}); c.getresponse().read(); c.close()
+        self.assertEqual(Recorder.seen[-1]["headers"].get("Accept-Encoding"), "gzip")
+        self.req("GET", "/api/power/api/energy"); self.assertNotEqual(Recorder.seen[-1]["headers"].get("Accept-Encoding"), "gzip")   # http.client sends identity
+
     def test_upstream_down_is_502(self):
         code, data = self.req("GET", "/api/anchor/api/state")
         self.assertEqual(code, 502); self.assertTrue(json.loads(data)["upstream_down"])

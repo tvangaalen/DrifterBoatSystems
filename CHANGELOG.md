@@ -2,6 +2,10 @@
 
 ## 0.9
 
+### 0.9.1 — 2026-11-02
+
+- Gateway: passes gzip through when the browser accepts it, so the History charts load about 2.5 MB less JSON from MasterVolt each time.
+
 ### 0.9.0 — 2026-11-01
 
 Energy, part 2: history charts.

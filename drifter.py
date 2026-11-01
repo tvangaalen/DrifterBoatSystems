@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-VERSION = "0.9.0"
+VERSION = "0.9.1"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -130,18 +130,20 @@ class Upstreams:
         self.status = {m: {"ok": None, "error": None, "t": None, "ms": None} for m in self.mods}
         self.lock = threading.Lock()
 
-    def request(self, module: str, method: str, path: str, query: str, body: bytes | None, ctype: str | None):
+    def request(self, module: str, method: str, path: str, query: str, body: bytes | None, ctype: str | None, gzip_ok: bool = False):
         u = urlsplit(self.mods[module]["url"]); timeout = GET_TIMEOUT if method == "GET" else POST_TIMEOUT
         conn = (http.client.HTTPSConnection(u.hostname, u.port or 443, timeout=timeout, context=self.ctx) if u.scheme == "https"
                 else http.client.HTTPConnection(u.hostname, u.port or 80, timeout=timeout))
         headers = {"Host": u.netloc, "Accept": "*/*", **UPSTREAM_HEADERS.get(module, {})}
+        if gzip_ok: headers["Accept-Encoding"] = "gzip"   # passed through untouched (MasterVolt's history is ~2.5 MB of JSON)
         if body is not None: headers["Content-Type"] = ctype or "application/json"
         t0 = time.monotonic()
         try:
             conn.request(method, (u.path.rstrip("/") + path) + (f"?{query}" if query else ""), body=body, headers=headers)
             r = conn.getresponse(); data = r.read()
             self._mark(module, True, None, t0)
-            return r.status, r.getheader("Content-Type") or "application/octet-stream", r.getheader("Content-Disposition"), data
+            return (r.status, r.getheader("Content-Type") or "application/octet-stream", r.getheader("Content-Disposition"), data,
+                    r.getheader("Content-Encoding"))
         except (OSError, http.client.HTTPException, ssl.SSLError) as e:
             self._mark(module, False, f"{type(e).__name__}: {e}", t0); raise
         finally: conn.close()
@@ -154,7 +156,7 @@ def make_precheck(up: Upstreams):
     """Before a restart from the app: refuse while MasterVolt runs a BMS control or Float is latched, or while the anchor
     watch has an alarm. A server that does not answer at all is stuck or gone, so restarting it is allowed."""
     def get(module, path):
-        code, _, _, data = up.request(module, "GET", path, "", None, None)
+        code, _, _, data, _ = up.request(module, "GET", path, "", None, None)
         if code != 200: raise OSError(f"{path}: HTTP {code}")
         return json.loads(data)
 
@@ -245,13 +247,14 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
                 body = self.rfile.read(n) if n else b"{}"
                 try: json.loads(body)
                 except ValueError: return self._json({"error": "invalid JSON"}, 400)
-            try: code, ctype, disp, data = up.request(module, method, sub, query, body, "application/json")
+            gz = "gzip" in (self.headers.get("Accept-Encoding") or "").lower()
+            try: code, ctype, disp, data, enc = up.request(module, method, sub, query, body, "application/json", gz)
             except Exception as e:
                 return self._json({"error": f"{systems[module]['name']} not reachable", "detail": str(e), "upstream_down": True}, 502)
             if method == "POST": log.info("%s %s -> %d", module, sub, code)
             tile = sub.startswith(("/tiles/", "/vendor/"))
-            self._send(code, data, ctype, "max-age=86400" if tile and code == 200 else "no-store",
-                       {"Content-Disposition": disp} if disp else None)
+            extra = {k: v for k, v in (("Content-Disposition", disp), ("Content-Encoding", enc if gz else None)) if v}
+            self._send(code, data, ctype, "max-age=86400" if tile and code == 200 else "no-store", extra or None)
 
     return H
 

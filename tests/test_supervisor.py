@@ -123,7 +123,7 @@ class FakeUp:
     def request(self, module, method, path, query, body, ctype):
         a = self.answers.get(path)
         if isinstance(a, Exception): raise a
-        return 200, "application/json", None, json.dumps(a).encode()
+        return 200, "application/json", None, json.dumps(a).encode(), None
 
 
 class PrecheckTest(unittest.TestCase):
