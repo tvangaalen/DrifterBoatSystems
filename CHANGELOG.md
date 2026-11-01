@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5
+
+### 0.5.0 — 2026-11-01
+
+Washer: everything is in Drifter now; the controller has no page of its own.
+
+- App: Diagnostics card on the Washer page (summary, failed checks first and the passed ones folded, controller version and uptime, washer and PC address, model, firmware; Recheck and JSON export) and a refresh button.
+- VIOMI controller 3.8-v59: the controller and startup-diagnostics pages and the app icons are removed; new `GET /api/diagnostics` (`?recheck=1` re-runs the checks); it listens on 127.0.0.1 only (`VIOMI_BIND` may choose another private address). Commands, validation and scheduler unchanged.
+- Gateway: `GET /api/washer/api/diagnostics` replaces the HTML route `/`; the washer has no classic-page link any more.
+
 ## 0.4
 
 ### 0.4.0 — 2026-11-01
