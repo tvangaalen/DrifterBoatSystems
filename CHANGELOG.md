@@ -2,6 +2,10 @@
 
 ## 0.6
 
+### 0.6.2 — 2026-11-01
+
+- `run_module.py`: the job object of 0.6.1 was not enough. The modules start through the venv launcher (`.venv\Scripts\pythonw.exe`), which starts the real python itself, and that python escaped the inherited job and outlived the runner. The server is now started suspended, assigned to the job explicitly, then resumed; everything it starts stays in the job. Tests for the venv launcher and for a silent-breakaway outer job.
+
 ### 0.6.1 — 2026-11-01
 
 - `tools/run_module.py` runs the server inside a kill-on-close job object: stopping the scheduled task (BoatGuard, gateway) now stops the server too. Before, BoatGuard's server outlived `Stop-ScheduledTask` and, running in session 0, could not be stopped from the app (restart failed with "port 8095 still in use"). Test added (`tests/test_run_module.py`).

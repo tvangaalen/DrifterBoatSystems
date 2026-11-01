@@ -44,6 +44,21 @@ def join_kill_on_close_job():
     return job
 
 
+CREATE_SUSPENDED = 0x4
+
+
+def start_in_job(job, cmd, **kw):
+    """Start cmd suspended, put it in `job`, then let it run. Task Scheduler's own job lets children break away silently,
+    so inheriting our job is not enough under a task (BoatGuard outlived Stop-ScheduledTask that way); assigning the child
+    explicitly before it runs puts it, and everything it starts (the venv launcher starts the real python), in our job."""
+    p = subprocess.Popen(cmd, creationflags=kw.pop("creationflags", 0) | (CREATE_SUSPENDED if job else 0), **kw)
+    if job:
+        k = ctypes.WinDLL("kernel32", use_last_error=True)
+        if not k.AssignProcessToJobObject(wintypes.HANDLE(job), wintypes.HANDLE(int(p._handle))): print("job assignment failed", file=sys.stderr)
+        ctypes.WinDLL("ntdll").NtResumeProcess(wintypes.HANDLE(int(p._handle)))
+    return p
+
+
 def main(name):
     m = modules.resolve(name)
     logs = Path(m["data"]) / "logs"; logs.mkdir(parents=True, exist_ok=True)
@@ -53,9 +68,9 @@ def main(name):
                   f"{'' if job else ' (no job object: the server may outlive this runner)'}\n"); out.flush()
         cmd = m["command"][:]; exe = Path(m["folder"]) / cmd[0]
         if exe.exists(): cmd[0] = str(exe)              # .venv\Scripts\python.exe relative to the module folder
-        r = subprocess.run(cmd, cwd=m["folder"], env={**os.environ, **m["env"]}, stdout=out, stderr=subprocess.STDOUT,
-                           stdin=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
-    return r.returncode
+        p = start_in_job(job, cmd, cwd=m["folder"], env={**os.environ, **m["env"]}, stdout=out, stderr=subprocess.STDOUT,
+                         stdin=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
+        return p.wait()
 
 
 if __name__ == "__main__":
