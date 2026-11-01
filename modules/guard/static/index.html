@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1215">
+<title>BoatGuard</title>
+<script>
+// Apply the saved theme before the page paints (no flash). Storage can be unavailable: then follow the system.
+try { const t = localStorage.getItem("bg-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<style>
+:root{--bg:#f3f5f7;--card:#fff;--fg:#14181d;--muted:#66707a;--line:#e1e5ea;--ok:#1f8a4c;--okbg:#e3f4ea;--warn:#b26a00;--warnbg:#fdf1dc;--bad:#c62828;--badbg:#fbe4e4;--accent:#1565c0;--onaccent:#fff;--off:#9aa3ad;--knob:#fff;--field:#f3f5f7;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme]){--bg:#0f1215;--card:#1a1f24;--fg:#e8ecef;--muted:#8e98a2;--line:#2a3138;--ok:#4cc27c;--okbg:#16301f;--warn:#f0a63a;--warnbg:#33260f;--bad:#ef5b5b;--badbg:#3a1717;--accent:#5aa2ef;--onaccent:#0f1215;--off:#58616a;--knob:#fff;--field:#11161a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1215;--card:#1a1f24;--fg:#e8ecef;--muted:#8e98a2;--line:#2a3138;--ok:#4cc27c;--okbg:#16301f;--warn:#f0a63a;--warnbg:#33260f;--bad:#ef5b5b;--badbg:#3a1717;--accent:#5aa2ef;--onaccent:#0f1215;--off:#58616a;--knob:#fff;--field:#11161a;color-scheme:dark}
+/* Night: red on black only, dim, to keep night vision in the cockpit. States differ by brightness and weight, not hue. */
+:root[data-theme="night"]{--bg:#000;--card:#0a0000;--fg:#c22a1f;--muted:#6e1a14;--line:#2a0805;--ok:#a8241b;--okbg:#140200;--warn:#d8352a;--warnbg:#1f0402;--bad:#ff4a3a;--badbg:#2e0603;--accent:#7a1a12;--onaccent:#ff7a6a;--off:#3a0c08;--knob:#c22a1f;--field:#000;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom))}
+main{max-width:640px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 0 12px}
+h1{font-size:22px;margin:0}
+.updated{color:var(--muted);font-size:12px}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:2px}
+.seg button{background:none;color:var(--muted);min-height:36px;padding:0 10px;font-size:13px;border-radius:8px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--onaccent)}
+.hero{border-radius:14px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line)}
+.hero .dot{width:14px;height:14px;border-radius:50%;flex:none;background:var(--off)}
+.hero.ok{background:var(--okbg);border-color:transparent}.hero.ok .dot{background:var(--ok)}
+.hero.warn{background:var(--warnbg);border-color:transparent}.hero.warn .dot{background:var(--warn)}
+.hero.bad{background:var(--badbg);border-color:transparent}.hero.bad .dot{background:var(--bad)}
+.hero b{display:block;font-size:17px}.hero span{color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 16px;margin-bottom:12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);min-height:48px}
+.row:first-child{border-top:0}
+.k{color:var(--muted)}.sub{color:var(--muted);font-size:13px}
+.v{text-align:right;font-weight:600}
+.v small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.good{color:var(--ok)}.warnc{color:var(--warn)}.badc{color:var(--bad)}
+.switch{position:relative;width:56px;height:32px;flex:none}
+.switch input{opacity:0;width:100%;height:100%;margin:0;position:absolute;z-index:1;cursor:pointer}
+.switch i{position:absolute;inset:0;border-radius:16px;background:var(--off);transition:.2s}
+.switch i:after{content:"";position:absolute;width:26px;height:26px;left:3px;top:3px;border-radius:50%;background:var(--knob);transition:.2s}
+.switch input:checked+i{background:var(--ok)}.switch input:checked+i:after{left:27px}
+.switch input:disabled+i{opacity:.5}
+button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:0 18px;min-height:44px;background:var(--accent);color:var(--onaccent);cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+.num{display:flex;align-items:center;gap:6px}
+.num input{width:84px;min-height:40px;font:inherit;font-weight:600;text-align:right;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--fg)}
+.num input:invalid{border-color:var(--bad)}
+.evt{flex-direction:column;align-items:stretch;gap:8px}
+.snd{display:flex;align-items:center;gap:6px}
+.snd select{flex:1;min-width:0;min-height:40px;font:inherit;padding:0 8px;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--fg)}
+.snd button{min-height:40px;min-width:44px;padding:0 12px}
+.note{font-size:13px;padding:0 0 12px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:20px 4px 8px;display:flex;justify-content:space-between}
+#log{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 0;max-height:60vh;overflow:auto;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+#log div{padding:5px 14px;border-top:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;gap:10px}
+#log div:first-child{border-top:0}
+#log time{color:var(--muted);white-space:nowrap}
+#log .msg{word-break:break-word}
+#log .WARNING .msg{color:var(--warn)}#log .ERROR .msg{color:var(--bad)}
+#log .arm .msg{color:var(--bad);font-weight:700}#log .disarm .msg{color:var(--ok);font-weight:700}
+#log .day{display:block;color:var(--muted);font-weight:600;background:var(--bg)}
+.err{color:var(--bad);font-size:13px;padding:8px 4px}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div><h1>BoatGuard</h1><div class="updated" id="updated">loading…</div></div>
+  <div class="seg" role="group" aria-label="Theme">
+    <button data-theme="auto">Auto</button><button data-theme="light">Light</button><button data-theme="dark">Dark</button><button data-theme="night">Night</button>
+  </div>
+</header>
+
+<div class="hero" id="hero"><div class="dot"></div><div><b id="heroTitle">Loading status…</b><span id="heroSub"></span></div></div>
+
+<div class="card">
+  <div class="row"><div><b>Monitoring</b><div class="sub" id="enSub"></div></div>
+    <label class="switch"><input type="checkbox" id="enabled" aria-label="Monitoring on/off"><i></i></label></div>
+</div>
+
+<div class="card">
+  <div class="row"><span class="k">Phone</span><span class="v" id="phone">–</span></div>
+  <div class="row"><span class="k">Camera</span><span class="v" id="camera">–</span></div>
+  <div class="row"><span class="k">Camera battery</span><span class="v" id="battery">–</span></div>
+  <div class="row"><span class="k">Router</span><span class="v" id="router">–</span></div>
+  <div class="row"><span class="k">Notifications</span><span class="v" id="notif">–</span></div>
+</div>
+
+<div class="card">
+  <div class="row"><div><b>Test camera</b><div class="sub">Arm, confirm, disarm, confirm (about 15 s)</div></div>
+    <button id="test">Test</button></div>
+  <div class="note" id="testres" hidden></div>
+</div>
+
+<h2><span>Settings</span></h2>
+<form class="card" id="settings" novalidate>
+  <div class="row"><div><b>Arming delay</b><div class="sub">Phone away this long before the camera is armed</div></div>
+    <label class="num"><input type="number" inputmode="numeric" id="away_after_s" required step="1"><span class="k">s</span></label></div>
+  <div class="row"><div><b>Router check interval</b><div class="sub">How often the router's Wi-Fi clients are read</div></div>
+    <label class="num"><input type="number" inputmode="numeric" id="poll_s" required step="1"><span class="k">s</span></label></div>
+  <div class="row"><b>Notifications</b><span class="sub">sound · priority · test</span></div>
+  <div id="soundrows"></div>
+  <div class="row"><span class="sub" id="setmsg"></span><button id="save" type="submit" disabled>Save</button></div>
+</form>
+
+<h2><span>Log</span><span id="logcount"></span></h2>
+<div id="log"></div>
+<div class="err" id="err" hidden></div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const hms = t => { const d = new Date(t * 1000); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+const dur = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = s % 60;
+  return h ? `${h} h ${pad(m)} min` : m ? `${m}:${pad(r)} min` : `${r} s`; };
+const MARK = [[/^camera ARMED$/, "arm"], [/^camera disarmed$/, "disarm"], [/^test OK/, "disarm"]];
+
+let st = null, busy = false, dirty = false;
+
+// Theme: auto follows the system; the choice is remembered per device.
+function setTheme(t) {
+  if (t === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  try { t === "auto" ? localStorage.removeItem("bg-theme") : localStorage.setItem("bg-theme", t); } catch (e) {}
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.theme === t));
+  document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.body).getPropertyValue("--bg").trim() || "#0f1215";
+}
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => setTheme(b.dataset.theme)));
+setTheme(document.documentElement.dataset.theme || "auto");
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {cache: "no-store"} :
+    {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j;
+}
+
+function render() {
+  if (!st) return;
+  const now = Date.now() / 1000, cam = st.camera || {};
+  $("updated").textContent = `updated ${hms(now)}`;
+  $("enabled").checked = st.enabled; $("enabled").disabled = busy;
+  $("enSub").textContent = st.enabled ? `Camera armed after ${dur(st.away_after_s)} without the phone` : "The camera is never armed automatically";
+
+  let cls = "ok", title, sub = "";
+  if (!st.enabled) { cls = ""; title = "Monitoring off"; sub = "BoatGuard will not arm the camera"; }
+  else if (st.test_running) { cls = "warn"; title = "Test running…"; }
+  else if (st.armed_by_us) { cls = "bad"; title = "Camera armed"; sub = `Phone away since ${hms(st.last_seen)}`; }
+  else if (st.arm_at) { cls = "warn"; title = `Arming at ${hms(st.arm_at)}`; sub = `in ${dur(st.arm_at - now)} · phone away since ${hms(st.last_seen)}`; }
+  else if (st.present) { title = "On board, monitoring ready"; sub = "The camera is armed once the phone leaves the boat"; }
+  else { cls = "warn"; title = "Waiting for the first check…"; }
+  if (st.router_ok === false && st.enabled) { cls = "warn"; sub = `${st.router_error || "Router not readable"}: nothing will be changed`; }
+  $("hero").className = "hero " + cls; $("heroTitle").textContent = title; $("heroSub").textContent = sub;
+
+  $("phone").innerHTML = st.present === null ? "unknown" : st.present
+    ? `<span class="good">On board</span><small>seen ${hms(st.last_seen)}</small>`
+    : `<span class="warnc">Away</span><small>last seen ${dur(now - st.last_seen)} ago</small>`;
+  $("camera").innerHTML = cam.error ? `<span class="badc">Error</span><small>${esc(cam.error)}</small>`
+    : cam.armed == null ? "unknown"
+    : cam.pending ? `${cam.armed ? '<span class="badc">Armed</span>' : '<span class="good">Disarmed</span>'}<small>by BoatGuard ${hms(cam.checked)} · waiting for EZVIZ to confirm</small>`
+    : `${cam.armed ? '<span class="badc">Armed</span>' : '<span class="good">Disarmed</span>'}<small>${cam.online === false ? "offline · " : ""}EZVIZ ${hms(cam.checked)}${!st.armed_by_us && cam.armed ? " · not by BoatGuard" : ""}</small>`;
+  $("battery").innerHTML = cam.battery == null ? "–" : `<span class="${cam.battery < 20 ? "badc" : cam.battery < 40 ? "warnc" : ""}">${cam.battery}%</span>`;
+  $("router").innerHTML = st.router_ok === null ? "–" : st.router_ok
+    ? `<span class="good">OK</span><small>checked ${hms(st.last_poll)}, every ${st.poll_s} s</small>`
+    : `<span class="badc">${esc(st.router_error || "Not readable")}</span><small>since ${hms(st.router_down_since || st.last_poll)}, last try ${hms(st.last_poll)}</small>`;
+
+  $("notif").innerHTML = st.notifications ? '<span class="good">Pushover on</span><small>armed · disarmed · left with monitoring off</small>'
+    : '<span class="warnc">Not set up</span><small>run boatguard.py pushover on the PC</small>';
+
+  $("test").disabled = busy || st.test_running || st.armed_by_us;
+  $("test").textContent = st.test_running ? "Running…" : "Test";
+  const t = st.last_test, tr = $("testres");
+  if (st.test_running) { tr.hidden = false; tr.textContent = "Arming and disarming the camera…"; }
+  else if (t) { tr.hidden = false; tr.innerHTML = t.ok ? `<span class="good">✓ Passed at ${hms(t.finished)}: arming and disarming confirmed by the camera</span>`
+    : `<span class="badc">✗ Failed at ${hms(t.finished)}: ${t.error ? esc(t.error) : "camera did not confirm (armed: " + t.armed_read + ", then: " + t.disarmed_read + ")"}</span>`; }
+  else if (st.armed_by_us) { tr.hidden = false; tr.textContent = "Not possible while BoatGuard has the camera armed."; }
+  else tr.hidden = true;
+
+  for (const k of ["away_after_s", "poll_s"]) {  // don't overwrite what the user is typing
+    const el = $(k), [lo, hi] = st.limits[k]; el.min = lo; el.max = hi;
+    if (!dirty) el.value = st[k];
+  }
+  buildSounds();
+  for (const e in st.events) {
+    if (!dirty) { $("snd-" + e).value = st.sounds[e]; $("pri-" + e).value = st.priorities[e]; }
+    $("try-" + e).disabled = !st.notifications; prioHint(e);
+  }
+  validate();
+}
+
+// One block per notification: sound and priority pickers plus a button that sends a sample to the iPhone.
+const PRIO_HINT = {"-2": "No alert: only listed in the Pushover app", "-1": "No sound or vibration", "0": "Sound per your iPhone settings",
+  "1": "Sounds even during Pushover quiet hours"};
+const label = s => s === "" ? "App default" : s === "none" ? "Silent" : s === "vibrate" ? "Vibrate only" : s[0].toUpperCase() + s.slice(1);
+function prioHint(e) {
+  const p = $("pri-" + e).value;
+  $("hint-" + e).textContent = p === "2" ? `Repeats every ${st.emergency.retry_s} s until you acknowledge it in Pushover (max ${dur(st.emergency.expire_s)})` : PRIO_HINT[p];
+  $("hint-" + e).className = p === "2" ? "sub warnc" : "sub";
+}
+function buildSounds() {
+  if ($("soundrows").childElementCount) return;
+  const prios = Object.entries(st.priority_options).sort((a, b) => +a[0] - +b[0]);
+  for (const [e, title] of Object.entries(st.events)) {
+    const row = document.createElement("div"); row.className = "row evt";
+    row.innerHTML = `<div><b>${esc(title)}</b><div class="sub" id="hint-${e}"></div></div>
+      <div class="snd"><select id="snd-${e}" aria-label="Sound for ${esc(title)}">${st.sound_options.map(s => `<option value="${s}">${label(s)}</option>`).join("")}</select>
+      <select id="pri-${e}" aria-label="Priority for ${esc(title)}">${prios.map(([p, n]) => `<option value="${p}">${n}</option>`).join("")}</select>
+      <button type="button" id="try-${e}" aria-label="Test on iPhone" title="Send a test notification with this sound and priority">▶</button></div>`;
+    $("soundrows").appendChild(row);
+    for (const id of ["snd-" + e, "pri-" + e]) $(id).addEventListener("change", () => { dirty = true; prioHint(e); validate(); });
+    $("try-" + e).addEventListener("click", async () => {
+      const p = +$("pri-" + e).value;
+      if (p === 2 && !confirm("An emergency test repeats every minute until you acknowledge it in Pushover (at most 2 minutes for a test). Send?")) return;
+      try { await api("/api/notify-test", {event: e, sound: $("snd-" + e).value, priority: p});
+            $("setmsg").textContent = `Test sent to your iPhone (${label($("snd-" + e).value)}, ${st.priority_options[p]})`; $("setmsg").className = "sub good"; }
+      catch (err) { $("setmsg").textContent = "Test not sent: " + err.message; $("setmsg").className = "sub badc"; }
+    });
+  }
+}
+const chosenSounds = () => Object.fromEntries(Object.keys(st.events).map(e => [e, $("snd-" + e).value]));
+const chosenPrios = () => Object.fromEntries(Object.keys(st.events).map(e => [e, +$("pri-" + e).value]));
+
+function validate() {
+  if (!st) return false;
+  const a = +$("away_after_s").value, p = +$("poll_s").value;
+  let msg = "";
+  for (const [k, v, name] of [["away_after_s", a, "Arming delay"], ["poll_s", p, "Check interval"]]) {
+    const [lo, hi] = st.limits[k], ok = Number.isInteger(v) && v >= lo && v <= hi;
+    $(k).setCustomValidity(ok ? "" : "x"); if (!ok && !msg) msg = `${name}: ${lo}–${hi} s`;
+  }
+  if (!msg && p > a) { msg = "Check interval can't be longer than the arming delay"; $("poll_s").setCustomValidity("x"); }
+  const changed = a !== st.away_after_s || p !== st.poll_s ||
+    ($("soundrows").childElementCount > 0 && (Object.entries(chosenSounds()).some(([e, s]) => s !== st.sounds[e]) ||
+                                              Object.entries(chosenPrios()).some(([e, p]) => p !== st.priorities[e])));
+  if (dirty || msg) { $("setmsg").textContent = msg || (changed ? "Not saved yet" : ""); $("setmsg").className = msg ? "sub badc" : "sub"; }
+  $("save").disabled = !!msg || !changed || busy;
+  return !msg;
+}
+for (const k of ["away_after_s", "poll_s"]) $(k).addEventListener("input", () => { dirty = true; validate(); });
+
+$("settings").addEventListener("submit", async e => {
+  e.preventDefault(); if (!validate()) return;
+  busy = true; $("save").disabled = true;
+  try { await api("/api/settings", {away_after_s: +$("away_after_s").value, poll_s: +$("poll_s").value, sounds: chosenSounds(), priorities: chosenPrios()});
+        dirty = false; $("setmsg").textContent = `Saved at ${hms(Date.now() / 1000)}`; $("setmsg").className = "sub good"; }
+  catch (err) { $("setmsg").textContent = "Not saved: " + err.message; $("setmsg").className = "sub badc"; }
+  busy = false; await loadStatus(); loadLog();
+});
+
+async function loadStatus() {
+  try { st = await api("/api/status"); $("err").hidden = true; render(); }
+  catch (e) { $("err").hidden = false; $("err").textContent = "BoatGuard not reachable: " + e.message; }
+}
+
+async function loadLog() {
+  try {
+    const {lines} = await api("/api/log?n=300");
+    const box = $("log"); box.innerHTML = ""; let day = null;
+    for (const line of lines.reverse()) {
+      const m = line.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) (\w+) (.*)$/);
+      if (!m) continue;
+      if (m[1] !== day) { day = m[1]; const d = document.createElement("div"); d.className = "day"; d.textContent = day.split("-").reverse().join("-"); box.appendChild(d); }
+      const row = document.createElement("div"); row.className = `${m[3]} ${(MARK.find(([re]) => re.test(m[4])) || [, ""])[1]}`;
+      const tm = document.createElement("time"); tm.textContent = m[2];
+      const msg = document.createElement("span"); msg.className = "msg"; msg.textContent = m[4];
+      row.append(tm, msg); box.appendChild(row);
+    }
+    $("logcount").textContent = `${lines.length} lines`;
+  } catch (e) {}
+}
+
+$("enabled").addEventListener("change", async e => {
+  const on = e.target.checked;
+  if (!on && st && st.armed_by_us && !confirm("Turning monitoring off also disarms the camera. Continue?")) { e.target.checked = true; return; }
+  busy = true; render();
+  try { await api("/api/enabled", {enabled: on}); } catch (err) { alert("Failed: " + err.message); }
+  busy = false; await loadStatus(); loadLog();
+});
+
+$("test").addEventListener("click", async () => {
+  busy = true; render();
+  try { await api("/api/test", {}); } catch (err) { alert("Test not started: " + err.message); }
+  busy = false; await loadStatus(); loadLog();
+});
+
+loadStatus(); loadLog();
+setInterval(render, 1000);
+setInterval(() => { loadStatus(); loadLog(); }, 5000);
+</script>
+</body>
+</html>

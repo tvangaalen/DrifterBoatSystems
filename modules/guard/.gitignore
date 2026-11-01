@@ -1,0 +1,13 @@
+# Personal data, keys and runtime state: never commit
+config.json
+state.json
+ezviz_token.json
+pushover.json
+certs/
+logs/
+*.tmp
+
+# Python
+.venv/
+__pycache__/
+*.pyc

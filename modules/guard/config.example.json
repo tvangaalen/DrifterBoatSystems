@@ -1,0 +1,21 @@
+{
+  "phone_macs": ["aa:bb:cc:dd:ee:ff"],
+  "away_after_s": 300,
+  "poll_s": 30,
+  "disarm_on_return": true,
+  "router": {
+    "host": "192.168.1.1",
+    "user": "root",
+    "key": "~/.ssh/router_key",
+    "timeout_s": 10
+  },
+  "ezviz": {
+    "camera_serial": "YOUR_CAMERA_SERIAL",
+    "region_url": "apiieu.ezvizlife.com"
+  },
+  "web": {
+    "port": 8095
+  },
+  "sounds": {"armed": "", "disarmed": "", "unguarded": ""},
+  "priorities": {"armed": 0, "disarmed": 0, "unguarded": 1}
+}
