@@ -18,6 +18,7 @@ def python(module: str) -> str:
 
 SUITES = [  # (name, folder, command)
     ("gateway", ROOT, [sys.executable, "tests/test_gateway.py"]),
+    ("supervisor", ROOT, [sys.executable, "tests/test_supervisor.py"]),
     ("energy", ROOT / "modules/energy", [python("energy"), "-m", "tests.run_all"] + (["quick"] if QUICK else [])),
     ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch"]),
     ("guard", ROOT / "modules/guard", [python("guard"), "boatguard_self_test.py"]),
@@ -30,7 +31,7 @@ for name, cwd, cmd in SUITES:
     r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     ok = r.returncode == 0
     last = next((ln for ln in reversed((r.stdout + r.stderr).strip().splitlines()) if ln.strip()), "")
-    print(f"{'ok  ' if ok else 'FAIL'} {name:8} {time.monotonic() - t0:6.1f} s  {last[:110]}")
+    print(f"{'ok  ' if ok else 'FAIL'} {name:10} {time.monotonic() - t0:6.1f} s  {last[:110]}")
     if not ok: failed.append(name); print((r.stdout + r.stderr)[-3000:])
 for p in ROOT.rglob("__pycache__"):          # the project folders are synced/shared: leave no bytecode behind
     if ".venv" not in p.parts: subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", str(p)], capture_output=True)

@@ -94,6 +94,9 @@ if (-not $Yes) {
 
 # From here on the old server is being stopped. Safety net: if anything fails before the new one is started, record
 # the old location again and start the module from there, so it is never left stopped.
+# A hold file keeps the Drifter supervisor from starting the module while it is being moved.
+$hold = Join-Path $planAll.data "hold\$Module"
+function Release-Hold { Remove-Item -LiteralPath $hold -Force -ErrorAction SilentlyContinue }
 $stopped = $false
 trap {
     if ($stopped) {
@@ -103,27 +106,18 @@ trap {
         & (Join-Path $root 'start_all.ps1') -Only $Module -NoWait
         $deadline = (Get-Date).AddSeconds(120); while (-not (Listener $cur.port) -and (Get-Date) -lt $deadline) { Start-Sleep 2 }
         Write-Host $(if (Listener $cur.port) { "$($cur.title) runs again from $($cur.location)." } else { "$($cur.title) did NOT come back: start it by hand!" }) -ForegroundColor Yellow
-        exit 4
+        Release-Hold; exit 4
     }
     Write-Host "`n$($_.Exception.Message)" -ForegroundColor Red; exit 1      # before stopping: nothing was changed
 }
 
 # ---- stop the old server
 Step 'Stopping the old server'
+New-Item -ItemType Directory -Force (Split-Path $hold) | Out-Null; Set-Content -LiteralPath $hold -Value "switch_module $(Get-Date -Format s)" -Encoding ascii
 $stopped = $true
-if ($cur.task) { Stop-ScheduledTask -TaskName $cur.task -ErrorAction SilentlyContinue }
-$procId = Listener $cur.port
-if ($procId) {
-    # The server and the launchers directly above it (venv python.exe, py/pyw, the cmd of its console window, which
-    # would otherwise stay open at "pause"); stop at the first process that is not one of those.
-    $chain = @(); $id = $procId
-    while ($id) { $pr = Get-CimInstance Win32_Process -Filter "ProcessId=$id" -ErrorAction SilentlyContinue
-                  if (-not $pr -or ($chain.Count -and $pr.Name -notmatch '^(cmd|py|pyw|python[\d.]*|pythonw[\d.]*)\.exe$')) { break }
-                  $chain += $id; $id = $pr.ParentProcessId }
-    foreach ($x in $chain) { Stop-Process -Id $x -Force -ErrorAction SilentlyContinue }   # a launcher may already have exited by itself
-}
-$deadline = (Get-Date).AddSeconds(20); while ((Listener $cur.port) -and (Get-Date) -lt $deadline) { Start-Sleep 1 }
+& powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $tools 'stop_module.ps1') $Module | Out-Null
 if (Listener $cur.port) { throw "Port $($cur.port) is still in use: stop it by hand, then run this again" }
+Remove-Item -LiteralPath (Join-Path $planAll.data "starting\$Module") -Force -ErrorAction SilentlyContinue   # stopped for sure: a new start is allowed
 Write-Host "  stopped"
 
 Step 'Copying runtime files (final)'; Copy-Runtime $true
@@ -135,5 +129,6 @@ Step 'Starting'
 & (Join-Path $root 'start_all.ps1') -Only $Module -NoWait
 $stopped = $false                                   # the new server is being started: do not start the old one as well
 $deadline = (Get-Date).AddSeconds(120); while (-not (Listener $to.port) -and (Get-Date) -lt $deadline) { Start-Sleep 2 }
+Release-Hold
 if (Listener $to.port) { Write-Host "`n$($to.title) runs from $target (port $($to.port))." -ForegroundColor Green }
 else { Write-Host "`n$($to.title) did not start: see $($to.data)\logs. Undo with: tools\switch_module.ps1 $Module $(if ($Back) { '' } else { '-Back' })" -ForegroundColor Red; exit 2 }

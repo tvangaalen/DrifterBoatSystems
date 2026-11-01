@@ -30,9 +30,18 @@ function Start-Module($m) {
 }
 
 if (-not $NoWait) { Write-Host "`n  Drifter Boat Systems`n" -ForegroundColor Cyan }
+# Every start goes through here (desktop icon, switch_module, the Drifter supervisor). A marker per module blocks a
+# second start while the first one is still coming up (MasterVolt needs up to a minute before it listens): two servers
+# would fight over the USB link and the Bluetooth radio. A hold file (set while a module is being moved) blocks the
+# full start-all; -Only (switch_module, supervisor) has checked it already.
+$marks = Join-Path $plan.data 'starting'; New-Item -ItemType Directory -Force $marks | Out-Null
 foreach ($m in $plan.modules) {
     $where = if ($m.location -eq 'drifter') { 'Drifter' } else { 'old folder' }
     if (Listening $m.port) { Write-Host ("  {0,-26} already running" -f $m.title) -ForegroundColor DarkGray; continue }
+    if (-not $Only -and (Test-Path (Join-Path $plan.data "hold\$($m.name)"))) { Write-Host ("  {0,-26} on hold (being moved), not started" -f $m.title) -ForegroundColor Yellow; continue }
+    $mark = Join-Path $marks $m.name
+    if ((Test-Path $mark) -and ((Get-Date) - (Get-Item $mark).LastWriteTime).TotalSeconds -lt 120) { Write-Host ("  {0,-26} already starting" -f $m.title) -ForegroundColor DarkGray; continue }
+    Set-Content -LiteralPath $mark -Value (Get-Date -Format s) -Encoding ascii
     Write-Host ("  {0,-26} starting ({1})..." -f $m.title, $where)
     try { Start-Module $m } catch { Write-Host "    could not start: $($_.Exception.Message)" -ForegroundColor Red; $m | Add-Member Failed $true }
 }

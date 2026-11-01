@@ -2,7 +2,8 @@
 
 The gateway serves the app and passes the page's requests on to the four existing servers, which keep running
 unchanged and keep all their own logic (Float protection, anchor alarm, arming, washer schedule). The gateway makes
-no decisions and talks to no hardware itself.
+no decisions and talks to no hardware itself. With "supervise" on, supervisor.py keeps the servers running (starts a
+stopped one, never stops a running one unless the user asks for a restart from the app).
 
 Safety:
 - Only routes listed in ROUTES are passed on (method + path pattern per module); everything else gets 404.
@@ -19,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -67,6 +68,7 @@ STATIC_TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=
 DEFAULT_CONFIG = {
     "bind": "127.0.0.1", "port": 8100, "allowed_hosts": [],
     "certfile": None, "keyfile": None, "ca_file": None,
+    "supervise": False,   # keep the module servers running (supervisor.py); only the live config turns it on
     "modules": {
         "power": {"name": "Energy", "url": "https://127.0.0.1:8000", "classic": None},
         "anchor": {"name": "Anchor watch", "url": "https://127.0.0.1:8766", "classic": None},
@@ -145,7 +147,28 @@ class Upstreams:
         with self.lock: self.status[module] = {"ok": ok, "error": err, "t": time.time(), "ms": round((time.monotonic() - t0) * 1000)}
 
 
-def make_handler(cfg: dict, up: Upstreams):
+def make_precheck(up: Upstreams):
+    """Before a restart from the app: refuse while MasterVolt runs a BMS control or Float is latched, or while the anchor
+    watch has an alarm. A server that does not answer at all is stuck or gone, so restarting it is allowed."""
+    def get(module, path):
+        code, _, _, data = up.request(module, "GET", path, "", None, None)
+        if code != 200: raise OSError(f"{path}: HTTP {code}")
+        return json.loads(data)
+
+    def check(name):
+        try:
+            if name == "energy":
+                if (get("power", "/api/bms").get("control_status") or {}).get("busy"): raise ValueError("a BMS control is running: try again later")
+                if (get("power", "/api/energy").get("high_soc_float_policy") or {}).get("float_latched"): raise ValueError("Float is latched: do not restart now")
+            elif name == "anchor":
+                alarms = get("anchor", "/api/state").get("alarms") or []
+                if alarms: raise ValueError("anchor alarm active (" + ", ".join(a.get("text", "?") for a in alarms) + "): do not restart now")
+        except ValueError: raise
+        except Exception as e: log.warning("restart %s: pre-check not possible (%s); the server does not answer, restarting anyway", name, e)
+    return check
+
+
+def make_handler(cfg: dict, up: Upstreams, sup=None):
     extra_hosts = list(cfg.get("allowed_hosts") or [])
     systems = {m: {"name": mv["name"], "classic": mv.get("classic")} for m, mv in cfg["modules"].items()}
 
@@ -178,7 +201,8 @@ def make_handler(cfg: dict, up: Upstreams):
                 return self._proxy("GET", path, query)
             if path == "/api/systems":
                 with up.lock: st = {m: dict(v) for m, v in up.status.items()}
-                return self._json({"version": VERSION, "systems": systems, "upstream": st})
+                return self._json({"version": VERSION, "systems": systems, "upstream": st,
+                                   "supervisor": sup.snapshot() if sup else {"enabled": False}})
             if path == "/": path = "/index.html"
             f = (STATIC / path.lstrip("/")).resolve()
             if STATIC.resolve() in f.parents and f.is_file() and f.suffix in STATIC_TYPES:
@@ -195,8 +219,18 @@ def make_handler(cfg: dict, up: Upstreams):
                 log.warning("blocked origin %s for %s", origin, path); return self._json({"error": "cross-origin request rejected"}, 403)
             if self.headers.get("X-Drifter-Request") != "1": return self._json({"error": "request not sent by the Drifter page"}, 403)
             if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json": return self._json({"error": "json only"}, 415)
+            if path == "/api/supervisor/restart": return self._restart()
             if not (path.startswith("/api/") and path.count("/") >= 2 and path.split("/")[2] in up.mods): return self._json({"error": "not found"}, 404)
             self._proxy("POST", path, query)
+
+        def _restart(self):
+            if not sup: return self._json({"error": "the supervisor is off"}, 409)
+            n = int(self.headers.get("Content-Length") or 0)
+            try: name = json.loads(self.rfile.read(min(n, MAX_BODY)) or b"{}").get("module")
+            except (ValueError, AttributeError): return self._json({"error": "invalid JSON"}, 400)
+            try: sup.restart(str(name))
+            except ValueError as e: return self._json({"error": str(e)}, 409)
+            log.info("restart of %s requested from the app", name); return self._json({"ok": True, "module": name}, 202)
 
         def _proxy(self, method: str, path: str, query: str):
             module = path.split("/")[2]; sub = path[len(f"/api/{module}"):] or "/"
@@ -228,9 +262,13 @@ class Server(ThreadingHTTPServer):
         super().handle_error(request, client_address)
 
 
-def serve(cfg: dict) -> Server:
+def serve(cfg: dict, supervisor=None) -> Server:
     check_bind(cfg["bind"])
-    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, Upstreams(cfg)))
+    up = Upstreams(cfg)
+    if supervisor is None and cfg.get("supervise"):
+        from supervisor import Supervisor
+        supervisor = Supervisor(precheck=make_precheck(up)); supervisor.start_thread()
+    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor))
     scheme = "http"
     if cfg.get("certfile"):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.minimum_version = ssl.TLSVersion.TLSv1_2

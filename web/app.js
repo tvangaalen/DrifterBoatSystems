@@ -216,21 +216,60 @@ const Drifter = (() => {
   }
 
   // ---------------------------------------------------------------- system page
-  let sysInfo = null;
+  // The supervisor (drifter.py) keeps the servers running; restarting one is the user's call, with a confirmation that
+  // says what pauses. The server refuses (with the reason) while MasterVolt runs a BMS control or Float is latched, or
+  // while the anchor watch has an alarm.
+  let sysInfo = null, sysTimer = null;
+  const SUP_NAME = {power: "energy"};                       // page module id -> supervisor module name
+  const RESTART_TEXT = {
+    energy: ["Float protection and the BMS and balancer connections pause for about a minute.", "Refused while a BMS control runs or Float is latched."],
+    anchor: ["The anchor watch pauses for about a minute; the anchor, settings and track are kept.", "Refused while an alarm is active."],
+    guard: ["BoatGuard pauses for a few seconds; whether it armed the camera is kept.", ""],
+    washer: ["The controller pauses for a few seconds; a running program carries on in the washer.", ""],
+  };
+  function supState(s) {
+    if (!s) return "";
+    if (s.busy) return `<span class="badge warn">restarting</span>`;
+    return {running: `<span class="badge ok">running${s.uptime_s != null ? " · " + dur(s.uptime_s) : ""}</span>`, starting: `<span class="badge warn">starting…</span>`,
+      down: `<span class="badge bad">not running</span>`, failed: `<span class="badge bad">failed · next try in ${dur(s.next_try_in)}</span>`,
+      held: `<span class="badge warn">on hold (being moved)</span>`}[s.state] || `<span class="badge">${esc(s.state)}</span>`;
+  }
   async function renderSystem(el) {
     el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="hint" style="margin:10px 2px 0">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p></div>
       <h2 class="sec">Systems</h2><div class="card"><div class="rows" id="sysRows"><div class="empty">Loading…</div></div></div>
+      <div id="sysEvWrap" hidden><h2 class="sec">Supervisor events</h2><div class="card"><div class="log" id="sysEvents"></div></div></div>
       <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="hint" style="margin:0">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's local certificate (the same one used for Energy, Anchor watch and BoatGuard).</p></div>
       <p class="hint" style="text-align:center;margin:18px 0" id="sysVer"></p>`;
+    el.onclick = e => { const b = e.target.closest("[data-restart]"); if (b) restartModule(b.dataset.restart, b); };
+    await refreshSystem();
+    clearInterval(sysTimer); sysTimer = setInterval(() => { if (current === "system" && !document.hidden) refreshSystem(); else if (current !== "system") clearInterval(sysTimer); }, 5000);
+  }
+  async function refreshSystem() {
     try { sysInfo = await (await fetch("api/systems", {cache: "no-store"})).json(); } catch (e) { sysInfo = null; }
-    const rows = mods.map(m => {
+    if (!$("sysRows")) return;
+    const sup = sysInfo && sysInfo.supervisor && sysInfo.supervisor.enabled ? sysInfo.supervisor : null;
+    $("sysRows").innerHTML = mods.map(m => {
       const u = sysInfo && sysInfo.upstream[m.id], c = sysInfo && sysInfo.systems[m.id] && sysInfo.systems[m.id].classic;
+      const name = SUP_NAME[m.id] || m.id, s = sup && sup.modules[name];
       const st = m.state.err ? `<span class="badc">Not reachable</span><small>${esc(m.state.err.message)}</small>`
         : m.state.data ? `<span class="good">Connected</span><small>${u && u.ms != null ? `${u.ms} ms · ` : ""}${hms(m.state.t)}</small>` : "–";
-      return `<div class="row"><div class="k"><b>${esc(m.title)}</b>${c ? `<a href="${esc(c)}" target="_blank" rel="noopener" class="hint">Open classic page ↗</a>` : ""}</div><div class="v">${st}</div></div>`;
-    });
-    $("sysRows").innerHTML = rows.join("");
+      return `<div class="row col"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+          <div class="k"><b>${esc(m.title)}</b>${c ? `<a href="${esc(c)}" target="_blank" rel="noopener" class="hint">Open classic page ↗</a>` : ""}</div><div class="v">${st}</div></div>
+        ${s ? `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">${supState(s)}
+          <span class="hint" style="flex:1;min-width:120px">${s.last_event ? `${esc(dayTime(s.last_event.t))} ${esc(s.last_event.text)}` : ""}</span>
+          <button class="btn sec sm" type="button" data-restart="${name}" ${s.busy || s.held || s.state === "starting" ? "disabled" : ""}>${icon("refresh")} Restart</button></div>` : ""}</div>`;
+    }).join("") + (sup ? "" : `<div class="row"><span class="hint">The supervisor is off: servers are not restarted automatically.</span></div>`);
+    $("sysEvWrap").hidden = !sup || !sup.events.length;
+    if (sup) $("sysEvents").innerHTML = sup.events.slice().reverse().slice(0, 30).map(e => `<div class="${e.kind === "bad" ? "bad" : e.kind === "warn" ? "warn" : ""}"><time>${esc(dayTime(e.t))}</time><span class="msg"><b>${esc(e.module)}</b> ${esc(e.text)}</span></div>`).join("");
     $("sysVer").textContent = `Drifter Boat Systems ${sysInfo ? "v" + sysInfo.version : ""}`;
+  }
+  async function restartModule(name, btn) {
+    const m = mods.find(x => (SUP_NAME[x.id] || x.id) === name), [what, refused] = RESTART_TEXT[name] || ["", ""];
+    if (!(await confirm({title: `Restart ${m ? m.title : name}?`, text: what, note: refused, ok: "Restart", cancel: "Cancel", danger: name === "energy" || name === "anchor"}))) return;
+    try { await run(null, btn, () => fetch("api/supervisor/restart", {method: "POST", headers: {"Content-Type": "application/json", "X-Drifter-Request": "1"}, body: JSON.stringify({module: name})})
+      .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`); return j; }), `Restarting ${m ? m.title : name}…`); }
+    catch (e) {}
+    refreshSystem();
   }
 
   function start() {
