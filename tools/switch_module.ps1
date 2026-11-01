@@ -42,6 +42,27 @@ if ($cur.precheck -eq 'energy' -and (Listener $cur.port)) {
         Write-Host "  BMS idle, Float not latched (house SOC $($en.storage.house.soc) %)" -ForegroundColor Green
     }
 }
+if ($cur.task) {
+    # The task must run tools\run_module.py, which starts the module from whatever locations.json says; then a switch
+    # never has to edit the task. Checked before anything is stopped. A task that runs "whether the user is logged on
+    # or not" can only be changed with the user's Windows password, so the user changes it once, by hand.
+    $act = (Get-ScheduledTask -TaskName $cur.task).Actions[0]
+    $runner = Join-Path $root 'tools\run_module.py'
+    if ("$($act.Execute) $($act.Arguments)" -notmatch [regex]::Escape($runner)) {
+        $pyw = (Get-Command pyw.exe).Source
+        try { Set-ScheduledTask -TaskName $cur.task -Action (New-ScheduledTaskAction -Execute $pyw -Argument "`"$runner`" $Module" -WorkingDirectory $root) -ErrorAction Stop | Out-Null
+              Write-Host "  scheduled task $($cur.task) now runs tools\run_module.py (follows locations.json)" }
+        catch {
+            Write-Host "`nScheduled task '$($cur.task)' cannot be changed from here ($($_.Exception.Message.Trim())). Change it once yourself:" -ForegroundColor Yellow
+            Write-Host "  Task Scheduler > $($cur.task) > Properties > Actions > Edit"
+            Write-Host "    Program/script:  $pyw"
+            Write-Host "    Add arguments:   `"$runner`" $Module"
+            Write-Host "    Start in:        $root"
+            Write-Host "  OK, enter your Windows password, then run this script again. Nothing was stopped or changed."
+            exit 3
+        }
+    } else { Write-Host "  scheduled task $($cur.task) runs tools\run_module.py: OK" -ForegroundColor Green }
+}
 if ($Module -eq 'anchor' -and (Listener $cur.port)) {
     $st = ViaDrifter 'anchor/api/state'
     if (-not $st) { Write-Host '  could not read the anchor state through Drifter: check it yourself' -ForegroundColor Yellow }
@@ -88,15 +109,7 @@ Write-Host "  stopped"
 Step 'Copying runtime files (final)'; Copy-Runtime $true
 foreach ($r in $to.requires) { if (-not (Test-Path (Join-Path $to.folder $r))) { throw "Missing $r in $($to.folder): not starting (the start script would create a new CA). Run -Back to restore." } }
 
-# ---- scheduled task, location, start
-if ($cur.task) {
-    $pyw = (Get-Command pyw.exe).Source
-    $action = if ($target -eq 'drifter') { New-ScheduledTaskAction -Execute $pyw -Argument "`"$(Join-Path $root 'tools\run_module.py')`" $Module" -WorkingDirectory $root }
-              else { $old = Resolve $Module 'legacy'; $e = Join-Path $old.folder $old.command[0]; if (-not (Test-Path $e)) { $e = (Get-Command $old.command[0]).Source }
-                     New-ScheduledTaskAction -Execute $e -Argument (($old.command | Select-Object -Skip 1) -join ' ') -WorkingDirectory $old.folder }
-    Set-ScheduledTask -TaskName $cur.task -Action $action | Out-Null
-    Write-Host "  scheduled task $($cur.task) now runs from $target"
-}
+# ---- location, start (a scheduled task follows locations.json through run_module.py)
 & py (Join-Path $tools 'modules.py') set $Module $target | Out-Null
 Step 'Starting'
 & (Join-Path $root 'start_all.ps1') -Only $Module -NoWait
