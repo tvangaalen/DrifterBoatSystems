@@ -1,0 +1,182 @@
+[
+  {
+    "device": {
+      "address": 1801441,
+      "type_code": 6,
+      "instance": 3,
+      "event_counter": 51,
+      "article": "35013000",
+      "serial": "NN14C0225",
+      "name": "CMR Charge house",
+      "revision": "AA0202",
+      "firmware": "8.86",
+      "field_max_index": 57
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 3257475,
+      "type_code": 12,
+      "instance": 1,
+      "event_counter": 13,
+      "article": "131906000",
+      "serial": "R422C0323",
+      "name": "SCM Solar",
+      "revision": "AA0104",
+      "firmware": "5.22",
+      "field_max_index": 20
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 3316620,
+      "type_code": 12,
+      "instance": 2,
+      "event_counter": 1,
+      "article": "45513000",
+      "serial": "R202J0012",
+      "name": "APR Alpha Pro MB",
+      "revision": "AA0400",
+      "firmware": null,
+      "field_max_index": 49
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 3830180,
+      "type_code": 14,
+      "instance": 2,
+      "event_counter": 184,
+      "article": "77030300",
+      "serial": "B201D0996",
+      "name": "TLI Diesel",
+      "revision": "AA0100",
+      "firmware": null,
+      "field_max_index": 16
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 3859348,
+      "type_code": 14,
+      "instance": 2,
+      "event_counter": 175,
+      "article": "77030450",
+      "serial": "N611S0084",
+      "name": "INT Yanmar ECU",
+      "revision": "S",
+      "firmware": null,
+      "field_max_index": 64
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 4424583,
+      "type_code": 16,
+      "instance": 3,
+      "event_counter": 0,
+      "article": "77020200",
+      "serial": "PN07G0327",
+      "name": "DCD Distribute#1",
+      "revision": "G",
+      "firmware": null,
+      "field_max_index": 20
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 4424593,
+      "type_code": 16,
+      "instance": 3,
+      "event_counter": 0,
+      "article": "77020200",
+      "serial": "PN07ÿ0337",
+      "name": "DCD Distribute#2",
+      "revision": "ÿ",
+      "firmware": null,
+      "field_max_index": 20
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 6408854,
+      "type_code": 24,
+      "instance": 1,
+      "event_counter": 20,
+      "article": "81205300",
+      "serial": "L107E0022",
+      "name": "MAC Charge bow",
+      "revision": "AD0108",
+      "firmware": null,
+      "field_max_index": 67
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 6541328,
+      "type_code": 24,
+      "instance": 3,
+      "event_counter": 78,
+      "article": "81205100",
+      "serial": "PN04J1168",
+      "name": "MAC Charge start",
+      "revision": "AD0108",
+      "firmware": null,
+      "field_max_index": 67
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 7166393,
+      "type_code": 27,
+      "instance": 1,
+      "event_counter": 36,
+      "article": "77020100",
+      "serial": "B505K0121",
+      "name": "MSH Start",
+      "revision": "K",
+      "firmware": null,
+      "field_max_index": 46
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 7184025,
+      "type_code": 27,
+      "instance": 1,
+      "event_counter": 20,
+      "article": "77020110",
+      "serial": "L513F0729",
+      "name": "MSH Bow",
+      "revision": "AA0066",
+      "firmware": null,
+      "field_max_index": 63
+    },
+    "fields": []
+  },
+  {
+    "device": {
+      "address": 7188635,
+      "type_code": 27,
+      "instance": 1,
+      "event_counter": 174,
+      "article": "77020115",
+      "serial": "M915J0923",
+      "name": "MSH House",
+      "revision": "AA0204",
+      "firmware": null,
+      "field_max_index": 67
+    },
+    "fields": []
+  }
+]

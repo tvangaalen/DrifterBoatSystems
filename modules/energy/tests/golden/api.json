@@ -1,0 +1,1233 @@
+{
+ "000 GET /api/settings ": {
+  "body": {
+   "balancer_connection_retry_seconds": 30,
+   "balancer_refresh_interval": 30,
+   "bms_connection_retry_seconds": 5,
+   "bms_popup_seconds": 3,
+   "bms_refresh_interval": 30,
+   "default_ac_limit": 15,
+   "float_cell_resume_mv": 3420.0,
+   "float_cell_trigger_mv": 3500.0,
+   "float_protection_enabled": true,
+   "history_retention_days": 7
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "001 GET /api/bms ": {
+  "body": {
+   "batteries": {
+    "BATTERY 1": {
+     "battery": "BATTERY 1",
+     "state": "not_read"
+    },
+    "BATTERY 2": {
+     "battery": "BATTERY 2",
+     "state": "not_read"
+    },
+    "BATTERY 3": {
+     "battery": "BATTERY 3",
+     "state": "not_read"
+    }
+   },
+   "ble_available": true,
+   "busy": false,
+   "connected_count": 0,
+   "connection_retry_interval_seconds": 5,
+   "control_status": {
+    "busy": false,
+    "current": 0,
+    "message": "",
+    "phase": "idle",
+    "total": 0
+   },
+   "controls_available": true,
+   "persistent_connections": true,
+   "queue": {
+    "active": null,
+    "active_for_seconds": null,
+    "balancers_allowed": false,
+    "bms_stable_seconds": 0,
+    "connected_bms": 0,
+    "degraded": false,
+    "forced_releases": 0,
+    "refreshed_bms": 0,
+    "waiting": {
+     "balancer": 0,
+     "bms": 0,
+     "bms_control": 0,
+     "bms_manual_connect": 0,
+     "bms_manual_read": 0,
+     "bms_read": 0
+    },
+    "waiting_bms": 0
+   },
+   "read_only": false,
+   "refresh_interval_seconds": 30,
+   "refresh_started_at": null,
+   "refresh_status": {
+    "completed": 0,
+    "generation": 0,
+    "pending": [],
+    "total": 0
+   }
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "002 GET /api/balancers ": {
+  "body": {
+   "ble_available": true,
+   "busy": false,
+   "completed_generation": 0,
+   "connection_mode": "sequential-read-disconnect",
+   "coordinator": {
+    "active": null,
+    "active_for_seconds": null,
+    "balancers_allowed": false,
+    "bms_stable_seconds": 0,
+    "connected_bms": 0,
+    "degraded": false,
+    "forced_releases": 0,
+    "refreshed_bms": 0,
+    "waiting": {
+     "balancer": 0,
+     "bms": 0,
+     "bms_control": 0,
+     "bms_manual_connect": 0,
+     "bms_manual_read": 0,
+     "bms_read": 0
+    },
+    "waiting_bms": 0
+   },
+   "devices": {
+    "DL-BAL1": {
+     "captured_at": null,
+     "connection_failures": 0,
+     "error": null,
+     "last_success_age_seconds": null,
+     "name": "DL-BAL1",
+     "next_attempt_in_seconds": 0.0,
+     "stale": false,
+     "state": "not_read",
+     "status": {},
+     "values": []
+    },
+    "DL-BAL2": {
+     "captured_at": null,
+     "connection_failures": 0,
+     "error": null,
+     "last_success_age_seconds": null,
+     "name": "DL-BAL2",
+     "next_attempt_in_seconds": 0.0,
+     "stale": false,
+     "state": "not_read",
+     "status": {},
+     "values": []
+    },
+    "DL-BAL3": {
+     "captured_at": null,
+     "connection_failures": 0,
+     "error": null,
+     "last_success_age_seconds": null,
+     "name": "DL-BAL3",
+     "next_attempt_in_seconds": 0.0,
+     "stale": false,
+     "state": "not_read",
+     "status": {},
+     "values": []
+    }
+   },
+   "persistent_connections": false,
+   "refresh_generation": 0,
+   "refresh_interval_seconds": 30,
+   "retry_interval_seconds": 30,
+   "shared_discovery": true,
+   "watchdog_level": 0,
+   "wedged": false,
+   "worker_alive": false,
+   "worker_restarts": 0
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "003 GET /api/bluetooth-coordinator ": {
+  "body": {
+   "active": null,
+   "active_for_seconds": null,
+   "balancers_allowed": false,
+   "bms_stable_seconds": 0,
+   "connected_bms": 0,
+   "degraded": false,
+   "forced_releases": 0,
+   "refreshed_bms": 0,
+   "waiting": {
+    "balancer": 0,
+    "bms": 0,
+    "bms_control": 0,
+    "bms_manual_connect": 0,
+    "bms_manual_read": 0,
+    "bms_read": 0
+   },
+   "waiting_bms": 0
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "004 GET /api/bluetooth-events ": {
+  "body": {
+   "counters": {},
+   "events": []
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "005 GET /api/bluetooth-events?limit=5 ": {
+  "body": {
+   "counters": {},
+   "events": []
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "006 GET /api/energy ": {
+  "body": {
+   "active_mode": null,
+   "alternator_balance": {
+    "alternator_a": 0.0,
+    "charge_state": null,
+    "charge_state_raw": null,
+    "charger_house_a": 0.0,
+    "house_battery_a": null,
+    "known_dc_load_a": 0.0,
+    "other_dc_display_a": null,
+    "running": false,
+    "shaft_running": false,
+    "solar_a": 0.0,
+    "total_house_load_baseline_a": null,
+    "total_house_load_observed_a": null
+   },
+   "cache_items": 0,
+   "combimaster": {
+    "ac_input_limit": null,
+    "ac_input_present": null,
+    "ac_support_enabled": null,
+    "alarms": null,
+    "charger_enabled": null,
+    "charging": null,
+    "inverter_enabled": null,
+    "inverting": null,
+    "supporting": null
+   },
+   "consumers": {
+    "alternator_field": {
+     "control_on": false,
+     "current": null,
+     "kind": "DC",
+     "label": "Alternator",
+     "power": null,
+     "state": null,
+     "state_raw": null,
+     "voltage": null
+    },
+    "charger_bow": {
+     "charge_state": null,
+     "charge_state_raw": null,
+     "current": null,
+     "kind": "DC",
+     "label": "Charger Bow",
+     "power": null,
+     "voltage": null
+    },
+    "charger_start": {
+     "charge_state": null,
+     "charge_state_raw": null,
+     "current": null,
+     "kind": "DC",
+     "label": "Charger Start",
+     "power": null,
+     "voltage": null
+    },
+    "engine_ecu": {
+     "current": null,
+     "efficiency_estimate": 0.85,
+     "kind": "DC",
+     "label": "Engine ECU power",
+     "output_current": null,
+     "output_power": null,
+     "output_voltage": null,
+     "power": null,
+     "voltage": null
+    },
+    "house_ac": {
+     "current": null,
+     "kind": "AC",
+     "label": "AC Loads",
+     "output_frequency": null,
+     "power": null,
+     "voltage": null
+    },
+    "inverter": {
+     "actual": false,
+     "current": 0.0,
+     "dc_current_raw": null,
+     "enabled": false,
+     "inverting": false,
+     "kind": "DC",
+     "label": "Inverter",
+     "power": 0.0,
+     "supporting": false,
+     "voltage": 0.0
+    },
+    "other_dc": {
+     "current": null,
+     "estimated": false,
+     "kind": "DC",
+     "label": "Other DC Loads",
+     "power": null,
+     "voltage": null
+    }
+   },
+   "controls": {
+    "charger_bow": {
+     "address": "61CA96",
+     "commit_field": null,
+     "current": null,
+     "field": 64,
+     "name": "On/Standby",
+     "protocol": "btm1",
+     "raw_current": null,
+     "type": "bool",
+     "verified": true
+    },
+    "charger_start": {
+     "address": "63D010",
+     "commit_field": null,
+     "current": null,
+     "field": 64,
+     "name": "On/Standby",
+     "protocol": "btm1",
+     "raw_current": null,
+     "type": "bool",
+     "verified": true
+    },
+    "engine_ecu": {
+     "address": "3AE394",
+     "capture_evidence": {
+      "off_write": "CAN 0x183AE394 data 2B 00 00 00 00 00",
+      "on_write": "CAN 0x183AE394 data 2B 00 00 00 80 3F"
+     },
+     "commit_field": null,
+     "current": null,
+     "field": 43,
+     "name": "Mac/Magic On",
+     "protocol": "btm1",
+     "raw_current": null,
+     "reason": "Confirmed from MasterAdjust USB capture: field 43 is written directly OFF=0.0 / ON=1.0; no adjacent commit transaction observed.",
+     "type": "bool",
+     "verified": true
+    },
+    "solar": {
+     "address": "31B483",
+     "commit_field": null,
+     "current": null,
+     "field": 12,
+     "name": "On/Off",
+     "protocol": "btm1",
+     "raw_current": null,
+     "reason": "Verified as SCM Solar On/Off request field. At night/no PV, the controller can immediately return the field to OFF; MasterView shows the same behavior.",
+     "type": "bool",
+     "verified": true
+    }
+   },
+   "discovery_status": "not_started",
+   "high_soc_float_policy": {
+    "active": false,
+    "bulk_event_id": 0,
+    "cell_resume_mv": 3420.0,
+    "cell_trigger_mv": 3500.0,
+    "check_interval_seconds": 3,
+    "enabled": true,
+    "event_id": 0,
+    "float_latched": false,
+    "house_soc": null,
+    "last_check_at": null,
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null,
+    "server_side": true,
+    "sources": {},
+    "trigger": null
+   },
+   "settings": {
+    "balancer_connection_retry_seconds": 30,
+    "balancer_refresh_interval": 30,
+    "bms_connection_retry_seconds": 5,
+    "bms_popup_seconds": 3,
+    "bms_refresh_interval": 30,
+    "default_ac_limit": 15,
+    "float_cell_resume_mv": 3420.0,
+    "float_cell_trigger_mv": 3500.0,
+    "float_protection_enabled": true,
+    "history_retention_days": 7
+   },
+   "sources": {
+    "alternator": {
+     "alternator_shaft": null,
+     "control_on": false,
+     "current": 0.0,
+     "engine_shaft": null,
+     "estimated": false,
+     "kind": "DC",
+     "label": "Alternator",
+     "power": null,
+     "running": false,
+     "shaft_running": false,
+     "state": null,
+     "state_raw": null,
+     "temperature": null,
+     "voltage": null
+    },
+    "charger_house": {
+     "charge_state": null,
+     "charge_state_raw": null,
+     "current": null,
+     "kind": "DC",
+     "label": "Charger House",
+     "power": null,
+     "voltage": null
+    },
+    "shore": {
+     "connected": false,
+     "current": null,
+     "input_frequency": null,
+     "kind": "AC",
+     "label": "Shore Power",
+     "power": null,
+     "voltage": null
+    },
+    "solar": {
+     "current": null,
+     "kind": "DC",
+     "label": "Solar",
+     "output_voltage": null,
+     "panel_voltage": null,
+     "power": null,
+     "state": null,
+     "state_raw": null,
+     "voltage": null
+    }
+   },
+   "storage": {
+    "bow": {
+     "battery_type": "AGM",
+     "capacity": null,
+     "capacity_unit": "Ah",
+     "config_discovered": false,
+     "current": null,
+     "label": "Bow Battery",
+     "power": null,
+     "soc": null,
+     "voltage": null
+    },
+    "house": {
+     "battery_type": "LiFePO4",
+     "capacity": null,
+     "capacity_unit": "Ah",
+     "config_discovered": false,
+     "current": null,
+     "label": "House Battery",
+     "max_cell_battery": null,
+     "max_cell_mv": null,
+     "max_spread_battery": null,
+     "max_spread_mv": null,
+     "power": null,
+     "soc": null,
+     "soc_age_seconds": null,
+     "soc_fresh_batteries": 0,
+     "soc_source": "daly_bms_unavailable",
+     "temperature": null,
+     "voltage": null
+    },
+    "start": {
+     "battery_type": "AGM",
+     "capacity": null,
+     "capacity_unit": "Ah",
+     "config_discovered": false,
+     "current": null,
+     "label": "Start Battery",
+     "power": null,
+     "soc": null,
+     "voltage": null
+    }
+   },
+   "totals": {
+    "ac_consumer_power": 0.0,
+    "consumer_power": 0.0,
+    "dc_input_power": 0.0
+   },
+   "usb": {
+    "product": null,
+    "serial": null
+   }
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "007 GET /api/history ": {
+  "body": {
+   "count": 0,
+   "records": [],
+   "retention_days": 7
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "008 GET /api/history?limit=2 ": {
+  "body": {
+   "count": 0,
+   "records": [],
+   "retention_days": 7
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "009 GET /api/history/bms-series ": {
+  "body": {
+   "earliest_id": 0,
+   "latest_id": 0,
+   "points": [],
+   "retention_days": 7
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "010 GET /api/history/dashboard-series?after_id=5 ": {
+  "body": {
+   "earliest_id": 0,
+   "latest_id": 0,
+   "points": [],
+   "retention_days": 7
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "011 GET /api/history/chart-data ": {
+  "body": {
+   "bms": [],
+   "bms_count": 0,
+   "cutoff": "<now>",
+   "dashboard": [],
+   "dashboard_count": 0,
+   "latest": "<now>",
+   "max_hours": 168.0,
+   "server_cached": true,
+   "zoom_hours": 168.0
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "012 GET /api/history/chart-data?hours=1 ": {
+  "body": {
+   "bms": [],
+   "bms_count": 0,
+   "cutoff": "<now>",
+   "dashboard": [],
+   "dashboard_count": 0,
+   "latest": "<now>",
+   "max_hours": 168.0,
+   "server_cached": true,
+   "zoom_hours": 1.0
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "013 GET /api/history/chart-data?hours=0.1 ": {
+  "body": {
+   "detail": "Zoom must be between 0.25 and 168 hours"
+  },
+  "status": 400,
+  "type": "application/json"
+ },
+ "014 GET /api/history/chart-data?hours=100000 ": {
+  "body": {
+   "detail": "Zoom must be between 0.25 and 168 hours"
+  },
+  "status": 400,
+  "type": "application/json"
+ },
+ "015 POST /api/history/chart-data/update?hours=2 ": {
+  "body": {
+   "bms": [],
+   "bms_count": 0,
+   "cutoff": "<now>",
+   "dashboard": [],
+   "dashboard_count": 0,
+   "latest": "<now>",
+   "max_hours": 168.0,
+   "server_cached": true,
+   "zoom_hours": 2.0
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "016 GET /api/history/contributions?start=x&end=y ": {
+  "body": {
+   "detail": "start and end must be ISO 8601 timestamps"
+  },
+  "status": 400,
+  "type": "application/json"
+ },
+ "017 GET /api/history/contributions?start=2026-10-01T10:00:00Z&end=2026-10-01T09:00:00Z ": {
+  "body": {
+   "detail": "end must be after start"
+  },
+  "status": 400,
+  "type": "application/json"
+ },
+ "018 GET /api/history/contributions ": {
+  "body": {
+   "detail": [
+    {
+     "input": null,
+     "loc": [
+      "query",
+      "start"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    },
+    {
+     "input": null,
+     "loc": [
+      "query",
+      "end"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "019 GET /api/history/export ": {
+  "body": {
+   "lines": 0
+  },
+  "status": 200,
+  "type": "application/x-ndjson"
+ },
+ "020 GET /api/reports/battery-health ": {
+  "body": {
+   "days": null,
+   "duration_seconds": null,
+   "error": null,
+   "finished_at": null,
+   "markdown": null,
+   "started_at": null,
+   "state": "idle"
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "021 POST /api/reports/battery-health {\"days\": 0}": {
+  "body": {
+   "detail": [
+    {
+     "ctx": {
+      "ge": 1
+     },
+     "input": 0,
+     "loc": [
+      "body",
+      "days"
+     ],
+     "msg": "Input should be greater than or equal to 1",
+     "type": "greater_than_equal"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "022 POST /api/reports/battery-health {\"days\": 400}": {
+  "body": {
+   "detail": [
+    {
+     "ctx": {
+      "le": 365
+     },
+     "input": 400,
+     "loc": [
+      "body",
+      "days"
+     ],
+     "msg": "Input should be less than or equal to 365",
+     "type": "less_than_equal"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "023 POST /api/reports/battery-health {}": {
+  "body": {
+   "detail": [
+    {
+     "input": {},
+     "loc": [
+      "body",
+      "days"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "024 POST /api/settings {\"default_ac_limit\": 15, \"float_protection_enabled\": true, \"float_cell_trigger_mv\": 3500, \"float_cell_resume_mv\": 3480, \"bms_refresh_interval\": 30, \"bms_popup_seconds\": 3, \"bms_connection_retry_seconds\": 5, \"balancer_refresh_interval\": 30, \"balancer_connection_retry_seconds\": 30, \"history_retention_days\": 7}": {
+  "body": {
+   "detail": "Float cell-voltage resume level must be at least 30 mV below the trigger"
+  },
+  "status": 400,
+  "type": "application/json"
+ },
+ "025 POST /api/settings {\"default_ac_limit\": 16, \"float_protection_enabled\": true, \"float_cell_trigger_mv\": 3500, \"float_cell_resume_mv\": 3420, \"bms_refresh_interval\": 30, \"bms_popup_seconds\": 3, \"bms_connection_retry_seconds\": 5, \"balancer_refresh_interval\": 30, \"balancer_connection_retry_seconds\": 30, \"history_retention_days\": 7}": {
+  "body": {
+   "detail": [
+    {
+     "ctx": {
+      "le": 15
+     },
+     "input": 16,
+     "loc": [
+      "body",
+      "default_ac_limit"
+     ],
+     "msg": "Input should be less than or equal to 15",
+     "type": "less_than_equal"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "026 POST /api/settings {\"default_ac_limit\": 15}": {
+  "body": {
+   "detail": [
+    {
+     "input": {
+      "default_ac_limit": 15
+     },
+     "loc": [
+      "body",
+      "float_protection_enabled"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    },
+    {
+     "input": {
+      "default_ac_limit": 15
+     },
+     "loc": [
+      "body",
+      "float_cell_trigger_mv"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    },
+    {
+     "input": {
+      "default_ac_limit": 15
+     },
+     "loc": [
+      "body",
+      "float_cell_resume_mv"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    },
+    {
+     "input": {
+      "default_ac_limit": 15
+     },
+     "loc": [
+      "body",
+      "bms_refresh_interval"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    },
+    {
+     "input": {
+      "default_ac_limit": 15
+     },
+     "loc": [
+      "body",
+      "bms_popup_seconds"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    },
+    {
+     "input": {
+      "default_ac_limit": 15
+     },
+     "loc": [
+      "body",
+      "bms_connection_retry_seconds"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    },
+    {
+     "input": {
+      "default_ac_limit": 15
+     },
+     "loc": [
+      "body",
+      "balancer_refresh_interval"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    },
+    {
+     "input": {
+      "default_ac_limit": 15
+     },
+     "loc": [
+      "body",
+      "balancer_connection_retry_seconds"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    },
+    {
+     "input": {
+      "default_ac_limit": 15
+     },
+     "loc": [
+      "body",
+      "history_retention_days"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "027 POST /api/settings {\"default_ac_limit\": 15, \"float_protection_enabled\": true, \"float_cell_trigger_mv\": 3500, \"float_cell_resume_mv\": 3420, \"bms_refresh_interval\": 30, \"bms_popup_seconds\": 3, \"bms_connection_retry_seconds\": 5, \"balancer_refresh_interval\": 30, \"balancer_connection_retry_seconds\": 30, \"history_retention_days\": 0}": {
+  "body": {
+   "detail": [
+    {
+     "ctx": {
+      "ge": 1
+     },
+     "input": 0,
+     "loc": [
+      "body",
+      "history_retention_days"
+     ],
+     "msg": "Input should be greater than or equal to 1",
+     "type": "greater_than_equal"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "028 POST /api/control/ac-limit {\"amps\": 2}": {
+  "body": {
+   "detail": [
+    {
+     "ctx": {
+      "ge": 3
+     },
+     "input": 2,
+     "loc": [
+      "body",
+      "amps"
+     ],
+     "msg": "Input should be greater than or equal to 3",
+     "type": "greater_than_equal"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "029 POST /api/control/ac-limit {\"amps\": 16}": {
+  "body": {
+   "detail": [
+    {
+     "ctx": {
+      "le": 15
+     },
+     "input": 16,
+     "loc": [
+      "body",
+      "amps"
+     ],
+     "msg": "Input should be less than or equal to 15",
+     "type": "less_than_equal"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "030 POST /api/control/ac-limit {\"amps\": 10}": {
+  "body": {
+   "detail": "USB Link not open"
+  },
+  "status": 500,
+  "type": "application/json"
+ },
+ "031 POST /api/control/inverter {\"enabled\": true}": {
+  "body": {
+   "detail": "USB Link not open"
+  },
+  "status": 500,
+  "type": "application/json"
+ },
+ "032 POST /api/control/charger {\"enabled\": false}": {
+  "body": {
+   "detail": "USB Link not open"
+  },
+  "status": 500,
+  "type": "application/json"
+ },
+ "033 POST /api/control/ac-support {\"enabled\": true}": {
+  "body": {
+   "detail": "USB Link not open"
+  },
+  "status": 409,
+  "type": "application/json"
+ },
+ "034 POST /api/control/alternator {\"enabled\": true}": {
+  "body": {
+   "detail": "USB Link not open"
+  },
+  "status": 409,
+  "type": "application/json"
+ },
+ "035 POST /api/control/mode {\"mode\": \"nope\"}": {
+  "body": {
+   "detail": "Unknown mode; use motor, anchor, marina or sail"
+  },
+  "status": 400,
+  "type": "application/json"
+ },
+ "036 POST /api/control/mode {\"mode\": \"marina\"}": {
+  "body": {
+   "detail": "Marina mode partially applied; inverter ON: USB Link not open; AC IN support ON: USB Link not open; AC limit 15 A: USB Link not open; Alternator OFF: USB Link not open; Solar ON: USB Link not open; Charger Start ON: USB Link not open; Charger Bowthruster ON: USB Link not open; Charger House ON: USB Link not open"
+  },
+  "status": 409,
+  "type": "application/json"
+ },
+ "037 POST /api/control/mode {}": {
+  "body": {
+   "detail": [
+    {
+     "input": {},
+     "loc": [
+      "body",
+      "mode"
+     ],
+     "msg": "Field required",
+     "type": "missing"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "038 POST /api/control/device/toaster {\"enabled\": true}": {
+  "body": {
+   "detail": "Unknown device control"
+  },
+  "status": 400,
+  "type": "application/json"
+ },
+ "039 POST /api/control/device/solar {\"enabled\": true}": {
+  "body": {
+   "detail": "USB Link not open"
+  },
+  "status": 409,
+  "type": "application/json"
+ },
+ "040 POST /api/control/inverter {\"enabled\": \"maybe\"}": {
+  "body": {
+   "detail": [
+    {
+     "input": "maybe",
+     "loc": [
+      "body",
+      "enabled"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "type": "bool_parsing"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "041 POST /api/bms/refresh ": {
+  "body": {
+   "parallel": true,
+   "started": true
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "042 POST /api/bms/1/charge {\"enabled\": true}": {
+  "body": {
+   "detail": "BATTERY 1 must be connected and refreshed before changing it"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "043 POST /api/bms/3/discharge {\"enabled\": false}": {
+  "body": {
+   "detail": "BATTERY 3 must be connected and refreshed before changing it"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "044 POST /api/bms/1/set-soc-100 ": {
+  "body": {
+   "detail": "BATTERY 1 must be connected and refreshed before changing it"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "045 POST /api/bms/2/set-soc-charge ": {
+  "body": {
+   "detail": "BATTERY 2 must be connected and refreshed before changing it"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "046 POST /api/bms/2/set-soc-discharge ": {
+  "body": {
+   "detail": "BATTERY 2 must be connected and refreshed before changing it"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "047 POST /api/bms/1/set-soc-value {\"percent\": 50}": {
+  "body": {
+   "detail": "BATTERY 1 must be connected and refreshed before changing it"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "048 POST /api/bms/1/set-soc-value ": {
+  "body": {
+   "detail": "Missing percent"
+  },
+  "status": 400,
+  "type": "application/json"
+ },
+ "049 POST /api/bms/1/set-soc-value {\"percent\": 101}": {
+  "body": {
+   "detail": [
+    {
+     "ctx": {
+      "le": 100.0
+     },
+     "input": 101,
+     "loc": [
+      "body",
+      "percent"
+     ],
+     "msg": "Input should be less than or equal to 100",
+     "type": "less_than_equal"
+    }
+   ]
+  },
+  "status": 422,
+  "type": "application/json"
+ },
+ "050 POST /api/bms/1/set-soc-nonsense ": {
+  "body": {
+   "detail": "Unknown SOC curve"
+  },
+  "status": 404,
+  "type": "application/json"
+ },
+ "051 POST /api/bms/set-all/charge-on ": {
+  "body": {
+   "detail": "All three batteries must be connected before changing all values"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "052 POST /api/bms/set-all/discharge-off ": {
+  "body": {
+   "detail": "All three batteries must be connected before changing all values"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "053 POST /api/bms/set-all/xyz ": {
+  "body": {
+   "detail": "Unknown all-battery action"
+  },
+  "status": 404,
+  "type": "application/json"
+ },
+ "054 POST /api/bms/set-all-soc/100 ": {
+  "body": {
+   "detail": "All three batteries must be connected before changing all values"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "055 POST /api/bms/set-all-soc/value {\"percent\": 80}": {
+  "body": {
+   "detail": "All three batteries must be connected before changing all values"
+  },
+  "status": 503,
+  "type": "application/json"
+ },
+ "056 POST /api/bms/set-all-soc/value ": {
+  "body": {
+   "detail": "Missing percent"
+  },
+  "status": 400,
+  "type": "application/json"
+ },
+ "057 POST /api/bms/set-all-soc/nonsense ": {
+  "body": {
+   "detail": "Unknown SOC mode"
+  },
+  "status": 404,
+  "type": "application/json"
+ },
+ "058 POST /api/balancers/refresh ": {
+  "body": {
+   "accepted": true,
+   "generation": 1
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "059 POST /api/balancers/1/refresh ": {
+  "body": {
+   "device": "DL-BAL1",
+   "started": true
+  },
+  "status": 200,
+  "type": "application/json"
+ },
+ "060 POST /api/balancers/7/refresh ": {
+  "body": {
+   "detail": "Unknown balancer"
+  },
+  "status": 404,
+  "type": "application/json"
+ },
+ "061 GET /manifest.webmanifest ": {
+  "body": {
+   "background_color": "#071017",
+   "description": "MasterBus monitoring and control dashboard",
+   "display": "standalone",
+   "icons": [
+    {
+     "purpose": "any maskable",
+     "sizes": "any",
+     "src": "/static/icons/app-icon.svg",
+     "type": "image/svg+xml"
+    }
+   ],
+   "name": "Mastervolt Energy",
+   "scope": "/",
+   "short_name": "Mastervolt",
+   "start_url": "/",
+   "theme_color": "#071017"
+  },
+  "status": 200,
+  "type": "application/manifest+json"
+ },
+ "062 GET /local-ca.cer ": {
+  "body": {
+   "detail": "Local CA certificate has not been generated"
+  },
+  "status": 404,
+  "type": "application/json"
+ },
+ "063 GET /nope ": {
+  "body": {
+   "detail": "Not Found"
+  },
+  "status": 404,
+  "type": "application/json"
+ },
+ "064 GET /api/settings/extra ": {
+  "body": {
+   "detail": "Not Found"
+  },
+  "status": 404,
+  "type": "application/json"
+ },
+ "openapi": [
+  "GET /",
+  "GET /api/balancers",
+  "GET /api/bluetooth-coordinator",
+  "GET /api/bluetooth-events",
+  "GET /api/bms",
+  "GET /api/energy",
+  "GET /api/history",
+  "GET /api/history/bms-series",
+  "GET /api/history/chart-data",
+  "GET /api/history/contributions",
+  "GET /api/history/dashboard-series",
+  "GET /api/history/export",
+  "GET /api/history/status",
+  "GET /api/reports/battery-health",
+  "GET /api/settings",
+  "GET /local-ca.cer",
+  "GET /manifest.webmanifest",
+  "GET /service-worker.js",
+  "POST /api/balancers/refresh",
+  "POST /api/balancers/{balancer_id}/refresh",
+  "POST /api/bms/refresh",
+  "POST /api/bms/set-all-soc/{mode}",
+  "POST /api/bms/set-all/{action}",
+  "POST /api/bms/{battery_id}/charge",
+  "POST /api/bms/{battery_id}/discharge",
+  "POST /api/bms/{battery_id}/refresh",
+  "POST /api/bms/{battery_id}/set-soc-100",
+  "POST /api/bms/{battery_id}/set-soc-{mode}",
+  "POST /api/control/ac-limit",
+  "POST /api/control/ac-support",
+  "POST /api/control/alternator",
+  "POST /api/control/charger",
+  "POST /api/control/device/{name}",
+  "POST /api/control/inverter",
+  "POST /api/control/mode",
+  "POST /api/history/chart-data/update",
+  "POST /api/reports/battery-health",
+  "POST /api/settings"
+ ],
+ "openapi_models": [
+  "BoolReq",
+  "HTTPValidationError",
+  "LimitReq",
+  "ModeReq",
+  "ReportReq",
+  "SettingsReq",
+  "SocValueReq",
+  "ValidationError"
+ ]
+}

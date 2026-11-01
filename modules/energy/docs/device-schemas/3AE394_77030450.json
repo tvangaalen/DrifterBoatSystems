@@ -1,0 +1,667 @@
+{
+  "cached_at": "2026-08-27T18:02:38",
+  "known": {
+    "article": "77030450",
+    "name": "INT Yanmar ECU",
+    "serial": "N611S0084",
+    "revision": "S",
+    "firmware": null,
+    "max_index": 64,
+    "family": "MasterBus interface",
+    "role": "Yanmar ECU interface"
+  },
+  "device": {
+    "address": 3859348,
+    "type_code": -1,
+    "instance": -1,
+    "event_counter": -1,
+    "article": "77030450",
+    "serial": "N611S0084",
+    "name": "INT Yanmar ECU",
+    "revision": "S",
+    "firmware": null,
+    "field_max_index": 64
+  },
+  "fields": [
+    {
+      "index": 0,
+      "name": "State",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 2.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 1,
+      "name": "Set Serial",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": true,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 2,
+      "name": "Set Serial",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 3,
+      "name": "Start test",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 4,
+      "name": "TestStage",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 4.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 5,
+      "name": "",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 6,
+      "name": "Battery",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 7,
+      "name": "Battery",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 200.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 8,
+      "name": "AC Input",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 300.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 9,
+      "name": "AC Input",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 50.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 10,
+      "name": "AC Output",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 300.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 11,
+      "name": "AC Output",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 50.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 12,
+      "name": "Charging",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 13,
+      "name": "Inverting",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 14,
+      "name": "Input = genset",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 2.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 15,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 16,
+      "name": "State",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 17,
+      "name": "Load",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 7.0,
+      "current_value": 6.0
+    },
+    {
+      "index": 18,
+      "name": "State of charger",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 7.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 19,
+      "name": "Shore fuse",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 27.0,
+      "current_value": 2.0
+    },
+    {
+      "index": 20,
+      "name": "Inverter",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 2.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 21,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 22,
+      "name": "Power sharing",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 50.0,
+      "current_value": 0.10000000149011612
+    },
+    {
+      "index": 23,
+      "name": "Input = genset",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 2.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 24,
+      "name": "MPC Gen reduce",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 25,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 26,
+      "name": "MPC Gen stop",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 27,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 28,
+      "name": "MPC Shore reduce",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 29,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 30,
+      "name": "MPC Shore stop",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 31,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 32,
+      "name": "Battery",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 33,
+      "name": "Battery",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 250.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 34,
+      "name": "State",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 2.0
+    },
+    {
+      "index": 35,
+      "name": "State of charger",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 4.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 36,
+      "name": "Dimmer",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 37,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 38,
+      "name": "Mode",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 9.0,
+      "current_value": 2.0
+    },
+    {
+      "index": 39,
+      "name": "DC Input",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 13.34999942779541
+    },
+    {
+      "index": 40,
+      "name": "DC Output",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 12.819999694824219
+    },
+    {
+      "index": 41,
+      "name": "DC Output",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 24.0,
+      "current_value": 0.05999999865889549
+    },
+    {
+      "index": 42,
+      "name": "Dimmer",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 100.0,
+      "current_value": 100.0
+    },
+    {
+      "index": 43,
+      "name": "Mac/Magic On",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 44,
+      "name": "State of Charge",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 45,
+      "name": "Time remaining",
+      "unit": "",
+      "viz_code": 7,
+      "viz": "Time",
+      "writable": false,
+      "maximum": 1728000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 46,
+      "name": "Ah consumed",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 47,
+      "name": "",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 48,
+      "name": "",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 49,
+      "name": "",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 50,
+      "name": "",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 51,
+      "name": "",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 52,
+      "name": "",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 53,
+      "name": "Device",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 4.0
+    },
+    {
+      "index": 54,
+      "name": "Charger on",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 55,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 56,
+      "name": "Power",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 2.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 57,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 58,
+      "name": "Charger",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 2.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 59,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 60,
+      "name": "Mode",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 5.0,
+      "current_value": 4.0
+    },
+    {
+      "index": 61,
+      "name": "Mac/Magic On",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 62,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 63,
+      "name": "Max. current",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 100.0,
+      "current_value": 4.705882549285889
+    }
+  ]
+}

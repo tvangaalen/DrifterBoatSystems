@@ -1,0 +1,227 @@
+{
+  "cached_at": "2026-08-27T18:02:42",
+  "known": {
+    "article": "77020200",
+    "name": "DCD Distribute#1",
+    "serial": "PN07G0327",
+    "revision": "G",
+    "firmware": null,
+    "max_index": 20,
+    "family": "DC Distribution",
+    "role": "DC distribution 1"
+  },
+  "device": {
+    "address": 4424583,
+    "type_code": -1,
+    "instance": -1,
+    "event_counter": -1,
+    "article": "77020200",
+    "serial": "PN07G0327",
+    "name": "DCD Distribute#1",
+    "revision": "G",
+    "firmware": null,
+    "field_max_index": 20
+  },
+  "fields": [
+    {
+      "index": 0,
+      "name": "State",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 2.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 1,
+      "name": "Set Serial",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": true,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 2,
+      "name": "Set Serial",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 3,
+      "name": "Done",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 4,
+      "name": "TestStage",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 12.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 5,
+      "name": "",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 6,
+      "name": "URef",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 13.210000038146973
+    },
+    {
+      "index": 7,
+      "name": "UFuse1",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 13.40999984741211
+    },
+    {
+      "index": 8,
+      "name": "UFuse2",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 13.34000015258789
+    },
+    {
+      "index": 9,
+      "name": "UFuse3",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 13.210000038146973
+    },
+    {
+      "index": 10,
+      "name": "UFuse4",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 13.34000015258789
+    },
+    {
+      "index": 11,
+      "name": "ADRef",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1024.0,
+      "current_value": 204.0
+    },
+    {
+      "index": 12,
+      "name": "ADFuse1",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1024.0,
+      "current_value": 205.0
+    },
+    {
+      "index": 13,
+      "name": "ADFuse2",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1024.0,
+      "current_value": 205.0
+    },
+    {
+      "index": 14,
+      "name": "ADFuse3",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1024.0,
+      "current_value": 205.0
+    },
+    {
+      "index": 15,
+      "name": "ADFuse4",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1024.0,
+      "current_value": 204.0
+    },
+    {
+      "index": 16,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1024.0,
+      "current_value": 551.0
+    },
+    {
+      "index": 17,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1024.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 18,
+      "name": "",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 150.0,
+      "current_value": 21.0
+    },
+    {
+      "index": 19,
+      "name": "Channel",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 5.0,
+      "current_value": 0.0
+    }
+  ]
+}

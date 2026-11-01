@@ -1,0 +1,5 @@
+# Development tools only (formatting and static checks); the server does not need them.
+# Install outside the project, for example: py -m pip install --target C:\Temp\mv_devtools -r requirements-dev.txt
+black>=26
+ruff>=0.16
+# The front end is formatted with prettier: npm install --prefix C:\Temp\mv_devtools prettier

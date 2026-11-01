@@ -1,0 +1,697 @@
+{
+  "cached_at": "2026-08-27T18:03:11",
+  "known": {
+    "article": "77020115",
+    "name": "MSH House",
+    "serial": "M915J0923",
+    "revision": "AA0204",
+    "firmware": null,
+    "max_index": 67,
+    "family": "MasterShunt",
+    "role": "House battery monitor"
+  },
+  "device": {
+    "address": 7188635,
+    "type_code": -1,
+    "instance": -1,
+    "event_counter": -1,
+    "article": "77020115",
+    "serial": "M915J0923",
+    "name": "MSH House",
+    "revision": "AA0204",
+    "firmware": null,
+    "field_max_index": 67
+  },
+  "fields": [
+    {
+      "index": 0,
+      "name": "State of Charge",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 59.29052734375
+    },
+    {
+      "index": 1,
+      "name": "Battery",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 65.0,
+      "current_value": 13.075814247131348
+    },
+    {
+      "index": 2,
+      "name": "Battery",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": -6.47694730758667
+    },
+    {
+      "index": 3,
+      "name": "Cap. consumed",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 2000.0,
+      "current_value": 390.8109130859375
+    },
+    {
+      "index": 4,
+      "name": "Remaining",
+      "unit": "",
+      "viz_code": 7,
+      "viz": "Time",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 305760.0
+    },
+    {
+      "index": 5,
+      "name": "Battery",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 150.0,
+      "current_value": 20.0
+    },
+    {
+      "index": 6,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": null
+    },
+    {
+      "index": 7,
+      "name": "Advanced",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 8,
+      "name": "Finish test",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 9,
+      "name": "Finish setup",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 10,
+      "name": "Time",
+      "unit": "",
+      "viz_code": 7,
+      "viz": "Time",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 64979.0
+    },
+    {
+      "index": 11,
+      "name": "Date",
+      "unit": "",
+      "viz_code": 8,
+      "viz": "Date",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 843099.0
+    },
+    {
+      "index": 12,
+      "name": "MB voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 21.5,
+      "current_value": 15.001029014587402
+    },
+    {
+      "index": 13,
+      "name": "Timer 1",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 14,
+      "name": "Timer 2",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 15,
+      "name": "PCB temperature",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 150.0,
+      "current_value": 24.0
+    },
+    {
+      "index": 16,
+      "name": "Reversed",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 17,
+      "name": "Result",
+      "unit": "AD",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 6.0,
+      "current_value": 1784.0
+    },
+    {
+      "index": 18,
+      "name": "Language",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 10.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 19,
+      "name": "Battery capacity",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 10000.0,
+      "current_value": 960.0
+    },
+    {
+      "index": 20,
+      "name": "Battery type",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 4.0,
+      "current_value": 3.0
+    },
+    {
+      "index": 21,
+      "name": "Nominal voltage",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 4.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 22,
+      "name": "Slave",
+      "unit": "",
+      "viz_code": 9,
+      "viz": "DeviceList",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 23,
+      "name": "Slave",
+      "unit": "",
+      "viz_code": 9,
+      "viz": "DeviceList",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 24,
+      "name": "Slave",
+      "unit": "",
+      "viz_code": 9,
+      "viz": "DeviceList",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 25,
+      "name": "Mode",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 26,
+      "name": "Automatic gain",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 27,
+      "name": "Gain",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 4.0,
+      "current_value": 3.0
+    },
+    {
+      "index": 28,
+      "name": "Shunt resistance",
+      "unit": "mOhm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1001.0,
+      "current_value": 0.05000000074505806
+    },
+    {
+      "index": 29,
+      "name": "Measured current",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 30,
+      "name": "Set low point",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 31,
+      "name": "Set high point",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 32,
+      "name": "Measured voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 33,
+      "name": "Set high point",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 34,
+      "name": "Qr",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 569.1873779296875
+    },
+    {
+      "index": 35,
+      "name": "Qp",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 569.1873779296875
+    },
+    {
+      "index": 36,
+      "name": "Qout",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 408.43621826171875
+    },
+    {
+      "index": 37,
+      "name": "Qin",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 50.143768310546875
+    },
+    {
+      "index": 38,
+      "name": "Right side",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 65.0,
+      "current_value": 13.075814247131348
+    },
+    {
+      "index": 39,
+      "name": "Cluster state",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 4.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 40,
+      "name": "",
+      "unit": "",
+      "viz_code": 7,
+      "viz": "Time",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 2858.0
+    },
+    {
+      "index": 41,
+      "name": "",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 59.992374420166016
+    },
+    {
+      "index": 42,
+      "name": "PGA2 Gain",
+      "unit": "nA/AD @ 1Ohm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 1256.637451171875
+    },
+    {
+      "index": 43,
+      "name": "PGA2 Offset",
+      "unit": "µA @ 1Ohm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 3.581416606903076
+    },
+    {
+      "index": 44,
+      "name": "PGA4 Gain",
+      "unit": "nA/AD @ 1Ohm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 628.6165771484375
+    },
+    {
+      "index": 45,
+      "name": "PGA4 Offset",
+      "unit": "µA @ 1Ohm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 3.7716994285583496
+    },
+    {
+      "index": 46,
+      "name": "PGA8 Gain",
+      "unit": "nA/AD @ 1Ohm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 314.5932922363281
+    },
+    {
+      "index": 47,
+      "name": "PGA8 Offset",
+      "unit": "µA @ 1Ohm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 4.593061923980713
+    },
+    {
+      "index": 48,
+      "name": "PGA16 Gain",
+      "unit": "nA/AD @ 1Ohm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 157.40231323242188
+    },
+    {
+      "index": 49,
+      "name": "PGA16 Offset",
+      "unit": "µA @ 1Ohm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 4.360044002532959
+    },
+    {
+      "index": 50,
+      "name": "Gain Uleft",
+      "unit": "mV/AD",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 2.0003881454467773
+    },
+    {
+      "index": 51,
+      "name": "Gain Uright",
+      "unit": "mV/AD",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 2.000889778137207
+    },
+    {
+      "index": 52,
+      "name": "Ipeukert",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": -6.0536274909973145
+    },
+    {
+      "index": 53,
+      "name": "State of Charge",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 59.2901725769043
+    },
+    {
+      "index": 54,
+      "name": "Ser.Nr",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": true,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 55,
+      "name": "Ser.Nr",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 56,
+      "name": "Master",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": -6.548092842102051
+    },
+    {
+      "index": 57,
+      "name": "Slave 1",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 58,
+      "name": "Slave 2",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 59,
+      "name": "Slave 3",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 60,
+      "name": "Save SOC",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 61,
+      "name": "Total Ah's",
+      "unit": "kAh",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1000000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 62,
+      "name": "Battery",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 150.0,
+      "current_value": 68.0
+    },
+    {
+      "index": 63,
+      "name": "SoC charge cnt",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 64,
+      "name": "SoC 4hours cnt",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 65,
+      "name": "SoC 8hours cnt",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 66,
+      "name": "SoC 12hours cnt",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100000.0,
+      "current_value": 0.0
+    }
+  ]
+}

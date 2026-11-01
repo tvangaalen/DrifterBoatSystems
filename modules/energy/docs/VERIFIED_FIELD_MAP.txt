@@ -1,0 +1,116 @@
+# Mastervolt dashboard fixed measurement map — v0.17
+
+SOURCES
+
+Shore Power — CMR Charge house [1B7CE1]
+  field 2  = Input voltage
+  field 3  = Input current
+  field 4  = Input frequency
+  watts    = field 2 * field 3
+
+Charger House — CMR Charge house [1B7CE1]
+  field 11 = Battery voltage
+  field 12 = Battery current
+  watts    = field 11 * field 12 (source side, clamp >= 0)
+
+Solar — SCM Solar [31B483]
+  field 4  = Solar/PV voltage (display)
+  field 5  = Charge current
+  field 6  = Battery/output voltage
+  watts    = field 6 * field 5
+
+Alternator — APR Alpha Pro MB [329B8C]
+  field 11 = Alternator shaft
+  field 12 = Engine shaft
+  field 14 = Alternator voltage
+  field 32 = Alternator temperature
+  current  = derived from house DC balance
+  watts    = field 14 * derived current
+
+
+STORAGE
+
+House — MSH House [6DB09B]
+  field 0 = State of Charge
+  field 1 = Battery voltage
+  field 2 = Battery current
+  field 5 = Battery temperature
+
+Start — MSH Start [6D59B9]
+  field 0 = State of Charge
+  field 1 = Battery voltage
+  field 2 = Battery current
+  field 5 = Battery temperature
+
+Bowthruster — MSH Bow [6D9E99]
+  field 0 = State of Charge
+  field 1 = Battery voltage
+  field 2 = Battery current
+  field 5 = Battery temperature
+
+
+LOADS
+
+Inverter — CMR Charge house [1B7CE1]
+  field 11 = DC battery-side voltage
+  field 12 = DC battery-side current (absolute value while active)
+  field 47 = actual Inverting status
+  field 49 = actual Supporting status
+  V/A/W  = zero unless field 47 or field 49 is active
+  watts  = abs(field 11 * field 12) while active
+  control = field 19 + commit field 20
+
+AC Loads (House) — CMR Charge house [1B7CE1]
+  field 5 = Output voltage
+  field 6 = Output frequency
+  field 8 = Output power
+  current = field 8 / field 5
+
+Charger Start — MAC Charge start [63D010]
+  field 4 = Input voltage
+  field 5 = Input current
+  watts   = field 4 * field 5
+  control = field 64 On/Standby
+
+Charger Bowthruster — MAC Charge bow [61CA96]
+  field 4 = Input voltage
+  field 5 = Input current
+  watts   = field 4 * field 5
+  control = field 64 On/Standby
+
+Engine ECU — INT Yanmar ECU [3AE394]
+  field 39 = DC Input voltage
+  field 40 = DC Output voltage
+  field 41 = DC Output current
+  field 43 = Mac/Magic On control
+  output watts = field 40 * field 41
+  estimated input watts = output watts / 0.85
+  estimated input current = estimated input watts / field 39
+
+Other DC Loads (House)
+  observed/learned from house-bus current balance while alternator is OFF
+  retained as filtered baseline while alternator is running
+
+
+CONTROLS
+
+CombiMaster Inverter
+  field 19 + commit field 20
+
+CombiMaster Charger
+  field 21 + commit field 22
+
+CombiMaster AC input limit
+  field 23
+
+CombiMaster AC IN support
+  Btm3 field 11, metadata name AC IN support, writable 0/1
+
+Charger Start
+  field 64, 0=Standby / 1=On
+
+Charger Bowthruster
+  field 64, 0=Standby / 1=On
+
+Engine ECU
+  field 43, 0=Off / 1=On

@@ -1,0 +1,597 @@
+{
+  "cached_at": "2026-08-27T18:02:13",
+  "known": {
+    "article": "35013000",
+    "name": "CMR Charge house",
+    "serial": "NN14C0225",
+    "revision": "AA0202",
+    "firmware": "8.86",
+    "max_index": 57,
+    "family": "CombiMaster",
+    "role": "House inverter/charger"
+  },
+  "device": {
+    "address": 1801441,
+    "type_code": -1,
+    "instance": -1,
+    "event_counter": -1,
+    "article": "35013000",
+    "serial": "NN14C0225",
+    "name": "CMR Charge house",
+    "revision": "AA0202",
+    "firmware": "8.86",
+    "field_max_index": 57
+  },
+  "fields": [
+    {
+      "index": 0,
+      "name": "Device state",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 7.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 1,
+      "name": "Charger state",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 5.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 2,
+      "name": "Input voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 300.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 3,
+      "name": "Input current",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 30.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 4,
+      "name": "Input frequency",
+      "unit": "Hz",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 70.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 5,
+      "name": "Output voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 300.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 6,
+      "name": "Output frequency",
+      "unit": "Hz",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 70.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 7,
+      "name": "Output power",
+      "unit": "VA",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 6000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 8,
+      "name": "Output power",
+      "unit": "W",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 6000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 9,
+      "name": "Output load.",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 10,
+      "name": "Bus voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 450.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 11,
+      "name": "Battery voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 32.0,
+      "current_value": 13.060001373291016
+    },
+    {
+      "index": 12,
+      "name": "Battery current",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 120.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 13,
+      "name": "Battery temp.",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 150.0,
+      "current_value": null
+    },
+    {
+      "index": 14,
+      "name": "State of charge",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 100.0
+    },
+    {
+      "index": 15,
+      "name": "Temp. heat sink",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 150.0,
+      "current_value": 33.0
+    },
+    {
+      "index": 16,
+      "name": "Device status",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 2047.0,
+      "current_value": 512.0
+    },
+    {
+      "index": 17,
+      "name": "DIP Switches",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1023.0,
+      "current_value": 3.0
+    },
+    {
+      "index": 18,
+      "name": "Dry contact",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 19,
+      "name": "Inverter",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 20,
+      "name": "",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 5.76084964230096e-37
+    },
+    {
+      "index": 21,
+      "name": "Charger",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 22,
+      "name": "",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 1.9368150981271205e-37
+    },
+    {
+      "index": 23,
+      "name": "AC IN limit",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 15.0,
+      "current_value": 15.0
+    },
+    {
+      "index": 24,
+      "name": "Total sent",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 39265624.0
+    },
+    {
+      "index": 25,
+      "name": "Total received",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 39265624.0
+    },
+    {
+      "index": 26,
+      "name": "Rcvd NAK",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 4.0
+    },
+    {
+      "index": 27,
+      "name": "Rcvd invalid",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 28,
+      "name": "Time out",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 29,
+      "name": "CRC Error",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 30,
+      "name": "UART Error",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 31,
+      "name": "On packet",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 28.0
+    },
+    {
+      "index": 32,
+      "name": "AC IN limit A",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 33,
+      "name": "",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 34,
+      "name": "AC IN limit B",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 35,
+      "name": "",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 36,
+      "name": "AC IN limit C",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 37,
+      "name": "",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 38,
+      "name": "Bulk",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 39,
+      "name": "",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 40,
+      "name": "Absorption",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 41,
+      "name": "",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 42,
+      "name": "Float",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 43,
+      "name": "",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 6.48747547277176e-38
+    },
+    {
+      "index": 44,
+      "name": "Bulk",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 45,
+      "name": "Absorption",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 46,
+      "name": "Float",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 47,
+      "name": "Inverting",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 48,
+      "name": "Charging",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 49,
+      "name": "Supporting",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 50,
+      "name": "AC IN present",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 51,
+      "name": "AC IN limit A",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 52,
+      "name": "AC IN limit B",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 53,
+      "name": "AC IN limit C",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 54,
+      "name": "Alarms",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 55,
+      "name": "Stop charge",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 56,
+      "name": "",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 0.0,
+      "current_value": 0.0
+    }
+  ]
+}

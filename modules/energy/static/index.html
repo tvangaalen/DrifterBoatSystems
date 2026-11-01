@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071017">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mastervolt">
+<script>try{if(localStorage.getItem('mastervolt-theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}</script>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/icons/app-icon.svg">
+<title>Mastervolt Energy</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<div class="app">
+<div class="top"><div class="menu">☰</div><div class="logo"><span class="brand-icon">⚡</span>MASTERVOLT</div><span class="online"><span id="dot" class="dot"></span><span id="sys">System OK</span></span><span id="clock" class="clock"></span><button id="themeToggle" class="theme-toggle" type="button" onclick="toggleTheme()" aria-label="Switch to Light UI" title="Switch to Light UI">☀</button></div>
+<div class="offline" id="offline">Offline — showing last values</div><div class="err" id="err"></div>
+<div id="overviewPage">
+
+<section class="section sources">
+ <div class="head"><div class="title"><span class="section-icon">⚡</span><span class="section-label">SOURCES</span></div><div class="total">Total DC Input <strong id="tdc">—</strong></div></div>
+ <div id="sources"></div>
+</section>
+
+<section class="section storage">
+ <div class="head"><div class="title"><span class="section-icon">🔋</span><span class="section-label">STORAGE</span></div><div class="total"><span id="hflow">—</span> <strong id="hv">—</strong></div></div>
+ <div id="storage"></div>
+</section>
+
+<section class="section loads">
+ <div class="head"><div class="title"><span class="section-icon">⚙</span><span class="section-label">LOADS</span></div><div class="total">Total DC load <strong id="tout">—</strong></div></div>
+<div id="loads"></div>
+</section>
+
+<div class="mode-controls" aria-label="Operating modes">
+ <button id="mode-motor" type="button" onclick="setMode('motor')">Motor mode</button>
+ <button id="mode-anchor" type="button" onclick="setMode('anchor')">Anchor mode</button>
+ <button id="mode-marina" type="button" onclick="setMode('marina')">Marina mode</button>
+ <button id="mode-sail" type="button" onclick="setMode('sail')">Sail mode</button>
+</div>
+
+<div class="discovery" id="disc"></div>
+</div>
+
+<section id="bmsPage" class="bms-page" hidden>
+ <div class="bms-head"><div class="bms-title">BMS House</div><div class="bms-head-actions"><button id="bmsRefresh" class="bms-refresh" type="button" onclick="refreshAllBms()">Refresh BMS</button><button id="bmsBalRefresh" class="bms-refresh" type="button" onclick="refreshAllBalancersFromBms()">Refresh BAL</button></div></div>
+ <div id="bmsRefreshState" class="bms-refresh-state bms-refresh-line">Waiting for status…</div>
+ <div id="bmsCards"></div>
+</section>
+<section id="historyPage" class="history-page" hidden>
+ <div class="history-head"><div><div class="bms-title">History</div><div id="historyCount" class="history-count">Loading server cache…</div></div><div class="history-actions"><button id="historyUpdate" class="bms-refresh" type="button" onclick="updateHistory()">Update</button></div></div>
+ <div class="history-tabs" role="tablist"><button id="historyTabSources" class="history-tab active" type="button" onclick="showHistoryTab('sources')">Sources</button><button id="historyTabStorage" class="history-tab" type="button" onclick="showHistoryTab('storage')">Storage</button><button id="historyTabLoads" class="history-tab" type="button" onclick="showHistoryTab('loads')">Loads</button><button id="historyTabAlarms" class="history-tab" type="button" onclick="showHistoryTab('alarms')">Alarms</button><button id="historyTabReports" class="history-tab" type="button" onclick="showHistoryTab('reports')">Reports</button></div>
+<div class="history-range no-swipe"><div id="historyRangePresets" class="range-presets" role="group" aria-label="Time range"><button type="button" data-hours="4" onclick="setHistoryPreset(4)">4 h</button><button type="button" data-hours="12" onclick="setHistoryPreset(12)">12 h</button><button type="button" data-hours="24" onclick="setHistoryPreset(24)">24 h</button><button type="button" data-hours="72" onclick="setHistoryPreset(72)">3 d</button><button type="button" data-hours="168" onclick="setHistoryPreset(168)">7 d</button><button type="button" data-hours="0" onclick="setHistoryPreset(0)">All</button></div><div class="range-summary"><div><div id="historyRangeDuration" class="history-range-duration">Full history</div><div class="history-range-labels"><span id="historyRangeStartLabel">—</span><span>→</span><span id="historyRangeEndLabel">—</span></div></div><div class="range-buttons"><button id="historyRangeZoomToggle" class="range-toggle" type="button" aria-expanded="false" aria-controls="historyRangeZoom" onclick="toggleHistoryZoom()">Zoom</button><button id="historyRangeCustomToggle" class="range-toggle" type="button" aria-expanded="false" aria-controls="historyRangeCustom" onclick="toggleHistoryCustom()">Custom</button></div></div><div id="historyRangeCustom" class="range-custom" hidden><label class="range-row"><span class="range-row-label">From</span><span id="historyRangeStartValue" class="range-row-value">—</span><input id="historyRangeStart" type="range" step="60" oninput="changeHistoryRange('start')" aria-label="Start of the period"></label><label class="range-row"><span class="range-row-label">To</span><span id="historyRangeEndValue" class="range-row-value">—</span><input id="historyRangeEnd" type="range" step="60" oninput="changeHistoryRange('end')" aria-label="End of the period"></label></div><div id="historyRangeZoom" class="range-custom" hidden><label class="range-row"><span class="range-row-label">Zoom from</span><span id="historyZoomStartValue" class="range-row-value">—</span><input id="historyZoomStart" type="range" step="1" oninput="changeHistoryZoom('start')" aria-label="Start of the zoomed period"></label><label class="range-row"><span class="range-row-label">Zoom to</span><span id="historyZoomEndValue" class="range-row-value">—</span><input id="historyZoomEnd" type="range" step="1" oninput="changeHistoryZoom('end')" aria-label="End of the zoomed period"></label><button class="range-toggle range-reset" type="button" onclick="resetHistoryZoom()">Reset zoom</button></div></div>
+ <div id="historyStorage" class="history-tab-panel" hidden>
+  <div id="historyEmpty" class="history-empty" hidden>No BMS history is available yet.</div>
+  <div id="historyCharts" class="history-charts">
+   <figure class="history-chart-card"><h3>Remaining (kWh / %)</h3><div class="history-chart-subtitle">Stacked Battery 1–3 capacity with a smooth total line · right axis: % of the 960 Ah bank</div><div class="history-chart-wrap"><canvas id="historyRemaining" class="history-chart"></canvas></div><div id="historyRemainingLegend" class="history-legend"></div></figure>
+   <figure class="history-chart-card"><h3>Charge/discharge (W / A)</h3><div class="history-chart-subtitle">Stacked battery power with a smooth total line · right axis in amps at the period's average voltage</div><div class="history-chart-wrap"><canvas id="historyLoad" class="history-chart"></canvas></div><div id="historyLoadLegend" class="history-legend"></div></figure>
+   <figure class="history-chart-card pie-card" id="pieStorage"><h3>Battery contribution</h3><div class="history-chart-subtitle">Energy supplied by each battery over the selected period, with its average power</div><div class="pie-body"><canvas class="pie-canvas" aria-label="Battery contribution"></canvas><div class="pie-legend"></div></div><div class="pie-note"></div></figure>
+   <figure class="history-chart-card"><h3>Battery 1 cell voltages</h3><div class="history-chart-subtitle">Total: 0–15 V · Selected cell: 2.5–4.0 V · Max difference: 0–400 mV</div><div class="history-chart-wrap"><canvas id="historyVoltage1" class="history-chart"></canvas></div><div id="historyVoltageLegend1" class="history-legend"></div></figure>
+   <figure class="history-chart-card"><h3>Battery 2 cell voltages</h3><div class="history-chart-subtitle">Total: 0–15 V · Selected cell: 2.5–4.0 V · Max difference: 0–400 mV</div><div class="history-chart-wrap"><canvas id="historyVoltage2" class="history-chart"></canvas></div><div id="historyVoltageLegend2" class="history-legend"></div></figure>
+   <figure class="history-chart-card"><h3>Battery 3 cell voltages</h3><div class="history-chart-subtitle">Total: 0–15 V · Selected cell: 2.5–4.0 V · Max difference: 0–400 mV</div><div class="history-chart-wrap"><canvas id="historyVoltage3" class="history-chart"></canvas></div><div id="historyVoltageLegend3" class="history-legend"></div></figure>
+  </div>
+ </div>
+ <div id="historySources" class="history-tab-panel"><div id="historySourceCharts" class="history-charts"><figure class="history-chart-card"><h3>Generated power (W / A)</h3><div id="historySourcePowerSub" class="history-chart-subtitle">Stacked DC source output with a smooth total line · right axis in amps</div><div class="history-chart-wrap"><canvas id="historySourcePower" class="history-chart"></canvas></div><div id="historySourcePowerLegend" class="history-legend"></div></figure><figure class="history-chart-card pie-card" id="pieSources"><h3>Source contribution</h3><div class="history-chart-subtitle">Energy delivered by each source over the selected period, with its average power</div><div class="pie-body"><canvas class="pie-canvas" aria-label="Source contribution"></canvas><div class="pie-legend"></div></div><div class="pie-note"></div></figure><figure class="history-chart-card"><h3>Source conditions</h3><div class="history-chart-subtitle">Shore AC, Solar PV and Alternator conditions</div><div class="history-condition-grid"><div class="history-condition-label">Shore Power AC <span class="shore-v">voltage (V, left)</span> and <span class="shore-a">current (A, right)</span></div><div class="history-chart-wrap compact"><canvas id="historyShoreCondition" class="history-chart"></canvas></div><div class="history-condition-label">Solar panel voltage (V)</div><div class="history-chart-wrap compact"><canvas id="historySolarCondition" class="history-chart"></canvas></div><div class="history-condition-label">Alternator temperature (°C)</div><div class="history-chart-wrap compact"><canvas id="historyAlternatorCondition" class="history-chart"></canvas></div></div></figure><figure class="history-chart-card" id="shoreIntakeCard"><h3>Shore power intake</h3><div class="history-chart-subtitle">Power taken in from shore power over the selected period</div><div class="history-chart-wrap compact"><canvas id="historyShoreIntake" class="history-chart"></canvas></div><div id="shoreIntakeTotal" class="shore-total" role="status">Total kWh intake over the selected period: -</div></figure></div></div>
+ <div id="historyLoads" class="history-tab-panel" hidden><div id="historyLoadCharts" class="history-charts"><figure class="history-chart-card"><h3>DC consumption (W / A)</h3><div id="historyLoadPowerSub" class="history-chart-subtitle">Stacked consumers with a smooth total-load line · right axis in amps</div><div class="history-chart-wrap"><canvas id="historyLoadPower" class="history-chart"></canvas></div><div id="historyLoadPowerLegend" class="history-legend"></div></figure><figure class="history-chart-card pie-card" id="pieLoads"><h3>Total per Consumer</h3><div class="history-chart-subtitle">Energy used by each DC consumer over the selected period, with its average power</div><div class="pie-body"><canvas class="pie-canvas" aria-label="Total per Consumer"></canvas><div class="pie-legend"></div></div><div class="pie-note"></div></figure><figure class="history-chart-card"><h3>AC Loads and Inverter</h3><div class="history-chart-subtitle">AC output power with Inverting/Supporting state</div><div class="history-condition-label">AC power (W)</div><div class="history-chart-wrap compact"><canvas id="historyAcPower" class="history-chart"></canvas></div><div class="history-condition-label">Inverter state (0=Off, 1=Inverting, 2=Supporting)</div><div class="history-chart-wrap compact"><canvas id="historyInverterState" class="history-chart"></canvas></div></figure></div></div>
+ <div id="historyReports" class="history-tab-panel" hidden><div class="report-launch"><button id="reportBatteryBtn" class="report-btn" type="button" onclick="openBatteryReportDialog()">Battery health report</button><div class="report-hint">Analyses the stored battery history: cell connection resistance, current sharing, alarms, cell balance, balancers and usage.</div></div><div class="report-launch"><button id="manualBtn" class="report-btn" type="button" onclick="openManual()">Manual</button><div class="report-hint">Opens the complete user manual in a separate window.</div></div><div id="reportStatus" class="report-status" role="status" hidden></div><div id="reportOutput" class="report-output" hidden></div></div>
+ <div id="historyAlarms" class="history-tab-panel" hidden><div id="historyAlarmCharts" class="history-charts"><figure class="history-chart-card"><h3 id="historyAlarmTimelineTitle">Alarm occurrences - All</h3><div id="historyAlarmSummary" class="history-chart-subtitle">Level 2 alarm samples per battery and time interval</div><div class="history-chart-wrap"><canvas id="historyAlarmTimeline" class="history-chart"></canvas></div><div id="historyAlarmLegend" class="history-legend"></div></figure><figure class="history-chart-card pie-card" id="pieAlarms"><h3>Total per Battery</h3><div class="history-chart-subtitle">Alarms per battery over the selected period</div><div class="pie-body"><canvas class="pie-canvas" aria-label="Total per Battery"></canvas><div class="pie-legend"></div></div><div class="pie-note"></div></figure><figure class="history-chart-card"><h3 id="historyAlarmSpreadTitle">Cell imbalance at alarms - All</h3><div class="history-chart-subtitle">Max difference (mV); red markers identify alarm samples</div><div class="history-chart-wrap"><canvas id="historyAlarmSpread" class="history-chart"></canvas></div></figure><figure class="history-chart-card"><h3 id="historyAlarmCurrentTitle">Charge/discharge consequence - All</h3><div class="history-chart-subtitle">Positive current = charging; negative current = discharging; red markers identify alarms</div><div class="history-chart-wrap"><canvas id="historyAlarmCurrent" class="history-chart"></canvas></div><div class="history-legend"><span><i style="background:#ff9f1c"></i>Charge MOS OFF</span><span><i style="background:#22d3ee"></i>Discharge MOS OFF</span></div></figure></div></div>
+</section>
+
+<section id="settingsPage" class="settings-page" hidden>
+ <div class="settings-title">Settings</div>
+ <div class="settings-card">
+  <label class="setting-row"><span><span class="setting-label">Default AC limit</span><span class="settings-hint">Applied when Marina mode is selected</span></span><span class="setting-value"><input id="settingAcLimit" class="setting-input" type="text" inputmode="numeric" maxlength="2" autocomplete="off"><span class="settings-unit">A</span></span></label>
+  <div class="setting-row"><span class="setting-label">Float protection</span><button id="settingFloatToggle" class="settings-toggle" type="button" onclick="toggleFloatSetting()" aria-pressed="true">ON</button></div>
+  <div id="floatSettings" class="float-settings">
+   <label class="setting-row"><span><span class="setting-label">Switch to Float when any cell reaches</span><span class="settings-hint">Protects against one battery running ahead of the others</span></span><span class="setting-value"><input id="settingFloatCellMv" class="setting-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off"><span class="settings-unit">mV</span></span></label>
+   <label class="setting-row"><span class="setting-label">Switch to Bulk once every cell is at or below</span><span class="setting-value"><input id="settingBulkCellMv" class="setting-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off"><span class="settings-unit">mV</span></span></label>
+  </div>
+  <label class="setting-row"><span><span class="setting-label">BMS refresh interval</span><span class="settings-hint">All three batteries update in parallel</span></span><span class="setting-value"><input id="settingBmsInterval" class="setting-input" type="text" inputmode="numeric" maxlength="3" autocomplete="off"><span class="settings-unit">seconds</span></span></label>
+  <label class="setting-row"><span><span class="setting-label">BMS connection retry</span><span class="settings-hint">Retry when a battery connection fails</span></span><span class="setting-value"><input id="settingBmsRetry" class="setting-input" type="text" inputmode="numeric" maxlength="3" autocomplete="off"><span class="settings-unit">seconds</span></span></label>
+  <label class="setting-row"><span><span class="setting-label">Balancer refresh interval</span><span class="settings-hint">Refresh all three balancers</span></span><span class="setting-value"><input id="settingBalancerInterval" class="setting-input" type="text" inputmode="numeric" maxlength="3" autocomplete="off"><span class="settings-unit">seconds</span></span></label>
+  <label class="setting-row"><span><span class="setting-label">Balancer connection retry</span><span class="settings-hint">Retry when a balancer connection fails</span></span><span class="setting-value"><input id="settingBalancerRetry" class="setting-input" type="text" inputmode="numeric" maxlength="3" autocomplete="off"><span class="settings-unit">seconds</span></span></label>
+  <label class="setting-row"><span><span class="setting-label">BMS pop-up duration</span><span class="settings-hint">Automatically closes status messages</span></span><span class="setting-value"><input id="settingBmsPopup" class="setting-input" type="text" inputmode="numeric" maxlength="2" autocomplete="off"><span class="settings-unit">seconds</span></span></label>
+  <label class="setting-row"><span><span class="setting-label">Save history period</span><span class="settings-hint">Older measurements are deleted automatically</span></span><span class="setting-value"><input id="settingHistoryDays" class="setting-input" type="text" inputmode="numeric" maxlength="3" autocomplete="off"><span class="settings-unit">days</span></span></label>
+  <div id="dbStatus" class="db-status" role="status" aria-live="polite">Loading database status…</div>
+ </div>
+ <button class="settings-save" type="button" onclick="saveSettings()">Save settings</button>
+ <div id="settingsStatus" class="settings-status" role="status" aria-live="polite"></div>
+ <a class="manual-link" href="/manual" target="_blank" rel="noopener">Manual</a>
+</section>
+</div>
+
+<div class="bottom">
+<button id="navOverview" class="nav active" type="button" onclick="showPage('dashboard')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5M9 20v-6h6v6"/></svg>Control panel</button><button id="navBms" class="nav" type="button" onclick="showPage('bms')"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 3.5V2m6 1.5V2M8 8h8m-8 4h8m-8 4h5"/></svg>BMS</button><button id="navHistory" class="nav" type="button" onclick="showPage('history')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3"/><path d="M2.5 19.5h19"/></svg>History</button><button id="navSettings" class="nav" type="button" onclick="showPage('settings')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v2m0 15v2m9.5-9.5h-2m-15 0h-2m16.2-6.2-1.4 1.4M6.7 17.3l-1.4 1.4m13.4 0-1.4-1.4M6.7 6.7 5.3 5.3"/></svg>Settings</button>
+</div>
+
+<div id="ecuSafety" class="safety-backdrop" aria-hidden="true">
+ <div class="safety-dialog" role="alertdialog" aria-modal="true" aria-labelledby="ecuSafetyTitle" aria-describedby="ecuSafetyText">
+  <div class="safety-head"><div class="safety-icon">!</div><div id="ecuSafetyTitle" class="safety-title">Switch off Engine ECU?</div></div>
+  <p id="ecuSafetyText" class="safety-copy">Switching off the Engine ECU will STOP the engine immediately if it is running!</p>
+  <p class="safety-note">The safe default is to leave the Engine ECU switched on.</p>
+  <div class="safety-actions"><button id="ecuOffConfirm" class="danger-btn" type="button">Switch OFF</button><button id="ecuOffCancel" class="cancel-btn" type="button">Keep ECU ON</button></div>
+ </div>
+</div>
+
+<div id="alternatorSafety" class="safety-backdrop" aria-hidden="true">
+ <div class="safety-dialog" role="alertdialog" aria-modal="true" aria-labelledby="alternatorSafetyTitle" aria-describedby="alternatorSafetyText">
+  <div class="safety-head"><div class="safety-icon">!</div><div id="alternatorSafetyTitle" class="safety-title">Switch off Alternator?</div></div>
+  <p id="alternatorSafetyText" class="safety-copy">This will put the Alpha Pro alternator regulator into Stop Charge mode.</p>
+  <p class="safety-note">Select Switch OFF to confirm.</p>
+  <div class="safety-actions"><button id="alternatorOffConfirm" class="danger-btn" type="button">Switch OFF</button><button id="alternatorOffCancel" class="cancel-btn" type="button">Keep Alternator ON</button></div>
+ </div>
+</div>
+
+<div id="modeProgress" class="safety-backdrop" aria-hidden="true">
+ <div class="safety-dialog mode-dialog" role="status" aria-live="polite" aria-atomic="true">
+  <div class="mode-spinner" aria-hidden="true"></div>
+  <div id="modeProgressText" class="mode-message">Setting mode</div>
+ </div>
+</div>
+
+<div id="modeAlready" class="safety-backdrop" aria-hidden="true">
+ <div class="safety-dialog mode-dialog" role="alertdialog" aria-modal="true" aria-labelledby="modeAlreadyText">
+  <div id="modeAlreadyText" class="mode-message">Mode already active</div>
+  <div class="safety-actions" style="display:block;margin-top:17px"><button id="modeAlreadyOk" class="cancel-btn" type="button">OK</button></div>
+ </div>
+</div>
+
+<div id="limitInvalid" class="safety-backdrop" aria-hidden="true">
+ <div class="safety-dialog mode-dialog" role="alertdialog" aria-modal="true" aria-labelledby="limitInvalidText">
+  <div id="limitInvalidText" class="mode-message">Enter a value between 3 and 15</div>
+  <div class="safety-actions" style="display:block;margin-top:17px"><button id="limitInvalidOk" class="cancel-btn" type="button">OK</button></div>
+ </div>
+</div>
+
+<div id="floatInfo" class="safety-backdrop" aria-hidden="true">
+ <div class="safety-dialog mode-dialog" role="alertdialog" aria-modal="true" aria-labelledby="floatInfoText">
+  <div id="floatInfoText" class="mode-message">House Battery SOC &gt;= 95% Charger House, Alternator, and Solar have been switched to Float</div>
+  <div class="safety-actions" style="display:block;margin-top:17px"><button id="floatInfoOk" class="cancel-btn" type="button">OK</button></div>
+ </div>
+</div>
+
+<div id="reportDialog" class="safety-backdrop" aria-hidden="true">
+ <div class="safety-dialog" role="dialog" aria-modal="true" aria-labelledby="reportDialogTitle">
+  <div class="safety-head"><div class="safety-icon">i</div><div id="reportDialogTitle" class="safety-title">Battery health report</div></div>
+  <p class="safety-copy">How many days of data should be analysed?</p>
+  <div class="report-days-row"><input id="reportDays" class="setting-input" type="text" inputmode="numeric" maxlength="3" autocomplete="off" aria-label="Number of days"><span class="settings-unit">days</span></div>
+  <p id="reportDaysHint" class="safety-note"></p>
+  <div id="reportDaysError" class="bms-error" hidden></div>
+  <div class="safety-actions"><button id="reportCancel" type="button">Cancel</button><button id="reportRun" class="cancel-btn" type="button">Run report</button></div>
+ </div>
+</div>
+
+<div id="bmsDialog" class="safety-backdrop" aria-hidden="true">
+ <div class="safety-dialog" role="alertdialog" aria-modal="true" aria-labelledby="bmsDialogTitle" aria-describedby="bmsDialogText">
+  <div class="safety-head"><div id="bmsDialogIcon" class="safety-icon">i</div><div id="bmsDialogTitle" class="safety-title">BMS</div></div>
+  <p id="bmsDialogText" class="safety-copy"></p>
+  <p id="bmsDialogNote" class="safety-note"></p>
+  <div id="bmsDialogConfirmActions" class="safety-actions"><button id="bmsDialogConfirm" class="danger-btn" type="button">Confirm</button><button id="bmsDialogCancel" class="cancel-btn" type="button">Cancel</button></div>
+  <div id="bmsDialogInfoActions" class="safety-actions" style="display:none"><button id="bmsDialogOk" class="cancel-btn" type="button">OK</button></div>
+  <div id="bmsDialogSocActions" class="soc-choice-actions"><button id="bmsSocCharge" type="button">Set SOC - Charge %</button><button id="bmsSocDischarge" type="button">Set SOC - Discharge %</button><button id="bmsSoc100" type="button">Set SOC 100%</button><div class="report-days-row"><input id="bmsSocManualValue" class="setting-input" type="text" inputmode="decimal" maxlength="5" autocomplete="off" aria-label="Manual SOC percent" placeholder="Manual"><span class="settings-unit">%</span><button id="bmsSocManual" type="button">Set</button></div><div id="bmsSocManualError" class="bms-error" hidden></div><button id="bmsSocCancel" class="cancel-btn" type="button">Cancel</button></div>
+ </div>
+</div>
+
+<script src="/static/js/core.js"></script>
+<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/controls.js"></script>
+<script src="/static/js/shell.js"></script>
+<script src="/static/js/settings.js"></script>
+<script src="/static/js/bms.js"></script>
+<script src="/static/js/history-data.js"></script>
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/history-render.js"></script>
+<script src="/static/js/reports.js"></script>
+<script src="/static/js/history-view.js"></script>
+<script src="/static/js/pies.js"></script>
+<script src="/static/js/history-load.js"></script>
+<script src="/static/js/main.js"></script>
+</body></html>

@@ -1,0 +1,44 @@
+{
+  "charger_start": {
+    "verified": true,
+    "address": "63D010",
+    "field": 64,
+    "protocol": "btm1",
+    "name": "On/Standby",
+    "type": "bool",
+    "commit_field": null
+  },
+  "charger_bow": {
+    "verified": true,
+    "address": "61CA96",
+    "field": 64,
+    "protocol": "btm1",
+    "name": "On/Standby",
+    "type": "bool",
+    "commit_field": null
+  },
+  "engine_ecu": {
+    "verified": true,
+    "address": "3AE394",
+    "field": 43,
+    "protocol": "btm1",
+    "name": "Mac/Magic On",
+    "type": "bool",
+    "commit_field": null,
+    "capture_evidence": {
+      "off_write": "CAN 0x183AE394 data 2B 00 00 00 00 00",
+      "on_write": "CAN 0x183AE394 data 2B 00 00 00 80 3F"
+    },
+    "reason": "Confirmed from MasterAdjust USB capture: field 43 is written directly OFF=0.0 / ON=1.0; no adjacent commit transaction observed."
+  },
+  "solar": {
+    "verified": true,
+    "address": "31B483",
+    "field": 12,
+    "protocol": "btm1",
+    "name": "On/Off",
+    "type": "bool",
+    "commit_field": null,
+    "reason": "Verified as SCM Solar On/Off request field. At night/no PV, the controller can immediately return the field to OFF; MasterView shows the same behavior."
+  }
+}

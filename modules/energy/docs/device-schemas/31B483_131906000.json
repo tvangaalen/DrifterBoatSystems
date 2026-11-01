@@ -1,0 +1,227 @@
+{
+  "cached_at": "2026-08-27T18:02:16",
+  "known": {
+    "article": "131906000",
+    "name": "SCM Solar",
+    "serial": "R422C0323",
+    "revision": "AA0104",
+    "firmware": "5.22",
+    "max_index": 20,
+    "family": "Solar ChargeMaster",
+    "role": "Solar charger"
+  },
+  "device": {
+    "address": 3257475,
+    "type_code": -1,
+    "instance": -1,
+    "event_counter": -1,
+    "article": "131906000",
+    "serial": "R422C0323",
+    "name": "SCM Solar",
+    "revision": "AA0104",
+    "firmware": "5.22",
+    "field_max_index": 20
+  },
+  "fields": [
+    {
+      "index": 0,
+      "name": "Serial number",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": true,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 1,
+      "name": "Serial number",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 2,
+      "name": "Device state",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 3,
+      "name": "Charge state",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 5.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 4,
+      "name": "Solar voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 36.68000411987305
+    },
+    {
+      "index": 5,
+      "name": "Charge current",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 60.0,
+      "current_value": 2.799999952316284
+    },
+    {
+      "index": 6,
+      "name": "Battery voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 65.0,
+      "current_value": 13.0600004196167
+    },
+    {
+      "index": 7,
+      "name": "Battery temp.",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 150.0,
+      "current_value": 20.0
+    },
+    {
+      "index": 8,
+      "name": "Charger temp.",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 150.0,
+      "current_value": 32.0
+    },
+    {
+      "index": 9,
+      "name": "Total energy",
+      "unit": "kWh",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 750.0012817382812
+    },
+    {
+      "index": 10,
+      "name": "State",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 11,
+      "name": "State of charge",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 59.30235290527344
+    },
+    {
+      "index": 12,
+      "name": "On/Off",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 13,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 14,
+      "name": "Bulk",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 15,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 16,
+      "name": "Absorption",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 17,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 18,
+      "name": "Float",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 19,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    }
+  ]
+}

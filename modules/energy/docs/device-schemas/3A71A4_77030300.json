@@ -1,0 +1,187 @@
+{
+  "cached_at": "2026-08-27T18:02:33",
+  "known": {
+    "article": "77030300",
+    "name": "TLI Diesel",
+    "serial": "B201D0996",
+    "revision": "AA0100",
+    "firmware": null,
+    "max_index": 16,
+    "family": "Tank Level Interface",
+    "role": "Diesel tank interface"
+  },
+  "device": {
+    "address": 3830180,
+    "type_code": -1,
+    "instance": -1,
+    "event_counter": -1,
+    "article": "77030300",
+    "serial": "B201D0996",
+    "name": "TLI Diesel",
+    "revision": "AA0100",
+    "firmware": null,
+    "field_max_index": 16
+  },
+  "fields": [
+    {
+      "index": 0,
+      "name": "Level",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 86.5999984741211
+    },
+    {
+      "index": 1,
+      "name": "Volume",
+      "unit": "liter",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 280.0,
+      "current_value": 242.0
+    },
+    {
+      "index": 2,
+      "name": "Allow low alarm",
+      "unit": null,
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 3,
+      "name": null,
+      "unit": null,
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.9368150981271205e-37
+    },
+    {
+      "index": 4,
+      "name": "Allow high alarm",
+      "unit": null,
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 5,
+      "name": null,
+      "unit": null,
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 6,
+      "name": "Ser.Nr",
+      "unit": null,
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": true,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 7,
+      "name": "Ser.Nr",
+      "unit": null,
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 8,
+      "name": "Setup done",
+      "unit": null,
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 9,
+      "name": "Voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 60.0,
+      "current_value": null
+    },
+    {
+      "index": 10,
+      "name": "Current",
+      "unit": "mA",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 25.0,
+      "current_value": null
+    },
+    {
+      "index": 11,
+      "name": "Resistance",
+      "unit": "Ohm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 400.0,
+      "current_value": 194.5591278076172
+    },
+    {
+      "index": 12,
+      "name": "MasterBus",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 14.816716194152832
+    },
+    {
+      "index": 13,
+      "name": "Device state",
+      "unit": null,
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 14,
+      "name": "Mech. revision",
+      "unit": null,
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 26.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 15,
+      "name": "Hw. revision",
+      "unit": null,
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 26.0,
+      "current_value": 0.0
+    }
+  ]
+}

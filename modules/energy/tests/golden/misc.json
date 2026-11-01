@@ -1,0 +1,3552 @@
+{
+ "daly": {
+  "alarms": [
+   [],
+   [],
+   [
+    "Cell voltage high \u2013 level 1",
+    "Cell voltage high \u2013 level 2",
+    "Cell voltage low \u2013 level 1",
+    "Cell voltage low \u2013 level 2",
+    "Pack voltage high \u2013 level 1",
+    "Pack voltage high \u2013 level 2",
+    "Pack voltage low \u2013 level 1",
+    "Pack voltage low \u2013 level 2",
+    "Charge temperature high \u2013 level 1",
+    "Charge temperature high \u2013 level 2",
+    "Charge temperature low \u2013 level 1",
+    "Charge temperature low \u2013 level 2",
+    "Discharge temperature high \u2013 level 1",
+    "Discharge temperature high \u2013 level 2",
+    "Discharge temperature low \u2013 level 1",
+    "Discharge temperature low \u2013 level 2",
+    "Charge overcurrent \u2013 level 1",
+    "Charge overcurrent \u2013 level 2",
+    "Discharge overcurrent \u2013 level 1",
+    "Discharge overcurrent \u2013 level 2",
+    "SOC high \u2013 level 1",
+    "SOC high \u2013 level 2",
+    "SOC low \u2013 level 1",
+    "SOC low \u2013 level 2",
+    "Cell voltage difference \u2013 level 1",
+    "Cell voltage difference \u2013 level 2",
+    "Temperature difference \u2013 level 1",
+    "Temperature difference \u2013 level 2",
+    "Charge MOS temperature high",
+    "Discharge MOS temperature high",
+    "Charge MOS temperature sensor error",
+    "Discharge MOS temperature sensor error",
+    "Charge MOS adhesion error",
+    "Discharge MOS adhesion error",
+    "Charge MOS open-circuit error",
+    "Discharge MOS open-circuit error",
+    "AFE acquisition module error",
+    "Voltage sensor module error",
+    "Temperature sensor module error",
+    "EEPROM error",
+    "RTC error",
+    "Precharge failure",
+    "Current module fault",
+    "Pack-voltage detection fault",
+    "Short-circuit protection fault",
+    "Charging forbidden by low voltage",
+    "Fault code 5"
+   ],
+   [
+    "Cell voltage high \u2013 level 1",
+    "Charge temperature high \u2013 level 2",
+    "Discharge overcurrent \u2013 level 1",
+    "Temperature difference \u2013 level 2",
+    "Charge MOS adhesion error",
+    "EEPROM error",
+    "Fault code 128"
+   ],
+   [
+    "Unknown alarm value: zz"
+   ],
+   [
+    "Pack voltage low \u2013 level 2"
+   ]
+  ],
+  "decode": [
+   [
+    144,
+    {
+     "acquisition_voltage_v": 5492.8,
+     "current_a": 3283.0,
+     "pack_voltage_v": 2171.8,
+     "state_of_charge_percent": 6230.1
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 198.1,
+     "current_a": 2609.9,
+     "pack_voltage_v": 3072.1,
+     "state_of_charge_percent": 1906.2
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 5729.6,
+     "current_a": 2787.3,
+     "pack_voltage_v": 3048.5,
+     "state_of_charge_percent": 4326.2
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 289.5,
+     "current_a": -1841.7,
+     "pack_voltage_v": 1529.2,
+     "state_of_charge_percent": 279.2
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 5272.8,
+     "current_a": -1019.3,
+     "pack_voltage_v": 2116.7,
+     "state_of_charge_percent": 510.4
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 2596.2,
+     "current_a": -2072.2,
+     "pack_voltage_v": 3075.8,
+     "state_of_charge_percent": 6240.6
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 1915.3,
+     "current_a": 833.0,
+     "pack_voltage_v": 2628.6,
+     "state_of_charge_percent": 5933.3
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 5056.8,
+     "current_a": -2662.5,
+     "pack_voltage_v": 4172.0,
+     "state_of_charge_percent": 2098.9
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 907.3,
+     "current_a": 1178.5,
+     "pack_voltage_v": 50.7,
+     "state_of_charge_percent": 2363.9
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 4546.8,
+     "current_a": 205.2,
+     "pack_voltage_v": 4573.8,
+     "state_of_charge_percent": 2204.9
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 4897.7,
+     "current_a": -2526.9,
+     "pack_voltage_v": 2300.3,
+     "state_of_charge_percent": 5333.1
+    }
+   ],
+   [
+    144,
+    {
+     "acquisition_voltage_v": 6444.8,
+     "current_a": 238.1,
+     "pack_voltage_v": 196.9,
+     "state_of_charge_percent": 2128.3
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 57552,
+     "highest_cell_number": 247,
+     "lowest_cell_mv": 7571,
+     "lowest_cell_number": 26
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 4566,
+     "highest_cell_number": 127,
+     "lowest_cell_mv": 22473,
+     "lowest_cell_number": 35
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 19957,
+     "highest_cell_number": 25,
+     "lowest_cell_mv": 33095,
+     "lowest_cell_number": 245
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 47950,
+     "highest_cell_number": 188,
+     "lowest_cell_mv": 56056,
+     "lowest_cell_number": 244
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 36167,
+     "highest_cell_number": 5,
+     "lowest_cell_mv": 49984,
+     "lowest_cell_number": 12
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 32727,
+     "highest_cell_number": 131,
+     "lowest_cell_mv": 53062,
+     "lowest_cell_number": 68
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 52016,
+     "highest_cell_number": 95,
+     "lowest_cell_mv": 3300,
+     "lowest_cell_number": 72
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 36928,
+     "highest_cell_number": 155,
+     "lowest_cell_mv": 42698,
+     "lowest_cell_number": 252
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 23646,
+     "highest_cell_number": 193,
+     "lowest_cell_mv": 26391,
+     "lowest_cell_number": 29
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 60704,
+     "highest_cell_number": 203,
+     "lowest_cell_mv": 22903,
+     "lowest_cell_number": 129
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 32199,
+     "highest_cell_number": 79,
+     "lowest_cell_mv": 40599,
+     "lowest_cell_number": 250
+    }
+   ],
+   [
+    145,
+    {
+     "highest_cell_mv": 42398,
+     "highest_cell_number": 149,
+     "lowest_cell_mv": 24864,
+     "lowest_cell_number": 166
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": -7,
+     "lowest_temperature_c": 175
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 186,
+     "lowest_temperature_c": 159
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 182,
+     "lowest_temperature_c": 86
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 164,
+     "lowest_temperature_c": 127
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 48,
+     "lowest_temperature_c": 150
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 215,
+     "lowest_temperature_c": 116
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 119,
+     "lowest_temperature_c": 34
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 196,
+     "lowest_temperature_c": 45
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 93,
+     "lowest_temperature_c": -26
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 102,
+     "lowest_temperature_c": 40
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 103,
+     "lowest_temperature_c": 156
+    }
+   ],
+   [
+    146,
+    {
+     "highest_temperature_c": 139,
+     "lowest_temperature_c": -31
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 122,
+     "remaining_capacity_mah": 2657216701
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 1,
+     "remaining_capacity_mah": 3709443680
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 213,
+     "remaining_capacity_mah": 4010353961
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 223,
+     "remaining_capacity_mah": 4277924269
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 78,
+     "remaining_capacity_mah": 2476213284
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 34,
+     "remaining_capacity_mah": 3096097822
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 82,
+     "remaining_capacity_mah": 3427799093
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 119,
+     "remaining_capacity_mah": 1701042216
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 166,
+     "remaining_capacity_mah": 3025734332
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 252,
+     "remaining_capacity_mah": 160373871
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 57,
+     "remaining_capacity_mah": 3988456884
+    }
+   ],
+   [
+    147,
+    {
+     "charge_mosfet_on": true,
+     "discharge_mosfet_on": true,
+     "mosfet_status": 88,
+     "remaining_capacity_mah": 1381880681
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 115,
+     "charge_discharge_cycles": 31439,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 146
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 180,
+     "charge_discharge_cycles": 3435,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 185
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 108,
+     "charge_discharge_cycles": 31449,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 189
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 253,
+     "charge_discharge_cycles": 56513,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 97
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 250,
+     "charge_discharge_cycles": 26898,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 244
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 225,
+     "charge_discharge_cycles": 49224,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 154
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 16,
+     "charge_discharge_cycles": 63604,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 1
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 28,
+     "charge_discharge_cycles": 43756,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 13
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 199,
+     "charge_discharge_cycles": 49024,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 229
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 63,
+     "charge_discharge_cycles": 32578,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 101
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 135,
+     "charge_discharge_cycles": 17662,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 53
+    }
+   ],
+   [
+    148,
+    {
+     "cell_count": 111,
+     "charge_discharge_cycles": 25160,
+     "charger_connected": true,
+     "load_connected": true,
+     "temperature_sensor_count": 16
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      34515,
+      7743,
+      2679
+     ],
+     "frame_number": 29
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      49117,
+      2747,
+      18865
+     ],
+     "frame_number": 249
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      59762,
+      57463,
+      2792
+     ],
+     "frame_number": 227
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      45306,
+      20308,
+      1674
+     ],
+     "frame_number": 44
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      39278,
+      6377,
+      24423
+     ],
+     "frame_number": 168
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      20558,
+      28985,
+      21819
+     ],
+     "frame_number": 5
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      16232,
+      27145,
+      11132
+     ],
+     "frame_number": 62
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      32104,
+      56580,
+      52378
+     ],
+     "frame_number": 49
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      54545,
+      65303,
+      52982
+     ],
+     "frame_number": 183
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      10371,
+      61830,
+      21396
+     ],
+     "frame_number": 19
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      64391,
+      51094,
+      6971
+     ],
+     "frame_number": 189
+    }
+   ],
+   [
+    149,
+    {
+     "cell_voltages_mv": [
+      63910,
+      17996,
+      40861
+     ],
+     "frame_number": 46
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 57,
+     "temperatures_c": [
+      98,
+      186,
+      78,
+      -15,
+      151,
+      177,
+      14
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 242,
+     "temperatures_c": [
+      71,
+      146,
+      61,
+      -17,
+      213,
+      115,
+      129
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 222,
+     "temperatures_c": [
+      55,
+      -31,
+      177,
+      62,
+      43,
+      -24,
+      71
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 109,
+     "temperatures_c": [
+      44,
+      132,
+      -34,
+      78,
+      190,
+      87,
+      141
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 192,
+     "temperatures_c": [
+      57,
+      103,
+      52,
+      148,
+      205,
+      33,
+      128
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 188,
+     "temperatures_c": [
+      34,
+      107,
+      0,
+      -11,
+      85,
+      115,
+      127
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 194,
+     "temperatures_c": [
+      45,
+      162,
+      -26,
+      99,
+      96,
+      68,
+      78
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 62,
+     "temperatures_c": [
+      -28,
+      67,
+      153,
+      57,
+      215,
+      68,
+      45
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 220,
+     "temperatures_c": [
+      154,
+      110,
+      26,
+      157,
+      -16,
+      30,
+      -38
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 47,
+     "temperatures_c": [
+      44,
+      192,
+      16,
+      202,
+      -16,
+      -2,
+      127
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 56,
+     "temperatures_c": [
+      50,
+      111,
+      188,
+      109,
+      171,
+      160,
+      19
+     ]
+    }
+   ],
+   [
+    150,
+    {
+     "frame_number": 142,
+     "temperatures_c": [
+      138,
+      -38,
+      169,
+      91,
+      197,
+      120,
+      95
+     ]
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      2,
+      5,
+      6,
+      8,
+      9,
+      11,
+      15,
+      21,
+      22,
+      24,
+      27,
+      29,
+      30,
+      32,
+      36,
+      38,
+      39,
+      42,
+      45,
+      47
+     ],
+     "balancing_raw_hex": "B2 45 B0 B4 68 52"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      2,
+      5,
+      7,
+      9,
+      18,
+      19,
+      20,
+      22,
+      24,
+      26,
+      27,
+      29,
+      33,
+      35,
+      37,
+      39,
+      41,
+      45,
+      46,
+      48
+     ],
+     "balancing_raw_hex": "52 01 AE 16 55 B1"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      1,
+      3,
+      5,
+      10,
+      11,
+      12,
+      20,
+      21,
+      23,
+      26,
+      27,
+      30,
+      32,
+      34,
+      35,
+      37,
+      38,
+      39,
+      41,
+      47
+     ],
+     "balancing_raw_hex": "15 0E 58 A6 76 41"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      1,
+      3,
+      6,
+      7,
+      9,
+      13,
+      14,
+      20,
+      21,
+      23,
+      25,
+      27,
+      28,
+      29,
+      32,
+      33,
+      34,
+      37,
+      39,
+      40,
+      41,
+      48
+     ],
+     "balancing_raw_hex": "65 31 58 9D D3 81"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      2,
+      4,
+      7,
+      8,
+      11,
+      15,
+      16,
+      17,
+      18,
+      19,
+      21,
+      24,
+      25,
+      27,
+      29,
+      35,
+      36,
+      37,
+      38,
+      39,
+      41,
+      44,
+      45,
+      48
+     ],
+     "balancing_raw_hex": "CA C4 97 15 7C 99"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      1,
+      2,
+      4,
+      5,
+      8,
+      9,
+      11,
+      12,
+      13,
+      15,
+      16,
+      22,
+      23,
+      26,
+      28,
+      30,
+      33,
+      35,
+      36,
+      38,
+      39,
+      40,
+      41,
+      42,
+      44,
+      46,
+      47,
+      48
+     ],
+     "balancing_raw_hex": "9B DD 60 2A ED EB"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      6,
+      7,
+      8,
+      9,
+      12,
+      13,
+      18,
+      23,
+      24,
+      25,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      36,
+      38,
+      41,
+      44,
+      45,
+      46,
+      47,
+      48
+     ],
+     "balancing_raw_hex": "E0 19 C2 F9 2B F9"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      3,
+      9,
+      10,
+      11,
+      12,
+      18,
+      19,
+      20,
+      21,
+      24,
+      28,
+      31,
+      46
+     ],
+     "balancing_raw_hex": "04 0F 9E 48 00 20"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      5,
+      7,
+      8,
+      10,
+      12,
+      13,
+      14,
+      16,
+      17,
+      18,
+      20,
+      23,
+      24,
+      25,
+      30,
+      31,
+      32,
+      34,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      48
+     ],
+     "balancing_raw_hex": "D0 BA CB E1 FA 87"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      1,
+      2,
+      5,
+      6,
+      7,
+      10,
+      12,
+      13,
+      16,
+      17,
+      18,
+      22,
+      28,
+      31,
+      33,
+      37,
+      39,
+      42,
+      45,
+      47,
+      48
+     ],
+     "balancing_raw_hex": "73 9A 23 48 51 D2"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      3,
+      5,
+      6,
+      8,
+      12,
+      15,
+      16,
+      17,
+      18,
+      20,
+      21,
+      22,
+      27,
+      28,
+      29,
+      30,
+      32,
+      34,
+      36,
+      37,
+      44,
+      46
+     ],
+     "balancing_raw_hex": "B4 C8 3B BC 1A 28"
+    }
+   ],
+   [
+    151,
+    {
+     "balancing_cells": [
+      1,
+      2,
+      4,
+      6,
+      7,
+      8,
+      10,
+      11,
+      12,
+      14,
+      16,
+      17,
+      21,
+      22,
+      23,
+      24,
+      25,
+      27,
+      29,
+      32,
+      33,
+      34,
+      36,
+      37,
+      38,
+      39,
+      42,
+      45,
+      46,
+      47,
+      48
+     ],
+     "balancing_raw_hex": "EB AE F1 95 7B F2"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "A1 A2 F7 D7 75 87 68 5B"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "54 30 5E 87 F6 D8 8A 7F"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "83 2C 3B 96 20 68 57 05"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "79 DC D6 CB 85 5C DC 62"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "07 95 C0 D5 64 85 CB FB"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "90 76 1E B9 80 BF AE DB"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "1D 87 52 77 5F 34 AB 73"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "57 58 A1 2B 11 1A F6 5D"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "56 CB C0 9A ED 15 54 4A"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "5F C2 E5 54 CE C4 AF 3C"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "68 5B 32 3A AC 14 3A C3"
+    }
+   ],
+   [
+    152,
+    {
+     "alarm_bytes_hex": "AC CD F4 8B 2B CD 1B 80"
+    }
+   ]
+  ],
+  "incomplete": "BATTERY 1 returned incomplete DALY status data",
+  "requests": [
+   "a540900800000000000000007d",
+   "a540910800000000000000007e",
+   "a540920800000000000000007f",
+   "a5409308000000000000000080",
+   "a5409408000000000000000081",
+   "a5409508000000000000000082",
+   "a5409608000000000000000083",
+   "a5409708000000000000000084",
+   "a5409808000000000000000085"
+  ],
+  "snapshots": [
+   {
+    "alarms": [],
+    "balancing_cells": [
+     1
+    ],
+    "balancing_raw_hex": "01 00 00 00 00 00",
+    "battery": "BATTERY 1",
+    "cell_spread_mv": 18,
+    "cells_mv": [
+     3342,
+     3350,
+     3360
+    ],
+    "charge_mosfet_on": true,
+    "current_a": -12.5,
+    "cycles": 255,
+    "device_name": "DL-TEST",
+    "discharge_mosfet_on": true,
+    "pack_voltage_v": 13.2,
+    "remaining_capacity_ah": 235.373,
+    "state": "connected",
+    "state_of_charge_percent": 36.6,
+    "temperatures_c": [
+     26,
+     25
+    ],
+    "valid_frame_count": 10
+   },
+   {
+    "alarms": [
+     "Cell voltage high \u2013 level 1"
+    ],
+    "balancing_cells": [
+     2,
+     4
+    ],
+    "balancing_raw_hex": "0A 00 00 00 00 00",
+    "battery": "BATTERY 2",
+    "cell_spread_mv": 15,
+    "cells_mv": [
+     3352,
+     3350,
+     3360,
+     3345
+    ],
+    "charge_mosfet_on": true,
+    "current_a": -3.7,
+    "cycles": 233,
+    "device_name": "DL-TEST",
+    "discharge_mosfet_on": true,
+    "pack_voltage_v": 13.2,
+    "remaining_capacity_ah": 126.586,
+    "state": "connected",
+    "state_of_charge_percent": 86.3,
+    "temperatures_c": [
+     26,
+     25
+    ],
+    "valid_frame_count": 10
+   },
+   {
+    "alarms": [
+     "Discharge temperature low \u2013 level 1",
+     "Fault code 3"
+    ],
+    "balancing_cells": [],
+    "balancing_raw_hex": "00 00 00 00 00 00",
+    "battery": "BATTERY 3",
+    "cell_spread_mv": 10,
+    "cells_mv": [
+     3355,
+     3350,
+     3360
+    ],
+    "charge_mosfet_on": true,
+    "current_a": 1.0,
+    "cycles": 417,
+    "device_name": "DL-TEST",
+    "discharge_mosfet_on": true,
+    "pack_voltage_v": 13.2,
+    "remaining_capacity_ah": 218.379,
+    "state": "connected",
+    "state_of_charge_percent": 67.1,
+    "temperatures_c": [
+     26,
+     25
+    ],
+    "valid_frame_count": 10
+   },
+   {
+    "alarms": [],
+    "balancing_cells": [
+     1
+    ],
+    "balancing_raw_hex": "01 00 00 00 00 00",
+    "battery": "BATTERY 1",
+    "cell_spread_mv": 19,
+    "cells_mv": [
+     3341,
+     3350,
+     3360,
+     3345
+    ],
+    "charge_mosfet_on": true,
+    "current_a": 18.9,
+    "cycles": 410,
+    "device_name": "DL-TEST",
+    "discharge_mosfet_on": true,
+    "pack_voltage_v": 13.2,
+    "remaining_capacity_ah": 261.997,
+    "state": "connected",
+    "state_of_charge_percent": 28.9,
+    "temperatures_c": [
+     26,
+     25
+    ],
+    "valid_frame_count": 10
+   },
+   {
+    "alarms": [
+     "Cell voltage high \u2013 level 1"
+    ],
+    "balancing_cells": [
+     2
+    ],
+    "balancing_raw_hex": "0A 00 00 00 00 00",
+    "battery": "BATTERY 2",
+    "cell_spread_mv": 19,
+    "cells_mv": [
+     3341,
+     3350,
+     3360
+    ],
+    "charge_mosfet_on": true,
+    "current_a": 1.0,
+    "cycles": 465,
+    "device_name": "DL-TEST",
+    "discharge_mosfet_on": true,
+    "pack_voltage_v": 13.2,
+    "remaining_capacity_ah": 268.908,
+    "state": "connected",
+    "state_of_charge_percent": 24.9,
+    "temperatures_c": [
+     26,
+     25
+    ],
+    "valid_frame_count": 10
+   },
+   {
+    "alarms": [
+     "Discharge temperature low \u2013 level 1",
+     "Fault code 3"
+    ],
+    "balancing_cells": [],
+    "balancing_raw_hex": "00 00 00 00 00 00",
+    "battery": "BATTERY 3",
+    "cell_spread_mv": 15,
+    "cells_mv": [
+     3358,
+     3350,
+     3360,
+     3345
+    ],
+    "charge_mosfet_on": true,
+    "current_a": 19.5,
+    "cycles": 362,
+    "device_name": "DL-TEST",
+    "discharge_mosfet_on": true,
+    "pack_voltage_v": 13.2,
+    "remaining_capacity_ah": 294.199,
+    "state": "connected",
+    "state_of_charge_percent": 81.3,
+    "temperatures_c": [
+     26,
+     25
+    ],
+    "valid_frame_count": 10
+   }
+  ],
+  "soc": [
+   [
+    2400,
+    0.0,
+    0.0
+   ],
+   [
+    2425,
+    0.0,
+    0.0
+   ],
+   [
+    2450,
+    0.0,
+    0.0
+   ],
+   [
+    2475,
+    0.0,
+    0.0
+   ],
+   [
+    2500,
+    0.0,
+    0.0
+   ],
+   [
+    2525,
+    0.0,
+    0.5
+   ],
+   [
+    2550,
+    0.0,
+    1.0
+   ],
+   [
+    2575,
+    0.0,
+    1.5
+   ],
+   [
+    2600,
+    0.0,
+    2.0
+   ],
+   [
+    2625,
+    0.0,
+    2.5
+   ],
+   [
+    2650,
+    0.0,
+    3.0
+   ],
+   [
+    2675,
+    0.0,
+    3.5
+   ],
+   [
+    2700,
+    0.0,
+    4.0
+   ],
+   [
+    2725,
+    0.0,
+    4.5
+   ],
+   [
+    2750,
+    0.0,
+    5.0
+   ],
+   [
+    2775,
+    1.0,
+    5.5
+   ],
+   [
+    2800,
+    2.0,
+    6.0
+   ],
+   [
+    2825,
+    3.0,
+    6.5
+   ],
+   [
+    2850,
+    4.0,
+    7.0
+   ],
+   [
+    2875,
+    5.0,
+    7.5
+   ],
+   [
+    2900,
+    6.0,
+    8.0
+   ],
+   [
+    2925,
+    7.0,
+    8.5
+   ],
+   [
+    2950,
+    8.0,
+    9.0
+   ],
+   [
+    2975,
+    9.0,
+    9.5
+   ],
+   [
+    3000,
+    10.0,
+    10.0
+   ],
+   [
+    3025,
+    12.5,
+    11.25
+   ],
+   [
+    3050,
+    15.0,
+    12.5
+   ],
+   [
+    3075,
+    17.5,
+    13.75
+   ],
+   [
+    3100,
+    20.0,
+    15.0
+   ],
+   [
+    3125,
+    22.5,
+    16.25
+   ],
+   [
+    3150,
+    25.0,
+    17.5
+   ],
+   [
+    3175,
+    27.5,
+    18.75
+   ],
+   [
+    3200,
+    30.0,
+    20.0
+   ],
+   [
+    3225,
+    35.0,
+    31.666667
+   ],
+   [
+    3250,
+    40.0,
+    40.0
+   ],
+   [
+    3275,
+    45.0,
+    61.666667
+   ],
+   [
+    3300,
+    50.0,
+    70.0
+   ],
+   [
+    3325,
+    55.0,
+    81.666667
+   ],
+   [
+    3350,
+    60.0,
+    90.0
+   ],
+   [
+    3375,
+    65.0,
+    95.0
+   ],
+   [
+    3400,
+    70.0,
+    100.0
+   ],
+   [
+    3425,
+    75.0,
+    100.0
+   ],
+   [
+    3450,
+    80.0,
+    100.0
+   ],
+   [
+    3475,
+    85.0,
+    100.0
+   ],
+   [
+    3500,
+    90.0,
+    100.0
+   ],
+   [
+    3525,
+    92.5,
+    100.0
+   ],
+   [
+    3550,
+    95.0,
+    100.0
+   ],
+   [
+    3575,
+    97.5,
+    100.0
+   ],
+   [
+    3600,
+    100.0,
+    100.0
+   ],
+   [
+    3625,
+    100.0,
+    100.0
+   ],
+   [
+    3650,
+    100.0,
+    100.0
+   ],
+   [
+    3675,
+    100.0,
+    100.0
+   ]
+  ],
+  "writes": [
+   "a580210800000000000000004e",
+   "a580210800000000000000004e",
+   "a580210800010203040500005d",
+   "a580210800010203040506076a",
+   "a580210800010203040506076a",
+   "a580d908000000000000000006",
+   "a580d908000000000000000006",
+   "a580d908000102030405000015",
+   "a580d908000102030405060722",
+   "a580d908000102030405060722",
+   "a580da08000000000000000007",
+   "a580da08000000000000000007",
+   "a580da08000102030405000016",
+   "a580da08000102030405060723",
+   "a580da08000102030405060723"
+  ]
+ },
+ "history": {
+  "bad_2026-10-01T10:00:00Z": "end must be after start",
+  "bad_x": "start and end must be ISO 8601 timestamps",
+  "bms_series": {
+   "earliest_id": 2,
+   "first": {
+    "alarms": [],
+    "battery": "BATTERY 1",
+    "captured_at": "2026-10-01T08:08:00+00:00",
+    "cell_spread": 6,
+    "cells": [
+     3307,
+     3308,
+     3302,
+     3308
+    ],
+    "charge_mos": true,
+    "current": -38.79541402096562,
+    "discharge_mos": true,
+    "id": 104,
+    "remaining": 204.8,
+    "voltage": 13.2
+   },
+   "last": {
+    "alarms": [],
+    "battery": "BATTERY 3",
+    "captured_at": "2026-10-01T10:59:30+00:00",
+    "cell_spread": 6,
+    "cells": [
+     3312,
+     3318,
+     3317,
+     3318
+    ],
+    "charge_mos": true,
+    "current": -0.7364749452100483,
+    "discharge_mos": true,
+    "id": 2278,
+    "remaining": 307.7,
+    "voltage": 13.2
+   },
+   "latest_id": 2278,
+   "points": {
+    "items": 1032,
+    "sha1": "6f86ea3559151646377ab43efcc61bd63e6d1dbd"
+   }
+  },
+  "chart_0.25": {
+   "bms": {
+    "items": 90,
+    "sha1": "cb8fe4b6f02f459b6a28916799d1615eb9231e4f"
+   },
+   "bms_count": 90,
+   "cutoff": "2026-10-01T10:44:50+00:00",
+   "dashboard": {
+    "items": 91,
+    "sha1": "37e043e258a4f2f02418d8ef4b2e9713e451c5c2"
+   },
+   "dashboard_count": 91,
+   "latest": "2026-10-01T10:59:50+00:00"
+  },
+  "chart_1": {
+   "bms": {
+    "items": 360,
+    "sha1": "b4b746c74a5296865036314c1c5227723e8f1e2a"
+   },
+   "bms_count": 360,
+   "cutoff": "2026-10-01T09:59:50+00:00",
+   "dashboard": {
+    "items": 361,
+    "sha1": "43a457b4be97253682a9c174392ebab5b81f6276"
+   },
+   "dashboard_count": 361,
+   "latest": "2026-10-01T10:59:50+00:00"
+  },
+  "chart_12": {
+   "bms": {
+    "items": 1080,
+    "sha1": "c41e76e6427c540dfee2d9345be78a36493ad6be"
+   },
+   "bms_count": 1080,
+   "cutoff": "2026-09-30T22:59:50+00:00",
+   "dashboard": {
+    "items": 1080,
+    "sha1": "4c36a19864c35cb321dc3395a89d7e2cc8a22680"
+   },
+   "dashboard_count": 1080,
+   "latest": "2026-10-01T10:59:50+00:00"
+  },
+  "chart_3": {
+   "bms": {
+    "items": 1080,
+    "sha1": "c41e76e6427c540dfee2d9345be78a36493ad6be"
+   },
+   "bms_count": 1080,
+   "cutoff": "2026-10-01T07:59:50+00:00",
+   "dashboard": {
+    "items": 1080,
+    "sha1": "4c36a19864c35cb321dc3395a89d7e2cc8a22680"
+   },
+   "dashboard_count": 1080,
+   "latest": "2026-10-01T10:59:50+00:00"
+  },
+  "contrib_2026-10-01T08:00:00Z_2026-10-01T11:00:00Z": {
+   "alarms": [
+    {
+     "episodes": 0,
+     "key": "BATTERY 1",
+     "samples": 0
+    },
+    {
+     "episodes": 3,
+     "key": "BATTERY 2",
+     "samples": 60
+    },
+    {
+     "episodes": 0,
+     "key": "BATTERY 3",
+     "samples": 0
+    }
+   ],
+   "batteries": [
+    {
+     "avg_discharge_w": 70.47096090566916,
+     "charge_wh": 503.96414125053957,
+     "covered_seconds": 10770.0,
+     "discharge_wh": 210.82562470946024,
+     "key": "BATTERY 1"
+    },
+    {
+     "avg_discharge_w": 57.274330759417836,
+     "charge_wh": 515.2138751989698,
+     "covered_seconds": 10770.0,
+     "discharge_wh": 171.3457061885917,
+     "key": "BATTERY 2"
+    },
+    {
+     "avg_discharge_w": 78.57598985108825,
+     "charge_wh": 548.8408109492077,
+     "covered_seconds": 10770.0,
+     "discharge_wh": 235.07316963783902,
+     "key": "BATTERY 3"
+    }
+   ],
+   "consumers": [
+    {
+     "avg_w": 153.41625778012218,
+     "key": "inverter",
+     "wh": 459.8226170687551
+    },
+    {
+     "avg_w": 10.000000000000032,
+     "key": "charger_start",
+     "wh": 29.972222222222317
+    },
+    {
+     "avg_w": 5.000000000000016,
+     "key": "charger_bow",
+     "wh": 14.986111111111159
+    },
+    {
+     "avg_w": 3.999999999999988,
+     "key": "engine_ecu",
+     "wh": 11.988888888888853
+    },
+    {
+     "avg_w": 20.000000000000064,
+     "key": "alternator_field",
+     "wh": 59.944444444444635
+    },
+    {
+     "avg_w": 98.69649706891276,
+     "key": "other_dc",
+     "wh": 295.81533427043576
+    }
+   ],
+   "consumers_covered_seconds": 10790.0,
+   "end": "2026-10-01T11:00:00+00:00",
+   "sources": [
+    {
+     "avg_w": 499.34799030085964,
+     "key": "charger_house",
+     "wh": 1496.6568931517431
+    },
+    {
+     "avg_w": 533.0861909175127,
+     "key": "alternator",
+     "wh": 1597.7777777777671
+    },
+    {
+     "avg_w": 100.52862042386421,
+     "key": "solar",
+     "wh": 301.3066151037486
+    }
+   ],
+   "sources_covered_seconds": 10790.0,
+   "span_seconds": 10800.0,
+   "start": "2026-10-01T08:00:00+00:00"
+  },
+  "contrib_2026-10-01T08:30:00Z_2026-10-01T10:15:30Z": {
+   "alarms": [
+    {
+     "episodes": 0,
+     "key": "BATTERY 1",
+     "samples": 0
+    },
+    {
+     "episodes": 2,
+     "key": "BATTERY 2",
+     "samples": 40
+    },
+    {
+     "episodes": 0,
+     "key": "BATTERY 3",
+     "samples": 0
+    }
+   ],
+   "batteries": [
+    {
+     "avg_discharge_w": 57.58765777063283,
+     "charge_wh": 303.44342603851817,
+     "covered_seconds": 6330.0,
+     "discharge_wh": 101.25829824669606,
+     "key": "BATTERY 1"
+    },
+    {
+     "avg_discharge_w": 52.04100730281426,
+     "charge_wh": 313.3496919220458,
+     "covered_seconds": 6330.0,
+     "discharge_wh": 91.50543784078174,
+     "key": "BATTERY 2"
+    },
+    {
+     "avg_discharge_w": 69.34633932749082,
+     "charge_wh": 359.49735136284266,
+     "covered_seconds": 6330.0,
+     "discharge_wh": 121.93397998417137,
+     "key": "BATTERY 3"
+    }
+   ],
+   "consumers": [
+    {
+     "avg_w": 153.92553993344484,
+     "key": "inverter",
+     "wh": 270.65240771630715
+    },
+    {
+     "avg_w": 10.000000000000007,
+     "key": "charger_start",
+     "wh": 17.583333333333346
+    },
+    {
+     "avg_w": 5.0000000000000036,
+     "key": "charger_bow",
+     "wh": 8.791666666666673
+    },
+    {
+     "avg_w": 3.9999999999999893,
+     "key": "engine_ecu",
+     "wh": 7.033333333333315
+    },
+    {
+     "avg_w": 20.000000000000014,
+     "key": "alternator_field",
+     "wh": 35.16666666666669
+    },
+    {
+     "avg_w": 99.20928073396888,
+     "key": "other_dc",
+     "wh": 174.44298529056195
+    }
+   ],
+   "consumers_covered_seconds": 6330.0,
+   "end": "2026-10-01T10:15:30+00:00",
+   "sources": [
+    {
+     "avg_w": 499.49138757117987,
+     "key": "charger_house",
+     "wh": 878.2723564793246
+    },
+    {
+     "avg_w": 345.02369668246513,
+     "key": "alternator",
+     "wh": 606.6666666666679
+    },
+    {
+     "avg_w": 101.66114529343706,
+     "key": "solar",
+     "wh": 178.7541804742935
+    }
+   ],
+   "sources_covered_seconds": 6330.0,
+   "span_seconds": 6330.0,
+   "start": "2026-10-01T08:30:00+00:00"
+  },
+  "contrib_2026-10-01T10:00:00+00:00_2026-10-01T10:00:30+00:00": {
+   "alarms": [
+    {
+     "episodes": 0,
+     "key": "BATTERY 1",
+     "samples": 0
+    },
+    {
+     "episodes": 0,
+     "key": "BATTERY 2",
+     "samples": 0
+    },
+    {
+     "episodes": 0,
+     "key": "BATTERY 3",
+     "samples": 0
+    }
+   ],
+   "batteries": [
+    {
+     "avg_discharge_w": 0.0,
+     "charge_wh": 0.45850588464370623,
+     "covered_seconds": 30.0,
+     "discharge_wh": 0.0,
+     "key": "BATTERY 1"
+    },
+    {
+     "avg_discharge_w": 0.0,
+     "charge_wh": 2.7187117883254577,
+     "covered_seconds": 30.0,
+     "discharge_wh": 0.0,
+     "key": "BATTERY 2"
+    },
+    {
+     "avg_discharge_w": 109.10530360357654,
+     "charge_wh": 0.0,
+     "covered_seconds": 30.0,
+     "discharge_wh": 0.9092108633631378,
+     "key": "BATTERY 3"
+    }
+   ],
+   "consumers": [
+    {
+     "avg_w": 111.20392176993121,
+     "key": "inverter",
+     "wh": 0.9266993480827601
+    },
+    {
+     "avg_w": 10.000000000000002,
+     "key": "charger_start",
+     "wh": 0.08333333333333334
+    },
+    {
+     "avg_w": 5.000000000000001,
+     "key": "charger_bow",
+     "wh": 0.04166666666666667
+    },
+    {
+     "avg_w": 4.0,
+     "key": "engine_ecu",
+     "wh": 0.03333333333333333
+    },
+    {
+     "avg_w": 20.000000000000004,
+     "key": "alternator_field",
+     "wh": 0.16666666666666669
+    },
+    {
+     "avg_w": 71.76325360069637,
+     "key": "other_dc",
+     "wh": 0.5980271133391364
+    }
+   ],
+   "consumers_covered_seconds": 30.0,
+   "end": "2026-10-01T10:00:30+00:00",
+   "sources": [
+    {
+     "avg_w": 476.4968233294844,
+     "key": "charger_house",
+     "wh": 3.9708068610790366
+    },
+    {
+     "avg_w": 800.0,
+     "key": "alternator",
+     "wh": 6.666666666666667
+    },
+    {
+     "avg_w": 108.28355367202184,
+     "key": "solar",
+     "wh": 0.9023629472668486
+    }
+   ],
+   "sources_covered_seconds": 30.0,
+   "span_seconds": 30.0,
+   "start": "2026-10-01T10:00:00+00:00"
+  },
+  "count": 2280,
+  "dashboard_series": {
+   "earliest_id": 1,
+   "first": {
+    "ac_frequency": 50.0,
+    "ac_power": 100.0,
+    "alternator_running": true,
+    "alternator_temperature": 28.0,
+    "captured_at": "2026-10-01T10:37:40+00:00",
+    "id": 2001,
+    "inverting": true,
+    "load_current": [
+     20.0,
+     0.8,
+     0.4,
+     0.3,
+     1.5,
+     8.0
+    ],
+    "load_power": [
+     283.83848877521535,
+     10.0,
+     5.0,
+     4.0,
+     20.0,
+     108.2634942186607
+    ],
+    "shore_connected": true,
+    "shore_voltage": 230.0,
+    "solar_panel_voltage": 100.0,
+    "source_current": [
+     35.0,
+     60.0,
+     3.0
+    ],
+    "source_power": [
+     459.76036879370554,
+     800.0,
+     171.8366912637165
+    ],
+    "supporting": false
+   },
+   "last": {
+    "ac_frequency": 50.0,
+    "ac_power": 100.0,
+    "alternator_running": true,
+    "alternator_temperature": 28.0,
+    "captured_at": "2026-10-01T10:59:50+00:00",
+    "id": 2280,
+    "inverting": true,
+    "load_current": [
+     20.0,
+     0.8,
+     0.4,
+     0.3,
+     1.5,
+     8.0
+    ],
+    "load_power": [
+     171.86452794487676,
+     10.0,
+     5.0,
+     4.0,
+     20.0,
+     63.04811399056813
+    ],
+    "shore_connected": true,
+    "shore_voltage": 230.0,
+    "solar_panel_voltage": 100.0,
+    "source_current": [
+     35.0,
+     60.0,
+     3.0
+    ],
+    "source_power": [
+     534.0701017632132,
+     800.0,
+     84.37585349796164
+    ],
+    "supporting": false
+   },
+   "latest_id": 2280,
+   "points": {
+    "items": 134,
+    "sha1": "824cf8a760004fb4949c5497200561a377170bf1"
+   }
+  },
+  "export_head": [
+   "{\"id\": 1, \"captured_at\": \"2026-10-01T08:00:00+00:00\", \"source\": \"dashboard\", \"device\": null, \"values\": {\"sources\": {\"shore\": {\"power\": 0, \"voltage\": 230.0, \"connected\": true}, \"charger_house\": {\"power\": 496.30073578150217, \"current\": 35.0}, \"alternator\": {\"power\": 800.0, \"current\": 60.0, \"temperature\": 28.0, \"running\": true}, \"solar\": {\"power\": 74.6623862790084, \"current\": 3.0, \"panel_voltage\": 100.0}}, \"consumers\": {\"inverter\": {\"power\": 41.56182375433657, \"current\": 20.0, \"inverting\": true, \"supporting\": false}, \"charger_start\": {\"power\": 10.0, \"current\": 0.8}, \"charger_bow\": {\"power\": 5.0, \"current\": 0.4}, \"engine_ecu\": {\"power\": 4.0, \"current\": 0.3}, \"alternator_field\": {\"power\": 20.0, \"current\": 1.5}, \"other_dc\": {\"power\": 136.65618499863413, \"current\": 8.0}, \"house_ac\": {\"power\": 100.0, \"output_frequency\": 50.0}}}}\n",
+   "{\"id\": 2, \"captured_at\": \"2026-10-01T08:00:00+00:00\", \"source\": \"bms\", \"device\": \"BATTERY 1\", \"values\": {\"battery\": \"BATTERY 1\", \"pack_voltage_v\": 13.2, \"current_a\": 49.82979700319382, \"remaining_capacity_ah\": 200.0, \"cells_mv\": [3300, 3305, 3308, 3307], \"cell_spread_mv\": 8, \"alarms\": [], \"charge_mosfet_on\": true, \"discharge_mosfet_on\": true}}\n",
+   "{\"id\": 3, \"captured_at\": \"2026-10-01T08:00:00+00:00\", \"source\": \"bms\", \"device\": \"BATTERY 2\", \"values\": {\"battery\": \"BATTERY 2\", \"pack_voltage_v\": 13.2, \"current_a\": 30.009829879474466, \"remaining_capacity_ah\": 200.0, \"cells_mv\": [3306, 3310, 3313, 3314], \"cell_spread_mv\": 8, \"alarms\": [], \"charge_mosfet_on\": true, \"discharge_mosfet_on\": true}}\n"
+  ],
+  "export_lines": 2280,
+  "latest": [
+   {
+    "captured_at": "2026-10-01T10:59:50+00:00",
+    "device": null,
+    "id": 2280,
+    "source": "dashboard",
+    "values": {
+     "consumers": {
+      "alternator_field": {
+       "current": 1.5,
+       "power": 20.0
+      },
+      "charger_bow": {
+       "current": 0.4,
+       "power": 5.0
+      },
+      "charger_start": {
+       "current": 0.8,
+       "power": 10.0
+      },
+      "engine_ecu": {
+       "current": 0.3,
+       "power": 4.0
+      },
+      "house_ac": {
+       "output_frequency": 50.0,
+       "power": 100.0
+      },
+      "inverter": {
+       "current": 20.0,
+       "inverting": true,
+       "power": 171.86452794487676,
+       "supporting": false
+      },
+      "other_dc": {
+       "current": 8.0,
+       "power": 63.04811399056813
+      }
+     },
+     "sources": {
+      "alternator": {
+       "current": 60.0,
+       "power": 800.0,
+       "running": true,
+       "temperature": 28.0
+      },
+      "charger_house": {
+       "current": 35.0,
+       "power": 534.0701017632132
+      },
+      "shore": {
+       "connected": true,
+       "power": 0,
+       "voltage": 230.0
+      },
+      "solar": {
+       "current": 3.0,
+       "panel_voltage": 100.0,
+       "power": 84.37585349796164
+      }
+     }
+    }
+   },
+   {
+    "captured_at": "2026-10-01T10:59:40+00:00",
+    "device": null,
+    "id": 2279,
+    "source": "dashboard",
+    "values": {
+     "consumers": {
+      "alternator_field": {
+       "current": 1.5,
+       "power": 20.0
+      },
+      "charger_bow": {
+       "current": 0.4,
+       "power": 5.0
+      },
+      "charger_start": {
+       "current": 0.8,
+       "power": 10.0
+      },
+      "engine_ecu": {
+       "current": 0.3,
+       "power": 4.0
+      },
+      "house_ac": {
+       "output_frequency": 50.0,
+       "power": 100.0
+      },
+      "inverter": {
+       "current": 20.0,
+       "inverting": true,
+       "power": 85.45018394073556,
+       "supporting": false
+      },
+      "other_dc": {
+       "current": 8.0,
+       "power": 92.99843818849351
+      }
+     },
+     "sources": {
+      "alternator": {
+       "current": 60.0,
+       "power": 800.0,
+       "running": true,
+       "temperature": 28.0
+      },
+      "charger_house": {
+       "current": 35.0,
+       "power": 494.07718468451816
+      },
+      "shore": {
+       "connected": true,
+       "power": 0,
+       "voltage": 230.0
+      },
+      "solar": {
+       "current": 3.0,
+       "panel_voltage": 100.0,
+       "power": 99.115979519519
+      }
+     }
+    }
+   },
+   {
+    "captured_at": "2026-10-01T10:59:30+00:00",
+    "device": "BATTERY 3",
+    "id": 2278,
+    "source": "bms",
+    "values": {
+     "alarms": [],
+     "battery": "BATTERY 3",
+     "cell_spread_mv": 6,
+     "cells_mv": [
+      3312,
+      3318,
+      3317,
+      3318
+     ],
+     "charge_mosfet_on": true,
+     "current_a": -0.7364749452100483,
+     "discharge_mosfet_on": true,
+     "pack_voltage_v": 13.2,
+     "remaining_capacity_ah": 307.7
+    }
+   }
+  ],
+  "pruned": 0,
+  "refresh": 2160,
+  "status": {
+   "by_source": {
+    "balancer": 120,
+    "bms": 1080,
+    "dashboard": 1080
+   },
+   "chart_cache": {
+    "bms": 1080,
+    "dashboard": 1080
+   },
+   "newest": "2026-10-01T10:59:50+00:00",
+   "oldest": "2026-10-01T08:00:00+00:00",
+   "records": 2280,
+   "retention_days": 31
+  }
+ },
+ "house_soc": {
+  "cells": [
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3445,
+    "max_spread_battery": "BATTERY 3",
+    "max_spread_mv": 40
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3480,
+    "max_spread_battery": "BATTERY 3",
+    "max_spread_mv": 12
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3506,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 12
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3423,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 40
+   },
+   {
+    "max_cell_battery": "BATTERY 2",
+    "max_cell_mv": 3365,
+    "max_spread_battery": "BATTERY 2",
+    "max_spread_mv": 40
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3506,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 12
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3455,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 12
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3551,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 12
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3552,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 40
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3596,
+    "max_spread_battery": "BATTERY 3",
+    "max_spread_mv": 375
+   },
+   {
+    "max_cell_battery": "BATTERY 2",
+    "max_cell_mv": 3398,
+    "max_spread_battery": "BATTERY 2",
+    "max_spread_mv": 12
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3485,
+    "max_spread_battery": "BATTERY 3",
+    "max_spread_mv": 12
+   },
+   {
+    "max_cell_battery": "BATTERY 2",
+    "max_cell_mv": 3479,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 121
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3592,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 40
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3594,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 209
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3538,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 245
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3581,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 40
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3424,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 79
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3574,
+    "max_spread_battery": "BATTERY 3",
+    "max_spread_mv": 40
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3549,
+    "max_spread_battery": "BATTERY 2",
+    "max_spread_mv": 225
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": "BATTERY 2",
+    "max_cell_mv": 3574,
+    "max_spread_battery": "BATTERY 3",
+    "max_spread_mv": 40
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3583,
+    "max_spread_battery": "BATTERY 3",
+    "max_spread_mv": 254
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3588,
+    "max_spread_battery": "BATTERY 3",
+    "max_spread_mv": 344
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3538,
+    "max_spread_battery": "BATTERY 2",
+    "max_spread_mv": 40
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3562,
+    "max_spread_battery": "BATTERY 3",
+    "max_spread_mv": 176
+   },
+   {
+    "max_cell_battery": "BATTERY 3",
+    "max_cell_mv": 3516,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 263
+   },
+   {
+    "max_cell_battery": "BATTERY 1",
+    "max_cell_mv": 3580,
+    "max_spread_battery": "BATTERY 1",
+    "max_spread_mv": 365
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   },
+   {
+    "max_cell_battery": null,
+    "max_cell_mv": null,
+    "max_spread_battery": null,
+    "max_spread_mv": null
+   }
+  ],
+  "float": [
+   [
+    true,
+    true,
+    null,
+    [
+     true,
+     false,
+     true,
+     "held"
+    ]
+   ],
+   [
+    true,
+    true,
+    3300,
+    [
+     false,
+     true,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    true,
+    3400,
+    [
+     false,
+     true,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    true,
+    3420,
+    [
+     false,
+     true,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    true,
+    3421,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    true,
+    3499,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    true,
+    3500,
+    [
+     true,
+     false,
+     false,
+     "cell_voltage"
+    ]
+   ],
+   [
+    true,
+    true,
+    3600,
+    [
+     true,
+     false,
+     false,
+     "cell_voltage"
+    ]
+   ],
+   [
+    true,
+    false,
+    null,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    false,
+    3300,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    false,
+    3400,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    false,
+    3420,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    false,
+    3421,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    false,
+    3499,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    true,
+    false,
+    3500,
+    [
+     true,
+     false,
+     false,
+     "cell_voltage"
+    ]
+   ],
+   [
+    true,
+    false,
+    3600,
+    [
+     true,
+     false,
+     false,
+     "cell_voltage"
+    ]
+   ],
+   [
+    false,
+    true,
+    null,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    true,
+    3300,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    true,
+    3400,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    true,
+    3420,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    true,
+    3421,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    true,
+    3499,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    true,
+    3500,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    true,
+    3600,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    false,
+    null,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    false,
+    3300,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    false,
+    3400,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    false,
+    3420,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    false,
+    3421,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    false,
+    3499,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    false,
+    3500,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ],
+   [
+    false,
+    false,
+    3600,
+    [
+     false,
+     false,
+     false,
+     null
+    ]
+   ]
+  ],
+  "max_age": [
+   120.0,
+   120.0,
+   240.0,
+   1200.0,
+   120.0,
+   120.0
+  ],
+  "soc": [
+   {
+    "ages": {
+     "BATTERY 3": 100.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 77.7,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 100.0,
+    "soc": 77.7,
+    "stale_batteries": 0,
+    "youngest_age_seconds": 100.0
+   },
+   {
+    "ages": {
+     "BATTERY 2": null
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 50.5,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {
+     "BATTERY 1": 100.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 50.5,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 100.0,
+    "soc": 50.5,
+    "stale_batteries": 0,
+    "youngest_age_seconds": 100.0
+   },
+   {
+    "ages": {
+     "BATTERY 3": 121.0
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 50.5,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 121.0,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 121.0
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {
+     "BATTERY 2": 100.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 50.5,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 100.0,
+    "soc": 50.5,
+    "stale_batteries": 0,
+    "youngest_age_seconds": 100.0
+   },
+   {
+    "ages": {
+     "BATTERY 2": 121.0,
+     "BATTERY 3": 1.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 88.85,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 121.0,
+    "soc": 77.7,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 1.0
+   },
+   {
+    "ages": {
+     "BATTERY 1": 119.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 50.5,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 119.0,
+    "soc": 50.5,
+    "stale_batteries": 0,
+    "youngest_age_seconds": 119.0
+   },
+   {
+    "ages": {
+     "BATTERY 3": 121.0
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 100.0,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 121.0,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 121.0
+   },
+   {
+    "ages": {
+     "BATTERY 1": 400.0,
+     "BATTERY 3": null
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 64.1,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 400.0,
+    "soc": null,
+    "stale_batteries": 2,
+    "youngest_age_seconds": 400.0
+   },
+   {
+    "ages": {
+     "BATTERY 1": 119.0,
+     "BATTERY 3": 400.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 64.1,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 400.0,
+    "soc": 50.5,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 119.0
+   },
+   {
+    "ages": {
+     "BATTERY 1": 1.0,
+     "BATTERY 2": 119.0
+    },
+    "fresh_batteries": 2,
+    "last_known_soc": 75.25,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 119.0,
+    "soc": 75.25,
+    "stale_batteries": 0,
+    "youngest_age_seconds": 1.0
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {
+     "BATTERY 1": null
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 77.7,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {
+     "BATTERY 1": 20.0,
+     "BATTERY 2": 1.0,
+     "BATTERY 3": 121.0
+    },
+    "fresh_batteries": 2,
+    "last_known_soc": 92.56666666666666,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 121.0,
+    "soc": 88.85,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 1.0
+   },
+   {
+    "ages": {
+     "BATTERY 3": 121.0
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 100.0,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 121.0,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 121.0
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {
+     "BATTERY 2": 121.0,
+     "BATTERY 3": 1.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 88.85,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 121.0,
+    "soc": 100.0,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 1.0
+   },
+   {
+    "ages": {
+     "BATTERY 2": 400.0,
+     "BATTERY 3": 100.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 75.25,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 400.0,
+    "soc": 100.0,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 100.0
+   },
+   {
+    "ages": {
+     "BATTERY 1": 119.0,
+     "BATTERY 2": 121.0,
+     "BATTERY 3": 20.0
+    },
+    "fresh_batteries": 2,
+    "last_known_soc": 67.0,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 121.0,
+    "soc": 75.25,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 20.0
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {
+     "BATTERY 3": 121.0
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 77.7,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 121.0,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 121.0
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {
+     "BATTERY 1": 119.0,
+     "BATTERY 3": 400.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 88.85,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 400.0,
+    "soc": 77.7,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 119.0
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {
+     "BATTERY 1": 20.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 77.7,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 20.0,
+    "soc": 77.7,
+    "stale_batteries": 0,
+    "youngest_age_seconds": 20.0
+   },
+   {
+    "ages": {
+     "BATTERY 3": 100.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 77.7,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 100.0,
+    "soc": 77.7,
+    "stale_batteries": 0,
+    "youngest_age_seconds": 100.0
+   },
+   {
+    "ages": {
+     "BATTERY 1": 400.0
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 50.5,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 400.0,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 400.0
+   },
+   {
+    "ages": {
+     "BATTERY 2": 20.0,
+     "BATTERY 3": 100.0
+    },
+    "fresh_batteries": 2,
+    "last_known_soc": 88.85,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 100.0,
+    "soc": 88.85,
+    "stale_batteries": 0,
+    "youngest_age_seconds": 20.0
+   },
+   {
+    "ages": {
+     "BATTERY 3": 400.0
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 50.5,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 400.0,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 400.0
+   },
+   {
+    "ages": {
+     "BATTERY 1": 121.0
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 77.7,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 121.0,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 121.0
+   },
+   {
+    "ages": {
+     "BATTERY 2": 400.0
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 77.7,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 400.0,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": 400.0
+   },
+   {
+    "ages": {
+     "BATTERY 1": 20.0
+    },
+    "fresh_batteries": 1,
+    "last_known_soc": 50.5,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": 20.0,
+    "soc": 50.5,
+    "stale_batteries": 0,
+    "youngest_age_seconds": 20.0
+   },
+   {
+    "ages": {},
+    "fresh_batteries": 0,
+    "last_known_soc": null,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 0,
+    "youngest_age_seconds": null
+   },
+   {
+    "ages": {
+     "BATTERY 1": null
+    },
+    "fresh_batteries": 0,
+    "last_known_soc": 100.0,
+    "max_age_seconds": 120.0,
+    "oldest_age_seconds": null,
+    "soc": null,
+    "stale_batteries": 1,
+    "youngest_age_seconds": null
+   }
+  ]
+ }
+}

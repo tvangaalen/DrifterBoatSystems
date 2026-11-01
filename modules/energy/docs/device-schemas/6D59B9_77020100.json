@@ -1,0 +1,487 @@
+{
+  "cached_at": "2026-08-27T18:03:01",
+  "known": {
+    "article": "77020100",
+    "name": "MSH Start",
+    "serial": "B505K0121",
+    "revision": "K",
+    "firmware": null,
+    "max_index": 46,
+    "family": "MasterShunt",
+    "role": "Start battery monitor"
+  },
+  "device": {
+    "address": 7166393,
+    "type_code": -1,
+    "instance": -1,
+    "event_counter": -1,
+    "article": "77020100",
+    "serial": "B505K0121",
+    "name": "MSH Start",
+    "revision": "K",
+    "firmware": null,
+    "field_max_index": 46
+  },
+  "fields": [
+    {
+      "index": 0,
+      "name": "State of Charge",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 100.0
+    },
+    {
+      "index": 1,
+      "name": "Battery",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 13.949000358581543
+    },
+    {
+      "index": 2,
+      "name": "Battery",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1500.0,
+      "current_value": 0.062373533844947815
+    },
+    {
+      "index": 3,
+      "name": "Cap. consumed",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 2000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 4,
+      "name": "Remaining",
+      "unit": "",
+      "viz_code": 7,
+      "viz": "Time",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": null
+    },
+    {
+      "index": 5,
+      "name": "Battery",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 120.0,
+      "current_value": 20.99916648864746
+    },
+    {
+      "index": 6,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 61.764705657958984
+    },
+    {
+      "index": 7,
+      "name": "I Avg",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 8,
+      "name": "Battery",
+      "unit": "°F",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 200.0,
+      "current_value": 69.83340454101562
+    },
+    {
+      "index": 9,
+      "name": "Time",
+      "unit": "",
+      "viz_code": 7,
+      "viz": "Time",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 66216.0
+    },
+    {
+      "index": 10,
+      "name": "Date",
+      "unit": "",
+      "viz_code": 8,
+      "viz": "Date",
+      "writable": false,
+      "maximum": 0.0,
+      "current_value": 843099.0
+    },
+    {
+      "index": 11,
+      "name": "MasterBus volt.",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 14.78796672821045
+    },
+    {
+      "index": 12,
+      "name": "Timer 1",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 13,
+      "name": "Timer 2",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 14,
+      "name": "Nominal voltage",
+      "unit": "V",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 15,
+      "name": "Battery type",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 4.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 16,
+      "name": "Battery capacity",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 10000.0,
+      "current_value": 95.0
+    },
+    {
+      "index": 17,
+      "name": "Language",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 11.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 18,
+      "name": "Qr",
+      "unit": "Ah",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 200000.0,
+      "current_value": 95.0
+    },
+    {
+      "index": 19,
+      "name": "QOut",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 200000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 20,
+      "name": "QIn",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 200000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 21,
+      "name": "Qp",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 200000.0,
+      "current_value": 144.68746948242188
+    },
+    {
+      "index": 22,
+      "name": "QtotalDeepDis",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 200000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 23,
+      "name": "Start test",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 24,
+      "name": "Complete",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 25,
+      "name": "Test stage",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 10.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 26,
+      "name": "Serial number",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": true,
+      "maximum": 10.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 27,
+      "name": "Serial number",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 10.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 28,
+      "name": "Test result",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 4.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 29,
+      "name": "Advanced",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 30,
+      "name": "Reverse",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 31,
+      "name": "Mode",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 32,
+      "name": "Slave",
+      "unit": "",
+      "viz_code": 9,
+      "viz": "DeviceList",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 33,
+      "name": "Slave",
+      "unit": "",
+      "viz_code": 9,
+      "viz": "DeviceList",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 34,
+      "name": "Slave",
+      "unit": "",
+      "viz_code": 9,
+      "viz": "DeviceList",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 35,
+      "name": "",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1500.0,
+      "current_value": 0.06236899271607399
+    },
+    {
+      "index": 36,
+      "name": "",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1500.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 37,
+      "name": "",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1500.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 38,
+      "name": "",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1500.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 39,
+      "name": "System",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 13.958639144897461
+    },
+    {
+      "index": 40,
+      "name": "",
+      "unit": "",
+      "viz_code": 7,
+      "viz": "Time",
+      "writable": false,
+      "maximum": 1000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 41,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 100.0
+    },
+    {
+      "index": 42,
+      "name": "HW ID",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 255.0,
+      "current_value": 255.0
+    },
+    {
+      "index": 43,
+      "name": "Save SOC",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 44,
+      "name": "Raw HMA Data",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 32767.0,
+      "current_value": 11.0
+    },
+    {
+      "index": 45,
+      "name": "Battery",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 1500.0,
+      "current_value": -0.05000000074505806
+    }
+  ]
+}

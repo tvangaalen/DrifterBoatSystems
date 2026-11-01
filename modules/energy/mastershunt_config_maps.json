@@ -1,0 +1,92 @@
+{
+  "house": {
+    "address": "6DB09B",
+    "capacity_field": 19,
+    "capacity_name": "Battery capacity",
+    "capacity_unit": "Ah",
+    "type_field": 20,
+    "type_name": "Battery type",
+    "type_options": [
+      {
+        "index": 0,
+        "string_id": 96,
+        "label": "Flooded"
+      },
+      {
+        "index": 1,
+        "string_id": 94,
+        "label": "Gel"
+      },
+      {
+        "index": 2,
+        "string_id": 95,
+        "label": "AGM"
+      },
+      {
+        "index": 3,
+        "string_id": 97,
+        "label": "MLI"
+      }
+    ]
+  },
+  "start": {
+    "address": "6D59B9",
+    "type_field": 15,
+    "type_name": "Battery type",
+    "type_options": [
+      {
+        "index": 0,
+        "string_id": 199,
+        "label": "Gel"
+      },
+      {
+        "index": 1,
+        "string_id": 200,
+        "label": "AGM"
+      },
+      {
+        "index": 2,
+        "string_id": 201,
+        "label": "Wet"
+      },
+      {
+        "index": 3,
+        "string_id": 202,
+        "label": "Li-ion"
+      }
+    ],
+    "capacity_field": 16,
+    "capacity_name": "Battery capacity",
+    "capacity_unit": "Ah"
+  },
+  "bow": {
+    "address": "6D9E99",
+    "capacity_field": 19,
+    "capacity_name": "Battery capacity",
+    "capacity_unit": "Ah",
+    "type_field": 20,
+    "type_name": "Battery type",
+    "type_options": [
+      {
+        "index": 0,
+        "string_id": 95,
+        "label": "Flooded"
+      },
+      {
+        "index": 1,
+        "string_id": 93,
+        "label": "Gel"
+      },
+      {
+        "index": 2,
+        "string_id": 94,
+        "label": "AGM"
+      },
+      {
+        "index": 3,
+        "string_id": 96,
+        "label": "MLI"
+      }
+    ]
+  }
+}

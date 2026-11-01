@@ -1,0 +1,517 @@
+{
+  "cached_at": "2026-08-27T18:02:21",
+  "known": {
+    "article": "45513000",
+    "name": "APR Alpha Pro MB",
+    "serial": "R202J0012",
+    "revision": "AA0400",
+    "firmware": null,
+    "max_index": 49,
+    "family": "Alpha Pro",
+    "role": "Alternator regulator"
+  },
+  "device": {
+    "address": 3316620,
+    "type_code": -1,
+    "instance": -1,
+    "event_counter": -1,
+    "article": "45513000",
+    "serial": "R202J0012",
+    "name": "APR Alpha Pro MB",
+    "revision": "AA0400",
+    "firmware": null,
+    "field_max_index": 49
+  },
+  "fields": [
+    {
+      "index": 0,
+      "name": "Ser.Nr",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": true,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 1,
+      "name": "Ser.Nr",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 9.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 2,
+      "name": "Finalize test",
+      "unit": "",
+      "viz_code": 5,
+      "viz": "CheckBox",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 3,
+      "name": "Device state",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 4,
+      "name": "Device state",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 5,
+      "name": "Charger state",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 6.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 6,
+      "name": "Battery voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 13.067811012268066
+    },
+    {
+      "index": 7,
+      "name": "Sense voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 8,
+      "name": "Field current",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 32.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 9,
+      "name": "Battery temp.",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 145.0,
+      "current_value": 20.0
+    },
+    {
+      "index": 10,
+      "name": "PCB temperature",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 145.0,
+      "current_value": 25.0
+    },
+    {
+      "index": 11,
+      "name": "Alternator shaft",
+      "unit": "rpm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 40000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 12,
+      "name": "Engine shaft",
+      "unit": "rpm",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 40000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 13,
+      "name": "MB voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 18.0,
+      "current_value": 15.351648330688477
+    },
+    {
+      "index": 14,
+      "name": "Alternator volt.",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 13.010101318359375
+    },
+    {
+      "index": 15,
+      "name": "System layout",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 4.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 16,
+      "name": "+D overload",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 17,
+      "name": "12V-MB-24V test",
+      "unit": "",
+      "viz_code": 4,
+      "viz": "Eventable",
+      "writable": false,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 18,
+      "name": "State",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 19,
+      "name": "State of charge",
+      "unit": "%",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 100.0,
+      "current_value": 59.300811767578125
+    },
+    {
+      "index": 20,
+      "name": "Battery voltage",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 36.0,
+      "current_value": 13.067811012268066
+    },
+    {
+      "index": 21,
+      "name": "Battery current",
+      "unit": "A",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 150.0,
+      "current_value": -7.874995231628418
+    },
+    {
+      "index": 22,
+      "name": "Battery temp.",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 145.0,
+      "current_value": 20.0
+    },
+    {
+      "index": 23,
+      "name": "Setpoint",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 33.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 24,
+      "name": "K-proportional",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 65535.0,
+      "current_value": 4500.0
+    },
+    {
+      "index": 25,
+      "name": "K-integral",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 65535.0,
+      "current_value": 45.0
+    },
+    {
+      "index": 26,
+      "name": "K-antiwindup",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 65535.0,
+      "current_value": 35.0
+    },
+    {
+      "index": 27,
+      "name": "Top DC",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 20000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 28,
+      "name": "Active DC",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 20000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 29,
+      "name": "Bottom DC",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 20000.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 30,
+      "name": "Cable loss",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 31,
+      "name": "Cable loss Filt.",
+      "unit": "V",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 3.0,
+      "current_value": 1.401298464324817e-45
+    },
+    {
+      "index": 32,
+      "name": "Alternator temp.",
+      "unit": "°C",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": false,
+      "maximum": 145.0,
+      "current_value": 19.0
+    },
+    {
+      "index": 33,
+      "name": "Bulk",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 34,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 35,
+      "name": "Absorption",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 36,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 37,
+      "name": "Float",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 1.0
+    },
+    {
+      "index": 38,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 6.48747547277176e-38
+    },
+    {
+      "index": 39,
+      "name": "Stop charge",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": true,
+      "maximum": 3.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 40,
+      "name": "",
+      "unit": "",
+      "viz_code": 1,
+      "viz": "Float",
+      "writable": true,
+      "maximum": 1.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 41,
+      "name": "Bootloader ver.",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 17.0,
+      "current_value": 6.0
+    },
+    {
+      "index": 42,
+      "name": "Version",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 17.0,
+      "current_value": 9.0
+    },
+    {
+      "index": 43,
+      "name": "Revision",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 17.0,
+      "current_value": 5.0
+    },
+    {
+      "index": 44,
+      "name": "Change ID",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 17.0,
+      "current_value": 10.0
+    },
+    {
+      "index": 45,
+      "name": "Build by",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 17.0,
+      "current_value": 11.0
+    },
+    {
+      "index": 46,
+      "name": "Build date",
+      "unit": "",
+      "viz_code": 6,
+      "viz": "Text",
+      "writable": false,
+      "maximum": 17.0,
+      "current_value": 12.0
+    },
+    {
+      "index": 47,
+      "name": "Mech. revision",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 26.0,
+      "current_value": 0.0
+    },
+    {
+      "index": 48,
+      "name": "Hw. revision",
+      "unit": "",
+      "viz_code": 3,
+      "viz": "DropDown",
+      "writable": false,
+      "maximum": 26.0,
+      "current_value": 0.0
+    }
+  ]
+}
