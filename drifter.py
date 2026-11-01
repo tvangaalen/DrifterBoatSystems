@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -52,8 +52,8 @@ ROUTES = {
     ],
     "washer": [  # VIOMI W1 controller
         ("GET", r"/api/(status|schedule|start-check)"),
+        ("GET", r"/api/diagnostics"),   # ?recheck=1 re-reads the config and re-runs the startup checks
         ("GET", r"/diagnostics/export"),
-        ("GET", r"/"),                  # startup diagnostics page: re-reads the config and re-runs the checks (HTML, not shown)
         ("POST", r"/api/(power/on|power/off|start|pause|schedule|schedule/cancel)"),
         ("POST", r"/api/(program|temperature|spin|rinses)/\d{1,3}"),
     ],

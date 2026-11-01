@@ -243,7 +243,16 @@ def make(name, obj):
                 if path in ("/api/status", "/api/start-check"): return self._j(200, obj.status())
                 if path == "/api/schedule": return self._j(200, {"ok": True, "schedule": obj.schedule})
                 if path == "/diagnostics/export": return self._j(200, {"recent_events": obj.events})
-                if path == "/": b = b"<html>diagnostics</html>"; self.send_response(200); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b); return
+                if path == "/api/diagnostics":
+                    if "recheck=1" in q: obj.events.insert(0, {"time": datetime.now().strftime("%H:%M:%S"), "event": "DIAGNOSTICS", "detail": "OK", "duration_ms": 812})
+                    checks = [{"name": n, "ok": ok, "detail": d, "severity": sev} for n, ok, d, sev in (
+                        ("Python runtime", True, "3.12 (mock)", "critical"), ("python-miio", True, "0.5.12", "critical"), ("Configuration file", True, "viomi_config.json", "critical"),
+                        ("Washer IP", True, "192.0.2.10", "critical"), ("MIoT token", True, "32 hex characters", "critical"), ("Windows PC network", True, "192.0.2.20", "critical"),
+                        ("UDP handshake", True, "192.0.2.10 · 31 ms", "critical"), ("Washer identity", True, "viomi.washer.w1 · firmware 1.0.0 · 140 ms", "critical"),
+                        ("MIoT communication", False, "mock warning: slow reply (2100 ms)", "warning"))]
+                    return self._j(200, {"checks": checks, "ok": True, "critical_count": 0, "warning_count": 1, "pc_ip": "192.0.2.20", "summary": "Ready with 1 warning(s)",
+                                         "summary_class": "warn", "controller_version": "3.8-v59 (mock)", "uptime": "2 h 14 min", "washer_ip": "192.0.2.10",
+                                         "expected_model": "viomi.washer.w1", "model": "viomi.washer.w1", "firmware": "1.0.0", "timings_ms": {"UDP handshake": 31}})
             self._j(404, {"error": "not found"})
 
         def do_POST(self):

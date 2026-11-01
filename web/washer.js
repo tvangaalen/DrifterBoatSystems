@@ -16,7 +16,7 @@
     40: {temperatures: [0, 30, 40, 60], spin: 700, rinses: [1, 2, 3, 4]},
   };
   const ACTIVE = [7, 9, 11, 25], IDLE = [0, 1, 17, 26];
-  let pending = false, editing = false, lastGood = null, lastSeen = null, events = [], evT = 0;
+  let pending = false, editing = false, lastGood = null, lastSeen = null, events = [], evT = 0, diag = null;
 
   function display(d) {
     if (Number(d.fault) === 3) return {text: "Close the door", cls: "warn"};
@@ -35,6 +35,7 @@
       if (D.visibleIs("washer") && Date.now() - evT > 15000) {
         evT = Date.now();
         try { events = (await D.api("washer", "/diagnostics/export")).recent_events || []; } catch (e) {}
+        try { diag = await D.api("washer", "/api/diagnostics"); } catch (e) {}
       }
     },
     badge() {
@@ -62,6 +63,12 @@
             <button class="btn" id="wStart" type="button">Start</button><button class="btn sec" id="wPause" type="button">Pause</button></div>
             <div class="btns eq" style="margin-top:8px"><button class="btn sec" id="wOn" type="button">Power on</button><button class="btn sec" id="wOff" type="button">Power off</button></div>
             <p class="hint" id="wMsg" style="margin:10px 2px 0"></p></div>
+          <div class="card"><div class="hd"><h3>Diagnostics</h3><span id="wDiagSum"></span>
+            <button class="iconbtn" type="button" id="wRefresh" aria-label="Read the washer now">${icon("refresh")}</button></div>
+            <div class="rows" id="wChecks"><div class="empty">Loading…</div></div>
+            <div class="stats" id="wInfo" style="margin:4px 16px 12px"></div>
+            <div class="btns" style="padding:0 16px 14px"><button class="btn sec sm" id="wDiag" type="button">${icon("refresh")} Recheck</button>
+              <a class="btn sec sm" href="api/washer/diagnostics/export" download="viomi_diagnostics.json">Export</a></div></div>
         </div>
         <div class="stack">
           <div class="card"><div class="hd"><h3>Program</h3></div><div class="rows">
@@ -77,7 +84,7 @@
             <div class="row" id="wSchedSum" hidden><span class="k" id="wSchedText"></span><button class="btn sec sm" id="wSchedCancel" type="button">Cancel</button></div></div></div>
         </div>
       </div>
-      <h2 class="sec">Events <span class="r"><button class="btn ghost sm" id="wDiag" type="button">${icon("refresh")} Run diagnostics</button></span></h2>
+      <h2 class="sec">Events</h2>
       <div class="card"><div class="log" id="wLog"></div></div>`;
       const now = new Date(Date.now() + 10 * 60000); now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5);
       $("wSchedTime").value = `${D.pad(now.getHours())}:${D.pad(now.getMinutes())}`;
@@ -96,10 +103,12 @@
       });
       $("wSched").addEventListener("click", schedule);
       $("wSchedCancel").addEventListener("click", e => cmd(e.target, "/api/schedule/cancel", "Schedule cleared", {}));
+      // Recheck re-reads the controller's config and re-creates the device connection (as the old diagnostics page did).
       $("wDiag").addEventListener("click", async e => {
-        await D.run(null, e.currentTarget, async () => { await fetch("api/washer/?stay=1", {cache: "no-store"}); evT = 0; }, "Diagnostics done").catch(() => {});
+        try { diag = await D.run(null, e.currentTarget, () => D.api("washer", "/api/diagnostics?recheck=1", undefined, {timeout: 45000}), r => r.summary); evT = 0; } catch (x) {}
         D.poll(m, true);
       });
+      $("wRefresh").addEventListener("click", e => { evT = 0; D.run(m, e.currentTarget, async () => {}, null).catch(() => {}); });
     },
     render() {
       const down = m.state.err && !offline() ? D.downCard(m) : "";
@@ -109,7 +118,7 @@
         $("wHero").className = "hero warn"; $("wHeroT").textContent = offline() ? "Washer offline" : "Not connected";
         $("wHeroS").textContent = offline() ? `${m.state.err.message}${lastSeen ? ` · last seen ${hm(lastSeen)}` : ""}` : "";
         for (const id of ["wStart", "wPause", "wOn", "wOff", "wSet", "wSched", "wProg", "wTemp", "wRinse"]) $(id).disabled = true;
-        renderEvents(); if (!d) { $("wStats").innerHTML = ""; return; }
+        renderEvents(); renderDiag(); if (!d) { $("wStats").innerHTML = ""; return; }
       } else {
         const s = display(d), st = Number(d.status);
         $("wHero").className = "hero " + s.cls; $("wHeroT").textContent = s.text + ([7, 9, 11, 25, 26].includes(st) && d.left_time != null ? ` · ${d.left_time} min left` : "");
@@ -122,7 +131,7 @@
       $("wSpin").textContent = d.spin == null ? "–" : `${d.spin} rpm`;
       if (!editing && !pending) { $("wProg").value = d.mode; fillCaps(d.mode, d.temperature, d.rinses); }
       renderSchedule(d.schedule);
-      renderEvents();
+      renderEvents(); renderDiag();
     },
   };
 
@@ -158,6 +167,17 @@
     edit.hidden = !["interrupted", "finished", "missed", "failed"].includes(sc.status);
     if (["started", "running"].includes(sc.status)) btn.hidden = true;
     if (["interrupted", "finished", "missed", "failed"].includes(sc.status)) btn.textContent = "Clear";
+  }
+  function renderDiag() {
+    if (!diag) { $("wChecks").innerHTML = `<div class="empty">${m.state.err && !offline() ? "Controller not reachable" : "Loading…"}</div>`; return; }
+    $("wDiagSum").innerHTML = `<span class="badge ${diag.summary_class === "ok" ? "ok" : diag.summary_class === "warn" ? "warn" : "bad"}">${esc(diag.summary)}</span>`;
+    const row = c => `<div class="row"><div class="k"><b>${c.ok ? '<span class="good">✓</span>' : c.severity === "warning" ? '<span class="warnc">!</span>' : '<span class="badc">×</span>'} ${esc(c.name)}</b>
+      <small>${esc(c.detail)}</small></div></div>`;
+    const checks = diag.checks || [], ok = checks.filter(c => c.ok), open = $("wChecks").querySelector("details[open]") != null;
+    $("wChecks").innerHTML = checks.filter(c => !c.ok).map(row).join("") +   // problems first and always visible; passed checks folded
+      (ok.length ? `<details class="row col" ${open ? "open" : ""}><summary class="k" style="cursor:pointer;min-height:28px"><span class="good">✓</span> ${ok.length} checks OK</summary>${ok.map(row).join("")}</details>` : "");
+    $("wInfo").innerHTML = [["Controller", diag.controller_version], ["Uptime", diag.uptime], ["Washer", diag.washer_ip], ["PC", diag.pc_ip], ["Model", diag.model || "unknown"], ["Firmware", diag.firmware || "unknown"]]
+      .map(([l, v]) => `<div class="stat"><div class="l">${l}</div><div class="s" style="color:var(--fg);font-weight:600;font-size:14px">${esc(v ?? "–")}</div></div>`).join("");
   }
   function renderEvents() {
     $("wLog").innerHTML = events.length ? events.map(e => `<div class="${/FAIL|BLOCKED|OFFLINE/.test(e.event + e.detail) ? "bad" : ""}"><time>${esc(e.time)}</time>

@@ -22,7 +22,7 @@ SUITES = [  # (name, folder, command)
     ("energy", ROOT / "modules/energy", [python("energy"), "-m", "tests.run_all"] + (["quick"] if QUICK else [])),
     ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch"]),
     ("guard", ROOT / "modules/guard", [python("guard"), "boatguard_self_test.py"]),
-    ("washer", ROOT / "modules/washer", [python("washer"), "-m", "py_compile", "viomi_web_english_v58.py"]),   # no test suite yet
+    ("washer", ROOT / "modules/washer", [python("washer"), "-m", "unittest", "test_controller"]),
 ]
 
 failed = []
