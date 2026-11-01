@@ -8,7 +8,7 @@
       "legacy": "C:\\Temp\\mastervoltproject", "dir": "modules\\energy",
       "command": ["cmd", "/c", "start_mastervolt_server.cmd"],
       "runtime": ["user_settings.json", "mastershunt_config_maps.json", "data", "backups", "logs", "reports"],
-      "code_runtime": ["certs"], "requires": ["certs\\ca-cert.pem", "certs\\ca-key.pem"],
+      "code_runtime": ["certs", "static\\products"], "requires": ["certs\\ca-cert.pem", "certs\\ca-key.pem"],
       "precheck": "energy"
     },
     "anchor": {
