@@ -2,6 +2,10 @@
 
 ## 0.6
 
+### 0.6.1 — 2026-11-01
+
+- `tools/run_module.py` runs the server inside a kill-on-close job object: stopping the scheduled task (BoatGuard, gateway) now stops the server too. Before, BoatGuard's server outlived `Stop-ScheduledTask` and, running in session 0, could not be stopped from the app (restart failed with "port 8095 still in use"). Test added (`tests/test_run_module.py`).
+
 ### 0.6.0 — 2026-11-01
 
 BoatGuard: everything is in Drifter now; BoatGuard has no page of its own.
