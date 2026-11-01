@@ -97,10 +97,13 @@ Step 'Stopping the old server'
 if ($cur.task) { Stop-ScheduledTask -TaskName $cur.task -ErrorAction SilentlyContinue }
 $procId = Listener $cur.port
 if ($procId) {
-    $parent = (Get-CimInstance Win32_Process -Filter "ProcessId=$procId").ParentProcessId
-    $pp = Get-CimInstance Win32_Process -Filter "ProcessId=$parent" -ErrorAction SilentlyContinue
-    taskkill /F /T /PID $procId | Out-Null
-    if ($pp -and $pp.Name -in 'cmd.exe', 'py.exe', 'pyw.exe') { taskkill /F /T /PID $parent 2>$null | Out-Null }   # its console window / launcher
+    # The server and the launchers directly above it (venv python.exe, py/pyw, the cmd of its console window, which
+    # would otherwise stay open at "pause"); stop at the first process that is not one of those.
+    $chain = @(); $id = $procId
+    while ($id) { $pr = Get-CimInstance Win32_Process -Filter "ProcessId=$id" -ErrorAction SilentlyContinue
+                  if (-not $pr -or ($chain.Count -and $pr.Name -notmatch '^(cmd|py|pyw|python[\d.]*|pythonw[\d.]*)\.exe$')) { break }
+                  $chain += $id; $id = $pr.ParentProcessId }
+    foreach ($x in $chain) { taskkill /F /PID $x 2>$null | Out-Null }
 }
 $deadline = (Get-Date).AddSeconds(20); while ((Listener $cur.port) -and (Get-Date) -lt $deadline) { Start-Sleep 1 }
 if (Listener $cur.port) { throw "Port $($cur.port) is still in use: stop it by hand, then run this again" }
