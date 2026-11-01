@@ -1,6 +1,6 @@
 # BoatGuard
 
-Arms an EZVIZ camera when your iPhone leaves the boat's Wi-Fi, and disarms it when the iPhone comes back. It runs on a Windows PC on board, has a small web page for the iPhone, and can send Pushover notifications.
+Arms an EZVIZ camera when your iPhone leaves the boat's Wi-Fi, and disarms it when the iPhone comes back. It runs on a Windows PC on board and can send Pushover notifications. Its page is the **BoatGuard** module of the Drifter app ([DrifterBoatSystems](https://github.com/tvangaalen/DrifterBoatSystems), `modules/guard`); since 2026-11-01 BoatGuard has no page of its own, only the API the app uses.
 
 - **Presence:** every 30 s, BoatGuard asks the UniFi router (read-only SSH, `wlanconfig <ap> list sta`) which devices are connected to Wi-Fi. If the phone's address (`phone_macs` in `config.json`) is missing for `away_after_s`, the camera is armed.
 - **Camera:** arming goes through the EZVIZ cloud (`pyezviz`), the same as the arm button in the EZVIZ app. Only a session token is stored (`ezviz_token.json`); your password is never saved.
@@ -28,24 +28,23 @@ To find the phone's address, run `wlanconfig <ap> list sta` on the router while 
 
 Logs are in `logs\boatguard.log` (24-hour timestamps). `state.json` remembers whether BoatGuard armed the camera, so a restart doesn't trigger it again.
 
-## Web page
+## The page (in Drifter) and the API
 
-While BoatGuard runs, it serves a page at **https://&lt;PC LAN address&gt;:8095/** (and https://127.0.0.1:8095/ on the PC itself). On the iPhone: open it in Safari → Share → *Add to Home Screen*. The page shows:
+While BoatGuard runs, it serves its API on **https://127.0.0.1:8095/** (localhost only: the Drifter gateway on the same PC uses it; `"web": {"host": "<private LAN address>"}` adds one LAN address on purpose). The BoatGuard page in Drifter shows:
 
 - the current status: whether the phone is on board, the countdown to arming, what EZVIZ reports for the camera (armed, battery), and the router check;
 - a **Monitoring** switch. *Off* means BoatGuard never arms the camera; it also disarms a camera BoatGuard armed. The setting is kept in `state.json` and survives a restart;
 - a **Test** button: arms the camera, reads the state back, disarms it and reads it back again (about 15 s). It's refused while BoatGuard has armed the camera for real;
 - **Settings:** arming delay (30–3600 s), router check interval (10–300 s, never longer than the delay), and per notification a sound and a priority. They're checked on the page and on the server, written to `config.json`, and apply at once;
-- a theme choice: Auto (follows the device), Light, Dark and Night (dim red on black, to keep your night vision). It's remembered per device;
 - the log, newest first.
 
 After BoatGuard arms or disarms the camera, the page shows the new state at once, marked "waiting for EZVIZ to confirm" until the EZVIZ cloud reports it too (the cloud can lag a few seconds).
 
-The page has no password: anyone on the boat Wi-Fi can open it. It only listens on the PC's private LAN address and localhost, never on a public address. The port is set in `config.json` under `"web": {"port": 8095}`.
+API: `GET /api/status`, `/api/log?n=`; `POST` (JSON only) `/api/enabled`, `/api/settings`, `/api/notify-test`, `/api/test`. There is no password; it never listens on a public address. The port is set in `config.json` under `"web": {"port": 8095}`.
 
 **HTTPS:** `setup_https.ps1 [-CaDir <folder>]` creates `certs\boatguard-cert.pem`/`-key.pem`, signed by a local CA (`ca-cert.pem` + `ca-key.pem` in that folder). The certificate covers localhost, the PC's name, 127.0.0.1 and its private IPv4 addresses, and is valid for 825 days (the most iOS accepts). The iPhone must trust that CA (install it as a profile, then Settings → General → About → Certificate Trust Settings). Run the script again if the PC's LAN address changes, then restart BoatGuard. Without a certificate the page falls back to plain HTTP, and the log says so.
 
-**Firewall:** to reach the page from the iPhone, right-click `add_firewall_rule.cmd` → *Run as administrator*. It allows TCP 8095 on the Private network profile, from the local subnet only.
+**Firewall:** not needed any more (localhost only); the iPhone reaches BoatGuard through Drifter. `add_firewall_rule.cmd` is only for a configured `web.host`.
 
 ## Notifications (Pushover)
 

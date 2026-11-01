@@ -1,28 +1,22 @@
-"""BoatGuard web page: status, log, monitoring on/off, settings and a camera test.
+"""BoatGuard API for the Drifter app: status, log, monitoring on/off, settings, notification tests and a camera test.
 
-Served over HTTPS on the boat LAN only (the PC's private address plus localhost), port `web.port` (default 8095).
+Since 2026-11-01 the page is in Drifter Boat Systems (the Guard module); this server has no page of its own and listens
+on localhost only, port `web.port` (default 8095). `web.host` may add one private LAN address on purpose.
 The certificate (certs/boatguard-*.pem, made by setup_https.ps1) is signed by the Mastervolt Local CA that the
 iPhone already trusts for YMS. Without it the page falls back to plain HTTP and says so in the log.
 Stdlib only: no extra packages.
 """
 from __future__ import annotations
 
-import ipaddress, json, logging, os, socket, ssl, threading, time
+import ipaddress, json, logging, os, ssl, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-PAGE = HERE / "static" / "index.html"
 DATA = Path(os.environ["DRIFTER_DATA"].strip()) / "guard" if os.environ.get("DRIFTER_DATA", "").strip() else HERE  # same rule as boatguard.py
 LOG = DATA / "logs" / "boatguard.log"
 CERT, KEY = HERE / "certs" / "boatguard-cert.pem", HERE / "certs" / "boatguard-key.pem"
 log = logging.getLogger("boatguard")
-
-
-def lan_address(router: str) -> str:
-    """The PC's own address on the router's network (no packet is sent: UDP connect only picks a route)."""
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.connect((router, 9)); return s.getsockname()[0]
 
 
 def tail(path: Path, n: int) -> list[str]:
@@ -52,7 +46,6 @@ def make_handler(guard):
 
         def do_GET(self):
             path, _, q = self.path.partition("?")
-            if path in ("/", "/index.html"): return self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
             if path == "/api/status":
                 return self._json(dict(guard.status(), camera=guard.camera_status(), last_test=last_test or None))
             if path == "/api/log":
@@ -92,20 +85,21 @@ def serve(guard, cfg: dict) -> None:
     w = cfg.get("web", {})
     if w.get("enabled", True) is False: return
     port = w.get("port", 8095)
-    hosts = {"127.0.0.1"}
-    try:
-        ip = w.get("host") or lan_address(cfg["router"]["host"])
-        if ipaddress.ip_address(ip).is_private: hosts.add(ip)  # never a public interface
-        else: log.warning("web page: %s is not a private address; serving on localhost only", ip)
-    except OSError as e: log.warning("web page: no LAN address (%s); serving on localhost only", e)
+    hosts = {"127.0.0.1"}                       # only the Drifter gateway on this PC uses the API
+    if w.get("host"):
+        try:
+            ip = ipaddress.ip_address(w["host"])
+            if ip.is_private and not ip.is_loopback and not ip.is_unspecified and not ip.is_link_local: hosts.add(str(ip))
+            else: log.warning("web: %s is not a private LAN address; serving on localhost only", ip)
+        except ValueError: log.warning("web: host %r is not an IP address; serving on localhost only", w["host"])
     try: ctx = tls_context()
-    except (OSError, ssl.SSLError) as e: ctx = None; log.error("web page: certificate not usable (%s)", e)
-    if ctx is None: log.warning("web page: no HTTPS certificate, serving plain HTTP (run setup_https.ps1)")
+    except (OSError, ssl.SSLError) as e: ctx = None; log.error("web: certificate not usable (%s)", e)
+    if ctx is None: log.warning("web: no HTTPS certificate, serving plain HTTP (run setup_https.ps1)")
     handler = make_handler(guard)
     for h in sorted(hosts):
         try: srv = ThreadingHTTPServer((h, port), handler)
-        except OSError as e: log.error("web page: cannot listen on %s:%d: %s", h, port, e); continue
+        except OSError as e: log.error("web: cannot listen on %s:%d: %s", h, port, e); continue
         # Handshake in the request thread, not in the accept loop, so one slow client can't block the page.
         if ctx: srv.socket = ctx.wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)
         threading.Thread(target=srv.serve_forever, daemon=True, name=f"web-{h}").start()
-        log.info("web page on %s://%s:%d/", "https" if ctx else "http", h, port)
+        log.info("web on %s://%s:%d/", "https" if ctx else "http", h, port)

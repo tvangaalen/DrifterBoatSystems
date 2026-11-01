@@ -5,7 +5,7 @@
   const PRIO_HINT = {"-2": "No alert: only listed in the Pushover app", "-1": "No sound or vibration", "0": "Sound per your iPhone settings",
     "1": "Sounds even during Pushover quiet hours"};
   const label = s => s === "" ? "App default" : s === "none" ? "Silent" : s === "vibrate" ? "Vibrate only" : s[0].toUpperCase() + s.slice(1);
-  let dirty = false, built = false, logLines = [], logT = 0;
+  let dirty = false, built = false, logLines = [], logT = 0, tickT = null;
 
   const m = {
     id: "guard", title: "BoatGuard", short: "Guard", icon: "guard", every: 4000, background: 8000,
@@ -116,6 +116,8 @@
       }
       validate();
       renderLog();
+      clearTimeout(tickT);                            // the arming countdown ticks every second while it runs
+      if (s.arm_at && D.visibleIs("guard")) tickT = setTimeout(() => D.visibleIs("guard") && m.render(), 1000);
     },
   };
 
@@ -135,8 +137,13 @@
         <button class="btn sec" type="button" id="gtry-${e}" aria-label="Send a test notification">▶</button></div>`;
       box.appendChild(row);
       $("gpri-" + e).addEventListener("change", () => prioHint(m.state.data, e));
-      $("gtry-" + e).addEventListener("click", ev => D.run(null, ev.currentTarget, () => D.api("guard", "/api/notify-test",
-        {event: e, sound: $("gsnd-" + e).value, priority: +$("gpri-" + e).value}), r => r.sent ? "Test notification sent" : "Not sent (see log)").catch(() => {}));
+      $("gtry-" + e).addEventListener("click", async ev => {
+        const btn = ev.currentTarget, p = +$("gpri-" + e).value;
+        if (p === 2 && !(await D.confirm({title: "Send an emergency test?", text: "An emergency notification repeats every minute until you acknowledge it in Pushover (a test stops after at most 2 minutes).",
+          ok: "Send test", cancel: "Cancel"}))) return;
+        D.run(null, btn, () => D.api("guard", "/api/notify-test", {event: e, sound: $("gsnd-" + e).value, priority: p}),
+          r => r.sent ? `Test sent (${label($("gsnd-" + e).value)}, ${s.priority_options[p]})` : "Not sent (see log)").catch(() => {});
+      });
     }
   }
   function validate() {

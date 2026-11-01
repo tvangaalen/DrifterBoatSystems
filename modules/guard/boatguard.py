@@ -7,7 +7,7 @@ Arming goes through the EZVIZ cloud (pyezviz), using a saved session token: the 
     py boatguard.py pushover  # one-time: Pushover keys for iPhone notifications (sends a test)
     py boatguard.py status    # show which Wi-Fi clients the router sees and whether the phone is aboard
     py boatguard.py arm|disarm  # manual test of the camera
-    py boatguard.py run       # the service loop, plus the web page (boatguard_web.py)
+    py boatguard.py run       # the service loop, plus the API for the Drifter app (boatguard_web.py)
 """
 from __future__ import annotations
 
@@ -174,7 +174,7 @@ class Guard:
         self.cam_status: dict | None = None
         self.cam_expect: tuple[bool, float] | None = None  # (armed, until): what BoatGuard just set, awaiting EZVIZ
         self.cam_gen = 0  # bumped on every change by BoatGuard, so an older status read is discarded
-        self.lock = threading.RLock()  # the poll loop and the web page's actions take turns
+        self.lock = threading.RLock()  # the poll loop and the app's actions take turns
         self.wake = threading.Event()
 
     def save(self) -> None:
@@ -263,14 +263,14 @@ class Guard:
             self.enabled = on
             if not on and self.present is False: self.unguarded_sent = True  # switched off while away: no warning needed
             self.save()
-            log.info("monitoring %s (web page)", "ON" if on else "OFF")
+            log.info("monitoring %s (app)", "ON" if on else "OFF")
             if not on and self.armed_by_us: self._apply(False, "Monitoring turned off on the BoatGuard page.")
 
     def test(self) -> dict:
         """Arm, read back, disarm, read back. Refused while BoatGuard has the camera armed for real."""
         with self.lock:
             if self.armed_by_us: return {"ok": False, "error": "camera is armed by BoatGuard (phone away); test not possible now"}
-            self.test_running = True; log.info("test started (web page)")
+            self.test_running = True; log.info("test started (app)")
             res = {"ok": False}
             try:
                 self.camera.set_armed(True); time.sleep(self.cfg.get("test_settle_s", 5))
@@ -290,10 +290,10 @@ class Guard:
             else: log.error("test FAILED: %s", res.get("error") or res)
             return res
 
-    SETTINGS = {"away_after_s": (30, 3600), "poll_s": (10, 300)}  # editable from the web page: (min, max) seconds
+    SETTINGS = {"away_after_s": (30, 3600), "poll_s": (10, 300)}  # editable from the app: (min, max) seconds
 
     def update_settings(self, new: dict, config_path: Path = CONFIG) -> dict:
-        """Validate and apply web-page settings, then write them to config.json (other keys untouched)."""
+        """Validate and apply settings from the app, then write them to config.json (other keys untouched)."""
         vals, sounds, prios = {}, None, None
         for k, v in new.items():
             if k == "sounds":
@@ -328,7 +328,7 @@ class Guard:
             desc += [f"sound {e} = {s or 'app default'}" for e, s in changed.get("sounds", {}).items() if old_sounds.get(e, "") != s]
             if "priorities" in changed:
                 desc += [f"priority {e} = {PRIORITIES[p]}" for e, p in eff(changed["priorities"]).items() if eff(old_prios)[e] != p]
-            log.info("settings changed (web page): %s", ", ".join(desc))
+            log.info("settings changed (app): %s", ", ".join(desc))
             self.wake.set()
         return merged
 
