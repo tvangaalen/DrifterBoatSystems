@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9
+
+### 0.9.0 — 2026-11-01
+
+Energy, part 2: history charts.
+
+- History tab: charts of the state of charge (total and per battery, from the remaining Ah), sources and DC consumers (stacked, opaque bands), battery current and cell spread, for 6 h, 24 h, 3 d, 7 d or 31 d, with a crosshair that shows the values (touch or mouse). The chart data is the server's drawing sample, refreshed once a minute.
+- Energy in this period: kWh and average W per source (incl. shore), per DC consumer, and charged/discharged per battery, from `/api/history/contributions` (the server's full-resolution totals; never added up in the browser).
+
 ## 0.8
 
 ### 0.8.0 — 2026-11-01

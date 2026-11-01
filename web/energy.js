@@ -24,7 +24,7 @@
     ["history_retention_days", "Keep history", "Lowering this deletes older history", 1, 365, 1, "days"],
     ["bms_popup_seconds", "BMS pop-up (classic page)", "Only used by the classic Energy page", 1, 60, 1, "s"],
   ];
-  let view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null;
+  let view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
   const busy = new Set();
   const on = v => v != null && +v >= .5;
 
@@ -38,6 +38,12 @@
       }
       if (D.visibleIs("power") && view === "history") {
         jobs.push(D.api("power", "/api/history/status").then(d => hstat = d).catch(() => {}), D.api("power", "/api/reports/battery-health").then(d => report = d).catch(() => {}));
+        if (chartFor !== hours || Date.now() - chartT > 60000) {      // the chart sample changes slowly: once a minute is plenty
+          chartT = Date.now(); chartFor = hours;
+          const end = new Date(), start = new Date(+end - hours * 3600e3);
+          jobs.push(D.api("power", `/api/history/chart-data?hours=${hours}`, undefined, {timeout: 45000}).then(d => chart = d).catch(e => D.toast(e.message, true)),
+                    D.api("power", `/api/history/contributions?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, undefined, {timeout: 45000}).then(d => contrib = d).catch(() => {}));
+        }
       }
       if (D.visibleIs("power") && view === "settings" && !setDirty) jobs.push(D.api("power", "/api/settings").then(d => settings = d).catch(() => {}));
       await Promise.all(jobs);
@@ -140,7 +146,7 @@
             ${dev("solar", "Solar", "SCM solar charger")}${dev("charger_start", "Charger Start", "Mass charger to start battery")}${dev("charger_bow", "Charger Bowthruster", "Mass charger to bow battery")}
             ${dev("engine_ecu", "Engine ECU", "Switching off stops a running engine")}
           </div></div>
-          <p class="hint" style="margin:0 4px">History charts are on the <a href="#system">classic Energy page</a> for now; reports are under History, Bluetooth diagnostics and SOC calibration under Batteries.</p>
+          <p class="hint" style="margin:0 4px">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
         </div>
       </div>`;
   }
@@ -235,11 +241,130 @@
     }
     flush(); return out.join("");
   }
+  // ---- history charts. The server sends a sample of the history for drawing only (about 2,500 points); totals always
+  // come from /api/history/contributions, which integrates the full-resolution data. Stacked bands are opaque areas.
+  const SRC_META = [["charger_house", "Charger House", "#a78bfa"], ["alternator", "Alternator", "#f4a631"], ["solar", "Solar", "#65d92f"]];
+  const LOAD_META = [["inverter", "Inverter", "#a78bfa"], ["charger_start", "Charger Start", "#65d92f"], ["charger_bow", "Charger Bow", "#34d399"],
+    ["engine_ecu", "Engine ECU", "#f4a631"], ["alternator_field", "Alt. field", "#fb7185"], ["other_dc", "Other DC", "#60a5fa"]];
+  const BAT_META = [["total", "Total", "#11c5c8"], ["BATTERY 1", "Battery 1", "#f4a631"], ["BATTERY 2", "Battery 2", "#65d92f"], ["BATTERY 3", "Battery 3", "#ff6262"]];
+  const RANGES = [[6, "6 h"], [24, "24 h"], [72, "3 d"], [168, "7 d"], [744, "31 d"]];
+  const night = () => document.documentElement.dataset.theme === "night";
+  const colorOf = (c, i) => night() ? `rgba(210,50,35,${[1, .75, .5, .35, .22, .14][i % 6]})` : c;   // night: shades of red only
+  function seriesFrom(c) {
+    const dash = (c.dashboard || []).map(r => ({t: Date.parse(r.captured_at), sp: r.source_power || [], lp: r.load_power || [], shore: r.shore_power})).sort((a, b) => a.t - b.t);
+    const cap = ((m.state.data || {}).storage || {}).house || {}, bankAh = cap.capacity || 960, perAh = bankAh / 3;
+    const byBat = {}; for (const r of c.bms || []) (byBat[r.battery] = byBat[r.battery] || []).push({t: Date.parse(r.captured_at), cur: r.current, rem: r.remaining, spread: r.cell_spread});
+    for (const k in byBat) byBat[k].sort((a, b) => a.t - b.t);
+    // total SOC: the three batteries' remaining Ah at each battery-1 sample time (nearest earlier reading of the others)
+    const tot = (byBat["BATTERY 1"] || []).map(p => { let sum = 0, n = 0;
+      for (const k of ["BATTERY 1", "BATTERY 2", "BATTERY 3"]) { const arr = byBat[k] || []; let j = arr.length - 1; while (j > 0 && arr[j].t > p.t) j--; if (arr[j] && arr[j].rem != null) { sum += arr[j].rem; n++; } }
+      return {t: p.t, v: n === 3 ? sum / bankAh * 100 : null}; });
+    return {dash, byBat, tot, perAh};
+  }
+  function drawChart(canvas, opt) {      // opt: {t0, t1, stacked, unit, series:[{label, color, pts:[{t, v}]}]}
+    const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight;
+    if (!W) return;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const g = canvas.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    const css = n => getComputedStyle(document.body).getPropertyValue(n).trim(), muted = css("--muted"), line = css("--line");
+    const L = 44, R = W - 8, T = 8, B = H - 22;
+    let lo = Infinity, hi = -Infinity;
+    if (opt.stacked) {     // stack on a shared time axis: the first series' timestamps
+      const base = opt.series[0] ? opt.series[0].pts.map(p => p.t) : [];
+      opt.stackTops = base.map((t, i) => opt.series.reduce((acc, s) => acc + Math.max(0, (s.pts[i] || {}).v || 0), 0));
+      lo = 0; hi = Math.max(1, ...opt.stackTops);
+    } else for (const s of opt.series) for (const p of s.pts) if (p.v != null) { lo = Math.min(lo, p.v); hi = Math.max(hi, p.v); }
+    if (!isFinite(lo)) { lo = 0; hi = 1; }
+    if (opt.zero) lo = Math.min(lo, 0);
+    if (hi - lo < 1e-6) { hi += 1; lo -= opt.zero ? 0 : 1; }
+    const pad = (hi - lo) * .06; hi += pad; if (!opt.stacked && lo !== 0) lo -= pad;
+    const X = t => L + (t - opt.t0) / (opt.t1 - opt.t0) * (R - L), Y = v => B - (v - lo) / (hi - lo) * (B - T);
+    g.font = "11px -apple-system, Segoe UI, sans-serif"; g.fillStyle = muted; g.strokeStyle = line; g.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, y = Y(v); g.beginPath(); g.moveTo(L, y); g.lineTo(R, y); g.stroke();
+      g.textAlign = "right"; g.fillText(Math.abs(hi - lo) >= 20 ? Math.round(v) : v.toFixed(1), L - 6, y + 4); }
+    const span = opt.t1 - opt.t0, step = [3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3, 24 * 3600e3, 48 * 3600e3, 7 * 864e5].find(s => span / s <= 6) || 7 * 864e5;
+    g.textAlign = "center";
+    for (let t = Math.ceil(opt.t0 / step) * step; t <= opt.t1; t += step) { const d = new Date(t), x = X(t);
+      const lab = step >= 864e5 ? `${D.pad(d.getDate())}-${D.pad(d.getMonth() + 1)}` : `${D.pad(d.getHours())}:00`;
+      g.beginPath(); g.moveTo(x, B); g.lineTo(x, B + 4); g.stroke(); g.fillText(lab, x, H - 6); }
+    if (opt.zero && lo < 0) { g.strokeStyle = muted; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(R, Y(0)); g.stroke(); }
+    g.save(); g.beginPath(); g.rect(L, T, R - L, B - T); g.clip();
+    if (opt.stacked) {
+      const base = opt.series[0] ? opt.series[0].pts : [], acc = base.map(() => 0);
+      opt.series.forEach((s, k) => {     // opaque bands, drawn once each: no stripes
+        g.fillStyle = colorOf(s.color, k); g.beginPath();
+        base.forEach((p, i) => { const top = acc[i] + Math.max(0, (s.pts[i] || {}).v || 0); g[i ? "lineTo" : "moveTo"](X(p.t), Y(top)); });
+        for (let i = base.length - 1; i >= 0; i--) g.lineTo(X(base[i].t), Y(acc[i]));
+        g.closePath(); g.fill();
+        base.forEach((p, i) => acc[i] += Math.max(0, (s.pts[i] || {}).v || 0));
+      });
+    } else opt.series.forEach((s, k) => {
+      g.strokeStyle = colorOf(s.color, k); g.lineWidth = s.width || 1.6; g.beginPath(); let on = false, last = null;
+      for (const p of s.pts) { if (p.v == null || (last && p.t - last > Math.max(600e3, span / 150))) { on = false; } if (p.v == null) { last = null; continue; }
+        g[on ? "lineTo" : "moveTo"](X(p.t), Y(p.v)); on = true; last = p.t; }
+      g.stroke();
+    });
+    g.restore();
+    canvas._map = {X, Y, L, R, T, B, opt};
+  }
+  function crosshair(canvas, tip, ev) {      // the values at the touched time
+    const mp = canvas._map; if (!mp) return;
+    const r = canvas.getBoundingClientRect(), x = Math.max(mp.L, Math.min(mp.R, ev.clientX - r.left));
+    const t = mp.opt.t0 + (x - mp.L) / (mp.R - mp.L) * (mp.opt.t1 - mp.opt.t0);
+    const near = pts => { let lo = 0, hi = pts.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (pts[mid].t < t) lo = mid + 1; else hi = mid; } return pts[lo]; };
+    const rows = mp.opt.series.map((s, k) => { const p = s.pts.length ? near(s.pts) : null;
+      return `<span><i style="background:${colorOf(s.color, k)}"></i>${esc(s.label)} <b>${p && p.v != null ? num(p.v, Math.abs(p.v) < 20 ? 1 : 0) : "–"}</b></span>`; }).join("");
+    tip.innerHTML = `<b>${D.dayTime(t)}</b> ${mp.opt.unit ? `<small>${esc(mp.opt.unit)}</small>` : ""}<div class="tiprows">${rows}</div>`;
+    tip.hidden = false; tip.style.left = Math.min(r.width - tip.offsetWidth - 4, Math.max(4, x - tip.offsetWidth / 2)) + "px";
+    const cur = canvas.parentElement.querySelector(".cross"); cur.style.left = x + "px"; cur.hidden = false;
+  }
+  function renderCharts() {
+    const box = $("eCharts"); if (!box) return;
+    document.querySelectorAll("#eRange button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.hours === hours));
+    if (!chart) { box.innerHTML = `<div class="empty">Loading history…</div>`; delete box.dataset.built; if ($("eContrib")) $("eContrib").innerHTML = `<div class="empty">Loading…</div>`; return; }
+    const S = seriesFrom(chart), t1 = Date.parse(chart.latest), t0 = Date.parse(chart.cutoff);
+    const defs = [
+      ["eChSoc", "State of charge", "%", {series: [{label: "Total", color: BAT_META[0][2], width: 2.4, pts: S.tot},
+        ...BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.rem != null ? p.rem / S.perAh * 100 : null}))}))]}],
+      ["eChSrc", "Sources", "W", {stacked: true, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
+      ["eChLoad", "DC consumers", "W", {stacked: true, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
+      ["eChCur", "Battery current", "A", {zero: true, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
+      ["eChSpread", "Cell spread", "mV", {series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.spread}))}))}],
+    ];
+    if (!box.dataset.built) {
+      box.dataset.built = "1";
+      box.innerHTML = defs.map(([id, title, unit]) => `<div class="card chartcard"><div class="hd"><h3>${title}</h3><span class="muted">${unit}</span></div>
+        <div class="legend" id="${id}Leg"></div><div class="chartwrap no-swipe"><canvas id="${id}"></canvas><div class="cross" hidden></div><div class="charttip" hidden></div></div></div>`).join("");
+      for (const [id] of defs) { const cv = $(id), tip = cv.parentElement.querySelector(".charttip");
+        const move = e => crosshair(cv, tip, e), leave = () => { tip.hidden = true; cv.parentElement.querySelector(".cross").hidden = true; };
+        cv.addEventListener("pointermove", move); cv.addEventListener("pointerdown", move); cv.addEventListener("pointerleave", leave); }
+    }
+    for (const [id, , unit, o] of defs) {
+      $(id + "Leg").innerHTML = o.series.map((s, k) => `<span><i style="background:${colorOf(s.color, k)}"></i>${esc(s.label)}</span>`).join("");
+      drawChart($(id), {...o, unit, t0, t1});
+    }
+    const c = contrib;
+    const bars = (items, unitLabel) => { const max = Math.max(1, ...items.map(x => x.wh));
+      return items.map(x => `<div class="ebar"><span class="el">${esc(x.label)}</span><span class="eb"><i style="width:${(x.wh / max * 100).toFixed(1)}%;background:${colorOf(x.color, x.i)}"></i></span><span class="ev">${(x.wh / 1000).toFixed(2)} kWh${x.avg != null ? `<small>${num(x.avg, 0)} W avg</small>` : ""}</span></div>`).join(""); };
+    $("eContrib").innerHTML = !c ? `<div class="empty">Loading…</div>` : `
+      <div class="ebars"><h4>Sources</h4>${bars([...c.sources.map(x => { const i = SRC_META.findIndex(m => m[0] === x.key); return {label: (SRC_META[i] || [, x.key])[1], color: (SRC_META[i] || [, , "#888"])[2], i, wh: x.wh, avg: x.avg_w}; }),
+        ...(c.shore ? [{label: "Shore (AC in)", color: "#0b62c4", i: 4, wh: c.shore.wh, avg: c.shore.avg_w}] : [])])}</div>
+      <div class="ebars"><h4>DC consumers</h4>${bars(c.consumers.map(x => { const i = LOAD_META.findIndex(m => m[0] === x.key); return {label: (LOAD_META[i] || [, x.key])[1], color: (LOAD_META[i] || [, , "#888"])[2], i, wh: x.wh, avg: x.avg_w}; }))}</div>
+      <div class="ebars"><h4>Batteries</h4>${(c.batteries || []).map((x, i) => `<div class="ebar"><span class="el">${esc(x.key[0] + x.key.slice(1).toLowerCase())}</span><span class="ev" style="flex:1;text-align:left">charged ${(x.charge_wh / 1000).toFixed(2)} kWh · discharged ${(x.discharge_wh / 1000).toFixed(2)} kWh</span></div>`).join("")}</div>
+      <p class="hint" style="margin:6px 0 0">${D.dayTime(Date.parse(c.start))} – ${D.dayTime(Date.parse(c.end))} · from the full-resolution history on the server${c.sources_covered_seconds != null && c.span_seconds ? ` · data for ${Math.round(c.sources_covered_seconds / c.span_seconds * 100)} % of the time` : ""}</p>`;
+  }
+  window.addEventListener("resize", () => { if (view === "history" && D.visibleIs("power")) renderCharts(); });
+  window.addEventListener("drifter-theme", () => { if (view === "history") renderCharts(); });
+
   function renderHistory() {
     const box = $("eHist"), r = report || {}, h = hstat || {}, MB = v => v == null ? "–" : v >= 1e9 ? (v / 1e9).toFixed(2) + " GB" : (v / 1e6).toFixed(0) + " MB";
     if (!box.dataset.built) {
       box.dataset.built = "1";
-      box.innerHTML = `<div class="grid g2l"><div class="stack">
+      box.innerHTML = `<div class="seg" id="eRange" style="max-width:460px;margin-bottom:12px">${RANGES.map(([h, l]) => `<button type="button" data-hours="${h}" aria-pressed="${h === hours}">${l}</button>`).join("")}</div>
+        <div class="grid g2 charts" id="eCharts"></div>
+        <h2 class="sec">Energy in this period</h2><div class="card pad" id="eContrib"></div>
+        <h2 class="sec">Reports and data</h2>
+        <div class="grid g2l"><div class="stack">
           <div class="card"><div class="hd">${icon("batt")}<h3>Battery health report</h3></div><div class="rows">
             <div class="row"><div class="k"><small>Analyses the stored battery history: cell connection resistance, current sharing, alarms, cell balance, balancers and usage. Runs in a separate low-priority process on the boat PC.</small></div></div>
             <div class="row"><span class="k">Days to analyse</span><div style="display:flex;gap:8px;align-items:center"><label class="numf"><input class="field" type="number" id="eRepDays" min="1" max="365" step="1" value="7" inputmode="numeric"><span class="u">days</span></label>
@@ -248,7 +373,7 @@
             <div class="mdreport" id="eRepOut" hidden></div></div></div>
         <div class="stack"><div class="card"><div class="hd"><h3>History database</h3></div><div class="rows" id="eHStat"></div></div>
           <div class="card pad"><a class="btn sec" href="api/power/manual" target="_blank" rel="noopener">${icon("ext")} Open the manual</a>
-            <p class="hint" style="margin:8px 0 0">The complete MasterVolt user manual, in a new window. History charts are on the classic Energy page for now.</p></div></div></div>`;
+            <p class="hint" style="margin:8px 0 0">The complete MasterVolt user manual, in a new window.</p></div></div></div>`;
     }
     const running = r.state === "running";
     $("eRepRun").disabled = running;
@@ -263,6 +388,7 @@
       <div class="row"><span class="k">File size</span><span class="v">${MB(h.size_bytes)}<small>at full retention ~${MB(h.projected_bytes_at_retention)} · reusable ${MB(h.reusable_bytes)}</small></span></div>
       <div class="row"><span class="k">Free disk</span><span class="v">${MB(h.disk_free_bytes)}</span></div>` : `<div class="empty">Loading…</div>`;
     clearTimeout(reportT); if (running && D.visibleIs("power")) reportT = setTimeout(() => D.poll(m, true), 3000);
+    renderCharts();
   }
 
   // ------------------------------------------------------------------ Settings
@@ -354,6 +480,7 @@
       const a = limitDraft; await control("ec-limit", () => D.api("power", "/api/control/ac-limit", {amps: a}), `AC limit ${a} A`); limitDraft = null; m.render(); return;
     }
     if (b.dataset.soc) return setSoc(b.dataset.soc, b);
+    if (b.dataset.hours) { hours = +b.dataset.hours; chart = null; contrib = null; renderCharts(); D.poll(m, true); return; }
     if (b.id === "eRepRun") {
       const days = +$("eRepDays").value;
       if (!Number.isInteger(days) || days < 1 || days > 365) return D.toast("Days: a whole number from 1 to 365", true);

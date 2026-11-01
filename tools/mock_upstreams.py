@@ -79,6 +79,32 @@ class Power:
                                                       "cells_mv": [3331, 3335, 3329 + n, 3333], "cell_delta_mv": 6 + n, "average_cell_mv": 3332, "temperatures_c": [22],
                                                       "alarms": [], "valid_frame_count": 6}} for n in (1, 2, 3)}}
 
+    def chart_data(self, hours):
+        """A made-up history sample in the shape of MasterVolt 2.x /api/history/chart-data."""
+        now = time.time(); n = 400; dash, bms = [], []
+        for i in range(n):
+            t = now - hours * 3600 * (1 - i / (n - 1)); day = math.sin((t % 86400) / 86400 * 2 * math.pi - math.pi / 2)
+            solar = max(0.0, 380 * day); alt = 600.0 if 0.30 < (i / n) % 0.5 < 0.36 else 0.0; ch = 0.0 if alt else (120.0 if (i // 40) % 3 == 0 else 0.0)
+            iso = datetime.fromtimestamp(t).astimezone().isoformat()
+            dash.append({"id": i, "captured_at": iso, "source_power": [ch, alt, solar], "source_current": [ch / 13.3, alt / 13.9, solar / 13.3],
+                         "load_power": [0.0, 6.0, 0.0, 4.2, 9.0 if alt else 0.0, 80 + 40 * math.sin(i / 7)], "shore_power": ch * 1.1, "shore_connected": ch > 0})
+            for b in (1, 2, 3):
+                cur = (solar + alt + ch - 140) / 13.3 / 3 + (b - 2) * 0.4
+                bms.append({"id": i * 3 + b, "captured_at": iso, "battery": f"BATTERY {b}", "voltage": 13.3, "current": round(cur, 1),
+                            "remaining": 240 + 50 * math.sin(i / 60) + b * 3, "cell_spread": 8 + b * 3 + (6 if alt else 0)})
+        cut = datetime.fromtimestamp(now - hours * 3600).astimezone().isoformat()
+        return {"bms": bms, "dashboard": dash, "bms_count": len(bms), "dashboard_count": n, "latest": datetime.fromtimestamp(now).astimezone().isoformat(),
+                "cutoff": cut, "zoom_hours": hours, "max_hours": 744.0, "server_cached": True}
+
+    def contributions(self, start, end):
+        span = max(1.0, (datetime.fromisoformat(end) - datetime.fromisoformat(start)).total_seconds()); k = span / 86400
+        src = [("charger_house", 1164.2), ("alternator", 3417.4), ("solar", 1520.4)]; loads = [("inverter", 0.0), ("charger_start", 90.0), ("charger_bow", 103.4),
+                                                                                               ("engine_ecu", 327.6), ("alternator_field", 152.9), ("other_dc", 2624.5)]
+        e = lambda key, wh: {"key": key, "wh": wh * k, "avg_w": wh / 24}
+        return {"start": start, "end": end, "span_seconds": span, "sources": [e(*x) for x in src], "shore": e("shore", 1978.3), "sources_covered_seconds": span * 0.97,
+                "consumers": [e(*x) for x in loads], "consumers_covered_seconds": span * 0.97,
+                "batteries": [{"key": f"BATTERY {b}", "charge_wh": 950 * k, "discharge_wh": 578 * k, "covered_seconds": span} for b in (1, 2, 3)]}
+
     def coordinator(self):
         return {"active": None, "active_for_seconds": None, "waiting": {"bms_control": 0, "bms_manual_read": 0, "bms": 0, "balancer": 0}, "connected_bms": 3,
                 "refreshed_bms": 3, "bms_stable_seconds": 8600, "balancers_allowed": True, "degraded": False, "forced_releases": 0}
@@ -270,6 +296,11 @@ def make(name, obj):
             path, _, q = self.path.partition("?")
             if name == "power":
                 if path == "/manual": b = b"<html><body><h1>MasterVolt manual (mock)</h1></body></html>"; self.send_response(200); self.send_header("Content-Type", "text/html"); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b); return
+                qs = dict(x.split("=", 1) for x in q.split("&") if "=" in x)
+                if path == "/api/history/chart-data": return self._j(200, obj.chart_data(float(qs.get("hours", 24))))
+                if path == "/api/history/contributions":
+                    from urllib.parse import unquote
+                    return self._j(200, obj.contributions(unquote(qs["start"]).replace("Z", "+00:00"), unquote(qs["end"]).replace("Z", "+00:00")))
                 r = {"/api/energy": obj.energy, "/api/bms": obj.bms, "/api/balancers": obj.balancers, "/api/settings": lambda: obj.settings,
                      "/api/bluetooth-coordinator": obj.coordinator, "/api/bluetooth-events": obj.ble_events, "/api/history/status": obj.history_status,
                      "/api/reports/battery-health": lambda: obj.report, "/api/version": lambda: {"version": "2.1.2 (mock)"}}.get(path)
