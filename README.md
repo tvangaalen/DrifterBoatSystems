@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.3.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.3.1 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
@@ -68,7 +68,7 @@ Then open **https://192.168.1.166:8100/** on the iPhone or iPad → Share → *A
 
 ## Moving the servers to `C:\Drifter` (one module at a time)
 
-Today each server still runs from its old folder. The move is prepared, not done:
+Since 2026-11-01 every server runs from `C:\Drifter`, with its runtime files in `C:\DrifterData`. How the move works (and how to undo it per module):
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\prepare_live.ps1          # clone C:\Drifter, Python environments, C:\DrifterData (nothing is stopped)

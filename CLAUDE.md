@@ -8,8 +8,17 @@ the four module servers in `modules/` — `energy` (MasterVolt YMS), `anchor` (O
 
 **Before touching a module, read its own `modules/<name>/CLAUDE.md`. Its hard rules (hardware safety, read-only on the
 Orca Core, never guessing MasterBus fields, ECU safety, privacy) apply in full.** Only its sections about version
-control, GitHub remotes, the Google Drive copy and the `.gitrepos` folder are historical: version control is this
-repository (below). Deploy instructions in a module CLAUDE.md stay valid until that module has moved to `C:\Drifter`.
+control, GitHub remotes, the Google Drive copy, the `.gitrepos` folder, the live folder `C:\Temp\mastervoltproject` and
+deploying by copying files are historical: version control is this repository and every module runs from `C:\Drifter`
+(see "Live" below). Their pre-restart checks (e.g. MasterVolt: `/api/bms` not busy, Float not latched) still apply.
+
+## Live (since 2026-11-01)
+
+- All five (energy, anchor, guard, washer, gateway) run from the clone `C:\Drifter`, runtime files in `C:\DrifterData\<module>` (gateway: `config.json`, `certs`, `logs` in `C:\Drifter`). `C:\DrifterData\locations.json` says `drifter` for each.
+- **Deploying** = commit and push here, then `git pull --ff-only` in `C:\Drifter`, then restart only the module that changed (stop it, then `C:\Drifter\start_all.ps1 -Only <module> -NoWait`; guard and gateway: `Stop-ScheduledTask`/`Start-ScheduledTask`). Never edit files in `C:\Drifter` directly. A web-only gateway change needs no restart (files are read per request).
+- Started outside any tool session: energy and anchor as minimised consoles under WmiPrvSE (`start_all.ps1`), washer hidden through `tools\run_module.py`, guard and gateway by their scheduled tasks (`BoatGuard` runs whether logged on or not, `DrifterBoatSystems` at logon), both running `tools\run_module.py`.
+- The old folders (`C:\Temp\mastervoltproject`, `..\OrcaCore2`, `..\BoatGuard`, `..\viomi-w1-controller`) are no longer used but kept for `tools\switch_module.ps1 <module> -Back`. Do not delete them without the user's go-ahead.
+- The Mastervolt Local CA now also lives in `C:\Drifter\modules\energy\certs` (identical copy); the anchor and BoatGuard certificate scripts still read it from `C:\Temp\mastervoltproject\certs` by default.
 
 ## Hard rules (app and gateway)
 
@@ -58,7 +67,7 @@ A module: follow that module's own release steps (version places, its CHANGELOG)
 ## Migration (plan agreed 2026-11-01)
 
 1. **Done:** one repository with full history and tags (phase 0–1a). Live servers unchanged.
-2. **Prepared (1b):** every module keeps its runtime files in `DRIFTER_DATA\<module>` when `DRIFTER_DATA` is set (unset = next to the code, as before; the anchor watch gets them as command-line options). `modules.json` describes each module (port, old folder, new folder, command, runtime files); `C:\DrifterData\locations.json` (not in git) records per module whether it runs from its old folder (`legacy`, the default) or from Drifter. `tools/prepare_live.ps1` clones `C:\Drifter` and builds the venvs; `tools/switch_module.ps1 <module> [-Back]` (run from `C:\Drifter`) moves one module: pre-checks, copies the runtime files (never deletes them in the old folder), stops the old server, starts the new one. **A switch restarts that module: only with the user's go-ahead, one module at a time.** `start_all.ps1` and `tools/run_module.py` start each module from its recorded location, through Win32_Process Create (outside any tool session's process tree; MasterVolt and the anchor watch in a minimised console). Never set `DRIFTER_DATA` machine- or user-wide: a legacy server restarted with it would look for its files in `C:\DrifterData`.
+2. **Done (1b), all modules moved on 2026-11-01:** every module keeps its runtime files in `DRIFTER_DATA\<module>` when `DRIFTER_DATA` is set (unset = next to the code, as before; the anchor watch gets them as command-line options). `modules.json` describes each module (port, old folder, new folder, command, runtime files); `C:\DrifterData\locations.json` (not in git) records per module whether it runs from its old folder (`legacy`, the default) or from Drifter. `tools/prepare_live.ps1` clones `C:\Drifter` and builds the venvs; `tools/switch_module.ps1 <module> [-Back]` (run from `C:\Drifter`) moves one module: pre-checks, copies the runtime files (never deletes them in the old folder), stops the old server, starts the new one. **A switch restarts that module: only with the user's go-ahead, one module at a time.** `start_all.ps1` and `tools/run_module.py` start each module from its recorded location, through Win32_Process Create (outside any tool session's process tree; MasterVolt and the anchor watch in a minimised console). Never set `DRIFTER_DATA` machine- or user-wide: a legacy server restarted with it would look for its files in `C:\DrifterData`.
    Until a module is switched, it runs from its old folder (`C:\Temp\mastervoltproject`, `..\OrcaCore2`, `..\BoatGuard`, `..\viomi-w1-controller`) and a change made here reaches live only by deploying it there (each module CLAUDE.md describes how). After the switch, deploying = `git pull` in `C:\Drifter` plus restarting that module.
    **MasterVolt's certificate script creates a new CA when `certs\ca-*.pem` are missing**, which would force every iPhone/iPad to trust a new CA: the switch copies `certs` and refuses to start energy without the CA.
 3. Supervisor in `drifter.py` replaces the scheduled tasks and `start_all.ps1`.

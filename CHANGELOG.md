@@ -2,6 +2,13 @@
 
 ## 0.3
 
+### 0.3.1 — 2026-11-01
+
+All five servers moved to `C:\Drifter` / `C:\DrifterData` (washer, BoatGuard, anchor watch, MasterVolt, gateway).
+
+- `switch_module.ps1`: checks (and where allowed sets) the scheduled task before stopping anything; scheduled tasks run `toolsun_module.py`, which follows `locations.json`, so a switch never edits a task; stops the launchers above a server too (no console window left at "pause"); a launcher that already exited no longer aborts the switch; safety net: any failure after stopping the old server starts it again from the old folder.
+- `modules.json`: MasterVolt's product photos are copied on switch-over; `prepare_live.ps1` installs without the pip cache.
+
 ### 0.3.0 — 2026-11-01
 
 Moving the servers to `C:\Drifter` is prepared (nothing has moved yet).
