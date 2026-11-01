@@ -38,7 +38,7 @@ class Services:
         self.bms = DalyBmsService(paths, coordinator=self.coordinator)
         self.balancers = DalyBalancerService(coordinator=self.coordinator)
         self.history = HistoryService(paths.history_db)
-        self.reports = BatteryHealthReports(paths.base)
+        self.reports = BatteryHealthReports(paths.runtime_base)
         self._stop = threading.Event()
         self._recorder_thread: threading.Thread | None = None
         float_protection = self.masterbus.float_protection

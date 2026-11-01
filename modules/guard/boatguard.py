@@ -11,13 +11,15 @@ Arming goes through the EZVIZ cloud (pyezviz), using a saved session token: the 
 """
 from __future__ import annotations
 
-import json, logging, re, subprocess, sys, threading, time
+import json, logging, os, re, subprocess, sys, threading, time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-CONFIG, STATE, TOKEN = HERE / "config.json", HERE / "state.json", HERE / "ezviz_token.json"
-PUSHOVER = HERE / "pushover.json"  # {"token": app token, "user": user key}; written by `boatguard.py pushover`, never logged
+# Runtime files (settings, state, tokens, logs): next to the code, or in DRIFTER_DATA\guard when Drifter Boat Systems sets it.
+DATA = Path(os.environ["DRIFTER_DATA"].strip()) / "guard" if os.environ.get("DRIFTER_DATA", "").strip() else HERE
+CONFIG, STATE, TOKEN = DATA / "config.json", DATA / "state.json", DATA / "ezviz_token.json"
+PUSHOVER = DATA / "pushover.json"  # {"token": app token, "user": user key}; written by `boatguard.py pushover`, never logged
 # Notification events and Pushover's built-in sounds ("" = the default set in the Pushover app).
 EVENTS = {"armed": "Camera armed", "disarmed": "Camera disarmed", "unguarded": "Left the boat, monitoring OFF"}
 # Pushover priorities. 2 (emergency) repeats every EMERGENCY_RETRY_S until acknowledged in the app, for at most EMERGENCY_EXPIRE_S.
@@ -378,9 +380,9 @@ class Guard:
 
 
 def setup_logging() -> None:
-    (HERE / "logs").mkdir(exist_ok=True)
+    (DATA / "logs").mkdir(parents=True, exist_ok=True)
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%d %H:%M:%S")  # 24-hour clock
-    fh = RotatingFileHandler(HERE / "logs" / "boatguard.log", maxBytes=1_000_000, backupCount=5, encoding="utf-8")
+    fh = RotatingFileHandler(DATA / "logs" / "boatguard.log", maxBytes=1_000_000, backupCount=5, encoding="utf-8")
     hs = [fh] + ([logging.StreamHandler()] if sys.stderr else [])  # pythonw (scheduled task) has no console
     for h in hs: h.setFormatter(fmt); log.addHandler(h)
     log.setLevel(logging.INFO)

@@ -16,7 +16,9 @@ except Exception as exc:
     MiotDevice = None
     MIIO_IMPORT_ERROR = str(exc)
 
-CONFIG_PATH = Path(__file__).with_name("viomi_config.json")
+# Runtime files (config with the token, schedule): next to the code, or in DRIFTER_DATA\washer when Drifter Boat Systems sets it.
+DATA_DIR = Path(os.environ["DRIFTER_DATA"].strip()) / "washer" if os.environ.get("DRIFTER_DATA", "").strip() else Path(__file__).resolve().parent
+CONFIG_PATH = DATA_DIR / "viomi_config.json"
 EXPECTED_MODEL = "viomi.washer.w1"
 CONTROLLER_VERSION = "3.7-v58"
 REQUEST_MARKER_HEADER = "X-Viomi-Request"
@@ -37,7 +39,7 @@ ACTUAL_MODEL = None
 ACTUAL_FIRMWARE = None
 LAST_DIAGNOSTICS = None
 
-SCHEDULE_PATH = Path(__file__).with_name("viomi_schedule.json")
+SCHEDULE_PATH = DATA_DIR / "viomi_schedule.json"
 SCHEDULE_LOCK = threading.Lock()
 SCHEDULE_STATE = None
 SCHEDULER_STOP = threading.Event()

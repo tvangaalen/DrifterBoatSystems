@@ -7,13 +7,14 @@ Stdlib only: no extra packages.
 """
 from __future__ import annotations
 
-import ipaddress, json, logging, socket, ssl, threading, time
+import ipaddress, json, logging, os, socket, ssl, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PAGE = HERE / "static" / "index.html"
-LOG = HERE / "logs" / "boatguard.log"
+DATA = Path(os.environ["DRIFTER_DATA"].strip()) / "guard" if os.environ.get("DRIFTER_DATA", "").strip() else HERE  # same rule as boatguard.py
+LOG = DATA / "logs" / "boatguard.log"
 CERT, KEY = HERE / "certs" / "boatguard-cert.pem", HERE / "certs" / "boatguard-key.pem"
 log = logging.getLogger("boatguard")
 
