@@ -7,7 +7,7 @@
   "ca_file": "C:/Temp/mastervoltproject/certs/ca-cert.pem",
   "supervise": true,
   "modules": {
-    "power": {"url": "https://192.168.1.166:8000", "classic": "https://192.168.1.166:8000/"},
+    "power": {"url": "https://127.0.0.1:8000"},
     "anchor": {"url": "https://127.0.0.1:8766"},
     "guard": {"url": "https://127.0.0.1:8095"},
     "washer": {"url": "http://127.0.0.1:8080"}

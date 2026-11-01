@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-VERSION = "0.9.1"
+VERSION = "0.10.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -217,6 +217,12 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             self._send(404, b"not found", "text/plain")
 
         def do_POST(self):
+            # Read the body before any answer, also a refusal: closing with unread data resets the connection, and the
+            # browser then sees a network error instead of the reason.
+            try: n = int(self.headers.get("Content-Length") or 0)
+            except ValueError: n = -1
+            if n < 0 or n > MAX_BODY: self.close_connection = True; return self._json({"error": "request too large" if n > 0 else "bad Content-Length"}, 413 if n > 0 else 400)
+            self._body = self.rfile.read(n) if n else b""
             if not self._guard(): return
             path, _, query = self.path.partition("?")
             origin = self.headers.get("Origin")
@@ -230,8 +236,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
 
         def _restart(self):
             if not sup: return self._json({"error": "the supervisor is off"}, 409)
-            n = int(self.headers.get("Content-Length") or 0)
-            try: name = json.loads(self.rfile.read(min(n, MAX_BODY)) or b"{}").get("module")
+            try: name = json.loads(self._body or b"{}").get("module")
             except (ValueError, AttributeError): return self._json({"error": "invalid JSON"}, 400)
             try: sup.restart(str(name))
             except ValueError as e: return self._json({"error": str(e)}, 409)
@@ -242,9 +247,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             if not route_allowed(module, method, sub): return self._json({"error": "not found"}, 404)
             body = None
             if method == "POST":
-                n = int(self.headers.get("Content-Length") or 0)
-                if n > MAX_BODY: return self._json({"error": "request too large"}, 413)
-                body = self.rfile.read(n) if n else b"{}"
+                body = self._body or b"{}"
                 try: json.loads(body)
                 except ValueError: return self._json({"error": "invalid JSON"}, 400)
             gz = "gzip" in (self.headers.get("Accept-Encoding") or "").lower()

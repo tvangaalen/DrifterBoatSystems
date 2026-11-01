@@ -21,6 +21,9 @@ if errorlevel 1 (
 
 echo Starting Mastervolt HTTPS web server...
 set /p MASTERVOLT_BIND=<"%~dp0certs\bind-address.txt"
+rem Started by Drifter Boat Systems (DRIFTER_DATA set): only the Drifter gateway on this PC uses the API, so listen on
+rem localhost; the iPhone and iPad reach MasterVolt through the Drifter app. The certificate covers 127.0.0.1.
+if defined DRIFTER_DATA set "MASTERVOLT_BIND=127.0.0.1"
 echo Private network address: https://%MASTERVOLT_BIND%:8000
 echo The application binds only to this private-LAN address, never to a public interface.
 echo.

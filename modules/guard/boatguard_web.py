@@ -54,9 +54,12 @@ def make_handler(guard):
             self._json({"error": "not found"}, 404)
 
         def do_POST(self):
+            # Read the body first, also when it is refused: closing with unread data resets the connection before the answer.
+            try: raw = self.rfile.read(min(int(self.headers.get("Content-Length") or 0), 65536))
+            except ValueError: return self._json({"error": "bad Content-Length"}, 400)
             # JSON body required: a plain cross-site form post can't send application/json without a CORS preflight.
             if self.headers.get("Content-Type", "").split(";")[0] != "application/json": return self._json({"error": "json only"}, 415)
-            try: body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+            try: body = json.loads(raw or b"{}")
             except ValueError: return self._json({"error": "invalid JSON"}, 400)
             if self.path == "/api/enabled":
                 guard.set_enabled(bool(body.get("enabled"))); return self._json({"enabled": guard.enabled})
