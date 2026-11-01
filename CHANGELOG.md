@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8
+
+### 0.8.0 — 2026-11-01
+
+Energy, part 1 of moving MasterVolt's classic page into Drifter.
+
+- Fixed for MasterVolt 2.x: the Settings form follows its settings table (Float purely by the highest cell voltage; the old SOC thresholds and warning pop-up are gone, so saving failed), the Float line shows the cell trigger and the highest cell now, and the balancer cards read the balancer's `status` (they were empty).
+- New: active mode marked, battery type and capacity, SOC calibration per battery and for all (Charge % / Discharge % from the cell voltages, 100 %, or a manual value; Cancel is the default), Bluetooth diagnostics (radio, waiting queue, per device counters and timings, recent events), a History tab with the battery health report (runs in the server's separate low-priority process, shown as formatted Markdown), the manual and the history database status.
+- Gateway: passes SOC calibration (`set-soc-100|charge|discharge|value`, `set-all-soc/…`), starting a report, `/api/history/status`, `/api/version` and `/manual`.
+
 ## 0.7
 
 ### 0.7.0 — 2026-11-01

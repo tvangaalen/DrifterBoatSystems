@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -30,13 +30,17 @@ log = logging.getLogger("drifter")
 ROUTES = {
     "power": [  # MasterVolt YMS
         ("GET", r"/api/(energy|settings|bms|balancers|bluetooth-coordinator|bluetooth-events|history)"),
-        ("GET", r"/api/history/(chart-data|contributions)"),
-        ("GET", r"/api/reports/battery-health"),
+        ("GET", r"/api/history/(chart-data|contributions|status)"),
+        ("GET", r"/api/(reports/battery-health|version)"),
+        ("GET", r"/manual"),                           # the user manual (HTML, read-only)
+        ("POST", r"/api/reports/battery-health"),      # runs in a separate low-priority process on the server
         ("POST", r"/api/settings"),
         ("POST", r"/api/(bms|balancers)/refresh"),
         ("POST", r"/api/bms/[123]/(refresh|charge|discharge)"),
         ("POST", r"/api/balancers/[123]/refresh"),
         ("POST", r"/api/bms/set-all/(charge|discharge)-(on|off)"),
+        ("POST", r"/api/bms/[123]/set-soc-(100|charge|discharge|value)"),   # SOC calibration, with a choice dialog in the app
+        ("POST", r"/api/bms/set-all-soc/(100|charge|discharge|value)"),
         ("POST", r"/api/control/(inverter|charger|ac-limit|ac-support|mode|alternator)"),
         ("POST", r"/api/control/device/(charger_start|charger_bow|engine_ecu|solar)"),
     ],

@@ -311,3 +311,10 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 [data-sound][aria-pressed="true"]{background:var(--okbg);color:var(--ok)}
 .alarmbar [data-sound]{background:rgba(255,255,255,.2);color:#fff}
 .alarmbar{flex-wrap:wrap}.alarmbar .grow{flex:1 1 210px}.alarmbar .btn{flex:none}
+
+/* ---------- energy ---------- */
+.btn.sec[aria-pressed="true"]{background:var(--accent);color:var(--onaccent)}
+.mdreport{padding:0 16px 14px;font-size:14px;overflow-wrap:anywhere}.mdreport h3,.mdreport h4,.mdreport h5{margin:16px 0 6px;font-size:15px}.mdreport h3{font-size:17px}
+.mdreport p,.mdreport ul{margin:6px 0}.mdreport code{font:12.5px ui-monospace,Menlo,Consolas,monospace;background:var(--bg2);padding:1px 5px;border-radius:5px}
+.mdtable{overflow-x:auto;margin:8px 0}.mdtable table{border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.mdtable th,.mdtable td{border-bottom:1px solid var(--line);padding:5px 9px;text-align:left;white-space:nowrap}.mdtable th{color:var(--muted);font-weight:650}

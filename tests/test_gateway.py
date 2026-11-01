@@ -57,9 +57,16 @@ class GatewayTest(unittest.TestCase):
     def test_unknown_route_is_404_and_not_sent(self):
         for path in ("/api/power/api/history/export", "/api/power/local-ca.cer", "/api/guard/", "/api/washer/api/program/abc", "/api/nope/x"):
             code, _ = self.req("GET", path); self.assertEqual(code, 404, path)
-        code, _ = self.post("/api/power/api/bms/1/set-soc-100"); self.assertEqual(code, 404)   # SOC calibration not exposed
+        code, _ = self.post("/api/power/api/bms/4/set-soc-100"); self.assertEqual(code, 404)   # only batteries 1-3
+        code, _ = self.post("/api/power/api/bms/1/set-soc-50"); self.assertEqual(code, 404)    # a value goes in the body
         code, _ = self.post("/api/power/api/control/device/other"); self.assertEqual(code, 404)
         self.assertEqual(Recorder.seen, [])
+
+    def test_soc_calibration_and_reports_pass(self):
+        for path in ("/api/power/api/bms/2/set-soc-charge", "/api/power/api/bms/set-all-soc/value", "/api/power/api/reports/battery-health"):
+            code, _ = self.post(path, {"percent": 80} if path.endswith("value") else {}); self.assertEqual(code, 200, path)
+        for path in ("/api/power/manual", "/api/power/api/history/status", "/api/power/api/version"):
+            self.assertEqual(self.req("GET", path)[0], 200, path)
 
     def test_get_is_not_a_command(self):
         code, _ = self.req("GET", "/api/power/api/control/inverter"); self.assertEqual(code, 404)

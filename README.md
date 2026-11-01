@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.7.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.8.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
@@ -30,7 +30,7 @@ decisions and talks to no hardware itself.
 
 - **Overview**: one tile per system with the key values; a red badge on a system that needs attention.
 - **Anchor alarm on every page**: while the anchor watch reports an alarm, a red bar with *Silence 5 min* is shown at the top of every page.
-- **Energy**: house battery (SOC, power, Float/Bulk state), sources, consumers, start and bow battery; modes (Motor, Anchor, Marina, Sail); inverter, charger, AC support, AC input limit, alternator, solar, charge-start/bow and Engine ECU; per battery the cells, temperatures and MOSFETs; balancers; settings.
+- **Energy**: house battery (SOC, power, battery type and capacity, Float/Bulk state by cell voltage), sources, consumers, start and bow battery; modes (Motor, Anchor, Marina, Sail; the active one marked); inverter, charger, AC support, AC input limit, alternator, solar, charge-start/bow and Engine ECU; per battery the cells, temperatures, MOSFETs and SOC calibration (charge/discharge curve, 100 %, manual value); balancers (balancing, delta, cells); Bluetooth diagnostics; battery health report, manual and history database status; settings.
 - **Anchor watch**: everything the old anchor page did. Map (street, satellite or plain, seamarks) with boat, anchor circle, max swing, rode, a fading track and AIS targets; drop (dropping now or already lying to it, with a scope calculator), move (tap or nudge 1 m), radius ±5 m, raise, silence; the alarm sounds and vibrates on the phone or tablet while sound is on (and when the watch cannot be reached with the anchor set), keeping the screen awake; tiles for distance, max swing, depth, wind, AIS, SOG, heading, sun, position (dmm/dms/dd); tide chart with chain advice and keel clearance; GPS order and removal; connections (Pushover, still-alive, internet AIS, noforeignland, network GPS) with their tests; all settings; Windy; new track.
 - **BoatGuard**: status, monitoring on/off, phone/camera/router, camera test, arming delay, check interval, sound and priority per notification with a test, log.
 - **Washer**: status and time left, start/pause/resume, power, program/temperature/rinses (confirmed by the washer before it says "applied"), schedule by start or finish time, events; diagnostics (startup checks, controller version and uptime, washer and PC address, model, firmware; recheck and JSON export).
@@ -38,7 +38,7 @@ decisions and talks to no hardware itself.
 - **iPhone and iPad**: tab bar at the bottom on iPhone, a sidebar on iPad (an icon rail in portrait). Safe areas, large touch targets, no zooming on inputs. Add it to the home screen for a full-screen app.
 - 24-hour times everywhere.
 
-**Still on the classic page** (linked from System; the washer, BoatGuard and the anchor watch have none any more): Energy history charts, battery health reports, Bluetooth diagnostics and SOC calibration. The gateway does not pass on routes the app does not use.
+**Still on the classic page** (linked from System; the washer, BoatGuard and the anchor watch have none any more): Energy history charts (next). The gateway does not pass on routes the app does not use.
 
 ## Safety
 

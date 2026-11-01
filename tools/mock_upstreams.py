@@ -25,10 +25,10 @@ class Power:
         self.c = {"inverter": 0.0, "charger": 1.0, "support": 0.0, "limit": 10.0, "alt": False,
                   "dev": {"solar": True, "charger_start": True, "charger_bow": False, "engine_ecu": True}}
         self.mos = {n: {"c": True, "d": True} for n in (1, 2, 3)}
-        self.settings = {"default_ac_limit": 10, "float_protection_enabled": True, "house_battery_soc": 95.0, "bulk_resume_soc": 90.0,
-                         "float_cell_trigger_mv": 3450.0, "float_cell_resume_mv": 3380.0, "warning_popup_seconds": 8, "bms_refresh_interval": 30,
-                         "bms_popup_seconds": 5, "bms_connection_retry_seconds": 5, "balancer_refresh_interval": 60,
-                         "balancer_connection_retry_seconds": 30, "history_retention_days": 31}
+        self.settings = {"default_ac_limit": 10, "float_protection_enabled": True, "float_cell_trigger_mv": 3550.0, "float_cell_resume_mv": 3375.0,
+                         "bms_refresh_interval": 30, "bms_popup_seconds": 5, "bms_connection_retry_seconds": 5, "balancer_refresh_interval": 60,
+                         "balancer_connection_retry_seconds": 30, "history_retention_days": 31}   # the v2 settings table
+        self.active_mode = None; self.report = {"state": "idle", "days": None, "started_at": None, "finished_at": None, "duration_seconds": None, "markdown": None, "error": None}
 
     def energy(self):
         solar = wobble(80, 420); soc = wobble(71, 74, 300); hv = 13.1 + soc / 1000
@@ -45,15 +45,16 @@ class Power:
                         "alternator": {**dc("Alternator", 0.0, 13.9), "running": False, "shaft_running": False, "estimated": False, "state": "Stop Charge", "control_on": self.c["alt"]},
                         "solar": {**dc("Solar", solar, hv), "panel_voltage": 38.4, "state": "Bulk"}},
             "storage": {"house": {"label": "House Battery", "soc": round(soc, 1), "voltage": hv, "current": batt_w / hv, "power": batt_w, "temperature": 21.5,
-                                  "chemistry": "LiFePO4", "soc_source": "daly_bms_average", "soc_age_seconds": 12, "max_cell_mv": 3341, "max_cell_battery": "BATTERY 1",
+                                  "battery_type": "MLI", "capacity": 960.0, "capacity_unit": "Ah", "soc_source": "daly_bms_average", "soc_age_seconds": 12, "max_cell_mv": 3341, "max_cell_battery": "BATTERY 1",
                                   "max_spread_mv": 18, "max_spread_battery": "BATTERY 1"},
-                        "start": {"label": "Start Battery", "soc": None, "voltage": 13.4, "current": 0.4, "power": 5.4, "chemistry": "AGM"},
-                        "bow": {"label": "Bow Battery", "soc": None, "voltage": 12.9, "current": 0.0, "power": 0.0, "chemistry": "AGM"}},
+                        "start": {"label": "Start Battery", "soc": None, "voltage": 13.4, "current": 0.4, "power": 5.4, "battery_type": "AGM", "capacity": 110.0, "capacity_unit": "Ah"},
+                        "bow": {"label": "Bow Battery", "soc": None, "voltage": 12.9, "current": 0.0, "power": 0.0, "battery_type": "AGM", "capacity": 70.0, "capacity_unit": "Ah"}},
             "consumers": loads, "totals": {"dc_input_power": solar, "consumer_power": total, "ac_consumer_power": 92.0},
             "settings": self.settings,
-            "high_soc_float_policy": {"enabled": self.settings["float_protection_enabled"], "threshold_soc": self.settings["house_battery_soc"],
-                                      "bulk_resume_soc": self.settings["bulk_resume_soc"], "cell_trigger_mv": self.settings["float_cell_trigger_mv"],
-                                      "cell_resume_mv": self.settings["float_cell_resume_mv"], "active": False, "trigger": None},
+            "high_soc_float_policy": {"enabled": self.settings["float_protection_enabled"], "cell_trigger_mv": self.settings["float_cell_trigger_mv"],
+                                      "cell_resume_mv": self.settings["float_cell_resume_mv"], "active": False, "trigger": None, "max_cell_mv": 3341,
+                                      "float_latched": False, "last_check_at": time.time()},
+            "active_mode": self.active_mode,
             "combimaster": {"inverter_enabled": self.c["inverter"], "charger_enabled": self.c["charger"], "ac_input_limit": self.c["limit"],
                             "ac_support_enabled": self.c["support"], "inverting": 0.0, "charging": 0.0, "supporting": 0.0, "ac_input_present": 0.0, "alarms": 0.0},
             "controls": {k: {"verified": True, "current": v} for k, v in self.c["dev"].items()},
@@ -72,8 +73,28 @@ class Power:
                 "refresh_interval_seconds": self.settings["bms_refresh_interval"]}
 
     def balancers(self):
-        return {"devices": {f"DL-BAL{n}": {"state": "connected", "stale": False, "error": None, "last_success_age_seconds": 20 + n,
-                                           "values": {"pack_voltage_v": 13.33, "cells_mv": [3331, 3335, 3329 + n, 3333], "cell_delta_mv": 6 + n}} for n in (1, 2, 3)}}
+        return {"devices": {f"DL-BAL{n}": {"name": f"DL-BAL{n}", "state": "connected", "stale": False, "error": None, "last_success_age_seconds": 20 + n,
+                                           "values": [{"service": "00001800-0000-1000-8000-00805f9b34fb"}],   # v2: the GATT services, not readings
+                                           "status": {"balance_active": n == 1, "balance_position": 3 if n == 1 else None, "pack_voltage_v": 13.33, "reported_current_a": 0.4 if n == 1 else 0.0,
+                                                      "cells_mv": [3331, 3335, 3329 + n, 3333], "cell_delta_mv": 6 + n, "average_cell_mv": 3332, "temperatures_c": [22],
+                                                      "alarms": [], "valid_frame_count": 6}} for n in (1, 2, 3)}}
+
+    def coordinator(self):
+        return {"active": None, "active_for_seconds": None, "waiting": {"bms_control": 0, "bms_manual_read": 0, "bms": 0, "balancer": 0}, "connected_bms": 3,
+                "refreshed_bms": 3, "bms_stable_seconds": 8600, "balancers_allowed": True, "degraded": False, "forced_releases": 0}
+
+    def ble_events(self):
+        now = time.time(); t = lambda s: datetime.fromtimestamp(now - s).astimezone().isoformat()
+        dev = lambda ok: {"events": {"read_ok": 240}, "failures": {}, "consecutive_failures": 0 if ok else 3, "last_success_epoch": now - 20, "last_error": None if ok else "not found; retrying automatically",
+                          "timings": {"connect": {"count": 1, "avg_ok_seconds": 4.9}, "radio_wait": {"count": 200, "p95_ok_seconds": 4.6}}, "signal": {"rssi": -71}}
+        return {"counters": {"BATTERY 1": dev(True), "BATTERY 2": dev(True), "BATTERY 3": dev(True), "DL-BAL2": dev(False), "balancers": {}},
+                "events": [{"time": t(300), "device": "DL-BAL2", "kind": "connect_failed", "detail": "RuntimeError: DL-BAL2 not found; retrying automatically"},
+                           {"time": t(120), "device": "DL-BAL1", "kind": "slow_connect", "detail": "connected after 8.6 s"}]}
+
+    def history_status(self):
+        return {"file": "history.sqlite3", "size_bytes": 1768214528, "reusable_bytes": 19922944, "disk_free_bytes": 290960031744, "records": 541557,
+                "oldest": "2026-10-01T22:40:20+00:00", "newest": datetime.now().astimezone().isoformat(), "span_days": 31.0, "retention_days": self.settings["history_retention_days"],
+                "records_per_day": 17469.3, "projected_bytes_at_retention": 1748263719}
 
     def post(self, path, body):
         if path == "/api/control/inverter": self.c["inverter"] = 1.0 if body["enabled"] else 0.0
@@ -84,10 +105,22 @@ class Power:
             self.c["limit"] = float(body["amps"])
         elif path == "/api/control/alternator": self.c["alt"] = bool(body["enabled"])
         elif path.startswith("/api/control/device/"): self.c["dev"][path.rsplit("/", 1)[1]] = bool(body["enabled"])
-        elif path == "/api/control/mode": time.sleep(1.5); return 200, {"mode": body["mode"], "ok": True, "actions": []}
+        elif path == "/api/control/mode": time.sleep(1.5); self.active_mode = body["mode"]; return 200, {"mode": body["mode"], "ok": True, "actions": []}
         elif path == "/api/settings":
-            if body.get("bulk_resume_soc", 0) >= body.get("house_battery_soc", 100): return 400, {"detail": "Bulk resume SOC must be below the Float SOC"}
-            self.settings.update(body); return 200, self.settings
+            missing = [k for k in self.settings if k not in body]
+            if missing: return 422, {"detail": f"missing: {', '.join(missing)}"}       # like the v2 SettingsReq
+            if body["float_cell_resume_mv"] > body["float_cell_trigger_mv"] - 30: return 400, {"detail": "Resume level must be at least 30 mV below the trigger"}
+            self.settings.update({k: body[k] for k in self.settings}); return 200, self.settings
+        elif path == "/api/reports/battery-health":
+            days = body.get("days"); started = datetime.now().astimezone()
+            self.report = {"state": "running", "days": days, "started_at": started.isoformat(), "finished_at": None, "duration_seconds": None, "markdown": None, "error": None}
+            def done():
+                time.sleep(4)
+                self.report = {**self.report, "state": "idle", "finished_at": datetime.now().astimezone().isoformat(), "duration_seconds": 4.0,
+                               "markdown": f"# Battery health ({days} days, mock)\n\n## Verdict\n- **Battery 1**: OK\n- **Battery 2**: OK\n- **Battery 3**: cell 3 a little high\n\n| Battery | Resistance | Cycles |\n|---|---|---|\n| 1 | 0.42 mΩ | 87 |\n| 2 | 0.45 mΩ | 86 |\n| 3 | 0.51 mΩ | 85 |\n\nNot from real data: `mock`."}
+            threading.Thread(target=done, daemon=True).start(); return 200, self.report
+        elif "/set-soc-" in path or path.startswith("/api/bms/set-all-soc/"):
+            time.sleep(1); return 200, {"ok": True, "path": path, "percent": body.get("percent")}
         elif path.endswith(("/charge", "/discharge")):
             n = int(path.split("/")[3]); self.mos[n]["c" if path.endswith("/charge") else "d"] = bool(body["enabled"]); time.sleep(1)
         elif path.startswith("/api/bms/set-all/"):
@@ -236,7 +269,10 @@ def make(name, obj):
         def do_GET(self):
             path, _, q = self.path.partition("?")
             if name == "power":
-                r = {"/api/energy": obj.energy, "/api/bms": obj.bms, "/api/balancers": obj.balancers, "/api/settings": lambda: obj.settings}.get(path)
+                if path == "/manual": b = b"<html><body><h1>MasterVolt manual (mock)</h1></body></html>"; self.send_response(200); self.send_header("Content-Type", "text/html"); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b); return
+                r = {"/api/energy": obj.energy, "/api/bms": obj.bms, "/api/balancers": obj.balancers, "/api/settings": lambda: obj.settings,
+                     "/api/bluetooth-coordinator": obj.coordinator, "/api/bluetooth-events": obj.ble_events, "/api/history/status": obj.history_status,
+                     "/api/reports/battery-health": lambda: obj.report, "/api/version": lambda: {"version": "2.1.2 (mock)"}}.get(path)
                 return self._j(200, r()) if r else self._j(404, {"detail": "not found"})
             if name == "anchor":
                 if path == "/api/state": return self._j(200, obj.state())
