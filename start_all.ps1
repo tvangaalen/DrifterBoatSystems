@@ -1,54 +1,60 @@
 # Starts everything Drifter Boat Systems needs, then opens the app. Used by the "Drifter Boat Systems" desktop icon.
+# What to start and from where comes from modules.json and <data>\locations.json (tools\modules.py plan).
 # A server that is already running is never restarted (a restart pauses Float protection and the anchor watch).
-# Each server is started the way it normally is: its own start script or scheduled task, hidden, output to its logs folder.
+# Processes are created through Win32_Process Create: they run in the user's session, outside the process tree of
+# whoever ran this script (servers started inside a tool session's tree disappeared when that session ended).
+# MasterVolt and the anchor watch get their usual console window (minimised); the rest runs without a window.
+# -Only <module>: start just that one (used by tools\switch_module.ps1); -NoWait: no waiting, status or browser.
+param([string]$Only, [switch]$NoWait)
 $ErrorActionPreference = 'Continue'
-$Host.UI.RawUI.WindowTitle = 'Drifter Boat Systems'
-$work = Split-Path $PSScriptRoot -Parent                      # the folder with the sibling projects
-$cfg = Get-Content (Join-Path $PSScriptRoot 'config.json') -Raw | ConvertFrom-Json
-$stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
-$noInput = Join-Path $env:TEMP 'drifter-empty-input.txt'      # stdin for the start scripts: their closing "pause" returns at once
-Set-Content -LiteralPath $noInput -Value '' -Encoding ascii
+if (-not $NoWait) { $Host.UI.RawUI.WindowTitle = 'Drifter Boat Systems' }
+$plan = (& py (Join-Path $PSScriptRoot 'tools\modules.py') plan | Out-String) | ConvertFrom-Json
+if ($Only) { $plan.modules = @($plan.modules | Where-Object name -eq $Only) }
+$runner = Join-Path $PSScriptRoot 'tools\run_module.py'
+$pyw = (Get-Command pyw.exe -ErrorAction SilentlyContinue).Source; if (-not $pyw) { $pyw = 'pyw.exe' }
 
 function Listening($port) { [bool](Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) }
-function StartScript($script, $logDir, $prefix) {
-    New-Item -ItemType Directory -Force $logDir | Out-Null
-    Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "`"$script`"" -WorkingDirectory (Split-Path $script) -WindowStyle Hidden `
-        -RedirectStandardInput $noInput -RedirectStandardOutput (Join-Path $logDir "${prefix}_$stamp.out.log") -RedirectStandardError (Join-Path $logDir "${prefix}_$stamp.err.log") | Out-Null
+function Launch($line, $dir, $show) {
+    $si = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ShowWindow = [uint16]$show}
+    $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine = $line; CurrentDirectory = $dir; ProcessStartupInformation = $si}
+    if ($r.ReturnValue -ne 0) { throw "Win32_Process Create returned $($r.ReturnValue)" }
+}
+function Start-Module($m) {
+    if ($m.task) { Start-ScheduledTask -TaskName $m.task; return }
+    if ($m.console) {
+        $cmd = ($m.command | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '
+        if ($m.env.DRIFTER_DATA) { $cmd = "cmd.exe /c `"set `"DRIFTER_DATA=$($m.env.DRIFTER_DATA)`" && $($cmd -replace '^cmd /c ', '')`"" }
+        Launch $cmd $m.folder 7; return                              # 7 = minimised, not activated
+    }
+    Launch "`"$pyw`" `"$runner`" $($m.name)" $m.folder 0             # 0 = hidden; output in <data>\logs\<module>.console.log
 }
 
-$services = @(
-    @{Name = 'Energy (MasterVolt YMS)'; Port = 8000; Start = { StartScript 'C:\Temp\mastervoltproject\start_mastervolt_server.cmd' 'C:\Temp\mastervoltproject\logs' 'server' }},
-    @{Name = 'Anchor watch';            Port = 8766; Start = { StartScript (Join-Path $work 'OrcaCore2\start_anchor_watch.cmd') (Join-Path $work 'OrcaCore2\logs') 'anchor' }},
-    @{Name = 'BoatGuard';               Port = 8095; Start = { Start-ScheduledTask -TaskName BoatGuard }},
-    @{Name = 'Washer (VIOMI)';          Port = 8080; Start = {
-        $d = Join-Path $work 'viomi-w1-controller'; New-Item -ItemType Directory -Force "$d\logs" | Out-Null
-        Start-Process -FilePath "$d\.venv\Scripts\python.exe" -ArgumentList 'viomi_web_english_v58.py' -WorkingDirectory $d -WindowStyle Hidden `
-            -RedirectStandardInput $noInput -RedirectStandardOutput "$d\logs\viomi_$stamp.out.log" -RedirectStandardError "$d\logs\viomi_$stamp.err.log" | Out-Null }},
-    @{Name = 'Drifter app';             Port = [int]$cfg.port; Start = { Start-ScheduledTask -TaskName DrifterBoatSystems }}
-)
-
-Write-Host ''
-Write-Host '  Drifter Boat Systems' -ForegroundColor Cyan
-Write-Host ''
-foreach ($s in $services) {
-    if (Listening $s.Port) { Write-Host ("  {0,-26} already running" -f $s.Name) -ForegroundColor DarkGray; $s.Started = $false; continue }
-    Write-Host ("  {0,-26} starting..." -f $s.Name)
-    try { & $s.Start; $s.Started = $true } catch { Write-Host "    could not start: $($_.Exception.Message)" -ForegroundColor Red; $s.Failed = $true }
+if (-not $NoWait) { Write-Host "`n  Drifter Boat Systems`n" -ForegroundColor Cyan }
+foreach ($m in $plan.modules) {
+    $where = if ($m.location -eq 'drifter') { 'Drifter' } else { 'old folder' }
+    if (Listening $m.port) { Write-Host ("  {0,-26} already running" -f $m.title) -ForegroundColor DarkGray; continue }
+    Write-Host ("  {0,-26} starting ({1})..." -f $m.title, $where)
+    try { Start-Module $m } catch { Write-Host "    could not start: $($_.Exception.Message)" -ForegroundColor Red; $m | Add-Member Failed $true }
 }
 
+if ($NoWait) { return }
 # MasterVolt opens the USB link and Bluetooth first and can take a minute; wait up to 90 s for every port.
 $deadline = (Get-Date).AddSeconds(90)
-while ((Get-Date) -lt $deadline -and ($services | Where-Object { -not $_.Failed -and -not (Listening $_.Port) })) { Start-Sleep -Seconds 2 }
+while ((Get-Date) -lt $deadline -and ($plan.modules | Where-Object { -not $_.Failed -and -not (Listening $_.port) })) { Start-Sleep -Seconds 2 }
 
 Write-Host ''
 $allOk = $true
-foreach ($s in $services) {
-    if (Listening $s.Port) { Write-Host ("  {0,-26} OK  (port {1})" -f $s.Name, $s.Port) -ForegroundColor Green }
-    else { $allOk = $false; Write-Host ("  {0,-26} NOT RUNNING (port {1}) - see its logs folder" -f $s.Name, $s.Port) -ForegroundColor Red }
+foreach ($m in $plan.modules) {
+    if (Listening $m.port) { Write-Host ("  {0,-26} OK  (port {1})" -f $m.title, $m.port) -ForegroundColor Green }
+    else { $allOk = $false; Write-Host ("  {0,-26} NOT RUNNING (port {1}) - see the logs in {2}" -f $m.title, $m.port, $m.data) -ForegroundColor Red }
 }
 
-$url = "https://$($cfg.bind):$($cfg.port)/"
-if (Listening ([int]$cfg.port)) { Write-Host "`n  Opening $url"; Start-Process $url }
+$gw = $plan.modules | Where-Object name -eq 'gateway'
+$cfgFile = Join-Path $gw.data 'config.json'
+if ((Listening $gw.port) -and (Test-Path $cfgFile)) {
+    $cfg = Get-Content $cfgFile -Raw | ConvertFrom-Json; $url = "https://$($cfg.bind):$($cfg.port)/"
+    Write-Host "`n  Opening $url"; Start-Process $url
+}
 Write-Host ''
 if ($allOk) { Write-Host '  This window closes in 10 s.'; Start-Sleep -Seconds 10 }
 else { Write-Host '  Press Enter to close.'; [void](Read-Host) }

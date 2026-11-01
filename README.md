@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.2.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.3.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
@@ -65,6 +65,19 @@ Then open **https://192.168.1.166:8100/** on the iPhone or iPad → Share → *A
 - `config.json`: `bind`, `port`, `allowed_hosts` (extra host names, e.g. `"drifter.lan"`), the certificate files, `ca_file` (to check the module servers' certificates) and per module the server `url` and the `classic` page link.
 - **Desktop icon "Drifter Boat Systems"** runs `start_all.ps1`: starts whatever is not running (MasterVolt YMS and the anchor watch through their own start scripts, hidden, logs in their `logs` folders; BoatGuard and Drifter through their scheduled tasks; the VIOMI controller), never restarts a server that already runs, waits up to 90 s, shows the status and opens the app.
 - Autostart: scheduled task **DrifterBoatSystems** runs `pyw drifter.py` from this folder at logon, restarts it within a minute if it stops, and logs to `logs\drifter.log`. After a code or `config.json` change: `Stop-ScheduledTask DrifterBoatSystems; Start-ScheduledTask DrifterBoatSystems`.
+
+## Moving the servers to `C:\Drifter` (one module at a time)
+
+Today each server still runs from its old folder. The move is prepared, not done:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\prepare_live.ps1          # clone C:\Drifter, Python environments, C:\DrifterData (nothing is stopped)
+cd C:\Drifter
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch_module.ps1 washer  # then guard, anchor, energy, gateway
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch_module.ps1 washer -Back   # undo
+```
+
+`switch_module.ps1` checks first (energy: no BMS control busy, Float not latched; anchor: no alarm), copies the module's runtime files (settings, keys, state, history, logs; listed in `modules.json`) to `C:\DrifterData\<module>` and its certificates into `C:\Drifter`, asks for confirmation, stops the old server, copies once more, and starts the module from `C:\Drifter`. Nothing is deleted from the old folder, so `-Back` always works. Each switch restarts that server for about a minute. Which module runs where is kept in `C:\DrifterData\locations.json`; `start_all.ps1` (the desktop icon) follows it.
 
 ## Development
 
