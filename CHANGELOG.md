@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10
+
+### 0.10.0 — 2026-11-02
+
+Energy, part 3: MasterVolt leaves the network.
+
+- `start_mastervolt_server.cmd` binds 127.0.0.1 when started by Drifter (`DRIFTER_DATA` set); the gateway reaches MasterVolt on https://127.0.0.1:8000. MasterVolt's own page stays reachable on the boat PC itself as a fallback; its frontend files are kept (MasterVolt's release test checks them). MasterBus/DALY code, mappings and safety logic unchanged.
+- With this every module is in Drifter and no module server is reachable from the boat network any more (except the anchor watch's network GPS port).
+- The gateway and BoatGuard read a POST body before answering, also when they refuse it (403/415/400): closing with unread data reset the connection, so the page saw a network error instead of the reason (the BoatGuard API test failed now and then because of it).
+
 ## 0.9
 
 ### 0.9.1 — 2026-11-02

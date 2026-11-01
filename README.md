@@ -1,11 +1,11 @@
 # Drifter Boat Systems
 
-Version 0.9.1 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.10.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
 |---|---|---|---|
-| **Energy** | Mastervolt (MasterBus), DALY BMS and balancers | MasterVolt YMS, `:8000` | `modules/energy` |
+| **Energy** | Mastervolt (MasterBus), DALY BMS and balancers | MasterVolt YMS, `127.0.0.1:8000` | `modules/energy` |
 | **Anchor watch** | Orca Core 2 anchor alarm, GPS, AIS, tide | Anchor watch, `127.0.0.1:8766` (network GPS stays on the LAN) | `modules/anchor` |
 | **BoatGuard** | EZVIZ camera armed when the iPhone leaves the boat | BoatGuard, `127.0.0.1:8095` (no page of its own) | `modules/guard` |
 | **Washer** | VIOMI W1 washing machine and its schedule | VIOMI controller, `127.0.0.1:8080` (no page of its own) | `modules/washer` |
@@ -38,7 +38,7 @@ decisions and talks to no hardware itself.
 - **iPhone and iPad**: tab bar at the bottom on iPhone, a sidebar on iPad (an icon rail in portrait). Safe areas, large touch targets, no zooming on inputs. Add it to the home screen for a full-screen app.
 - 24-hour times everywhere.
 
-**Classic pages:** only MasterVolt still serves its own page (linked from System); everything it shows is in Drifter now and the page goes next. The gateway does not pass on routes the app does not use.
+**Classic pages:** none on the network any more. Every module server listens on 127.0.0.1 (the anchor watch's network GPS stays on the LAN); MasterVolt's own page is still reachable on the boat PC itself (https://127.0.0.1:8000/) as a fallback. The gateway does not pass on routes the app does not use.
 
 ## Safety
 
