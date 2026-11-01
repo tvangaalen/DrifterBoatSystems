@@ -1,0 +1,61 @@
+# Drifter Boat Systems
+
+Version 0.1.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer):
+
+| Module | System | Server it talks to |
+|---|---|---|
+| **Energy** | Mastervolt (MasterBus), DALY BMS and balancers | MasterVolt YMS, `:8000` |
+| **Anchor watch** | Orca Core 2 anchor alarm, GPS, AIS, tide | Anchor watch, `:8766` |
+| **BoatGuard** | EZVIZ camera armed when the iPhone leaves the boat | BoatGuard, `:8095` |
+| **Washer** | VIOMI W1 washing machine and its schedule | VIOMI controller, `:8080` |
+
+The four existing servers keep running unchanged and keep all their own logic: Float protection, the anchor alarm and
+its push alerts, arming the camera and the washer schedule all keep working when Drifter is closed or stopped.
+`drifter.py` is a small gateway: it serves the app and passes the app's requests on to those servers. It makes no
+decisions and talks to no hardware itself.
+
+## What the app does
+
+- **Overview**: one tile per system with the key values; a red badge on a system that needs attention.
+- **Anchor alarm on every page**: while the anchor watch reports an alarm, a red bar with *Silence 5 min* is shown at the top of every page.
+- **Energy**: house battery (SOC, power, Float/Bulk state), sources, consumers, start and bow battery; modes (Motor, Anchor, Marina, Sail); inverter, charger, AC support, AC input limit, alternator, solar, charge-start/bow and Engine ECU; per battery the cells, temperatures and MOSFETs; balancers; settings.
+- **Anchor watch**: map with boat, anchor circle, track and AIS targets; drop (at the bow or ahead), move by tapping the map, radius, raise, silence; depth/tide/chain advice; GPS sources and connections; events; settings; push and still-alive tests.
+- **BoatGuard**: status, monitoring on/off, phone/camera/router, camera test, arming delay, check interval, sound and priority per notification with a test, log.
+- **Washer**: status and time left, start/pause/resume, power, program/temperature/rinses (confirmed by the washer before it says "applied"), schedule by start or finish time, events, diagnostics.
+- **Themes**: Auto (follows the device), Light, Dark and Night (dim red on black, keeps your night vision). Chosen with the sun/moon button or on the System page, remembered per device. In dark mode map tiles are dimmed, never colour-inverted; Night tints them red.
+- **iPhone and iPad**: tab bar at the bottom on iPhone, a sidebar on iPad (an icon rail in portrait). Safe areas, large touch targets, no zooming on inputs. Add it to the home screen for a full-screen app.
+- 24-hour times everywhere.
+
+**Still on the classic pages** (linked from System): Energy history charts, battery health reports, Bluetooth diagnostics and SOC calibration; the anchor watch's GPS source order and network-GPS port. The gateway does not pass on routes the app does not use.
+
+## Safety
+
+- Engine ECU OFF always asks first, with *Keep ECU ON* as the default (Escape and tapping outside also keep it on). No mode switches the ECU off (that rule lives on the MasterVolt server).
+- Alternator OFF, discharge/charge MOSFET OFF, monitoring OFF, raising the anchor and shortening the history ask first, the safe choice being the default.
+- A switch keeps showing the real state until the server has read the new state back.
+- The gateway only passes on the routes listed in `ROUTES` in `drifter.py`; everything else is refused. It binds only to localhost or a private LAN address, accepts only requests addressed to an IP, localhost or this PC's name (DNS rebinding), and a command must carry the app's own header from the app's own origin, so a web page opened on the boat Wi-Fi cannot send commands through it.
+- No login: anyone on the boat network (or on UniFi Teleport) can use it, like the existing pages. Never port-forward it or put it behind a public tunnel.
+
+## Setup (boat PC)
+
+Requirements: Windows, Python 3.12+ (stdlib only, no packages), OpenSSL for the certificate.
+
+```powershell
+copy config.example.json config.json        # check the addresses: bind = this PC's LAN address
+powershell -NoProfile -ExecutionPolicy Bypass -File setup_https.ps1   # certificate from the existing Mastervolt Local CA
+py tests/test_gateway.py                          # gateway tests (fake servers, nothing on the boat is touched)
+start_drifter.cmd                           # or: py drifter.py
+```
+
+Then open **https://192.168.1.166:8100/** on the iPhone or iPad → Share → *Add to Home Screen*. The devices already trust the Mastervolt Local CA (used by Energy, Anchor watch and BoatGuard), so no new profile is needed.
+
+- Firewall: right-click `add_firewall_rule.cmd` → *Run as administrator* (TCP 8100, Private profile, local subnet and Teleport clients 192.168.2.x).
+- `config.json`: `bind`, `port`, `allowed_hosts` (extra host names, e.g. `"drifter.lan"`), the certificate files, `ca_file` (to check the module servers' certificates) and per module the server `url` and the `classic` page link.
+- **Desktop icon "Drifter Boat Systems"** runs `start_all.ps1`: starts whatever is not running (MasterVolt YMS and the anchor watch through their own start scripts, hidden, logs in their `logs` folders; BoatGuard and Drifter through their scheduled tasks; the VIOMI controller), never restarts a server that already runs, waits up to 90 s, shows the status and opens the app.
+- Autostart: scheduled task **DrifterBoatSystems** runs `pyw drifter.py` from this folder at logon, restarts it within a minute if it stops, and logs to `logs\drifter.log`. After a code or `config.json` change: `Stop-ScheduledTask DrifterBoatSystems; Start-ScheduledTask DrifterBoatSystems`.
+
+## Development
+
+`py tools/mock_upstreams.py --gateway` starts four fake servers with made-up data plus a gateway on http://127.0.0.1:8101/ (`tools/config.mock.json`). Use it for every UI test: it never contacts the boat. `py tools/mock_upstreams.py` alone starts only the fakes.
+
+Files: `drifter.py` (gateway), `web/index.html` (shell), `web/app.css` (design system and themes), `web/app.js` (routing, polling, dialogs, overview, System page), `web/energy.js`, `anchor.js`, `guard.js`, `washer.js` (modules), `web/sw.js` (app-shell cache; live data is never cached).

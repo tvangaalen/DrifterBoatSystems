@@ -1,0 +1,10 @@
+# Local settings, keys and logs: never commit
+config.json
+certs/
+logs/
+*.tmp
+
+# Python
+.venv/
+__pycache__/
+*.pyc

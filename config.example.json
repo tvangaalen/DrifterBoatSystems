@@ -1,0 +1,14 @@
+{
+  "bind": "192.168.1.166",
+  "port": 8100,
+  "allowed_hosts": [],
+  "certfile": "certs/drifter-cert.pem",
+  "keyfile": "certs/drifter-key.pem",
+  "ca_file": "C:/Temp/mastervoltproject/certs/ca-cert.pem",
+  "modules": {
+    "power": {"url": "https://192.168.1.166:8000", "classic": "https://192.168.1.166:8000/"},
+    "anchor": {"url": "https://192.168.1.166:8766", "classic": "https://192.168.1.166:8766/"},
+    "guard": {"url": "https://192.168.1.166:8095", "classic": "https://192.168.1.166:8095/"},
+    "washer": {"url": "http://127.0.0.1:8080", "classic": "http://192.168.1.166:8080/app"}
+  }
+}
