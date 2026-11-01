@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6
+
+### 0.6.0 — 2026-11-01
+
+BoatGuard: everything is in Drifter now; BoatGuard has no page of its own.
+
+- App: an Emergency (priority 2) test notification asks first (it repeats every minute until acknowledged); the arming countdown updates every second.
+- BoatGuard: the page (`static/index.html`) is removed; the API listens on 127.0.0.1 only (`web.host` adds one private LAN address on purpose, never a public one). Arming, presence, notifications and settings unchanged. New `test_web.py`.
+- Gateway: BoatGuard is reached on https://127.0.0.1:8095; no classic-page link.
+
 ## 0.5
 
 ### 0.5.1 — 2026-11-01
