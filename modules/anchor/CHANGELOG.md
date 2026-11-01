@@ -4,6 +4,17 @@ All notable changes to the Orca Core 2 Anchor Watch. Newest first.
 
 ---
 
+## 1.17 — The page moves into Drifter
+
+### 1.17.0
+- **No page of its own any more**: the anchor watch page is the Anchor watch module of the Drifter app (Drifter Boat
+  Systems), with everything the old page did. `static/anchor.html`, the manifest and the app icons are removed;
+  Leaflet moved to the Drifter app. This server serves only the API and the map tiles.
+- `--web-bind` puts the API on another address than network GPS (`--bind`): on the boat the API listens on 127.0.0.1
+  (only the Drifter gateway uses it) while NMEA from phones keeps arriving on the LAN address.
+- `--app-url` sets the link in push alerts (the Drifter app's anchor page).
+- Alarm logic, GPS handling, push alerts, still-alive, AIS, NFL and the tide are unchanged. New `test_api.py`.
+
 ## 1.16 — Phone as GPS, remove old GPS
 
 ### 1.16.1

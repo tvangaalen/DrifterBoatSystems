@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7
+
+### 0.7.0 — 2026-11-01
+
+Anchor watch: everything is in Drifter now; the anchor watch has no page of its own.
+
+- App: the Anchor watch page gets everything of the old page: alarm sound, vibration and wake lock on the phone or tablet (Sound on/off, also in the alarm bar; on automatically when dropping), an alarm when the watch cannot be reached with the anchor set (on every page), the classic status lines (holding, close to the limit, outside the circle with countdown), map layers, max swing, rode, fading track, named AIS targets (internet hollow), scale, fit, Windy, move with 1 m nudges and arrow keys, radius ±5 m, scope calculator, new track, the classic tiles incl. sun and position, tide chart with chain advice and keel clearance, GPS order/removal/default, connection statuses with tests (test alarm asks first), all settings incl. transducer depth, NMEA port and NFL at anchor, My MMSI suggestion, credits.
+- Anchor watch 1.17.0: page, manifest and icons removed; `--web-bind` (API on 127.0.0.1) separate from `--bind` (network GPS on the LAN); `--app-url` for the link in push alerts. Alarm logic unchanged. New `test_api.py`.
+- Leaflet is served by Drifter (`web/vendor/leaflet`); the gateway no longer passes `/vendor/` on.
+
 ## 0.6
 
 ### 0.6.2 — 2026-11-01

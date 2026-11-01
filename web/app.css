@@ -281,3 +281,33 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- anchor watch ---------- */
+.hero .herobig{font-size:30px;font-weight:750;letter-spacing:-.02em;white-space:nowrap}.hero .herobig small{font-size:15px;color:var(--muted);font-weight:600}
+.mapbtns .seg{background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,.18)}.mapbtns .seg button{min-height:34px;padding:0 9px;font-size:13px}
+.movebar{position:absolute;z-index:600;left:10px;right:10px;bottom:22px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.movebar .btns{margin-top:8px;align-items:center}
+.trackbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 4px}
+.tiles{margin-top:12px;display:flex;flex-direction:column;gap:12px}
+.stats.tilegrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:640px){.stats.tilegrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.stat.wide{grid-column:span 2}
+.stat .n.pos{font-size:17px;line-height:1.35;white-space:normal}
+.stat .l .badge{margin-left:4px;vertical-align:1px;font-size:11px;padding:1px 7px}
+.tidecard .thead,.tidecard .trow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.tidecard .thead .l{font-size:12px;color:var(--muted);font-weight:600}
+.tchart{display:block;width:100%;height:130px;margin:6px 0}
+.tchart .area{fill:color-mix(in srgb,var(--accent) 14%,transparent)}.tchart .curve{fill:none;stroke:var(--accent);stroke-width:2}
+.tchart .lim{stroke:var(--muted);stroke-dasharray:5 4;stroke-width:1}.tchart .now{stroke:var(--fg);stroke-dasharray:2 3;stroke-width:1}
+.tchart circle{fill:var(--accent)}.tchart text{fill:var(--muted);font-size:11px;font-family:inherit}
+.keel{margin-top:10px}.keel .kl{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.kbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--bg2);margin:5px 0}
+.kbar .hull{background:var(--muted)}.keel.ok .clear{background:var(--ok)}.keel.warn .clear{background:var(--warn)}.keel.bad .clear{background:var(--bad)}
+details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;min-height:32px}
+.gpsrow .gnum{width:22px;height:22px;border-radius:50%;background:var(--bg2);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none;color:var(--muted)}
+.gpsrow .btns .btn{min-width:38px;padding:0 8px}
+.aisic{display:flex;align-items:center;gap:4px;color:var(--load);white-space:nowrap;font-size:11px;font-weight:650;text-shadow:0 0 3px var(--card),0 0 3px var(--card)}
+.aisic svg{flex:none;fill:currentColor}.aisic.net svg{fill:none;stroke:currentColor;stroke-width:1.6}.aisic.net span{font-style:italic}
+[data-sound][aria-pressed="true"]{background:var(--okbg);color:var(--ok)}
+.alarmbar [data-sound]{background:rgba(255,255,255,.2);color:#fff}
+.alarmbar{flex-wrap:wrap}.alarmbar .grow{flex:1 1 210px}.alarmbar .btn{flex:none}

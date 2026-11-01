@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-VERSION = "0.6.2"
+VERSION = "0.7.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -43,7 +43,6 @@ ROUTES = {
     "anchor": [  # Orca Core 2 anchor watch
         ("GET", r"/api/(state|track)"),
         ("GET", r"/tiles/[a-z]+/\d{1,2}/\d{1,7}/\d{1,7}\.(png|jpg)"),
-        ("GET", r"/vendor/leaflet/(leaflet\.js|leaflet\.css|images/layers(-2x)?\.png)"),
         ("POST", r"/api/command"),
     ],
     "guard": [  # BoatGuard

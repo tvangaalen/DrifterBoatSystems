@@ -1,12 +1,12 @@
 # Drifter Boat Systems
 
-Version 0.6.2 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.7.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
 |---|---|---|---|
 | **Energy** | Mastervolt (MasterBus), DALY BMS and balancers | MasterVolt YMS, `:8000` | `modules/energy` |
-| **Anchor watch** | Orca Core 2 anchor alarm, GPS, AIS, tide | Anchor watch, `:8766` | `modules/anchor` |
+| **Anchor watch** | Orca Core 2 anchor alarm, GPS, AIS, tide | Anchor watch, `127.0.0.1:8766` (network GPS stays on the LAN) | `modules/anchor` |
 | **BoatGuard** | EZVIZ camera armed when the iPhone leaves the boat | BoatGuard, `127.0.0.1:8095` (no page of its own) | `modules/guard` |
 | **Washer** | VIOMI W1 washing machine and its schedule | VIOMI controller, `127.0.0.1:8080` (no page of its own) | `modules/washer` |
 
@@ -31,14 +31,14 @@ decisions and talks to no hardware itself.
 - **Overview**: one tile per system with the key values; a red badge on a system that needs attention.
 - **Anchor alarm on every page**: while the anchor watch reports an alarm, a red bar with *Silence 5 min* is shown at the top of every page.
 - **Energy**: house battery (SOC, power, Float/Bulk state), sources, consumers, start and bow battery; modes (Motor, Anchor, Marina, Sail); inverter, charger, AC support, AC input limit, alternator, solar, charge-start/bow and Engine ECU; per battery the cells, temperatures and MOSFETs; balancers; settings.
-- **Anchor watch**: map with boat, anchor circle, track and AIS targets; drop (at the bow or ahead), move by tapping the map, radius, raise, silence; depth/tide/chain advice; GPS sources and connections; events; settings; push and still-alive tests.
+- **Anchor watch**: everything the old anchor page did. Map (street, satellite or plain, seamarks) with boat, anchor circle, max swing, rode, a fading track and AIS targets; drop (dropping now or already lying to it, with a scope calculator), move (tap or nudge 1 m), radius ±5 m, raise, silence; the alarm sounds and vibrates on the phone or tablet while sound is on (and when the watch cannot be reached with the anchor set), keeping the screen awake; tiles for distance, max swing, depth, wind, AIS, SOG, heading, sun, position (dmm/dms/dd); tide chart with chain advice and keel clearance; GPS order and removal; connections (Pushover, still-alive, internet AIS, noforeignland, network GPS) with their tests; all settings; Windy; new track.
 - **BoatGuard**: status, monitoring on/off, phone/camera/router, camera test, arming delay, check interval, sound and priority per notification with a test, log.
 - **Washer**: status and time left, start/pause/resume, power, program/temperature/rinses (confirmed by the washer before it says "applied"), schedule by start or finish time, events; diagnostics (startup checks, controller version and uptime, washer and PC address, model, firmware; recheck and JSON export).
 - **Themes**: Auto (follows the device), Light, Dark and Night (dim red on black, keeps your night vision). Chosen with the sun/moon button or on the System page, remembered per device. In dark mode map tiles are dimmed, never colour-inverted; Night tints them red.
 - **iPhone and iPad**: tab bar at the bottom on iPhone, a sidebar on iPad (an icon rail in portrait). Safe areas, large touch targets, no zooming on inputs. Add it to the home screen for a full-screen app.
 - 24-hour times everywhere.
 
-**Still on the classic pages** (linked from System; the washer and BoatGuard have none any more): Energy history charts, battery health reports, Bluetooth diagnostics and SOC calibration; the anchor watch's GPS source order and network-GPS port. The gateway does not pass on routes the app does not use.
+**Still on the classic page** (linked from System; the washer, BoatGuard and the anchor watch have none any more): Energy history charts, battery health reports, Bluetooth diagnostics and SOC calibration. The gateway does not pass on routes the app does not use.
 
 ## Safety
 

@@ -12,7 +12,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-VENDOR = (ROOT / "modules" / "anchor" / "static" / "vendor").resolve()
 LAT0, LON0 = 50.0, -30.0          # mid-Atlantic: obviously not a real anchorage
 T0 = time.time()
 
@@ -104,7 +103,7 @@ class Anchor:
                          "bow_offset": 0.0, "gps_sources": "254", "own_mmsi": "", "pc_sound": True, "push_alerts": True, "alive_minutes": 60.0,
                          "internet_ais": True, "nfl_tracking": False, "nfl_on_anchor": False, "track_hours": 24, "bow_height": 1.2, "chain_formula": "5*(D+B)",
                          "loa": 11.5, "min_ais_dist": 0.0, "pos_format": "dmm", "draught": 1.6, "transducer_depth": 0.4, "nmea_port": 10110}
-        self.track = []; self.gen = 1
+        self.track = []; self.gen = 1; self.forgotten = set(); self.pending_mock = False
 
     def pos(self):
         a = (time.time() - T0) / 60
@@ -114,20 +113,28 @@ class Anchor:
         p = self.pos(); now = time.time()
         if not self.track or now - self.track[-1][0] > 5: self.track.append([round(now, 1), p["lat"], p["lon"]])
         out = {"time": now, "core": {"connected": True, "last_error": None, "last_message_age": 0.4},
-               "ais_stream": {"connected": True, "last_error": None}, "boat": {"pos": p, "heading": (now * 2) % 360, "depth": 6.4, "tws": 12.3, "twd": 230, "sog": 0.3},
-               "gps_rows": [{"source": "254", "name": "Orca Core", "status": "in_use", "sats": 11, "hdop": 0.8, "last_seen": None, "listed": True},
-                            {"source": "2", "name": "B&G ZG100", "status": "active", "sats": 9, "hdop": 1.1, "last_seen": None, "listed": False}],
+               "ais_stream": {"connected": True, "last_error": None, "last_message_age": 3.0},
+               "boat": {"pos": {**p, "sats": 11, "hdop": 0.8}, "heading": (now * 2) % 360, "depth": 6.4, "tws": 12.3, "twd": 230, "sog": 0.3, "depth_offset": 0.4, "depth_offset_src": "sounder"},
+               "gps_rows": [r for r in [{"source": "254", "name": "Orca Core", "status": "in_use", "sats": 11, "hdop": 0.8, "last_seen": None, "listed": True},
+                            {"source": "2", "name": "B&G ZG100", "status": "active", "sats": 9, "hdop": 1.1, "last_seen": None, "listed": False},
+                            {"source": "net-192.0.2.30", "name": "Network GPS (mock phone)", "status": "inactive", "sats": None, "hdop": None, "last_seen": 3600, "listed": False}]
+                            if r["source"] not in self.forgotten],
+               "gps_default": "254", "track_start": self.track[0][0] if self.track else None,
+               "own_candidate": {"mmsi": "000000002", "name": "MOCK OWN BOAT", "dist": 4.0},
                "anchor": self.anchor, "settings": self.settings,
                "alarms": [{"id": k, "text": {"drag": "Anchor drag"}.get(k, k), "detail": v, "since": now - 20} for k, v in self.alarms.items()],
-               "pending": {}, "sounding": bool(self.alarms) and now > self.silenced, "silenced_until": self.silenced if self.alarms else 0,
+               "pending": {"drag": 4.0} if self.anchor and self.alarms == {} and self.pending_mock else {}, "sounding": bool(self.alarms) and now > self.silenced, "silenced_until": self.silenced if self.alarms else 0,
                "max_dist": 18.0, "events": self.events[-40:], "track_gen": self.gen,
-               "push": {"configured": True, "last_error": None}, "alive": {"configured": True, "last_ok": now - 300, "last_error": None, "note": None},
-               "nfl": {"configured": False}, "nmea": {"on": False, "port": 10110, "error": None}, "track_points": len(self.track), "version": "mock", "gps_age": 0.6,
+               "push": {"configured": True, "last_error": None, "last_sent": now - 900}, "alive": {"configured": True, "last_ok": now - 300, "last_error": None, "note": None, "every_s": 300},
+               "nfl": {"configured": True, "last_ok": now - 4000, "last_count": 12, "last_error": None, "sent_t": now - 4000}, "nmea": {"on": False, "port": 10110, "error": None}, "track_points": len(self.track), "version": "mock", "gps_age": 0.6,
                "ais": [{"mmsi": "000000001", "name": "MOCK VESSEL", "lat": LAT0 + 0.002, "lon": LON0 + 0.001, "length": 14, "heading": 90, "cog": 90, "sog": 0.0, "age": 30,
                         "src": "local", "dist": 240.0, "bearing": 18}],
                "net_ais": {"configured": True, "connected": True, "ships": 4, "last_error": None},
-               "tide": {"available": True, "level": 0.42, "trend": "rising", "next": [{"type": "high", "t": now + 7200, "h": 1.1}, {"type": "low", "t": now + 29000, "h": -0.8}]},
-               "depth_plan": {"available": True, "min": 5.6, "max": 7.4, "source": "sounder", "chain": 43, "formula": "5*(D+B)", "clearance_min": 4.0}}
+               "tide": {"available": True, "level": 0.42, "trend": "rising", "range": 1.9, "next": [{"type": "high", "t": now + 7200, "h": 1.1}, {"type": "low", "t": now + 29000, "h": -0.8}],
+                        "curve": [[now + h * 3600, 0.95 * math.sin((h + 1.7) / 12.42 * 2 * math.pi)] for h in range(-6, 25)]},
+               "depth_plan": {"available": True, "now": 6.4, "min": 5.6, "min_t": now + 29000, "max": 7.4, "max_t": now + 7200, "source": "sounder", "chain": 43, "formula": "5*(D+B)",
+                              "bow_height": 1.2, "loa": 11.5, "draught": 1.6, "clearance_min": 4.0, "reading_t": now,
+                              "curve": [[now + h * 3600, 6.4 + 0.95 * math.sin((h + 1.7) / 12.42 * 2 * math.pi)] for h in range(-6, 25)]}}
         if self.anchor:
             dy = (p["lat"] - self.anchor["lat"]) * 111320; dx = (p["lon"] - self.anchor["lon"]) * 111320 * math.cos(math.radians(LAT0))
             out["distance"], out["bearing"] = math.hypot(dx, dy), math.degrees(math.atan2(dx, dy)) % 360
@@ -146,6 +153,10 @@ class Anchor:
         elif a == "silence": self.silenced = now + float(c["minutes"]) * 60
         elif a == "settings": self.settings.update(c.get("settings") or {})
         elif a == "mock_alarm": self.alarms["drag"] = "Boat 52 m from the anchor (radius 40 m)"
+        elif a == "mock_pending": self.pending_mock = True
+        elif a == "clear_track": self.track = []; self.gen += 1; self.events.append({"t": now, "text": "New track started (old track and max swing deleted)", "kind": "info"})
+        elif a == "gps_forget": self.forgotten.add(c["source"])
+        elif a in ("push_test", "push_alarm_test", "push_alarm_stop", "alive_check", "net_ais_check", "nfl_send"): self.events.append({"t": now, "text": f"{a} (mock)", "kind": "info"})
         elif a == "mock_clear": self.alarms.clear()
 
 
@@ -230,11 +241,7 @@ def make(name, obj):
             if name == "anchor":
                 if path == "/api/state": return self._j(200, obj.state())
                 if path == "/api/track": return self._j(200, {"gen": obj.gen, "points": obj.track})
-                vendor = VENDOR / path[len("/vendor/"):] if path.startswith("/vendor/leaflet/") else None
-                if vendor and vendor.is_file() and VENDOR in vendor.resolve().parents:   # Leaflet from the OrcaCore2 checkout, if present
-                    b = vendor.read_bytes(); self.send_response(200); self.send_header("Content-Type", "text/css" if path.endswith(".css") else "application/javascript")
-                    self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b); return
-                if path.startswith(("/tiles/", "/vendor/")):   # no map tiles in the mock
+                if path.startswith("/tiles/"):   # no map tiles in the mock
                     self.send_response(404); self.send_header("Content-Length", "0"); self.end_headers(); return
             if name == "guard":
                 if path == "/api/status": return self._j(200, obj.status())

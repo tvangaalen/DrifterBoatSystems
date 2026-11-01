@@ -21,7 +21,7 @@ SUITES = [  # (name, folder, command)
     ("supervisor", ROOT, [sys.executable, "tests/test_supervisor.py"]),
     ("run-module", ROOT, [sys.executable, "tests/test_run_module.py"]),
     ("energy", ROOT / "modules/energy", [python("energy"), "-m", "tests.run_all"] + (["quick"] if QUICK else [])),
-    ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch"]),
+    ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch", "test_api"]),
     ("guard", ROOT / "modules/guard", [python("guard"), "boatguard_self_test.py"]),
     ("guard-api", ROOT / "modules/guard", [python("guard"), "-m", "unittest", "test_web"]),
     ("washer", ROOT / "modules/washer", [python("washer"), "-m", "unittest", "test_controller"]),

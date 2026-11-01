@@ -3,8 +3,9 @@
 Reads the Core's live sensor and AIS streams (read-only, same streams as orca_reader.py), keeps an anchor
 position and swing radius, and raises alarms when the boat drags, GPS is lost, the Core stops talking, or
 optional depth/wind limits are crossed. The watch runs here, not in the browser: alarms are evaluated and
-(on Windows) sounded on this PC even when no page is open. The page at http://<this PC>:8766/ shows the
-swing circle, track and nearby AIS boats and works from a phone on the boat Wi-Fi.
+(on Windows) sounded on this PC even when no page is open. Its page is the Anchor watch module of the Drifter app
+(Drifter Boat Systems); since 1.17.0 this server has no page of its own, only the API (`/api/state`, `/api/track`,
+`/api/command`) and the map tiles, on --web-bind (localhost on the boat). Network GPS keeps listening on --bind.
 
 Position source: the GNSS sources are used in the order of the `gps_sources` setting, with failover. The Core's
 own GPS (source 254) can be chosen too: with the rest of the NMEA 2000 network switched off it is the only one
@@ -63,7 +64,7 @@ from orca_reader import AIS_PATH, CORE_SOURCE, KN, RAD, SENSORS_PATH, Store, dev
 try: import winsound
 except ImportError: winsound = None
 
-VERSION = "1.16.1"
+VERSION = "1.17.0"
 HERE = Path(__file__).resolve().parent
 log = logging.getLogger("anchor")
 EARTH = 6371008.8
@@ -1665,16 +1666,8 @@ class TileCache:
 
 
 TILE_RE = re.compile(r"^/tiles/([a-z]+)/(\d{1,2})/(\d{1,7})/(\d{1,7})\.(?:png|jpg)$")
-STATIC = {"/vendor/leaflet/leaflet.js": "application/javascript", "/vendor/leaflet/leaflet.css": "text/css",
-          "/vendor/leaflet/images/layers.png": "image/png", "/vendor/leaflet/images/layers-2x.png": "image/png",
-          "/icons/logo.svg": "image/svg+xml", "/icons/apple-touch-icon.png": "image/png",
-          "/icons/icon-192.png": "image/png", "/icons/icon-512.png": "image/png",
-          "/manifest.webmanifest": "application/manifest+json"}
-
 
 def make_handler(watch, tiles):
-    page_file = HERE / "static" / "anchor.html"
-
     class Handler(BaseHTTPRequestHandler):
         def _send(self, body, ctype="application/json", code=200, cache="no-store"):
             self.send_response(code); self.send_header("Content-Type", ctype); self.send_header("Cache-Control", cache)
@@ -1687,13 +1680,10 @@ def make_handler(watch, tiles):
         def do_GET(self):
             path, _, q = self.path.partition("?")
             args = dict(p.split("=", 1) for p in q.split("&") if "=" in p)
-            if path == "/": self._send(page_file.read_bytes(), "text/html; charset=utf-8")
-            elif path == "/api/state": self._json(watch.state())
+            if path == "/api/state": self._json(watch.state())
             elif path == "/api/track":
                 try: self._json(watch.track_since(float(args.get("since", 0)), int(args.get("gen", -1))))
                 except ValueError: self._json({"error": "bad query"}, 400)
-            elif path in STATIC: self._send((HERE / "static" / path.lstrip("/")).read_bytes(), STATIC[path], cache="max-age=86400")
-            elif path == "/apple-touch-icon.png": self._send((HERE / "static/icons/apple-touch-icon.png").read_bytes(), "image/png", cache="max-age=86400")
             elif (m := TILE_RE.match(path)) and m[1] in TileCache.SOURCES:
                 t = tiles.get(m[1], int(m[2]), int(m[3]), int(m[4]))
                 if t: self._send(t[0], t[1], cache="max-age=86400")
@@ -1734,9 +1724,11 @@ def check_bind(addr):
 def main():
     ap = argparse.ArgumentParser(description="Anchor watch for the Orca Core 2 (read-only on the Core)")
     ap.add_argument("--host", default="192.168.1.124", help="Orca Core address (default 192.168.1.124)")
-    ap.add_argument("--bind", default="127.0.0.1", help="address for the web page: localhost or this PC's private LAN address "
-                                                         "(start_anchor_watch.cmd passes the LAN address)")
-    ap.add_argument("--port", type=int, default=8766, help="port for the web page (default 8766)")
+    ap.add_argument("--bind", default="127.0.0.1", help="localhost or this PC's private LAN address: network GPS (NMEA) listens here, "
+                                                         "and the API too unless --web-bind is given (start_anchor_watch.cmd passes the LAN address)")
+    ap.add_argument("--web-bind", help="address for the API and map tiles (Drifter passes 127.0.0.1); default: --bind")
+    ap.add_argument("--port", type=int, default=8766, help="port for the API (default 8766)")
+    ap.add_argument("--app-url", help="link in push alerts, e.g. the Drifter app's anchor page (default: this server)")
     ap.add_argument("--state", default=str(HERE / "anchor_state.json"), help="file that keeps the anchor, settings and track")
     ap.add_argument("--no-ais", action="store_true", help="do not open the AIS stream")
     ap.add_argument("--tile-cache", default=str(HERE / "tile_cache"), help="folder for cached map tiles")
@@ -1751,12 +1743,12 @@ def main():
                     help="do not listen for network GPS (NMEA 0183 over UDP/TCP, e.g. GPS2IP); the port is a setting on the page")
     ap.add_argument("--tide-cache", default=str(HERE / "tide_cache.json"), help="local copy of the tide forecast (works offline)")
     a = ap.parse_args()
-    check_bind(a.bind)
+    check_bind(a.bind); a.web_bind = a.web_bind or a.bind; check_bind(a.web_bind)
     if bool(a.certfile) != bool(a.keyfile): ap.error("--certfile and --keyfile go together")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S")
 
     store = Store(); watch = AnchorWatch(store, a.state, diag_dir=a.recordings)
-    page_url = f"{'https' if a.certfile else 'http'}://{a.bind}:{a.port}/"
+    page_url = a.app_url or f"{'https' if a.certfile else 'http'}://{a.web_bind}:{a.port}/"
     watch.notifier = Pushover(a.pushover, page_url, on_event=lambda text, kind: watch.event(text, kind=kind))
     log.info("Push alerts: %s", "Pushover ready" if watch.notifier.configured else f"off ({Path(a.pushover).name} missing or invalid)")
     watch.alive = StillAlive(a.still_alive, lambda: watch.settings["alive_minutes"], on_event=lambda text, kind: watch.event(text, kind=kind))
@@ -1772,7 +1764,7 @@ def main():
     watch.netais = InternetAIS(a.aisstream, boat_center, lambda: watch.settings["internet_ais"], on_event=lambda text, kind: watch.event(text, kind=kind))
     watch.tide = TideFeed(a.tide_cache, boat_center, on_event=lambda text, kind: watch.event(text, kind=kind))
     log.info("Internet AIS: %s", "aisstream.io ready" if watch.netais.configured else f"off ({Path(a.aisstream).name} missing or invalid)")
-    server = Server((a.bind, a.port), make_handler(watch, TileCache(a.tile_cache)))
+    server = Server((a.web_bind, a.port), make_handler(watch, TileCache(a.tile_cache)))
     scheme = "http"
     if a.certfile:
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -1781,7 +1773,7 @@ def main():
         server.socket = ctx.wrap_socket(server.socket, server_side=True, do_handshake_on_connect=False); scheme = "https"
     threading.Thread(target=server.serve_forever, daemon=True).start()
     threading.Thread(target=sound_loop, args=(watch,), daemon=True).start()
-    log.info("Anchor Watch %s: %s://%s:%d/  (Core %s)", VERSION, scheme, a.bind, a.port, a.host)
+    log.info("Anchor Watch %s: API %s://%s:%d/, network GPS on %s (Core %s)", VERSION, scheme, a.web_bind, a.port, a.bind, a.host)
 
     async def run():
         tasks = [stream_loop(store, "sensors", f"ws://{a.host}:8089" + SENSORS_PATH.format(ms=1000), None), watch_loop(watch),

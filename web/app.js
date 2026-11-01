@@ -116,6 +116,11 @@ const Drifter = (() => {
   function renderAlarm() {
     const a = byId.anchor, bar = $("alarmbar"), s = a && a.state.data;
     const alarms = (s && s.alarms) || [];
+    if (a && a.alarmState && a.alarmState() === "unreachable") {        // anchor set, but the watch does not answer
+      bar.classList.add("on"); bar.classList.remove("silenced");
+      $("alarmTitle").textContent = "Anchor watch not reachable"; $("alarmSub").textContent = a.state.err ? a.state.err.message : "";
+      $("alarmSilence").textContent = "Open"; return;
+    }
     if (!alarms.length) { bar.classList.remove("on"); return; }
     const silenced = s.silenced_until && s.silenced_until * 1000 > Date.now();
     bar.classList.add("on"); bar.classList.toggle("silenced", !!silenced);
@@ -125,7 +130,8 @@ const Drifter = (() => {
   }
   $("alarmSilence").addEventListener("click", async () => {
     const s = byId.anchor && byId.anchor.state.data;
-    if (s && s.silenced_until && s.silenced_until * 1000 > Date.now()) { location.hash = "#anchor"; return; }
+    const a = byId.anchor;
+    if ((s && s.silenced_until && s.silenced_until * 1000 > Date.now()) || (a.alarmState && a.alarmState() === "unreachable")) { location.hash = "#anchor"; return; }
     try { await api("anchor", "/api/command", {action: "silence", minutes: 5}); toast("Alarm silenced for 5 min"); }
     catch (e) { toast(e.message, true); }
     poll(byId.anchor, true);

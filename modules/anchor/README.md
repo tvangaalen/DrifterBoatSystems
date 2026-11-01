@@ -1,6 +1,6 @@
-<p align="center"><img src="static/icons/logo.svg" width="96" alt="Anchor Watch logo"></p>
-
 # Orca Core 2 Anchor Watch
+
+> **Since 1.17.0 (2026-11-01) the page is the Anchor watch module of the Drifter app** ([DrifterBoatSystems](https://github.com/tvangaalen/DrifterBoatSystems), `modules/anchor`). This server has no page of its own any more: it serves the API (`/api/state`, `/api/track`, `/api/command`) and the map tiles on `--web-bind` (127.0.0.1 on the boat; the Drifter gateway passes them on), keeps network GPS (NMEA) on `--bind` (the LAN address, for phones with GPS2IP), and links push alerts to `--app-url` (the Drifter app). Everything the old page did is in Drifter: map, drop/move/radius/raise, silence, sound on the phone, tiles, tide, GPS order, settings, tests. The sections below still describe how the watch works; where they say "the page", read "the Anchor watch page in Drifter".
 
 An anchor alarm for a boat with an **Orca Core 2**, plus a read-only live reader for everything the Core publishes.
 Runs on a Windows PC on the boat LAN; open it on an iPhone (or any browser) over HTTPS.
@@ -8,7 +8,7 @@ Runs on a Windows PC on the boat LAN; open it on an iPhone (or any browser) over
 
 | Part | Start | Page |
 |---|---|---|
-| Anchor watch | `start_anchor_watch.cmd` | `https://<PC LAN address>:8766/` |
+| Anchor watch | started by the Drifter supervisor (`start_anchor_watch.cmd`) | the Drifter app, https://<PC LAN address>:8100/#anchor |
 | Live reader (all Core values, AIS, NMEA 2000 devices) | `run.cmd` | `http://localhost:8765/` |
 
 Not for navigation.
@@ -254,7 +254,7 @@ missing.
 ### Command line
 
 ```
-.venv\Scripts\python.exe anchor_watch.py [--host 192.168.1.124] [--bind 127.0.0.1] [--port 8766]
+.venv\Scripts\python.exe anchor_watch.py [--host 192.168.1.124] [--bind 127.0.0.1] [--web-bind 127.0.0.1] [--port 8766] [--app-url URL]
     [--certfile certs\server-cert.pem --keyfile certs\server-key.pem] [--state anchor_state.json]
     [--tile-cache tile_cache] [--no-ais] [--no-nmea]
 ```
