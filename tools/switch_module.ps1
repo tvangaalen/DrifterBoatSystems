@@ -92,8 +92,25 @@ if (-not $Yes) {
     if ((Read-Host 'Type yes to continue') -ne 'yes') { Write-Host 'Nothing changed.'; exit 1 }
 }
 
+# From here on the old server is being stopped. Safety net: if anything fails before the new one is started, record
+# the old location again and start the module from there, so it is never left stopped.
+$stopped = $false
+trap {
+    if ($stopped) {
+        Write-Host "`nFailed after stopping the old server: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Starting $($cur.title) again from $($cur.location)..." -ForegroundColor Yellow
+        & py (Join-Path $tools 'modules.py') set $Module $cur.location | Out-Null
+        & (Join-Path $root 'start_all.ps1') -Only $Module -NoWait
+        $deadline = (Get-Date).AddSeconds(120); while (-not (Listener $cur.port) -and (Get-Date) -lt $deadline) { Start-Sleep 2 }
+        Write-Host $(if (Listener $cur.port) { "$($cur.title) runs again from $($cur.location)." } else { "$($cur.title) did NOT come back: start it by hand!" }) -ForegroundColor Yellow
+        exit 4
+    }
+    Write-Host "`n$($_.Exception.Message)" -ForegroundColor Red; exit 1      # before stopping: nothing was changed
+}
+
 # ---- stop the old server
 Step 'Stopping the old server'
+$stopped = $true
 if ($cur.task) { Stop-ScheduledTask -TaskName $cur.task -ErrorAction SilentlyContinue }
 $procId = Listener $cur.port
 if ($procId) {
@@ -103,7 +120,7 @@ if ($procId) {
     while ($id) { $pr = Get-CimInstance Win32_Process -Filter "ProcessId=$id" -ErrorAction SilentlyContinue
                   if (-not $pr -or ($chain.Count -and $pr.Name -notmatch '^(cmd|py|pyw|python[\d.]*|pythonw[\d.]*)\.exe$')) { break }
                   $chain += $id; $id = $pr.ParentProcessId }
-    foreach ($x in $chain) { taskkill /F /PID $x 2>$null | Out-Null }
+    foreach ($x in $chain) { Stop-Process -Id $x -Force -ErrorAction SilentlyContinue }   # a launcher may already have exited by itself
 }
 $deadline = (Get-Date).AddSeconds(20); while ((Listener $cur.port) -and (Get-Date) -lt $deadline) { Start-Sleep 1 }
 if (Listener $cur.port) { throw "Port $($cur.port) is still in use: stop it by hand, then run this again" }
@@ -116,6 +133,7 @@ foreach ($r in $to.requires) { if (-not (Test-Path (Join-Path $to.folder $r))) {
 & py (Join-Path $tools 'modules.py') set $Module $target | Out-Null
 Step 'Starting'
 & (Join-Path $root 'start_all.ps1') -Only $Module -NoWait
+$stopped = $false                                   # the new server is being started: do not start the old one as well
 $deadline = (Get-Date).AddSeconds(120); while (-not (Listener $to.port) -and (Get-Date) -lt $deadline) { Start-Sleep 2 }
 if (Listener $to.port) { Write-Host "`n$($to.title) runs from $target (port $($to.port))." -ForegroundColor Green }
 else { Write-Host "`n$($to.title) did not start: see $($to.data)\logs. Undo with: tools\switch_module.ps1 $Module $(if ($Back) { '' } else { '-Back' })" -ForegroundColor Red; exit 2 }
