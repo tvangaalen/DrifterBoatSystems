@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4
+
+### 0.4.0 — 2026-11-01
+
+Supervisor: the gateway keeps the module servers running.
+
+- `supervisor.py`: adopts running servers, starts one that has not listened for 30 s (through `start_all.ps1 -Only`, outside the gateway's process tree), waits 2.5 min for it, backs off 1/2/5/10/15 min; never stops a server by itself; respects `C:\DrifterData\hold\<module>`. On with `"supervise": true` (live config only).
+- System page: per server its state, uptime and last event, a Restart button (with confirmation; refused while a BMS control runs, Float is latched or an anchor alarm is active; allowed when the server does not answer), and the supervisor's events. `POST /api/supervisor/restart`.
+- `start_all.ps1` marks a module as starting and never starts it twice within 2 min; skips modules on hold. New `tools/stop_module.ps1`, used by `switch_module.ps1` (which now sets a hold while moving).
+- Tests: `tests/test_supervisor.py` (adopt, grace, back-off, hold, restart, pre-checks, API); the mock gateway runs a fake supervisor that only logs.
+
 ## 0.3
 
 ### 0.3.1 — 2026-11-01

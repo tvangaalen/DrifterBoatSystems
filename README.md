@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.3.1 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.4.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
@@ -65,6 +65,15 @@ Then open **https://192.168.1.166:8100/** on the iPhone or iPad → Share → *A
 - `config.json`: `bind`, `port`, `allowed_hosts` (extra host names, e.g. `"drifter.lan"`), the certificate files, `ca_file` (to check the module servers' certificates) and per module the server `url` and the `classic` page link.
 - **Desktop icon "Drifter Boat Systems"** runs `start_all.ps1`: starts whatever is not running (MasterVolt YMS and the anchor watch through their own start scripts, hidden, logs in their `logs` folders; BoatGuard and Drifter through their scheduled tasks; the VIOMI controller), never restarts a server that already runs, waits up to 90 s, shows the status and opens the app.
 - Autostart: scheduled task **DrifterBoatSystems** runs `pyw drifter.py` from this folder at logon, restarts it within a minute if it stops, and logs to `logs\drifter.log`. After a code or `config.json` change: `Stop-ScheduledTask DrifterBoatSystems; Start-ScheduledTask DrifterBoatSystems`.
+
+## Supervisor
+
+With `"supervise": true` in `config.json` (the live setting) the gateway keeps the four servers running:
+
+- A server that runs is left alone. One that has not been listening for 30 s is started (the same way as the desktop icon does, outside the gateway's process tree, so restarting the gateway never takes a server down), then given 2.5 min to come up; failed starts are retried after 1, 2, 5, 10 and then every 15 min.
+- It never stops a server by itself. **System → Restart** stops and starts one on request, after a confirmation that says what pauses; MasterVolt is refused while a BMS control runs or Float is latched, the anchor watch while an alarm is active.
+- Closing a server's console window counts as "stopped": it is started again after 30 s. To keep a module stopped, create the file `C:\DrifterData\hold\<module>` (energy, anchor, guard, washer); `switch_module.ps1` does that itself while moving a module.
+- The System page shows each server's state, uptime and the supervisor's events.
 
 ## Moving the servers to `C:\Drifter` (one module at a time)
 
