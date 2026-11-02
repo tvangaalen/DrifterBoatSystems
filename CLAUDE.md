@@ -125,3 +125,4 @@ App/gateway: bump `VERSION` in `drifter.py`, `CACHE` in `web/sw.js`, the version
   3. **Done (washer 4.0 in 0.16.0, BoatGuard 2.0 in 0.17.0, anchor watch 2.0 in 0.18.0, MasterVolt 2.2 in 0.19.0):** the module contract, a package on FastAPI per module, plain HTTP on 127.0.0.1 with a shared token (certificates only for the gateway).
   4. **Done (0.20.0):** ES modules (`web/core`), `tsc --checkJs`, Playwright tests on recorded mock data; MasterVolt's classic page removed (MasterVolt 3.0).
   5. **Done (0.21.0):** the English user manual in the app (`docs/MANUAL.md` → `web/manual.html` by `tools/build_manual.py`; English was the user's choice), the developer guide and runbook (`docs/`), this single CLAUDE.md; *Backup keys and tokens* on the System page (0.21.1; the nightly back-up of 0.21.0 was dropped before it was deployed).
+- Drifter **1.0.0** (2026-11-02) marks the end of the refactoring: the base for new functionality.

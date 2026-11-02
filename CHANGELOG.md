@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0
+
+### 1.0.0 — 2026-11-02
+
+The base for new functionality: the migration (0.1–0.13) and the refactoring (0.14–0.22) are complete. No functional change
+since 0.22.0.
+- One public repository with the full history; the Windows service *Drifter* (drifterd 1.2.0) runs the gateway and the four
+  module servers, each under the module contract (plain HTTP on 127.0.0.1, token, `/health`); only the app serves HTTPS.
+- Modules: MasterVolt 3.0.1, anchor watch 2.0.1, BoatGuard 2.0.0, washer controller 4.0.1.
+- The app: ES modules, a type check, browser tests on recorded mock data; the user manual in the app.
+- Operations: `verify_live.py`, push alerts when a system is down, *Backup keys and tokens*, the runbook and the developer guide.
+
 ## 0.22
 
 ### 0.22.0 — 2026-11-02
