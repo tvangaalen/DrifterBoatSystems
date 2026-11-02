@@ -1,0 +1,4 @@
+
+# The browser tests compare these byte for byte: LF on every checkout (Windows runners convert to CRLF otherwise)
+tests/ui/__snapshots__/** text eol=lf
+tests/ui/fixtures/** text eol=lf
