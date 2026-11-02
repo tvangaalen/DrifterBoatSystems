@@ -1,25 +1,19 @@
 # Drifter Boat Systems
 
-One repository for the boat's systems: the Drifter app (iPhone/iPad PWA, `web/`), its stdlib gateway `drifter.py`, and
-the four module servers in `modules/` — `energy` (MasterVolt YMS), `anchor` (Orca Core 2 anchor watch), `guard`
-(BoatGuard) and `washer` (VIOMI W1). Overview: `README.md`. Migration plan and status: "Migration" below.
-
-## Module rules
-
-**Before touching a module, read its own `modules/<name>/CLAUDE.md`. Its hard rules (hardware safety, read-only on the
-Orca Core, never guessing MasterBus fields, ECU safety, privacy) apply in full.** Only its sections about version
-control, GitHub remotes, the Google Drive copy, the `.gitrepos` folder, the live folder `C:\Temp\mastervoltproject` and
-deploying by copying files are historical: version control is this repository and every module runs from `C:\Drifter`
-(see "Live" below). Their pre-restart checks (e.g. MasterVolt: `/api/bms` not busy, Float not latched) still apply.
+One repository for the boat's systems: the Drifter app (iPhone/iPad PWA, `web/`), its stdlib gateway `drifter.py`, the
+service `drifterd.py`, and the four module servers in `modules/` — `energy` (MasterVolt YMS), `anchor` (Orca Core 2
+anchor watch), `guard` (BoatGuard) and `washer` (VIOMI W1). This is the only CLAUDE.md: every rule for the app and for
+each module is here. Overview: `README.md`; architecture and tests: `docs/DEVELOPER.md`; operations: `docs/RUNBOOK.md`;
+the user manual: `docs/MANUAL.md`.
 
 ## Live
 
 - Everything runs from the clone `C:\Drifter`; runtime files in `C:\DrifterData\<module>` (gateway: `config.json`, `certs`, `logs` in `C:\Drifter`).
-- **The Windows service `Drifter` (drifterd.py)** runs the gateway and all four modules as its own children, each in a kill-on-close job object, in session 0, as the user's account, whether anybody is logged on or not; output in `<data>\logs\<module>.console.log`, its own log in `C:\DrifterData\logs\drifterd.log`. It is installed (and removed with `-Remove`) by the user's `tools\install_service.ps1`: it needs the user's password and an elevated shell, so the user runs it, never Claude. Until it is installed, the scheduled task DrifterBoatSystems (`tools\run_module.py gateway`) is the fallback.
-- **Deploying** = commit and push here, then `git pull --ff-only` in `C:\Drifter`, then restart only what changed through the gateway (System page, or `POST /api/supervisor/restart` with `X-Drifter-Request: 1`; the gateway itself: module `gateway`); a change to drifterd.py, supervisor.py or common/proc.py needs a service restart (`Restart-Service Drifter`, or Stop/Start; the user's account may do both). Claude's session cannot stop session-0 processes directly. New packages: `py -3.12 tools\sync_envs.py --into .venv-next`, then restart that module. Never edit files in `C:\Drifter` directly. A web-only change needs no restart (files are read per request).
-- **After a deploy or restart**, verify with `py -3.12 toolserify_live.py [module ...]` (read-only GETs, about a second; it retries
-  what can still come right, like the BMS units ~2 minutes after an energy restart, up to `--wait 240`): health, version,
-  403 without the token, supervisor and gateway state, and each module's own essentials. Exit code = failed checks.
+- **The Windows service `Drifter` (drifterd.py)** runs the gateway and all four modules as its own children, each in a kill-on-close job object, in session 0, as the user's account, whether anybody is logged on or not; output in `<data>\logs\<module>.console.log`, its own log in `C:\DrifterData\logs\drifterd.log`. It is installed (and removed with `-Remove`) by the user's `tools\install_service.ps1`: it needs the user's password and an elevated shell, so the user runs it, never Claude.
+- **Deploying** = commit and push here, then `git pull --ff-only` in `C:\Drifter`, then restart only what changed through the gateway (System page, or `POST /api/supervisor/restart` with `X-Drifter-Request: 1`; the gateway itself: module `gateway`); a change to drifterd.py, supervisor.py or common/proc.py needs a service restart (`Restart-Service Drifter`, or Stop/Start; the user's account may do both), which restarts every module. Claude's session cannot stop session-0 processes directly. New packages: `py -3.12 tools\sync_envs.py --into .venv-next <module>`, then restart that module. Never edit files in `C:\Drifter` directly. A web-only change needs no restart (files are read per request).
+- **After a deploy or restart**, verify with `py -3.12 tools\verify_live.py [module ...]` (read-only GETs, about a second; it waits for what can still come right, like the BMS units ~2 minutes after an energy restart, up to `--wait 240`). Exit code = failed checks.
+- Before any restart, read-only pre-checks: energy `GET /api/bms` → `control_status.busy` false and `GET /api/energy` → `high_soc_float_policy.float_latched` false; anchor `GET /api/state` → no alarms (and say so if the anchor is set). A restart pauses Float protection and the anchor watch.
+- **Back-up of the keys**: drifterd runs `tools/backup.py` every night at 03:30 (`backup` in `modules.json`): only `anchor\pushover.json`, `anchor\nfl.json`, `guard\pushover.json`, `guard\ezviz_token.json`, `washer\viomi_config.json`, to `C:\DrifterBackups` (7 daily, 4 weekly). The user chose keys only (2026-11-02): never add positions, the track or the MasterVolt history. The service cannot see Google Drive (G:); the user syncs `C:\DrifterBackups` with Google Drive for desktop.
 - A session without desktop has no sound and no windows; never add a feature that needs either.
 - The old project folders are in `C:\DrifterArchive\legacy-2026-11-02` (the user's to delete). The Mastervolt Local CA lives in `C:\Drifter\modules\energy\certs`; `common/issue_cert.ps1` reads it there.
 
@@ -29,24 +23,73 @@ deploying by copying files are historical: version control is this repository an
 - **Engine ECU OFF** always needs the confirmation whose default is *Keep ECU ON* (`web/energy.js`); Escape/tap outside = keep on. Never weaken this or add a path that switches the ECU off without it.
 - Confirm-first for every action that cuts power, stops charging, stops a watch or deletes data; the safe answer is the default button.
 - **Route allowlist**: a new upstream route goes into `ROUTES` in `drifter.py` with the narrowest pattern, plus a test in `tests/test_gateway.py`. Do not add catch-all patterns. SOC calibration (`set-soc-*`) is exposed with its choice dialog (Cancel default); history export and the CA download are not exposed.
-- Keep the gateway checks: `check_bind` (localhost/private only), `host_allowed` (DNS rebinding), and for POST: JSON, `X-Drifter-Request: 1`, same Origin. The washer's `X-Viomi-Request` header is added by the gateway only after those checks.
-- **Never run UI tests against the live servers.** Use `py tools/mock_upstreams.py --gateway` (launch config `drifter-mock`, port 8101). A test click on the live servers can arm the camera, switch the inverter or start the washer. GETs to live servers for reading payload shapes are fine.
+- Keep the gateway checks: `check_bind` (localhost/private only), `host_allowed` (DNS rebinding), and for POST: JSON, `X-Drifter-Request: 1`, same Origin. Every module refuses requests without the gateway's `X-Drifter-Token` (the module contract: `common/service.py`, MasterVolt's own `mastervolt/api/contract.py`); keep it fail-closed.
+- **Never run UI tests against the live servers.** Use the browser tests (`npx playwright test`, their own mock on port 9101) or `py tools/mock_upstreams.py --gateway` (port 8101). A test click on the live servers can arm the camera, switch the inverter or start the washer. GETs to live servers for reading payload shapes are fine.
 - The supervisor (inside drifterd) must never stop a running server on its own initiative; health checks are display only. It stops servers only for a restart or *Switch all systems off* the user asks for in the app, both after the gateway's `make_precheck` (for switch-off a latched Float does not count, the user's choice of 2026-11-02); *Switch all systems off* never sends a command to the boat (only processes stop) and its confirmation keeps *Leave on* as the default. Keep `"supervise"` off in every config except the live one; UI tests use the in-process mock supervisor in `tools/mock_upstreams.py`, never drifterd.
-- Do not start, stop or restart the live module servers unless the user asks in that turn (MasterVolt owns the USB link and Bluetooth; restarts pause Float protection and the anchor watch). `start_all.ps1` (the desktop icon) only starts the service; it never restarts a running server; keep it that way.
-- LAN only: never bind a public address, port-forward or tunnel. Remote access is UniFi Teleport (clients 192.168.2.x).
-- HTTPS certificates come from the existing Mastervolt Local CA through `common/issue_cert.ps1` (only reads the CA folder, refuses without it). Never create a new CA or write into the CA folder.
-- **Shared code goes in `common/`** (stdlib only, except `common/service.py`, the FastAPI module contract: token, `/health`, 127.0.0.1): network checks, HTTPS, logging, clock texts, Pushover posting, the certificate script. Change it with every user in mind (gateway, anchor, guard, washer) and run the whole `run_all.py`. Keep module behaviour in the module: alarm decisions, Pushover queues/priorities and retries stay where they are. MasterVolt does not import `common` (own package, golden tests, owner of the CA). A module imports it after `sys.path.insert(0, <repository root>)`; the live servers run from `C:\Drifter`, so `common/` is deployed with `git pull` like everything else, and a change there means restarting every module that uses it.
-- Times are always 24-hour (`hm`/`hms`/`dayTime` in `web/core/format.js`); never locale time defaults.
+- Do not start, stop or restart the live servers unless the user asks in that turn (MasterVolt owns the USB link and Bluetooth). Never start a server yourself (Start-Process or otherwise): drifterd runs them. `start_all.ps1` (the desktop icon) only starts the service; it never restarts a running server; keep it that way.
+- LAN only: never bind a public address, port-forward or tunnel. Remote access is UniFi Teleport (clients 192.168.2.x), so never restrict requests to 192.168.1.x.
+- HTTPS certificates come from the existing Mastervolt Local CA through `common/issue_cert.ps1` (only reads the CA folder, refuses without it). Never create a new CA, write into the CA folder or change the Windows trust store: every phone would have to be set up again. Only the gateway serves HTTPS; the modules serve plain HTTP on 127.0.0.1.
+- **Shared code goes in `common/`** (stdlib only, except `common/service.py`, the FastAPI module contract): network checks, HTTPS, logging, clock texts, Pushover posting, processes, the certificate script. Change it with every user in mind (gateway, drifterd, anchor, guard, washer) and run the whole `run_all.py`. Keep module behaviour in the module: alarm decisions, Pushover queues/priorities and retries stay where they are. MasterVolt does not import `common`. A change in `common/` means restarting every module that uses it.
+- Times are always 24-hour (`hm`/`hms`/`dayTime` in `web/core/format.js`); never locale time defaults (AM/PM).
 - Live data is never cached by the service worker (`/api/` is skipped). Bump `CACHE` in `web/sw.js` with every release so home-screen apps update.
+
+## Energy (MasterVolt YMS, `modules/energy`)
+
+FastAPI server (package `mastervolt`, `python -m mastervolt`) that monitors and controls the boat's Mastervolt system over
+the MasterBus USB Link, plus the DALY BMS units and balancers over Bluetooth. **It writes to live hardware** (inverter,
+chargers, alternator regulator, Engine ECU, battery MOSFETs): treat every control path as safety-critical. Its page is
+the app's Energy page (`web/energy.js`). In depth: `modules/energy/docs/MANUAL.md` (chapter 9: developer guide);
+protocol and field maps: `docs/hardware-notes.md`, `docs/VERIFIED_FIELD_MAP.txt` (the v0.17 map; the hardware notes list
+what changed since). Read the hardware notes before touching any MasterBus or DALY code.
+
+- **Never guess a MasterBus field number, CAN opcode or DALY command.** Only use fields verified on hardware, in a device snapshot (`py -m tools.inspect_device snapshot`) or in a MasterAdjust capture. If a mapping is unknown, say so and propose a read-only inspection instead of code that "tries" a field.
+- **Never run anything that writes to hardware** (`tools/reversible_write_test.py`, the `/api/control/*` and `/api/bms/*` POST routes) unless the user explicitly asks in that turn. Prefer read-only tools.
+- **Importing must never touch hardware.** Tests and tools are imported by the test runner; keep module level free of device access. Hardware access belongs in `main()`.
+- Preserve write-then-read-back verification on controls; never turn a verified write into fire-and-forget. Keep hardware-verified mappings, control sequences and safety logic unchanged unless the task is about them, and say so when it is.
+- **Golden tests** (`tests/test_masterbus_golden.py`, `test_api_golden.py`, `test_misc_golden.py`) compare the code with the hardware-verified 1.22.2 release: a failing golden test means behaviour changed. **Never regenerate a golden file to make a test pass**; only for an intended change, said in the changelog (routes removed on purpose are listed in the test, e.g. `REMOVED_ROUTES`).
+- `mastervolt/reports/battery_health.py` only reads the history database (`mode=ro`) and the BMS backups; never point any tool at the live database with anything but a read-only connection. The Reports tab runs it in a **separate low-priority process** (`reports/service.py`): never in the server process or a server thread (the GIL would slow MasterBus/Bluetooth and Float protection).
+- **Layering:** `api` → `runtime` → services → protocol/IO. Nothing below `api` imports FastAPI. Nothing in `masterbus` imports `bluetooth`: they meet only in `runtime.py`. New MasterBus/DALY behaviour goes through the existing classes (`BusIO`, `DeviceControls`, `FloatProtection`, `BatteryWorker`, `DalyBalancerService`) and the shared `io_lock` / Bluetooth coordinator; never open a second HID or BLE connection.
+- **Bluetooth** work goes through `bluetooth/coordinator.py` in its priority order (user controls > manual refresh > auto reconnect > auto reads > balancers); per-battery workers stay failure-isolated. **Every Windows BLE call needs a hard deadline** (`asyncio.wait_for` around connect, start_notify, GATT writes, disconnect); a client that connected but failed later must be disconnected; `acquire()` returns a token that `release()` must be given. `except Exception` does not catch `asyncio.CancelledError`: worker loops run under a `link.Supervisor`, and a new worker must too. Log failures with `ble_events.ble_log`.
+- **Float protection only trusts fresh data** (`soc.py`): use `Services.house_soc_details` (only the three DALY BMSes, never the balancers' readings). Float is triggered purely by the highest single cell voltage (`soc.float_decision`); the pack-average House SOC never starts, holds or resumes Float. A fresh Float start also sets every battery's SOC to 100% once (fire-and-forget, own thread). No MasterShunt fallback without the user's approval.
+- **The chart cache** (`history/chart_cache.py`) is append-only in id order and only grows: filter it by bisecting, never scan or rebuild it; the same for `history.sqlite3`. History totals come from `history/totals.py` over the full-resolution caches; the chart data sent to the browser is a sample for drawing only — never add totals up in the browser. Stacked history charts are areas, not bars (no stripes).
+- Settings are one table in `mastervolt/settings.py` (defaults, limits, validation, API model); a new setting goes there and into `SETTINGS` in `web/energy.js` with the same limits, with a default that keeps existing `user_settings.json` files working.
+- iPhone touch: a control dragged or scrolled sideways must be an `input`/`select`/`textarea` or sit inside `.no-swipe`; touch targets at least ~40 px.
+- Style: black (140 columns) and ruff with its own `pyproject.toml`; one statement per line, no star imports, no bare `except:`. Never edit sources with PowerShell `Get-Content`/`Set-Content` (it breaks UTF-8); use the Edit tool or a script that writes UTF-8 bytes. Paths come from `mastervolt.config.Paths` (injectable for tests).
+- uvicorn always runs with `timeout_graceful_shutdown=5` (`mastervolt/__main__.py`): a plain uvicorn waits forever for an open browser keep-alive connection when told to stop, and then listens no more but never exits.
+- Known: Alternator ON only clears Stop Charge (field 39 = 0 + commit 40) and expects the Alpha Pro to resume by itself.
+- Verify: `.venv\Scripts\python.exe -m tests.run_all` in `modules\energy` (no test touches hardware: `FakeBus`, the fake `bleak`, a temporary database). Release: the version in `mastervolt/__init__.py`, the first paragraph of its `README.md`, the version line of `docs/MANUAL.md` (then `py -m tools.build_manual`) and a `### x.y.z` entry in its `CHANGELOG.md`; `py -m tests.test_release` checks them.
+
+## Anchor watch (`modules/anchor`)
+
+FastAPI server (package `anchor/`, `python -m anchor`) with the anchor alarm for the Orca Core 2, plus the read-only live
+reader `orca_reader.py`. `anchor_watch.py` only re-exports the package for `test_anchor_watch.py`.
+
+- **Read-only on the Core.** Never call `PUT /v1/sources`, `POST :9001/imu/calibration`, the `/v1/sync` WebSocket or the firmware page on port 8090, and never send anything on the sensor WebSockets. Only GETs and listening. Parse Core messages with `orca_reader.parse_message`, never plain `json.loads` (the Core sends unescaped text).
+- **Never trust a GPS position just because it is fresh**: the Core's position (source 254) can freeze while it flags the boat as stationary, and a frozen position hides a drag. Keep the frozen-position check in `AnchorWatch.tick` (`FROZEN_S`: unchanged for 60 s = not used) for every source, including 254. A held `navigation.position` may fall back to the same source's own `navigation.gnss` fix only while that fix keeps changing. Only exception: source 254's measured static hold (releases after `HOLD_M` = 10 m), used only while its fix time keeps advancing; never extend that to other receivers or drop the fix-time check. The hold is detected on 254's own fix with the position within `HOLD_NEAR_M` of it; never widen that to positions that really move. `HOLD_SOON_S` only puts 254 behind live receivers; it must never keep 254 out of the frozen check or log a hold before it is confirmed. `SLOW_GPS` (B&G ZG100: 100 s, approved 2026-10-28) stays per model and only as long as the recordings show. Simulated receivers in tests need jitter, or they count as frozen.
+- Network GPS (`NetGPS`, NMEA over UDP/TCP, e.g. GPS2IP) is a source like any other: never exempt it from the frozen check, keep the `NET_MAX_AGE_S` check on the sentence's own GPS time, accept private-LAN senders only, keep the `NET_AWAY_M` check (a phone can go ashore).
+- The alarm logic runs on the server (`AnchorWatch.tick`); the page only displays and sends commands.
+- The chain formula is user input: only ever evaluate it through `ChainFormula` (parsed, no `eval`).
+- Push alerts go out only through the `Pushover` worker thread, never from `tick()` or a request thread; anchor drag stays the only emergency (priority 2) alert. The still-alive ping runs in its own thread (`StillAlive`), independent of the alarm logic and of the page, and pings more often than its interval.
+- AIS from the Core's own receiver always has priority over internet AIS (`read_ais`); keep My MMSI filtered in both. Do not reproduce the Orca app's private cloud API.
+- A test instance points `--pushover`, `--still-alive`, `--aisstream` and `--nfl` at non-existent files, `--recordings` at a scratch folder, uses `--no-nmea` and another `--port`/`--state`: a test must never send a real alert, ping, subscription or position.
+- noforeignland.com uploads go out only from the `NoForeignLand` worker thread and only take points of the watch's own track. The Signal K plugin's shared key lives in the local `nfl.json` only (until NFL's own key arrives): never in code, tests or docs.
+- Map tiles are fetched on demand only (OpenStreetMap policy). No sea charts (removed in 1.12.0; Seamarks stay); only add a map source whose terms allow it; no HNHS tiles without written agreement; never decode, convert or commit CM93/C-MAP or other proprietary chart data. Never colour-invert charts in dark mode (dim them); Night may tint them red.
+- Never commit `pushover.json`, `still_alive.json`, `aisstream.json`, `nfl.json`, `tide_cache.json`, `anchor_state.json`, `tile_cache/`, `captures/` or `recordings/`; keep real MMSIs and anchorage positions out of tests.
+- Verify: `.venv\Scripts\python.exe -m unittest test_anchor_watch test_anchor` in `modules\anchor`. Release: `VERSION` in `anchor/settings.py` and its `CHANGELOG.md`.
+
+## BoatGuard and the washer (`modules/guard`, `modules/washer`)
+
+- BoatGuard arms the EZVIZ camera when the iPhone leaves the boat's Wi-Fi. `python -m guard login` and `-m guard pushover` ask for the user's passwords and keys: the user runs them, never Claude. Its tests never reach the router, the camera or Pushover; never arm or disarm the real camera unless the user asks in that turn.
+- The washer controller only sends a command to the washer when the user asks for it in the app; tests use fakes. Its token lives in `C:\DrifterData\washer\viomi_config.json` only.
+- Verify: `tests\run_all.py` runs both (`guard`, `guard-api`, `washer`). Release: `VERSION` in `guard/__init__.py` / `washer/__init__.py` and their CHANGELOG.
 
 ## Conventions
 
-- Python: the python.org **Python 3.12** in the environments built from `uv.lock` (`tools/sync_envs.py`): `.venv` for the gateway and tools, `modules/<name>/.venv` per module. Never the Microsoft Store Python (hung at boot in session 0, cannot be started through Win32_Process Create), never `pip install` into an environment by hand: add the package to its group in `pyproject.toml`, `py -3.12 -m uv lock`, rebuild. Gateway: stdlib only, dense style like the modules; `ruff check .` must pass.
-- Frontend: plain JS, no build step. `web/app.css` holds all colours as tokens per theme (light, dark, night, auto = device); modules never hard-code colours. New UI uses the existing components (`card`, `row`, `stats`, `hero`, `badge`, `btn`, `switch`, `seg`, `field`, `sheet`).
-- The app is ES modules loaded as they are (`web/main.js` → `web/core/*.js` and the page modules); a page starts with `import Drifter from "./core/app.js"`. New shared code goes in `web/core/`, with JSDoc types where the check needs them; `npm run typecheck` must stay at 0 errors. Node (`package.json`) is a development tool only: never add a build step or a runtime npm dependency.
-- **UI changes:** `npx playwright test` compares every page's DOM with `tests/ui/__snapshots__`. A change you intend updates them (`--update-snapshots`), and the diff shows what changed; re-record the fixtures (`RECORD=1`, delete `tests/ui/fixtures` first) only after changing the mock. For a refactor that must not change the look, take screenshots first (`SCREENS=1 npx playwright test --project chromium -g width --update-snapshots=missing`, kept locally) and compare after.
+- Python: the python.org **Python 3.12** in the environments built from `uv.lock` (`tools/sync_envs.py`): `.venv` for the gateway and tools, `modules/<name>/.venv` per module. Never the Microsoft Store Python, never `pip install` into an environment by hand: add the package to its group in `pyproject.toml`, `py -3.12 -m uv lock`, rebuild. Gateway and drifterd: stdlib only, dense style like the modules; `ruff check .` must pass.
+- Frontend: ES modules loaded as they are (`web/main.js` → `web/core/*.js` and the page modules; a page starts with `import Drifter from "./core/app.js"`), no build step; Node (`package.json`) is a development tool only, never a runtime dependency. `web/app.css` holds all colours as tokens per theme (light, dark, night, auto); modules never hard-code colours. New UI uses the existing components (`card`, `row`, `stats`, `hero`, `badge`, `btn`, `switch`, `seg`, `field`, `sheet`); new shared code goes in `web/core/` with JSDoc types where the check needs them; `npm run typecheck` stays at 0 errors.
 - A page module registers with `Drifter.register({id, title, short, icon, every, background, load, render, mount, tile, badge})`; commands go through `Drifter.api(module, path, body)` and `Drifter.run(...)`, confirmations through `Drifter.confirm(...)`.
-- Check new layouts at 390 px (iPhone), 820 px portrait and 1180 px landscape (iPad), in light, dark and night.
+- **UI changes:** `npx playwright test` compares every page's DOM with `tests/ui/__snapshots__`. A change you intend updates them (`--update-snapshots`); read the diff. Re-record the fixtures (`RECORD=1`, delete `tests/ui/fixtures` first) only after changing the mock. For a refactor that must not change the look, take screenshots first (`SCREENS=1 npx playwright test --project chromium -g width --update-snapshots=missing`, kept locally) and compare after. Check new layouts at 390, 820 and 1180 px in light, dark and night.
+- Write files with LF line endings (Python's `write_text` on Windows writes CRLF: use `newline="\n"` or bytes); check `git diff --stat` shows only the intended lines. Delete `__pycache__` folders after running Python (`run_all.py` does).
 
 ## Verifying
 
@@ -57,11 +100,7 @@ npm run typecheck                            # tsc --checkJs over web/ (JSDoc ty
 npx playwright test                          # the app in Chromium and WebKit on recorded mock data (tests/ui)
 ```
 
-GitHub CI (`.github/workflows/ci.yml`) runs the same on every push, plus the privacy scan. Do not wait for it after a push (about 5 minutes; the user's choice of 2026-11-02): run the full
-local suite before committing, push, carry on (deploy included), and check the run's result once at the end of the turn
-(`gh run list --limit 1`); a failed run also reaches the user by e-mail. Never skip CI or the privacy hook.
-
-Then the UI against the mocks (`drifter-mock`). `run_all.py` removes `__pycache__` folders afterwards.
+GitHub CI (`.github/workflows/ci.yml`) runs the same on every push, plus the privacy scan. Do not wait for it after a push (about 5 minutes; the user's choice of 2026-11-02): run the full local suite before committing, push, carry on (deploy included), and check the run's result once at the end of the turn (`gh run list --limit 1`); a failed run also reaches the user by e-mail. Never skip CI or the privacy hook.
 
 ## Version control
 
@@ -69,13 +108,12 @@ Then the UI against the mocks (`drifter-mock`). `run_all.py` removes `__pycache_
 - Repo-local identity `TvanG` with the GitHub no-reply address. Never put the user's real e-mail or other personal data in commits, files or tags.
 - **Everything committed is public.** The pre-commit hook (`tools/privacy_scan.py`, `git config core.hooksPath .githooks`, local deny list `C:\DrifterData\privacy_denylist.txt`) and CI scan every commit; never bypass them (`--no-verify`), and still read the staged diff yourself. Before every commit and push, scan the staged diff for positions (anchorages, tracks), MMSIs, keys/tokens, hardware serials and personal data, and read the result. Never commit `config.json`, `certs/`, `logs/`, module runtime files (each module's `.gitignore` lists them), captures, recordings, databases or backups.
 - Commit code and docs separately; imperative summary line, then what and why. Push only when the user asks or approved a release; never force-push.
-- Tags: the gateway/app as `vX.Y.Z`; a module release as `<module>/vX.Y.Z` (e.g. `energy/v2.1.3`), on the commit that bumps that module's version.
-- The old repositories (MasterVolt-YMS, OrcaCore2-AnchorWatch, BoatGuard, viomi-w1-controller) are archived: never push to them. Their old local folders are in `C:\DrifterArchive\legacy-2026-11-02`.
+- Tags: the gateway/app as `vX.Y.Z`; a module release as `<module>/vX.Y.Z` (e.g. `energy/v3.0.0`), on the commit that bumps that module's version.
+- The old repositories (MasterVolt-YMS, OrcaCore2-AnchorWatch, BoatGuard, viomi-w1-controller) are archived: never push to them.
 
 ## Releasing
 
-App/gateway: bump `VERSION` in `drifter.py`, `CACHE` in `web/sw.js`, the version line in `README.md`, add a `CHANGELOG.md` entry.
-A module: follow that module's own release steps (version places, its CHANGELOG), tag `<module>/vX.Y.Z`.
+App/gateway: bump `VERSION` in `drifter.py`, `CACHE` in `web/sw.js`, the version line in `README.md`, add a `CHANGELOG.md` entry. A module: its own version places (above) and CHANGELOG, tag `<module>/vX.Y.Z`.
 
 ## History and refactoring
 
@@ -83,6 +121,6 @@ A module: follow that module's own release steps (version places, its CHANGELOG)
 - Refactoring, plan of 2026-11-02 (user's choices: a real Windows service, FastAPI for every module, python.org Python, no frontend build step):
   1. **Done (0.14.x):** one Python 3.12 and `uv.lock`, ruff, privacy hook, CI; one scheduled task; the Store Python removed.
   2. **Done (0.15.0):** drifterd as the Windows service, the supervisor inside it, health checks, migration tools removed.
-  3. **Done (washer 4.0 in 0.16.0, BoatGuard 2.0 in 0.17.0, anchor watch 2.0 in 0.18.0, MasterVolt 2.2 in 0.19.0):** module contract, per module (washer, guard, anchor, energy): a package on FastAPI, one config file with a schema, logging from `common`, `/health`, plain HTTP on 127.0.0.1 with a shared token from the gateway (then certificates only for the gateway). MasterBus/DALY code, Float and `AnchorWatch.tick` stay as they are (characterization and golden tests first).
-  4. **Done (0.20.0):** ES modules (`web/core`), `tsc --checkJs` at 0 errors, Playwright tests on recorded mock data (DOM of every page and view, the safe defaults, Chromium and WebKit); MasterVolt's classic page removed (MasterVolt 3.0). Shared components so far: the core's fragments (`ui.js`); more can move there with the DOM snapshots as the check.
-  5. Docs and operations: one Dutch user manual, English developer docs, one CLAUDE.md, a runbook, backups of `C:\DrifterData`.
+  3. **Done (washer 4.0 in 0.16.0, BoatGuard 2.0 in 0.17.0, anchor watch 2.0 in 0.18.0, MasterVolt 2.2 in 0.19.0):** the module contract, a package on FastAPI per module, plain HTTP on 127.0.0.1 with a shared token (certificates only for the gateway).
+  4. **Done (0.20.0):** ES modules (`web/core`), `tsc --checkJs`, Playwright tests on recorded mock data; MasterVolt's classic page removed (MasterVolt 3.0).
+  5. **In progress:** an English user manual in the app (the user's choice), the developer guide and runbook (`docs/`), this single CLAUDE.md, the nightly back-up of the keys (drifterd 1.3.0).
