@@ -251,7 +251,7 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(self.req(port, "POST", "/api/supervisor/shutdown", {}, {**H, "Origin": "http://evil.example"})[0], 403)
         self.assertEqual(sup.calls, [])
         self.assertEqual(self.req(port, "POST", "/api/supervisor/shutdown", {}, H)[0], 202)
-        self.assertEqual(sup.calls, ["shutdown"]); self.assertTrue(callable(sup.on_done))            # the gateway ends itself afterwards
+        self.assertEqual(sup.calls, ["shutdown"]); self.assertIsNone(sup.on_done)                     # drifterd ends the gateway, not the gateway itself
         sup.refuse = True; code, j = self.req(port, "POST", "/api/supervisor/shutdown", {}, H)
         self.assertEqual(code, 409); self.assertIn("latched", j["error"])
         code, j = self.req(port, "GET", "/api/supervisor/log?module=energy&lines=3"); self.assertEqual((code, j["lines"]), (200, ["line 0", "line 1", "line 2"]))

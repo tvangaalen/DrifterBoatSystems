@@ -237,9 +237,11 @@ const Drifter = (() => {
     if (!s) return "";
     if (s.busy === "shutdown") return s.state === "stopped" ? `<span class="badge">switched off</span>` : `<span class="badge warn">switching off…</span>`;
     if (s.busy) return `<span class="badge warn">restarting</span>`;
+    if (s.state === "running" && s.health && s.health.ok === false)   // listening, but its health check gets no answer (display only)
+      return `<span class="badge warn" title="${esc(s.health.detail || "")}">running · not answering since ${esc(hm(s.health.since))}</span>`;
     return {running: `<span class="badge ok">running${s.uptime_s != null ? " · " + dur(s.uptime_s) : ""}</span>`, starting: `<span class="badge warn">starting…</span>`,
       down: `<span class="badge bad">not running</span>`, failed: `<span class="badge bad">failed · next try in ${dur(s.next_try_in)}</span>`,
-      held: `<span class="badge warn">on hold (being moved)</span>`}[s.state] || `<span class="badge">${esc(s.state)}</span>`;
+      held: `<span class="badge warn">on hold</span>`}[s.state] || `<span class="badge">${esc(s.state)}</span>`;
   }
   async function renderSystem(el) {
     el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="hint" style="margin:10px 2px 0">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p></div>
@@ -277,7 +279,9 @@ const Drifter = (() => {
           <span class="hint" style="flex:1;min-width:120px">${s.last_event ? `${esc(dayTime(s.last_event.t))} ${esc(s.last_event.text)}` : ""}</span>
           <span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="${name}">Show log</button>
           <button class="btn sec sm" type="button" data-restart="${name}" ${s.busy || s.held || s.state === "starting" ? "disabled" : ""}>${icon("refresh")} Restart</button></span></div>` : ""}</div>`;
-    }).join("") + (sup ? `<div class="row"><div class="k"><b>Drifter</b><span class="hint">this app's server on the boat PC</span></div><button class="btn sec sm" type="button" data-log="gateway">Show log</button></div>`
+    }).join("") + (sup && sup.error ? `<div class="row"><span class="badc">${esc(sup.error)}</span></div>` : "")
+      + (sup ? `<div class="row"><div class="k"><b>Drifter</b><span class="hint">this app's server on the boat PC${sup.drifterd ? ` · service drifterd ${esc(sup.drifterd.version)}, running since ${esc(dayTime(sup.drifterd.started))}` : ""}</span></div>
+          <span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="gateway">Show log</button>${sup.drifterd ? `<button class="btn sec sm" type="button" data-log="drifterd">Service log</button>` : ""}</span></div>`
       : `<div class="row"><span class="hint">The supervisor is off: servers are not restarted automatically.</span></div>`);
     $("sysEvWrap").hidden = !sup || !sup.events.length;
     $("sysOffWrap").hidden = !sup; $("sysOff").disabled = !!(sup && sup.shutdown && sup.shutdown.state === "running");

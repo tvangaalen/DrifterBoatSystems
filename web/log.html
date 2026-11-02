@@ -31,7 +31,7 @@ try { const t = localStorage.getItem("drifter-theme"); if (t && t !== "auto") do
 // One module's log file (<data>\logs\<module>.console.log on the boat PC), read through the gateway. Refreshes every 3 s while
 // "Follow" is on and keeps the newest line in view. Times are as the server wrote them (24-hour).
 (() => {
-  const NAMES = {energy: "Energy (MasterVolt)", anchor: "Anchor watch", guard: "BoatGuard", washer: "Washer", gateway: "Drifter"};
+  const NAMES = {energy: "Energy (MasterVolt)", anchor: "Anchor watch", guard: "BoatGuard", washer: "Washer", gateway: "Drifter", drifterd: "Drifter service"};
   const mod = location.hash.slice(1), $ = id => document.getElementById(id), pad = n => String(n).padStart(2, "0");
   const esc = s => s.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"})[c]);
   $("t").textContent = `${NAMES[mod] || mod} log`; document.title = `${NAMES[mod] || mod} log · Drifter`;

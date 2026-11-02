@@ -1,20 +1,17 @@
 """Supervisor: keeps the module servers (energy, anchor, guard, washer) running, shows their state, restarts on request.
+It runs inside drifterd (the service), which gives it start/stop functions that run each server as drifterd's child in
+its own job object.
 
 Rules (see CLAUDE.md):
-- It never starts a server as its own child: the gateway runs as a scheduled task, and Windows ends a task's whole
-  process tree when the task stops (a gateway restart would take MasterVolt down). Every start goes through
-  `start_all.ps1 -Only <module> -NoWait`, which creates the process outside this tree (or starts the module's task).
-- A server that is already running is adopted, never touched. The supervisor only *starts* a module that has not been
-  listening for GRACE_S, then waits up to START_WAIT_S for its port, and backs off (BACKOFF) when starts keep failing.
-- It never stops a server by itself. Only `restart()` stops one, on the user's explicit request from the app, after the
-  module's pre-check (energy: no BMS control busy, Float not latched; anchor: no alarm).
-- `<data>\\hold\\<module>` (set by switch_module.ps1 while a module is being moved) means: leave it alone.
-- `shutdown_all()` ("Switch all systems off" in the app) is the other stop the user asks for: after the same pre-checks
-  for every module it stops the loop (nothing is started again), stops every module server, then lets the gateway end.
-- Every module runs without a window (also in session 0, when nobody is logged on); its output goes to
-  `<data>\\logs\\<module>.console.log` (tools/run_module.py), which the app shows through `log_tail()`.
-- A module that is down when the supervisor starts is started at once (the desktop icon leaves that to the supervisor);
-  one that stops later is started after GRACE_S.
+- A server that is already running is adopted, never touched. The supervisor only *starts* a module that is not
+  listening (at once when the supervisor starts, after GRACE_S when it stops later), waits up to START_WAIT_S for its
+  port, and backs off (BACKOFF) when starts keep failing.
+- It never stops a server by itself. Only `restart()` and `shutdown_all()` stop servers, on the user's explicit request
+  from the app, after the gateway's pre-checks (energy: no BMS control busy, Float not latched for a restart; anchor:
+  no alarm).
+- `<data>\\hold\\<module>` means: leave it alone (not started by the supervisor).
+- A restart puts a new Python environment in place when tools/sync_envs.py built one (`<folder>/.venv-next`).
+- `log_tail()` reads `<data>\\logs\\<module>.console.log` for the app's log window.
 Stdlib only.
 """
 from __future__ import annotations
@@ -28,15 +25,14 @@ sys.path.insert(0, str(HERE / "tools"))
 import modules as M  # noqa: E402
 
 log = logging.getLogger("drifter")
-# START_WAIT_S: after a boot without anybody logged on, start_all.ps1 itself took up to 90 s and MasterVolt listened
-# 177 s after its start (2026-11-02); a start that is declared failed too early gets a second start (start_all.ps1 blocks
-# that for 300 s, see its "starting" marker).
+# START_WAIT_S: after a boot without anybody logged on MasterVolt listened 177 s after its start (2026-11-02); a start
+# declared failed too early gets a second one, and two MasterVolts would fight over the USB Link.
 GRACE_S, START_WAIT_S, STABLE_S, TICK_S = 30, 300, 600, 5
 BACKOFF = [60, 120, 300, 600, 900]          # s between failed start attempts
-SUPERVISED = ("energy", "anchor", "guard", "washer")   # the gateway cannot supervise itself (its task restarts it)
+SUPERVISED = M.MODULES                                  # the gateway is kept running by drifterd itself
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 SHUTDOWN_ORDER = ("washer", "guard", "anchor", "energy")
-LOG_NAMES = (*SUPERVISED, "gateway")
+LOG_NAMES = M.NAMES
 
 
 def listening_ports() -> set[int]:
@@ -51,31 +47,17 @@ def listening_ports() -> set[int]:
     return ports
 
 
-def _ps(script: str, *args: str, timeout: int = 240) -> subprocess.CompletedProcess:
-    return subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(HERE / script), *args],
-                          capture_output=True, text=True, timeout=timeout, creationflags=NO_WINDOW)
-
-
-def start_module(name: str) -> None:
-    r = _ps("start_all.ps1", "-Only", name, "-NoWait")
-    if r.returncode: raise RuntimeError((r.stderr or r.stdout).strip()[-300:] or f"start_all exit {r.returncode}")
-
-
-def stop_module(name: str) -> None:
-    r = _ps("tools/stop_module.ps1", name)
-    if r.returncode: raise RuntimeError((r.stdout or r.stderr).strip()[-300:] or f"stop_module exit {r.returncode}")
-
-
 class Supervisor:
-    def __init__(self, names=SUPERVISED, ports=None, data=None, listening=listening_ports, start=start_module, stop=stop_module,
+    def __init__(self, names=SUPERVISED, ports=None, data=None, listening=listening_ports, start=None, stop=None,
                  precheck=None, clock=time.time, logs=None, start_async=True, folders=None):
         self.names = list(names)
         self.ports = ports or {n: M.resolve(n)["port"] for n in self.names}
         self.data = Path(data or M.DATA)
+        if start is None or stop is None: raise ValueError("the supervisor needs start and stop functions (drifterd gives them)")
         self.listening, self.start_fn, self.stop_fn, self.precheck, self.clock = listening, start, stop, precheck, clock
         self.start_async = start_async        # starts run in their own thread, so one slow start never holds up the others
-        # Log file per module (and the gateway): <data>\\logs\\<module>.console.log, written by tools/run_module.py
-        self.logs = logs or {n: Path(M.resolve(n)["data"]) / "logs" / f"{n}.console.log" for n in LOG_NAMES}
+        # Log file per module (and the gateway): <data>\\logs\\<module>.console.log, written by drifterd
+        self.logs = logs or {n: Path(M.resolve(n)["log"]) for n in LOG_NAMES}
         # module code folders, for swapping in a new Python environment at a restart (none for tests: no `ports` given)
         self.folders = folders if folders is not None else {} if ports else {n: Path(M.resolve(n)["folder"]) for n in self.names}
         self.lock = threading.Lock(); self.events = deque(maxlen=200); self._stop = threading.Event()

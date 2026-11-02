@@ -2,8 +2,9 @@
 
 The gateway serves the app and passes the page's requests on to the four existing servers, which keep running
 unchanged and keep all their own logic (Float protection, anchor alarm, arming, washer schedule). The gateway makes
-no decisions and talks to no hardware itself. With "supervise" on, supervisor.py keeps the servers running (starts a
-stopped one, never stops a running one unless the user asks for a restart, or to switch all systems off, from the app).
+no decisions and talks to no hardware itself. With "supervise" on (the live setting) the System page talks to drifterd,
+the service that runs and keeps running every server (DrifterdClient below): states, logs, restart and switch-off,
+after this gateway's pre-checks.
 
 Safety:
 - Only routes listed in ROUTES are passed on (method + path pattern per module); everything else gets 404.
@@ -15,7 +16,7 @@ Stdlib only.
 """
 from __future__ import annotations
 
-import argparse, http.client, json, logging, re, ssl, sys, threading, time
+import argparse, http.client, json, logging, re, ssl, sys, threading, time, urllib.error, urllib.request
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -24,7 +25,7 @@ from common import logs
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "0.14.2"
+VERSION = "0.15.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -75,7 +76,8 @@ STATIC_TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=
 DEFAULT_CONFIG = {
     "bind": "127.0.0.1", "port": 8100, "allowed_hosts": [],
     "certfile": None, "keyfile": None, "ca_file": None,
-    "supervise": False,   # keep the module servers running (supervisor.py); only the live config turns it on
+    "supervise": False,   # the System page talks to drifterd (the service); only the live config turns it on
+    "drifterd": "http://127.0.0.1:8099", "drifterd_token": "C:/DrifterData/drifterd.token",
     "modules": {
         "power": {"name": "Energy", "url": "https://127.0.0.1:8000", "classic": None},
         "anchor": {"name": "Anchor watch", "url": "https://127.0.0.1:8766", "classic": None},
@@ -161,7 +163,52 @@ def make_precheck(up: Upstreams):
     return check
 
 
-def make_handler(cfg: dict, up: Upstreams, sup=None, end_gateway=None):
+class DrifterdClient:
+    """The supervisor as the System page sees it, through drifterd's control API (127.0.0.1:8099, token file). Same
+    methods as supervisor.Supervisor, which the mock and the tests use in-process instead."""
+
+    def __init__(self, url: str, token_file: Path, precheck, modules=("energy", "anchor", "guard", "washer")):
+        self.url, self.token_file, self.precheck, self.modules = url.rstrip("/"), Path(token_file), precheck, modules
+
+    def _call(self, method: str, path: str, body=None, timeout: float = 15):
+        req = urllib.request.Request(self.url + path, data=None if body is None else json.dumps(body).encode(), method=method,
+                                     headers={"Content-Type": "application/json", "X-Drifterd-Token": self.token_file.read_text(encoding="ascii").strip()})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r: return r.status, json.loads(r.read() or b"{}")
+        except urllib.error.HTTPError as e:
+            try: return e.code, json.loads(e.read() or b"{}")
+            except ValueError: return e.code, {"error": f"HTTP {e.code}"}
+
+    def snapshot(self) -> dict:
+        try:
+            code, j = self._call("GET", "/status")
+            if code == 200: return {"enabled": True, **j}
+            err = j.get("error", f"HTTP {code}")
+        except (OSError, ValueError) as e: err = str(e)
+        return {"enabled": True, "modules": {}, "events": [], "shutdown": None, "error": f"drifterd (the Drifter service) not reachable: {err}"}
+
+    def _post(self, path: str, body: dict) -> dict:
+        try: code, j = self._call("POST", path, body)
+        except (OSError, ValueError) as e: raise ValueError(f"drifterd (the Drifter service) not reachable: {e}")
+        if code >= 400: raise ValueError(j.get("error", f"HTTP {code}"))
+        return j
+
+    def restart(self, name: str) -> None:
+        if name != "gateway": self.precheck(name)
+        self._post("/restart", {"module": name})
+
+    def shutdown_all(self, on_done=None) -> None:
+        for n in self.modules: self.precheck(n, "shutdown")
+        self._post("/shutdown", {})
+
+    def log_tail(self, name: str, lines: int = 400) -> dict:
+        try: code, j = self._call("GET", f"/log?module={name}&lines={int(lines)}")
+        except (OSError, ValueError) as e: raise ValueError(f"drifterd (the Drifter service) not reachable: {e}")
+        if code != 200: raise ValueError(j.get("error", f"HTTP {code}"))
+        return j
+
+
+def make_handler(cfg: dict, up: Upstreams, sup=None):
     extra_hosts = list(cfg.get("allowed_hosts") or [])
     systems = {m: {"name": mv["name"], "classic": mv.get("classic")} for m, mv in cfg["modules"].items()}
 
@@ -239,7 +286,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, end_gateway=None):
         def _shutdown(self):
             """Switch all systems off: every module server stops, then the gateway itself (see serve)."""
             if not sup: return self._json({"error": "the supervisor is off"}, 409)
-            try: sup.shutdown_all(on_done=end_gateway)
+            try: sup.shutdown_all()   # drifterd ends this gateway itself, 15 s after the modules
             except ValueError as e: return self._json({"error": str(e)}, 409)
             log.warning("switch all systems off requested from the app"); return self._json({"ok": True}, 202)
 
@@ -268,15 +315,8 @@ def serve(cfg: dict, supervisor=None) -> Server:
     check_bind(cfg["bind"])
     up = Upstreams(cfg)
     if supervisor is None and cfg.get("supervise"):
-        from supervisor import Supervisor
-        supervisor = Supervisor(precheck=make_precheck(up)); supervisor.start_thread()
-    srv = None
-
-    def end_gateway():
-        # After "switch all systems off": 15 s for the page to read the result, then serve_forever returns and the
-        # gateway exits with code 0, so its scheduled task does not start it again (the desktop icon does).
-        log.warning("all module servers stopped; the gateway ends in 15 s"); threading.Timer(15, srv.shutdown).start()
-    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor, end_gateway))
+        supervisor = DrifterdClient(cfg["drifterd"], Path(cfg["drifterd_token"]), make_precheck(up))
+    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor))
     scheme = "http"
     if cfg.get("certfile"): use_tls(srv, tls_context(cfg["certfile"], cfg["keyfile"])); scheme = "https"
     log.info("Drifter Boat Systems %s on %s://%s:%d/", VERSION, scheme, cfg["bind"], cfg["port"])

@@ -1,4 +1,4 @@
-"""Read-only check, run by install_autostart.ps1 in the session the boot task will use (session 0, nobody logged on):
+"""Read-only check, run by install_service.ps1 in the session the boot task will use (session 0, nobody logged on):
 can it see the MasterBus USB Link and Bluetooth LE, and start a process the way the supervisor does (Win32_Process
 Create)? Opens no device and connects to nothing (the Bluetooth part only listens to advertisements for 4 s), writes
 only its result file. Device names and addresses are not recorded.

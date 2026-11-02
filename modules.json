@@ -1,48 +1,36 @@
 {
-  "_comment": "How each module is started, old (legacy) and new (Drifter) location, and its runtime files. Which location is active per module is kept in <data>\\locations.json (not in git); missing = drifter. The old folders were moved to C:\\DrifterArchive\\legacy-2026-11-02 on 2026-11-02 (legacy points there; -Back is best effort). Paths may use %ENV% variables. In the Drifter location {data} is <data>\\<module>. old_task = a scheduled task that started the module before (BoatGuard): used while it still exists, so the supervisor never starts a second copy; tools\\install_autostart.ps1 removes it. Every module runs without a window through tools\\run_module.py (output in <data>\\logs\\<module>.console.log), also when nobody is logged on; runtime = copied from the old folder to <data>\\<module> at switch-over; code_runtime = copied into the new code folder (certificates incl. the Mastervolt Local CA, gateway config); requires = must exist in the new code folder before the first start.",
+  "_comment": "The servers drifterd runs (drifterd.py): code in <live>\\<dir>, runtime files in <data>\\<module> ({data}), output in <data>\\logs\\<module>.console.log; the gateway keeps config.json, certs and logs in its own folder (runtime_in_code). command runs in the module folder with DRIFTER_DATA set; data_args are appended. health = a cheap GET on 127.0.0.1 (shown on the System page; it never stops or restarts anything), none = only the port is checked. requires = files that must exist before a start (MasterVolt's certificate script would create a new CA without them). precheck = asked of the module before a restart or switch-off (drifter.py make_precheck).",
   "live": "C:\\Drifter",
   "data": "C:\\DrifterData",
   "modules": {
+    "gateway": {
+      "name": "Drifter app", "port": 8100, "dir": ".", "runtime_in_code": true,
+      "command": [".venv\\Scripts\\pythonw.exe", "drifter.py"]
+    },
     "energy": {
-      "name": "Energy (MasterVolt YMS)", "port": 8000,
-      "legacy": "C:\\DrifterArchive\\legacy-2026-11-02\\mastervoltproject", "dir": "modules\\energy",
+      "name": "Energy (MasterVolt YMS)", "port": 8000, "dir": "modules\\energy",
       "command": ["cmd", "/c", "start_mastervolt_server.cmd"],
-      "runtime": ["user_settings.json", "mastershunt_config_maps.json", "data", "backups", "logs", "reports"],
-      "code_runtime": ["certs", "static\\products"], "requires": ["certs\\ca-cert.pem", "certs\\ca-key.pem"],
-      "precheck": "energy"
+      "requires": ["certs\\ca-cert.pem", "certs\\ca-key.pem"],
+      "health": "https:/api/version", "precheck": "energy"
     },
     "anchor": {
-      "name": "Anchor watch", "port": 8766,
-      "legacy": "C:\\DrifterArchive\\legacy-2026-11-02\\OrcaCore2", "dir": "modules\\anchor",
+      "name": "Anchor watch", "port": 8766, "dir": "modules\\anchor",
       "command": ["cmd", "/c", "start_anchor_watch.cmd"],
       "data_args": ["--state", "{data}\\anchor_state.json", "--tile-cache", "{data}\\tile_cache", "--pushover", "{data}\\pushover.json",
                     "--still-alive", "{data}\\still_alive.json", "--aisstream", "{data}\\aisstream.json", "--nfl", "{data}\\nfl.json",
                     "--recordings", "{data}\\recordings", "--tide-cache", "{data}\\tide_cache.json",
                     "--web-bind", "127.0.0.1", "--app-url", "https://192.168.1.166:8100/#anchor"],
-      "runtime": ["anchor_state.json", "pushover.json", "still_alive.json", "aisstream.json", "nfl.json", "tide_cache.json", "tile_cache", "recordings", "logs"],
-      "code_runtime": ["certs"],
-      "venv": "requirements.txt"
+      "health": "https:/api/track?since=9999999999", "precheck": "anchor"
     },
     "guard": {
-      "name": "BoatGuard", "port": 8095, "old_task": "BoatGuard",
-      "legacy": "C:\\DrifterArchive\\legacy-2026-11-02\\BoatGuard", "dir": "modules\\guard",
+      "name": "BoatGuard", "port": 8095, "dir": "modules\\guard",
       "command": [".venv\\Scripts\\pythonw.exe", "boatguard.py", "run"],
-      "runtime": ["config.json", "state.json", "ezviz_token.json", "pushover.json", "logs"],
-      "code_runtime": ["certs"],
-      "venv": "requirements.txt"
+      "health": "https:/api/log?n=1"
     },
     "washer": {
-      "name": "Washer (VIOMI)", "port": 8080,
-      "legacy": "C:\\DrifterArchive\\legacy-2026-11-02\\viomi-w1-controller", "dir": "modules\\washer",
+      "name": "Washer (VIOMI)", "port": 8080, "dir": "modules\\washer",
       "command": [".venv\\Scripts\\python.exe", "viomi_web_english_v58.py"],
-      "runtime": ["viomi_config.json", "viomi_schedule.json"],
-      "venv": "requirements.txt+requirements-miio.txt"
-    },
-    "gateway": {
-      "name": "Drifter app", "port": 8100, "task": "DrifterBoatSystems",
-      "legacy": "%USERPROFILE%\\Claude working folder\\DrifterBoatSystems", "dir": ".",
-      "command": [".venv\\Scripts\\pythonw.exe", "drifter.py"],
-      "runtime": [], "code_runtime": ["config.json", "certs"], "runtime_in_code": true
+      "health": "none"
     }
   }
 }
