@@ -1,6 +1,7 @@
 # Orca Core 2 Anchor Watch
 
-Windows-hosted anchor alarm (`anchor_watch.py` + `static/anchor.html`) and live reader (`orca_reader.py`) for a
+Windows-hosted anchor alarm (the package `anchor/`, FastAPI, `python -m anchor`; its page is the Drifter app's Anchor
+watch module) and live reader (`orca_reader.py`) for a
 boat's Orca Core 2. Separate from MasterVolt YMS; it only borrows that project's local HTTPS CA.
 
 Overview: `README.md`. Release history: `CHANGELOG.md`.
@@ -28,11 +29,13 @@ Overview: `README.md`. Release history: `CHANGELOG.md`.
 - **Parse Core messages with `orca_reader.parse_message`**, never plain `json.loads`: the Core sends unescaped text.
 - The alarm logic runs on the server (`AnchorWatch.tick`); the page only displays and sends commands. Do not move
   alarm decisions into the browser.
-- Keep everything on a private LAN: the server binds only to localhost or an RFC 1918 address (`check_bind`).
+- Keep everything on a private LAN: the server binds only to localhost or an RFC 1918 address (`common.net.check_bind`; the API on
+  127.0.0.1 under the Drifter module contract, network GPS on the LAN address).
   Never bind a public interface, port-forward it or add a public tunnel (Cloudflare, ngrok): the app has no login.
   Remote access is through UniFi Teleport (VPN into the boat LAN; clients come from 192.168.2.x), so do not
   restrict requests to the 192.168.1.x subnet.
-- HTTPS certificates come from the existing *Mastervolt Local CA* (`setup_local_https.ps1`). Never create a new CA
+- Since 2.0 the watch has no certificate (the Drifter gateway serves HTTPS). Should one be needed, it comes from the
+  existing *Mastervolt Local CA* (`common/issue_cert.ps1`). Never create a new CA
   (the iPhone would need it installed again), never write into the CA folder, never change the Windows trust store.
 - The chain formula is user input: only ever evaluate it through `ChainFormula` (parsed, no `eval`).
 - Push alerts go out only through the `Pushover` worker thread; never send from `tick()` or a request thread, and keep
@@ -62,9 +65,8 @@ Overview: `README.md`. Release history: `CHANGELOG.md`.
 ## Verifying changes
 
 ```powershell
-.venv\Scripts\python.exe -m unittest test_anchor_watch   # simulated Core data, no network
+.venv\Scripts\python.exe -m unittest test_anchor_watch test_anchor test_contract_stdlib   # simulated Core data, no network; API contract
 ```
 
-For frontend edits, syntax-check the JavaScript in `static/anchor.html` and check the page at phone width (375 px)
-in light, dark and night mode. A test server can run beside the live one with `--port 8767 --state <scratch file>`.
-Bump `VERSION` in `anchor_watch.py` and add a `CHANGELOG.md` entry for each release.
+The page is `web/anchor.js` of the Drifter app (see the root CLAUDE.md for checking it). A test server can run beside the live one with `--port 8767 --state <scratch file>`.
+Bump `VERSION` in `anchor/settings.py` and add a `CHANGELOG.md` entry for each release.

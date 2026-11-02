@@ -4,6 +4,22 @@ All notable changes to the Orca Core 2 Anchor Watch. Newest first.
 
 ---
 
+## 2.0 — Package and FastAPI
+
+### 2.0.0
+- **The package `anchor/` on FastAPI** instead of the single file `anchor_watch.py` with its stdlib server: `settings`,
+  `geo`, `gps`, `ais`, `tide`, `chain`, `alerts`, `nfl`, `watch` (AnchorWatch and its loops), `tiles` and `api`, moved
+  block by block without changing a line: `AnchorWatch.tick`, the GPS rules (frozen check, 254's hold), push alerts,
+  still-alive, AIS, NFL and the tide are exactly 1.17's. `test_anchor_watch.py` runs unchanged against it (through
+  `anchor_watch.py`, which now only re-exports the package and keeps 1.17's HTTP handler one release).
+- **Module contract** (Drifter's `common/service.py`): the API on 127.0.0.1:8766, plain HTTP, only with the token
+  drifterd gives the gateway and the watch (`X-Drifter-Token`); `GET /health` for drifterd. `test_api_contract.py`
+  passed against 1.17's server and 2.0.
+- `python -m anchor` replaces `start_anchor_watch.cmd`; `--bind auto` takes the PC's LAN address for network GPS
+  (it was `certs\bind-address.txt` of the certificate script). `setup_local_https.ps1`, `start_anchor_watch.cmd`,
+  `run_anchor.cmd` and `--certfile/--keyfile` are gone: the phone reaches the watch through the Drifter app's HTTPS.
+  `test_api.py` is replaced by the contract tests.
+
 ## 1.17 — The page moves into Drifter
 
 ### 1.17.2

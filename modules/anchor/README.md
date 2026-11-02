@@ -3,33 +3,28 @@
 > **Since 1.17.0 (2026-11-01) the page is the Anchor watch module of the Drifter app** ([DrifterBoatSystems](https://github.com/tvangaalen/DrifterBoatSystems), `modules/anchor`). This server has no page of its own any more: it serves the API (`/api/state`, `/api/track`, `/api/command`) and the map tiles on `--web-bind` (127.0.0.1 on the boat; the Drifter gateway passes them on), keeps network GPS (NMEA) on `--bind` (the LAN address, for phones with GPS2IP), and links push alerts to `--app-url` (the Drifter app). Everything the old page did is in Drifter: map, drop/move/radius/raise, silence, sound on the phone, tiles, tide, GPS order, settings, tests. The sections below still describe how the watch works; where they say "the page", read "the Anchor watch page in Drifter".
 
 An anchor alarm for a boat with an **Orca Core 2**, plus a read-only live reader for everything the Core publishes.
-Runs on a Windows PC on the boat LAN; open it on an iPhone (or any browser) over HTTPS.
+Runs on a Windows PC on the boat LAN; open it in the Drifter app on an iPhone (or any browser).
 **Read-only on the Core**: it only listens to the streams the Orca app uses.
 
 | Part | Start | Page |
 |---|---|---|
-| Anchor watch | started by the Drifter supervisor (`start_anchor_watch.cmd`) | the Drifter app, https://<PC LAN address>:8100/#anchor |
+| Anchor watch | started by drifterd, the Drifter service (`python -m anchor`) | the Drifter app, https://<PC LAN address>:8100/#anchor |
 | Live reader (all Core values, AIS, NMEA 2000 devices) | `run.cmd` | `http://localhost:8765/` |
 
 Not for navigation.
 
 ## Anchor watch
 
-### Starting it (HTTPS, same setup as MasterVolt YMS)
+### Starting it
 
-Double-click `start_anchor_watch.cmd`. It:
+Since 2.0 the anchor watch is the package `anchor/` on FastAPI, started by drifterd (the Drifter service) as
+`.venv\Scripts\python.exe -m anchor` with the data paths from `modules.json`. Under the Drifter module contract the
+API listens on **127.0.0.1:8766, plain HTTP**: only the Drifter gateway calls it, with the token drifterd gives both
+(`X-Drifter-Token`; without it everything but `GET /health` is refused). The phone reaches the watch through the
+Drifter app over HTTPS, so the anchor watch needs no certificate of its own any more. Network GPS (NMEA) listens on
+`--bind auto`, the PC's private LAN address on the default route.
 
-1. runs `setup_local_https.ps1`, which issues this app's certificate from the existing **Mastervolt Local CA**
-   (`modules\energy\certs` of the Drifter checkout, through `common\issue_cert.ps1`; override with the `ANCHOR_CA_DIR` environment variable). An iPhone that
-   already trusts that CA for MasterVolt YMS opens the anchor watch with no change. The script never creates a CA,
-   never writes into the CA folder and never touches the Windows certificate store;
-2. creates `.venv` on first run;
-3. starts the server on the PC's private LAN address only (the same address MasterVolt YMS uses, written to
-   `certs/bind-address.txt`), port 8766. It prints the address but does not open a browser tab.
-
-`run_anchor.cmd` still works and calls `start_anchor_watch.cmd`. The server refuses any address that is not localhost
-or a private LAN address (10.x, 172.16-31.x, 192.168.x). There is no login: anyone on the boat network can open
-the page and change the watch.
+The server refuses any address that is not localhost or a private LAN address (10.x, 172.16-31.x, 192.168.x).
 
 On the iPhone, *Share → Add to Home Screen* gives the app its own icon and a full-screen window. HTTPS also lets the
 page keep the screen awake (Wake Lock) while sound is on.
@@ -37,7 +32,7 @@ page keep the screen awake (Wake Lock) while sound is on.
 ### Remote access (UniFi Teleport)
 
 Away from the boat, connect the iPhone with **UniFi Teleport** (WiFiman app) and open the same address,
-`https://<PC LAN address>:8766/`. Teleport is a WireGuard VPN run by the boat's UniFi router: it works although
+the Drifter app, `https://<PC LAN address>:8100/#anchor`. Teleport is a WireGuard VPN run by the boat's UniFi router: it works although
 both internet links (Starlink and 5G) sit behind carrier NAT, the page and its certificate stay exactly the same, and
 the server is never reachable from the internet. Teleport clients arrive from their own subnet (192.168.2.x), so the
 Windows Firewall rule for Python must allow remote addresses beyond the local subnet on the *Private* profile
@@ -64,7 +59,7 @@ Setup, once:
 1. Install Pushover on the iPhone (one-time purchase after the trial) and sign in.
 2. On [pushover.net](https://pushover.net), copy your **user key**, and create an application named *Anchor Watch*
    ([apps/build](https://pushover.net/apps/build)) to get its **API token**.
-3. Copy `pushover.example.json` to `pushover.json` next to `anchor_watch.py` and fill in both keys
+3. Copy `pushover.example.json` to `pushover.json` in the anchor watch's data folder (`C:\DrifterData\anchor`) and fill in both keys
    (`pushover.json` is in `.gitignore`; never commit it). Optional: `emergency_sound`, `device`.
 4. In the app, under *Alarm settings*, press **Send test** (no restart needed).
 5. On the iPhone: in the Pushover app, *Settings → Critical Alerts*, turn on critical alerts for emergency-priority
@@ -254,14 +249,13 @@ missing.
 ### Command line
 
 ```
-.venv\Scripts\python.exe anchor_watch.py [--host 192.168.1.124] [--bind 127.0.0.1] [--web-bind 127.0.0.1] [--port 8766] [--app-url URL]
-    [--certfile certs\server-cert.pem --keyfile certs\server-key.pem] [--state anchor_state.json]
-    [--tile-cache tile_cache] [--no-ais] [--no-nmea]
+.venv\Scripts\python.exe -m anchor [--host 192.168.1.124] [--bind 127.0.0.1|auto] [--web-bind 127.0.0.1] [--port 8766] [--app-url URL]
+    [--state anchor_state.json] [--tile-cache tile_cache] [--no-ais] [--no-nmea]
 ```
 
 `--no-nmea` switches the network GPS listener off (the test servers use it); its port is a setting on the page.
 
-Without `--certfile/--keyfile` it serves plain HTTP (development only; phones then get no wake lock).
+Without `DRIFTER_TOKEN` in its environment it refuses every request but `GET /health`.
 
 ## Live reader
 
@@ -302,10 +296,12 @@ The packet captures the protocol was worked out from stay in `captures/` locally
 ## Tests
 
 ```
-.venv\Scripts\python.exe -m unittest test_anchor_watch
+.venv\Scripts\python.exe -m unittest test_anchor_watch test_anchor test_contract_stdlib
 ```
 
 Simulated Core data, no network: drag, GPS jumps, the frozen Core position, receiver failover, GPS and Core loss,
-silence, restart, depth/wind, tile cache, the JSON repair, My MMSI and *Start new track*.
+silence, restart, depth/wind, tile cache, the JSON repair, My MMSI and *Start new track*. `test_api_contract.py`
+pins down the HTTP API (state, track, commands with every error path, tiles); it passed against the stdlib server of
+1.17 (`test_contract_stdlib.py`, kept one release) and the FastAPI package (`test_anchor.py`, plus token and `/health`).
 
 Release history: [CHANGELOG.md](CHANGELOG.md).

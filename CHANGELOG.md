@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18
+
+### 0.18.0 — 2026-11-02
+
+Refactoring phase 3: the anchor watch.
+- **Anchor watch 2.0.0**: the package `modules/anchor/anchor` on FastAPI with the module contract (plain HTTP on 127.0.0.1:8766, token, `/health`). `anchor_watch.py` was split block by block without changing the code (`AnchorWatch.tick`, the GPS rules, alerts, AIS, NFL, tide): its 114 tests run unchanged against the package, and `test_api_contract.py` (state, track, commands with every error path, tiles) passed against the stdlib server of 1.17 and against 2.0. drifterd starts it as `python -m anchor`; network GPS (NMEA) stays on the LAN address (`--bind auto`). Its certificate script and start scripts are gone.
+- `common/service.py`: `start()` serves a module's API in a thread, for the anchor watch, whose main thread runs its asyncio data loops.
+- The gateway's default address for the anchor watch is http://127.0.0.1:8766; the mock checks the token for the anchor watch too.
+
 ## 0.17
 
 ### 0.17.0 — 2026-11-02
