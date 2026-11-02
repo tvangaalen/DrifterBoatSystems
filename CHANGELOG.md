@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19
+
+### 0.19.0 — 2026-11-02
+
+Refactoring phase 3: energy, the last module.
+- **MasterVolt 2.2.0**: `python -m mastervolt` under the module contract (plain HTTP on 127.0.0.1:8000, token, `/health`), with its own copy of the contract (MasterVolt does not import `common`). MasterBus, DALY, Float protection and every route are unchanged: the golden tests pass as before. drifterd starts it as `python -m mastervolt` instead of `start_mastervolt_server.cmd`, so no server certificate is issued for it any more; the Mastervolt Local CA stays in `modules/energy/certs` (the gateway's certificate comes from it).
+- Every module now follows the contract: only the gateway serves HTTPS. The gateway's default address for energy is http://127.0.0.1:8000; the mock checks the token for energy too.
+
 ## 0.18
 
 ### 0.18.0 — 2026-11-02
