@@ -32,6 +32,8 @@ SETTINGS_OK = {
 }
 
 MERGED_ROUTES = ("POST /api/bms/{battery_id}/set-soc-100",)
+# The classic page and its files, removed in 3.0 (the page is the Drifter app's): they now answer like any unknown path.
+REMOVED_ROUTES = ("GET /", "GET /manifest.webmanifest", "GET /service-worker.js", "GET /local-ca.cer")
 REQUESTS = [
     ("GET", "/api/settings", None),
     ("GET", "/api/bms", None),
@@ -142,7 +144,6 @@ def new_client():
     folder = Path(tempfile.mkdtemp())
     for name in ("control_maps.json", "mastershunt_config_maps.json"):
         shutil.copy(PATHS.base / name, folder / name)
-    shutil.copytree(PATHS.static, folder / "static", ignore=shutil.ignore_patterns("products"))
     return TestClient(create_app(Services(Paths(folder))))
 
 
@@ -155,8 +156,12 @@ def main():
     expected = json.loads(GOLDEN.read_text(encoding="utf-8"))
     actual = json.loads(json.dumps(run(new_client()), sort_keys=True))
     new_routes = [r for r in actual["openapi"] if r not in expected["openapi"]]
-    # Routes added since 1.22.2 (/api/version) are allowed; /set-soc-100 is now one of the /set-soc-{mode} values (same answer, see above).
-    expected["openapi"] = sorted([r for r in expected["openapi"] if r not in MERGED_ROUTES] + new_routes)
+    # Routes added since 1.22.2 (/api/version) are allowed; /set-soc-100 is now one of the /set-soc-{mode} values (same answer, see above);
+    # the classic page's routes are gone since 3.0 and answer 404 like /nope.
+    expected["openapi"] = sorted([r for r in expected["openapi"] if r not in MERGED_ROUTES + REMOVED_ROUTES] + new_routes)
+    not_found = next(v for k, v in expected.items() if k.endswith(" GET /nope "))
+    for key in [k for k in expected if any(k.endswith(f" {r} ") for r in REMOVED_ROUTES)]:
+        expected[key] = not_found
     expected["openapi_models"] = sorted(set(expected["openapi_models"]) | set(actual["openapi_models"]))
     problems = list(differences(expected, actual))
     for line in problems[:40]:

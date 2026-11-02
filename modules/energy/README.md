@@ -1,6 +1,6 @@
 # MasterVolt YMS
 
-**Mastervolt Energy v2.2.0** — a private web app (installable iPhone PWA) that monitors and controls a boat's
+**Mastervolt Energy v3.0.0** — a private server (its page is the Energy module of the Drifter app) that monitors and controls a boat's
 Mastervolt electrical system and its DALY battery management, from a Windows PC on the boat's LAN.
 
 > **On the boat (since 2026-11-02) MasterVolt is used through the Energy module of the Drifter app** ([DrifterBoatSystems](https://github.com/tvangaalen/DrifterBoatSystems), `modules/energy`), which shows everything of this app's own page: dashboard, controls, batteries, SOC calibration, Bluetooth diagnostics, history charts, reports and settings. Started by the Drifter supervisor (`DRIFTER_DATA` set), `start_mastervolt_server.cmd` makes the server listen on 127.0.0.1 only; this app's own page is then only reachable on the boat PC itself (https://127.0.0.1:8000/), as a fallback. Run without Drifter, it still listens on the LAN address as before.
@@ -8,7 +8,7 @@ Mastervolt electrical system and its DALY battery management, from a Windows PC 
 - **MasterBus** over the Mastervolt USB Link: CombiMaster (shore power, inverter, charger), Solar ChargeMaster,
   Alpha Pro alternator regulator, Mass chargers, MasterShunts and the Yanmar engine ECU interface.
 - **DALY Bluetooth** for the three house-battery BMS units (`BATTERY 1`–`3`) and the three balancers (`DL-BAL1`–`3`).
-- **FastAPI** backend (the `mastervolt` package), a no-build front end in `static/`, SQLite measurement history, local HTTPS.
+- **FastAPI** backend (the `mastervolt` package), SQLite measurement history; the page is the Drifter app's (since 3.0).
 
 **The complete guide is the [manual](docs/MANUAL.md)** (also served by the app at `/manual`): what every screen shows, how
 every number is obtained, Float protection, the Bluetooth design, files, API, operations, troubleshooting and the developer
@@ -61,7 +61,6 @@ mastervolt/             the application
   reports/                battery health report
   api/                    the HTTP routes, one module per area
   settings.py, soc.py, runtime.py, app.py, config.py, logs.py
-static/                 index.html, css/app.css, js/*.js, service worker, manifest, icons, product photos
 tests/                  hardware-free tests, simulated USB/Bluetooth, golden files from the verified 1.22.2 release
 tools/                  diagnostic command-line tools (py -m tools.<name>)
 docs/                   MANUAL.md (+ manual.html), hardware notes, verified field map, HTTPS guide, device schemas
@@ -85,7 +84,7 @@ application against a simulated USB Link and Bluetooth stack.
 
 ## Development
 
-Python is formatted with black and checked with ruff (`pyproject.toml`); the front end with prettier (`.prettierrc.json`).
+Python is formatted with black and checked with ruff (`pyproject.toml`).
 These are development tools only and are not needed to run the server. The release procedure, the rules that must not be broken
 and how to add a setting, field, control or page are in the manual, chapter 9.
 

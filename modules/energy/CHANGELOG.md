@@ -10,6 +10,19 @@ Unless an entry says otherwise, every release also bumps the application version
 
 ---
 
+## 3.0 — No page of its own
+
+### 3.0.0
+- **The classic page is removed** (`static/`: `index.html`, its scripts and styles, the service worker, the manifest, the
+  icons and product photos; `tools/cache_product_images.py`; `.prettierrc.json`). The page is the Energy module of the Drifter
+  app (Now, Batteries, History, Settings), which has had every function of it since Drifter 0.10. This server keeps the API,
+  `/manual` and `/health`, and everything behind them (MasterBus, DALY, Float protection, history, reports) is unchanged.
+- The routes `/`, `/manifest.webmanifest`, `/service-worker.js`, `/static/*` and `/local-ca.cer` answer 404 (an intended
+  change). The golden file of 1.22.2 is unchanged: `test_api_golden.py` lists these routes as removed and expects the 404 of
+  an unknown path for the two recorded requests to them; every other recorded answer is the same.
+- The Mastervolt Local CA stays in `certs\`: the Drifter app's certificate comes from it. The manual's chapters on the phone
+  and on using the app point to the Drifter app; `test_release` checks the version places only.
+
 ## 2.2 — Drifter module contract
 
 ### 2.2.0

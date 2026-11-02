@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .api import routers
@@ -51,7 +50,6 @@ def create_app(services: Services | None = None) -> FastAPI:
     app = FastAPI(title="Mastervolt Energy", version=__version__, lifespan=lifespan)
     app.state.services = services
     app.add_middleware(GZipMiddleware, minimum_size=1000)
-    app.mount("/static", StaticFiles(directory=services.paths.static), name="static")
     for router in routers:
         app.include_router(router)
     return app

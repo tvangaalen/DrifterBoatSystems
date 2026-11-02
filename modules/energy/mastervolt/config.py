@@ -1,6 +1,6 @@
 """Where the application keeps its files.
 
-Code (static, docs, certificates, control maps) lives in the project folder. Runtime files (settings, history,
+Code (docs, certificates, control maps) lives in the project folder. Runtime files (settings, history,
 backups, logs, the MasterShunt discovery cache) live there too, unless `runtime` is set: Drifter Boat Systems sets the
 environment variable DRIFTER_DATA (e.g. C:\\DrifterData) and then they live in DRIFTER_DATA\\energy, outside the code.
 The `Paths` object is passed to the services so tests can point them at a temporary directory instead.
@@ -21,10 +21,6 @@ class Paths:
     @property
     def runtime_base(self) -> Path:
         return self.runtime or self.base
-
-    @property
-    def static(self) -> Path:
-        return self.base / "static"
 
     @property
     def docs(self) -> Path:

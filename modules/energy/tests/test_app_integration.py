@@ -59,7 +59,6 @@ def make_services():
     folder = Path(tempfile.mkdtemp())
     for name in ("control_maps.json", "mastershunt_config_maps.json"):
         shutil.copy(PATHS.base / name, folder / name)
-    shutil.copytree(PATHS.static, folder / "static", ignore=shutil.ignore_patterns("products"))
     values = default_values(random.Random(2))
     values.update({(HOUSE, 1): 13.4, (HOUSE, 2): 5.0, (COMBIMASTER, 2): 230.0, (COMBIMASTER, 1): 1.0})
     bus = FakeBus(FakeClock(), values=values)
@@ -118,9 +117,9 @@ def main():
         # ---- the diagnostics
         assert client.get("/api/bluetooth-coordinator").json()["connected_bms"] == 3
         assert client.get("/api/bluetooth-events").json()["counters"]["BATTERY 1"]["timings"]["connect"]["ok"] >= 1
-        assert client.get("/api/version").json()["version"].startswith("2.")
-        assert client.get("/").status_code == 200
-        print("Diagnostics, version and the page itself: OK")
+        assert client.get("/api/version").json()["version"].startswith("3.")
+        assert client.get("/").status_code == 404  # no page of its own since 3.0: the Drifter app shows it
+        print("Diagnostics and version: OK")
     # ---- shutdown: the lifespan stopped everything
     time.sleep(0.3)
     assert not any(w.supervisor.alive for w in services.bms._workers.values()) and not services.balancers.supervisor.alive

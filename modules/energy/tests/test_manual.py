@@ -48,7 +48,6 @@ def main():
     folder = Path(tempfile.mkdtemp())
     for name in ("control_maps.json", "mastershunt_config_maps.json"):
         shutil.copy(PATHS.base / name, folder / name)
-    shutil.copytree(PATHS.static, folder / "static", ignore=shutil.ignore_patterns("products"))
     shutil.copytree(PATHS.docs, folder / "docs", ignore=shutil.ignore_patterns("archive", "device-schemas"))
     client = TestClient(create_app(Services(Paths(folder))))
     paths = set(client.get("/openapi.json").json()["paths"])
@@ -64,11 +63,9 @@ def main():
     assert (
         'id="back"' in page.text and "Back to the app" in page.text
     ), "the manual needs a way back to the app (the iPhone app has no back button)"
-    assert 'href="/manual"' in (PATHS.static / "index.html").read_text(encoding="utf-8"), "the Settings page must link to the manual"
-    index = (PATHS.static / "index.html").read_text(encoding="utf-8")
-    assert 'id="manualBtn"' in index and 'onclick="openManual()"' in index, "the Reports tab must have the Manual button"
-    assert "function openManual()" in (PATHS.static / "js" / "reports.js").read_text(encoding="utf-8")
-    print("GET /manual serves the manual; the Settings page links to it and the Reports tab has a Manual button: OK")
+    drifter = (PATHS.base.parents[1] / "web" / "energy.js").read_text(encoding="utf-8")
+    assert 'href="api/power/manual"' in drifter, "the Drifter app's Energy page must link to the manual"
+    print("GET /manual serves the manual and the Drifter app's Energy page links to it: OK")
 
 
 if __name__ == "__main__":

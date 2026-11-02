@@ -1,6 +1,7 @@
 # MasterVolt YMS
 
-Windows-hosted FastAPI app (iPhone PWA frontend) that monitors and controls a real boat's Mastervolt electrical
+Windows-hosted FastAPI server (since 3.0 its page is the Energy module of the Drifter app, `web/energy.js` of the
+repository) that monitors and controls a real boat's Mastervolt electrical
 system over the MasterBus USB Link, plus DALY BMS/balancers over Bluetooth. **It writes to live hardware** (inverter,
 chargers, alternator regulator, Engine ECU, battery MOSFETs). Treat every control path as safety-critical.
 
@@ -30,15 +31,15 @@ py -m tests.run_all quick    # without the slow simulations
 
 No test touches hardware: the USB Link is `tests/masterbus_fakes.py:FakeBus` (with a fake clock), Bluetooth is the fake `bleak` of
 `tests/ble_fakes.py`, the database is a temporary file. New Bluetooth logic is tested against the simulated `bleak`, never with real
-hardware. Run the whole suite before finishing; run `py -m tests.test_release` after any version or front-end file change.
+hardware. Run the whole suite before finishing; run `py -m tests.test_release` after any version change.
 
-Frontend: the scripts in `static/js/` are classic scripts sharing one global scope, loaded in the order of the `<script>` tags at the end of `index.html` (`tests/test_release.py` checks the list against the service worker and syntax-checks each file with `node --check`). For UI changes compare against the previous build side by side (computed styles and canvas pixels of every page, both themes) - see the 2.0.0 changelog entry for how that was done.
+Frontend: since 3.0 this server has no page of its own. The Energy page is `web/energy.js` of the Drifter app; change and test it there (the root CLAUDE.md: type check, browser tests on the mock). The rules below about charts, totals and touch apply to that page.
 
 Delete `__pycache__` folders after running Python here; the project lives in Google Drive.
 
 ## Conventions
 
-- **Style.** Python 3.12+, formatted with **black** (140 columns) and checked with **ruff** (`pyproject.toml`); the front end with **prettier** (`.prettierrc.json`). One statement per line, no star imports, no bare `except:`. Comments and docstrings say *why*. These tools are development-only and live outside the project (for example `C:\Temp\mv_devtools`, see manual 9.5).
+- **Style.** Python 3.12+, formatted with **black** (140 columns) and checked with **ruff** (`pyproject.toml`). One statement per line, no star imports, no bare `except:`. Comments and docstrings say *why*. These tools are development-only and live outside the project (for example `C:\Temp\mv_devtools`, see manual 9.5).
 - **Never edit source files with PowerShell `Get-Content`/`Set-Content`** (Windows PowerShell 5.1 reads UTF-8 as the ANSI code page and writes a BOM: every "–", "·", "—" became "â€“" etc. in a version bump once). Use the Edit tool, or a Python script that reads and writes bytes as UTF-8, and check `git diff --stat` shows only the intended lines afterwards. Working-tree files may be CRLF while Git stores LF.
 - `py` launcher, not `python`. Paths must not be hardcoded: use `mastervolt.config.Paths` (injectable, so tests run on a temporary folder).
 - **Layering.** `api` → `runtime` → services → protocol/IO. Nothing below `api` imports FastAPI. Nothing in `masterbus` imports `bluetooth`: the two meet only in `runtime.py` (Float protection is given the BMS cell data and the "all batteries to 100%" callback there).
@@ -47,16 +48,14 @@ Delete `__pycache__` folders after running Python here; the project lives in Goo
 - **Float protection only trusts fresh data** (`soc.py`). Do not read `cells_mv` from the BMS snapshot directly for control decisions: use `Services.house_soc_details` (`runtime.py`), which reads only the three DALY BMSes - never the balancers' own cell readings, which exist for display only. Float is triggered purely by the highest single cell voltage (`soc.float_decision`); the pack-average House SOC is shown for information but never starts, holds or resumes Float. A fresh Float start also sets every battery's SOC to 100% once (`FloatProtection.started_callback`, fire-and-forget in its own thread). No MasterShunt fallback without the user's approval.
 - **The server-side chart cache** (`history/chart_cache.py`) is append-only in id order and only grows (heading for ~230k/~270k points at the 31-day default retention): any code that filters it by time or id must bisect (`bisect_left(cache, cutoff, key=...)`), never scan or rebuild the list. The same applies to anything touching `history.sqlite3` directly.
 - History totals (the donut charts) come from `history/totals.py`, integrated over the full-resolution caches. The chart data sent to the browser is a *sample* (2,500 dashboard points, 1,200 per battery) for drawing only: never add up totals from it in the browser.
-- Stacked History charts are drawn as areas by `drawStackedHistoryChart`, not as bars: no per-bar gaps or alpha, so no stripes. Keep bands opaque on the offscreen layer and composite once.
-- **iPhone touch rules.** Pages switch on a horizontal swipe (`static/js/main.js`). Any control that is dragged or scrolled sideways (sliders, scrollable tables, carousels) must be an `input`/`select`/`textarea` or sit inside an element with class `no-swipe`, otherwise dragging it changes page. Touch targets should be at least ~40 px.
-- **CSS edits:** when removing or rewriting rules with a script, remove the *whole* rule including its selector prefix, then compare the set of rules before and after and confirm only the intended rules changed (a dangling prefix once silently turned `.voltage-cell{position:relative}` into a light-theme-only rule, changelog 1.11.0).
-- Settings are one table in `mastervolt/settings.py` (defaults, limits, messages, validation, API model). Add a setting there and to the Settings page (`static/index.html`, `static/js/settings.js`) with the same limits; give it a default that keeps existing `user_settings.json` files working.
+- Stacked History charts are drawn as areas, not as bars: no per-bar gaps or alpha, so no stripes. Keep bands opaque on the offscreen layer and composite once.
+- **iPhone touch rules.** Any control that is dragged or scrolled sideways (sliders, scrollable tables, carousels) must be an `input`/`select`/`textarea` or sit inside an element with class `no-swipe`, otherwise dragging it can scroll or change the page. Touch targets should be at least ~40 px.
+- Settings are one table in `mastervolt/settings.py` (defaults, limits, messages, validation, API model). Add a setting there and to the Settings view of the Drifter app (`SETTINGS` in `web/energy.js`) with the same limits; give it a default that keeps existing `user_settings.json` files working.
 
 ## Releasing
 
 The version is defined once, in `mastervolt/__init__.py`. Every user-visible change bumps it and updates, in the same commit:
-`CACHE` in `static/service-worker.js` (a new cache name is what makes the iPhone PWA refresh), the version in the first paragraph of
-`README.md`, the version line of `docs/MANUAL.md` (then `py -m tools.build_manual`), and a `### x.y.z` entry at the top of
+the version in the first paragraph of `README.md`, the version line of `docs/MANUAL.md` (then `py -m tools.build_manual`), and a `### x.y.z` entry at the top of
 `CHANGELOG.md`. `py -m tests.test_release` fails until they all agree. Do not recreate per-release `README_*.md` /
 `CHANGELOG_v*.md` files; those live in `docs/archive/` for history only.
 
@@ -77,7 +76,7 @@ The version is defined once, in `mastervolt/__init__.py`. Every user-visible cha
 - `G:\My Drive\Claude\MasterVolt-YMS` (Google Drive) is the **source** copy. Do not run the server from it: it holds only a stale snapshot of runtime state, and a large SQLite history should not live on Drive.
 - When Google Drive (`G:`) is not available, work in the independent clone (a normal git checkout of the GitHub repository). Commit and push from there; the Drive copy and the external `.gitrepos` repository catch up later by pulling from GitHub, so never edit the same file in two copies at once.
 - `C:\Temp\mastervoltproject` is the **live** folder the boat PC runs from. It holds the real `user_settings.json` (31-day retention and the configured Float thresholds), `data/history.sqlite3` (~1 GB), `backups/`, `logs/`, `certs/*-key.pem` and `data/bms_mos_encoding.json`.
-- To deploy: copy only the changed code files (for a code change the `mastervolt/` package, `static/`, `docs/manual.html` and `app.py`; everything else is untouched) from source to live, after backing up the live versions to a sibling folder such as `C:\Temp\mastervoltproject_pre_<version>_<timestamp>`. Never overwrite live runtime state, and never run with a settings file that lacks `history_retention_days` against the live database (missing means the 7-day default and pruning). The 2.0.0 restructure replaced the flat modules (`masterbus_*.py`, `daly_*.py`, `bluetooth_coordinator.py`, `ble_events.py`, `house_soc.py`, `history_service.py`, `report_service.py`, `battery_health.py`) by the `mastervolt` package: they were moved out of the live folder into the backup folder so a stale copy can never be imported.
+- To deploy: copy only the changed code files (for a code change the `mastervolt/` package, `docs/manual.html` and `app.py`; everything else is untouched) from source to live, after backing up the live versions to a sibling folder such as `C:\Temp\mastervoltproject_pre_<version>_<timestamp>`. Never overwrite live runtime state, and never run with a settings file that lacks `history_retention_days` against the live database (missing means the 7-day default and pruning). The 2.0.0 restructure replaced the flat modules (`masterbus_*.py`, `daly_*.py`, `bluetooth_coordinator.py`, `ble_events.py`, `house_soc.py`, `history_service.py`, `report_service.py`, `battery_health.py`) by the `mastervolt` package: they were moved out of the live folder into the backup folder so a stale copy can never be imported.
 - **The live folder may also be edited directly by other tools and sessions.** Never deploy blindly. Immediately before copying, compare every file you are about to overwrite with the last deployed commit (`git show <commit>:<file>`, ignoring line endings). If a live file differs, **stop**: import the live changes first (branch from the last deployed commit, commit the live files, merge into `main`, resolve conflicts, re-apply your work), and only then deploy. Copy only the files you changed, and never touch live runtime files.
 - **Always deploy and push right away (standing instruction from the user, 26 Sep 2026).** When a change is finished and its tests pass, commit it, deploy it to the live server and push it to GitHub in the same turn, without asking first. The safety steps still apply every time: (1) compare the live files with the last deployed commit and stop if they differ; (2) back up what you overwrite; (3) if the change needs a Python restart, run the read-only pre-checks below first and restart, otherwise deploy frontend files without a restart; (4) run the secrets/personal-data guard before pushing; (5) verify the live server and GitHub afterwards and report what you saw.
 - Before restarting, read-only check `GET /api/bms` (`control_status.busy` false) and `GET /api/energy` (`high_soc_float_policy.float_latched` false); a restart pauses server-side Float protection.

@@ -1,6 +1,6 @@
 # Mastervolt Energy - Manual
 
-**Version 2.2.0** - the complete guide to using, operating and maintaining the application. It explains what every screen
+**Version 3.0.0** - the complete guide to using, operating and maintaining the application. It explains what every screen
 shows, how every number is obtained, what the application does on its own (Float protection, Bluetooth recovery, history),
 which files it keeps, what to do when something goes wrong, and how the code is organised for whoever changes it next.
 
@@ -118,11 +118,10 @@ describes how code gets from the source to the live folder.
 
 ### 3.3 HTTPS and the phone
 
-An iPhone only installs a home-screen app from an HTTPS address, so the server uses a private certificate authority
-(`Mastervolt Local CA`) that exists only on this PC. `start_mastervolt_server.cmd` creates it, issues a server certificate for
-the PC's current addresses, and trusts it for the current Windows user. One-time phone set-up (profile install and trust) is in
-`docs/local-https.md`. If the PC's IP address changes, restart the server: it issues a new certificate containing the new
-address; the phone does not need to be set up again.
+Since 3.0 the phone reaches Energy through the Drifter app, whose server (the Drifter gateway) serves HTTPS with a certificate
+from the private certificate authority that lives here, `Mastervolt Local CA` (`certs\`, created once by
+`setup_local_https.ps1`; never remove or recreate it, or every phone must be set up again). One-time phone set-up (profile install
+and trust) is in `docs/local-https.md`. This server itself serves plain HTTP on 127.0.0.1 and has no page of its own.
 
 ### 3.4 Starting and stopping
 
@@ -164,8 +163,8 @@ py -m tools.show_fields
 
 ### 3.5 Installing on the phone
 
-Open the HTTPS address in Safari, then *Share → Add to Home Screen*. The app opens full-screen, shows the last values when
-the server cannot be reached ("Offline - showing last values") and refreshes itself when a new version is installed on the PC.
+Install the Drifter app (Drifter Boat Systems): open its address in Safari, then *Share → Add to Home Screen*. Energy is one of
+its pages.
 
 ---
 
@@ -173,12 +172,11 @@ the server cannot be reached ("Offline - showing last values") and refreshes its
 
 ### 4.1 The basics
 
-* **Header:** ☰ (reserved), the name, a **status dot** (green = the server answered; red = it did not), the word *System OK* or
-  *Alarm n* (the CombiMaster's alarm code), the **clock** (24-hour) and a **☀/☾ button** that switches between the dark and the
-  light theme (the light one is for sunlight). The choice is remembered on that phone.
-* **Four pages**, in the bar at the bottom: **Control panel**, **BMS**, **History**, **Settings**. On a touch screen you can also
-  **swipe** left and right between them (on History, the swipe first moves between its tabs).
-* A red **Offline** bar means the server cannot be reached; the page keeps showing the last values and retries every second.
+Since 3.0 the screens are the **Energy** page of the Drifter app, with four views at the top: **Now** (the control panel of
+section 4.2), **Batteries** (the BMS page, 4.3), **History** (4.4, with the reports and this manual) and **Settings** (4.5). The
+sections below describe what each view shows and does; the Drifter app arranges them in its own design and themes, and its
+manual (Drifter Boat Systems) describes the screens themselves. When this server cannot be reached the page says so and keeps
+showing the last values.
 
 ### 4.2 Control panel
 
@@ -501,8 +499,6 @@ silently: the first occurrence of each problem is logged with its traceback, rep
 |---|---|---|
 | `app.py` | entry point for the launchers (`uvicorn app:app`) | yes |
 | `mastervolt/` | the application package | yes |
-| `static/` | the page: `index.html`, `css/app.css`, `js/*.js`, `service-worker.js`, `manifest.webmanifest`, `icons/` | yes |
-| `static/products/` | cached product photos for the tiles (`cache_product_images.py`) | only `sources.json` |
 | `control_maps.json` | the verified on/off control mappings | yes |
 | `mastershunt_config_maps.json` | battery type/capacity fields found by name (written at start-up) | yes |
 | `user_settings.json` | your settings | **no** |
@@ -547,7 +543,7 @@ browser shows `detail` to the user.
 | `GET /api/bluetooth-coordinator`, `/api/bluetooth-events?limit=` | Bluetooth diagnostics | |
 | `GET /api/history`, `/status`, `/bms-series`, `/dashboard-series`, `/chart-data?hours=`, `/contributions?start=&end=`, `/export` | the history | `POST /api/history/chart-data/update` refreshes the cache first |
 | `GET`/`POST /api/reports/battery-health` | status / start a report (`{"days": 1-365}`) | `409` while one is running |
-| `GET /`, `/manifest.webmanifest`, `/service-worker.js`, `/local-ca.cer`, `/manual`, `/static/*` | the page and its files | |
+| `GET /manual` | this manual (HTML) | the page itself is the Drifter app's Energy page |
 
 ---
 
@@ -571,7 +567,7 @@ Nothing to do: leave the server window open. Open the app on the phone. If the s
 | Float message appeared | a cell reached the trigger | expected: it names the battery and cell; the sources return to Bulk by themselves |
 | `charger_house Bulk verify failed` in the Float status | the charger did not confirm Bulk (it may be off, or in another stage) | check the CombiMaster; the protection retries on the next resume |
 | History page shows old data | the server was stopped; or the page is cached | press **Update**; the server refreshes its cache every minute |
-| Page does not update after an upgrade | the phone still has the old version | close and reopen the app; the service-worker cache name changes with every version |
+| Page does not update after an upgrade | the phone still has the old version of the Drifter app | close and reopen the app |
 | The server window closed by itself | the process crashed, or was started from a tool that ended | start it again with `start_mastervolt_server.cmd` and look at `logs\server.log` |
 
 ### 8.3 Bluetooth tuning
@@ -589,7 +585,7 @@ The live folder is edited only by deployment. Procedure used on this boat:
 1. In the **source** folder: change, run `py -m tests.run_all`, commit.
 2. **Compare** the live code with the commit you last deployed; if the live folder differs, stop and import the differences first.
 3. **Back up** what you will overwrite to a sibling folder, `C:\Temp\mastervoltproject_pre_<version>_<timestamp>`.
-4. Copy the changed files: the `mastervolt` package and `static` folder for a code change; a frontend-only change needs no restart.
+4. Copy the changed files: the `mastervolt` package for a code change (the page is the Drifter app's, deployed with it).
    Never copy runtime files (`user_settings.json`, `data\`, `backups\`, `certs\`).
 5. Restart the server **only when Python changed**, and only when no battery control is running and Float is not latched
    (`GET /api/bms` → `control_status.busy` is false; `GET /api/energy` → `high_soc_float_policy.float_latched` is false): a restart
@@ -635,7 +631,6 @@ mastervolt/
   reports/             battery_health (analysis + CLI), service (runs it as a process)
   api/                 one router per area: system, energy, settings, controls, bms, balancers,
                        bluetooth, history, reports; deps (Services dependency, error mapping)
-static/                index.html, css/app.css, js/*.js (classic scripts, loaded in order), service-worker.js
 tools/                 diagnostic CLIs (py -m tools.<name>)
 tests/                 test_*.py, fakes, golden/*.json, run_all.py
 docs/                  MANUAL.md, hardware-notes.md, VERIFIED_FIELD_MAP.txt, local-https.md, device-schemas/, archive/
@@ -667,8 +662,7 @@ instantly); Bluetooth is the fake `bleak` of `tests/ble_fakes.py`; the database 
 * **Unit tests** for pure logic (`test_soc`, `test_settings`, `test_history`, `test_ble_events`, `test_bluetooth_coordinator`,
   `test_battery_health`, `test_release`).
 
-`test_release` checks that the version, the service-worker cache name and its file list, the README, the CHANGELOG and this
-manual agree.
+`test_release` checks that the version, the README, the CHANGELOG and this manual agree.
 
 ### 9.3 Rules that must not be broken
 
@@ -687,8 +681,8 @@ These are in `CLAUDE.md` as well; they are the lessons of earlier incidents.
 
 ### 9.4 Common changes
 
-**Add a setting.** One row in `mastervolt/settings.py`; the API model and validation follow. Add the control to the Settings page
-(`static/index.html`, `static/js/settings.js`) with the same limits, and a line in section 4.5.
+**Add a setting.** One row in `mastervolt/settings.py`; the API model and validation follow. Add the control to the Settings view
+of the Drifter app (`SETTINGS` in its `web/energy.js`) with the same limits, and a line in section 4.5.
 
 **Add a measured field.** Verify it on the hardware first (`py -m tools.inspect_device snapshot --device <address>`). Then add it
 to `POLLED_FIELDS`, read it in `masterbus/energy.py`, document it in `docs/VERIFIED_FIELD_MAP.txt`, extend the golden test's
@@ -697,20 +691,16 @@ to `POLLED_FIELDS`, read it in `masterbus/energy.py`, document it in `docs/VERIF
 **Add a control.** Add the verified mapping to `control_maps.json` or a method to `masterbus/controls.py` that writes and reads
 back; give it a route in `api/controls.py`; add the scenario to `tests/golden_masterbus.py`.
 
-**Add a page or tab.** Markup in `static/index.html`, code in a new `static/js/<name>.js`, listed in the script tags of
-`index.html` and in `SHELL` of `static/service-worker.js` (the release test enforces this).
+**Add a page or view.** In the Drifter app (`web/energy.js` of Drifter Boat Systems), with its browser tests.
 
 ### 9.5 Style and tools
 
-Python is formatted with **black** (140 columns) and checked with **ruff**; the front end with **prettier** (single quotes, no
-arrow parentheses). The configuration is in `pyproject.toml` and `.prettierrc.json`. They are development tools only; the
-server needs neither. Install them outside the project, for example:
+Python is formatted with **black** (140 columns) and checked with **ruff**. The configuration is in `pyproject.toml`. They are
+development tools only; the server needs neither. Install them outside the project, for example:
 
 ```powershell
 py -m pip install --target C:\Temp\mv_devtools black ruff
-npm install --prefix C:\Temp\mv_devtools prettier
 $env:PYTHONPATH = "C:\Temp\mv_devtools"; py -m black mastervolt tests tools app.py; py -m ruff check mastervolt tests tools app.py
-node C:\Temp\mv_devtools\node_modules\prettier\bin\prettier.cjs --write static/js static/css static/service-worker.js
 ```
 
 Edit source files with an editor or a UTF-8-safe script. Do not edit them with Windows PowerShell 5.1 `Get-Content`/`Set-Content`:
@@ -718,7 +708,7 @@ it reads UTF-8 as the ANSI code page and writes a byte-order mark, turning every
 
 ### 9.6 Releasing
 
-1. Change the version in `mastervolt/__init__.py`; update `CACHE` in `static/service-worker.js`, the first paragraph of
+1. Change the version in `mastervolt/__init__.py`; update the first paragraph of
    `README.md`, the version line of this manual and add `### x.y.z` to the top of `CHANGELOG.md`. `py -m tests.test_release` says
    what is missing.
 2. `py -m tests.run_all`; format and lint.
@@ -736,7 +726,6 @@ All run from the project folder with the server **stopped**; the read-only ones 
 | `py -m tools.alpha_stop_charge_watch` | watch the Alpha Pro *Stop charge* fields while you change them in MasterView (read-only) |
 | `py -m tools.capture_hid --seconds 30` | print the raw HID reports from the Link (read-only) |
 | `py -m tools.reversible_write_test <device> --confirm-write` | **writes**: switches a charger, the ECU or Solar to the opposite state, verifies, restores |
-| `py -m tools.cache_product_images [--force]` | download the tile photos into `static/products/` |
 | `tools\install_autostart.ps1` | register (or `-Remove`, `-Status`) the scheduled task that starts the server at boot; needs an elevated PowerShell |
 | `tools\find_masterbus_usb.ps1`, `tools\ecu_capture_session.ps1` | find the USB Link; guided USBPcap capture of MasterAdjust |
 
@@ -758,6 +747,6 @@ All run from the project folder with the server **stopped**; the read-only ones 
 | **Degraded mode** | balancers allowed to run although one BMS has been away for two minutes |
 | **Wedged** | the balancer worker was rebuilt three times without a successful read |
 | **RSSI** | Bluetooth signal strength in dBm (closer to 0 is stronger) |
-| **PWA** | the web app installed on the phone's home screen |
+| **PWA** | a web app installed on the phone's home screen (the Drifter app) |
 | **Golden file** | recorded results of the verified release, which the current code must reproduce exactly |
 | **Supervisor** | the part that restarts a Bluetooth worker that crashed, died or hung |
