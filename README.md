@@ -65,7 +65,7 @@ Then open **https://192.168.1.166:8100/** on the iPhone or iPad → Share → *A
 - Firewall: right-click `add_firewall_rule.cmd` → *Run as administrator* (TCP 8100, Private profile, local subnet and Teleport clients 192.168.2.x).
 - `config.json`: `bind`, `port`, `allowed_hosts` (extra host names, e.g. `"drifter.lan"`), the certificate files, `ca_file` (to check the module servers' certificates) and per module the server `url` and the `classic` page link.
 - **Desktop icon "Drifter Boat Systems"** runs `start_all.ps1`: starts whatever is not running (MasterVolt YMS and the anchor watch through their own start scripts, hidden, logs in their `logs` folders; BoatGuard and Drifter through their scheduled tasks; the VIOMI controller), never restarts a server that already runs, waits up to 90 s, shows the status and opens the app.
-- Autostart: scheduled task **DrifterBoatSystems** runs `pyw drifter.py` from this folder at logon, restarts it within a minute if it stops; `toolsun_module.py` writes its output to `logs\gateway.console.log`. After a code or `config.json` change: `Stop-ScheduledTask DrifterBoatSystems; Start-ScheduledTask DrifterBoatSystems`.
+- Autostart: scheduled task **DrifterBoatSystems** runs `pyw tools\run_module.py gateway` (which starts `drifter.py`) at logon, restarts it within a minute if it stops; `tools\run_module.py` writes its output to `logs\gateway.console.log`. After a code or `config.json` change: `Stop-ScheduledTask DrifterBoatSystems; Start-ScheduledTask DrifterBoatSystems`.
 
 ## Supervisor
 
