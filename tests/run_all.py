@@ -27,7 +27,7 @@ SUITES = [  # (name, folder, command)
     ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch", "test_api"]),
     ("guard", ROOT / "modules/guard", [python("guard"), "boatguard_self_test.py"]),
     ("guard-api", ROOT / "modules/guard", [python("guard"), "-m", "unittest", "test_web"]),
-    ("washer", ROOT / "modules/washer", [python("washer"), "-m", "unittest", "test_washer", "test_contract_flask", "test_controller"]),
+    ("washer", ROOT / "modules/washer", [python("washer"), "-m", "unittest", "test_washer"]),
 ]
 
 failed = []

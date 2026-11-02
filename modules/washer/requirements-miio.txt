@@ -1,4 +1,0 @@
-# Install with: pip install --no-deps -r requirements-miio.txt
-# Their runtime dependencies are pinned in requirements.txt (netifaces is deliberately left out).
-python-miio==0.5.12
-micloud==0.6

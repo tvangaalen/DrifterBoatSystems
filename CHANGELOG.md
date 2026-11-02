@@ -2,6 +2,11 @@
 
 ## 0.16
 
+### 0.16.1 — 2026-11-02
+
+- Washer controller 4.0.1: the Flask controller 3.8, its contract adapter, its old tests and its requirements files are removed (4.0.0 has run live since 14:43 and passed the same contract); Flask leaves the lock.
+- The tags `v0.16.0` and `washer/v4.0.0` point at the commit before 0.16.0 (a blocked commit, the script tagged anyway); 0.16.0 is the commit "Module contract and the washer on FastAPI". Tags from here on: `v0.16.1`, `washer/v4.0.1`.
+
 ### 0.16.0 — 2026-11-02
 
 Refactoring phase 3, the module contract; the washer first.

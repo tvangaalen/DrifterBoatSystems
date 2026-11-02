@@ -1,7 +1,7 @@
 """The washer controller's behaviour, as the Drifter app sees it, pinned down at HTTP level with a fake washer and a fixed
 clock: every route, status code and message, the schedule's life cycle, diagnostics and the export. ApiContract runs
-against an implementation through a small adapter (make); the FastAPI package must pass the same tests that the Flask
-controller (3.8) passed before it was replaced. Nothing is sent to a real washer."""
+against an implementation through a small adapter (make); it passed against the Flask controller 3.8 and against
+the FastAPI package 4.0 before 3.8 was removed (Drifter 0.16.0). Nothing is sent to a real washer."""
 import copy, json, os, tempfile, unittest
 from datetime import datetime, timedelta, timezone
 

@@ -13,5 +13,5 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))   # the repository root: common/ (shared with the Drifter gateway)
 
-VERSION = "4.0.0"
+VERSION = "4.0.1"
 EXPECTED_MODEL = "viomi.washer.w1"

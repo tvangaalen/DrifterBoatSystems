@@ -1,6 +1,6 @@
 # VIOMI W1 controller
 
-Lokale controller voor de VIOMI W1 (`viomi.washer.w1`), versie `4.0.0`: de API achter de module **Washer** van de Drifter-app (status, bediening, diagnostiek en een planner op de server). Sinds 3.8 heeft de controller geen eigen webpagina; de bediening zit in Drifter.
+Lokale controller voor de VIOMI W1 (`viomi.washer.w1`), versie `4.0.1`: de API achter de module **Washer** van de Drifter-app (status, bediening, diagnostiek en een planner op de server). Sinds 3.8 heeft de controller geen eigen webpagina; de bediening zit in Drifter.
 
 Onderdeel van [DrifterBoatSystems](https://github.com/tvangaalen/DrifterBoatSystems) (`modules/washer`); de oude repository viomi-w1-controller is gearchiveerd.
 
@@ -17,7 +17,7 @@ Een Python-package op FastAPI, volgens Drifters modulecontract (`common/service.
 | `washer/diagnostics.py` | de opstartcontroles |
 | `washer/api.py` | de HTTP-API |
 
-De API geeft dezelfde antwoorden, statuscodes en meldingen als de Flask-controller 3.8: `test_api_contract.py` legt dat vast en draaide tegen beide versies.
+De API geeft dezelfde antwoorden, statuscodes en meldingen als de Flask-controller 3.8: `test_api_contract.py` legt dat vast en draaide tegen beide versies; 4.0.1 verwijdert de Flask-versie.
 
 ## Draaien
 
