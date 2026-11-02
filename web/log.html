@@ -20,7 +20,7 @@ try { const t = localStorage.getItem("drifter-theme"); if (t && t !== "auto") do
 </style>
 </head>
 <body>
-<div class="lhead"><h1 id="t">Log</h1>
+<div class="lhead"><button class="btn sec sm" type="button" id="back">‹ Drifter</button><h1 id="t">Log</h1>
   <label class="hint" style="width:auto;display:flex;align-items:center;gap:6px"><input type="checkbox" id="follow" checked> Follow</label>
   <select class="field" id="n" aria-label="Lines" style="width:auto"><option>200</option><option selected>500</option><option>2000</option></select>
   <button class="btn sec sm" type="button" id="r">Refresh</button>
@@ -49,6 +49,8 @@ try { const t = localStorage.getItem("drifter-theme"); if (t && t !== "auto") do
     } catch (e) { $("s").textContent = `Not available: ${e.message}`; }
     if ($("follow").checked) timer = setTimeout(load, 3000);
   }
+  // Back to the app: close this window when the app opened it, otherwise go to the System page (home-screen app, link)
+  $("back").onclick = () => { if (window.opener && !window.opener.closed) window.close(); setTimeout(() => { location.href = "./#system"; }, 300); };
   $("r").onclick = load; $("n").onchange = load; $("follow").onchange = load;
   document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
   load().then(() => requestAnimationFrame(() => window.scrollTo(0, document.body.scrollHeight)));

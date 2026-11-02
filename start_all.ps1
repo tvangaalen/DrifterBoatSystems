@@ -52,7 +52,17 @@ foreach ($m in $plan.modules) {
 if ($NoWait) { return }
 # MasterVolt opens the USB link and Bluetooth first and can take a minute, after the supervisor started it; wait up to 3 min.
 $deadline = (Get-Date).AddSeconds(180)
-while ((Get-Date) -lt $deadline -and ($plan.modules | Where-Object { -not $_.Failed -and -not (Listening $_.port) })) { Start-Sleep -Seconds 2 }
+# A task whose server stops while we wait is started again: right after "Switch all systems off" the gateway still
+# listens for 15 s, so it looked "already running" and then ended (2026-11-02), and nothing started the other modules.
+while ((Get-Date) -lt $deadline -and ($plan.modules | Where-Object { -not $_.Failed -and -not (Listening $_.port) })) {
+    foreach ($m in @($plan.modules | Where-Object { $_.task -and -not $_.Failed -and -not (Listening $_.port) })) {
+        if ((Get-ScheduledTask -TaskName $m.task -ErrorAction SilentlyContinue).State -ne 'Running') {
+            Write-Host ("  {0,-26} stopped meanwhile: starting it again" -f $m.title) -ForegroundColor Yellow
+            try { Start-ScheduledTask -TaskName $m.task } catch { $m | Add-Member Failed $true -Force }
+        }
+    }
+    Start-Sleep -Seconds 2
+}
 
 Write-Host ''
 $allOk = $true

@@ -251,7 +251,11 @@ const Drifter = (() => {
       <p class="hint" style="text-align:center;margin:18px 0" id="sysVer"></p>`;
     el.onclick = e => {
       const b = e.target.closest("[data-restart]"); if (b) restartModule(b.dataset.restart, b);
-      const l = e.target.closest("[data-log]"); if (l) window.open(`log.html#${l.dataset.log}`, `drifter-log-${l.dataset.log}`);   // its own window or tab
+      const l = e.target.closest("[data-log]");
+      if (l) {   // a home-screen app has no tabs or back button: open the log in place there (it has its own "Back to Drifter")
+        const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+        if (standalone) location.href = `log.html#${l.dataset.log}`; else window.open(`log.html#${l.dataset.log}`, `drifter-log-${l.dataset.log}`);
+      }
       if (e.target.closest("#sysOff")) switchAllOff(e.target.closest("#sysOff"));
     };
     await refreshSystem();
