@@ -296,12 +296,12 @@ The packet captures the protocol was worked out from stay in `captures/` locally
 ## Tests
 
 ```
-.venv\Scripts\python.exe -m unittest test_anchor_watch test_anchor test_contract_stdlib
+.venv\Scripts\python.exe -m unittest test_anchor_watch test_anchor
 ```
 
 Simulated Core data, no network: drag, GPS jumps, the frozen Core position, receiver failover, GPS and Core loss,
 silence, restart, depth/wind, tile cache, the JSON repair, My MMSI and *Start new track*. `test_api_contract.py`
 pins down the HTTP API (state, track, commands with every error path, tiles); it passed against the stdlib server of
-1.17 (`test_contract_stdlib.py`, kept one release) and the FastAPI package (`test_anchor.py`, plus token and `/health`).
+1.17 (removed after 2.0.0) and the FastAPI package (`test_anchor.py`, plus token and `/health`).
 
 Release history: [CHANGELOG.md](CHANGELOG.md).

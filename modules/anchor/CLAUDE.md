@@ -65,7 +65,7 @@ Overview: `README.md`. Release history: `CHANGELOG.md`.
 ## Verifying changes
 
 ```powershell
-.venv\Scripts\python.exe -m unittest test_anchor_watch test_anchor test_contract_stdlib   # simulated Core data, no network; API contract
+.venv\Scripts\python.exe -m unittest test_anchor_watch test_anchor   # simulated Core data, no network; API contract
 ```
 
 The page is `web/anchor.js` of the Drifter app (see the root CLAUDE.md for checking it). A test server can run beside the live one with `--port 8767 --state <scratch file>`.

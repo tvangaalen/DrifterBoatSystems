@@ -25,9 +25,9 @@ SUITES = [  # (name, folder, command)
     ("drifterd", ROOT, [sys.executable, "tests/test_drifterd.py"]),
     ("verify-live", ROOT, [sys.executable, "tests/test_verify_live.py"]),
     ("energy", ROOT / "modules/energy", [python("energy"), "-m", "tests.run_all"] + (["quick"] if QUICK else [])),
-    ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch", "test_anchor", "test_contract_stdlib"]),
+    ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch", "test_anchor"]),
     ("guard", ROOT / "modules/guard", [python("guard"), "test_core.py"]),
-    ("guard-api", ROOT / "modules/guard", [python("guard"), "-m", "unittest", "test_guard", "test_contract_web"]),
+    ("guard-api", ROOT / "modules/guard", [python("guard"), "-m", "unittest", "test_guard"]),
     ("washer", ROOT / "modules/washer", [python("washer"), "-m", "unittest", "test_washer"]),
 ]
 

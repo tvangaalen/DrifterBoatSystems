@@ -1,6 +1,6 @@
 """The presence state machine: arm the camera when the phone has been off the boat Wi-Fi for away_after_s, disarm it on
 return. `armed_by_us` makes sure BoatGuard only disarms what it armed itself; a router that cannot be read never
-arms or disarms anything. Unchanged from boatguard.py 1.x (test_core.py, test_api_contract.py)."""
+arms or disarms anything. Unchanged from boatguard.py 1.x, removed after 2.0.0 (test_core.py, test_api_contract.py)."""
 from __future__ import annotations
 
 import logging, threading, time

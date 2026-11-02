@@ -1,7 +1,7 @@
 """BoatGuard's API as the Drifter app sees it, pinned down at HTTP level with the real presence logic and a fake router,
 camera, notifier and clock: status, log, monitoring on/off, settings (with every refusal), notification tests and the
 camera test. ApiContract runs against an implementation through make(); it passed against the stdlib server
-(boatguard_web.py) and the FastAPI package (guard 2.0). Nothing reaches the router, the camera or Pushover."""
+(boatguard_web.py, removed after 2.0.0) and the FastAPI package (guard 2.0). Nothing reaches the router, the camera or Pushover."""
 import json, tempfile, time, unittest
 from pathlib import Path
 
