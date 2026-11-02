@@ -2,6 +2,13 @@
 
 ## 0.13
 
+### 0.13.1 — 2026-11-02
+
+First boot without anybody logged on: BoatGuard, MasterVolt (USB Link and all three BMS over Bluetooth), the anchor watch and the washer all ran in session 0, but getting there was slow and fragile. Fixed:
+- The supervisor starts modules in their own threads: it used to wait for each `start_all.ps1`, which took up to 90 s in session 0 after the boot, so the anchor watch's first start timed out and the others waited. A start is timed from when it really began.
+- `start_all.ps1` reads the module list once (each Python start is slow in session 0 right after a boot); the supervisor gives the script 4 min, a module 5 min before it counts as failed, and the "already starting" marker blocks a second start for 5 min (MasterVolt listened 177 s after its start; two MasterVolts would fight over the USB Link).
+- `install_autostart.ps1` sets the boot delay to 2 min: with 30 s the py launcher hung before starting Python (the task then stays "running" and is never restarted); BoatGuard's task, at 1 min, was fine. Run it once more to apply this.
+
 ### 0.13.0 — 2026-11-02
 
 - **Every module runs without a window, with a log file**, so all of Drifter can run while nobody is logged on. MasterVolt and the anchor watch now start through `tools/run_module.py` like the others; output goes to `<data>\logs\<module>.console.log` (previous 5 MB kept as `.log.1`). The console-window switches of 0.12.0 are replaced by **System → Show log**: the module's log in its own window or tab (`web/log.html`, `GET /api/supervisor/log`), following the newest lines.
