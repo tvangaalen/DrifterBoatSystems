@@ -28,7 +28,10 @@ sys.path.insert(0, str(HERE / "tools"))
 import modules as M  # noqa: E402
 
 log = logging.getLogger("drifter")
-GRACE_S, START_WAIT_S, STABLE_S, TICK_S = 30, 150, 600, 5
+# START_WAIT_S: after a boot without anybody logged on, start_all.ps1 itself took up to 90 s and MasterVolt listened
+# 177 s after its start (2026-11-02); a start that is declared failed too early gets a second start (start_all.ps1 blocks
+# that for 300 s, see its "starting" marker).
+GRACE_S, START_WAIT_S, STABLE_S, TICK_S = 30, 300, 600, 5
 BACKOFF = [60, 120, 300, 600, 900]          # s between failed start attempts
 SUPERVISED = ("energy", "anchor", "guard", "washer")   # the gateway cannot supervise itself (its task restarts it)
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -48,7 +51,7 @@ def listening_ports() -> set[int]:
     return ports
 
 
-def _ps(script: str, *args: str, timeout: int = 90) -> subprocess.CompletedProcess:
+def _ps(script: str, *args: str, timeout: int = 240) -> subprocess.CompletedProcess:
     return subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(HERE / script), *args],
                           capture_output=True, text=True, timeout=timeout, creationflags=NO_WINDOW)
 
@@ -65,11 +68,12 @@ def stop_module(name: str) -> None:
 
 class Supervisor:
     def __init__(self, names=SUPERVISED, ports=None, data=None, listening=listening_ports, start=start_module, stop=stop_module,
-                 precheck=None, clock=time.time, logs=None):
+                 precheck=None, clock=time.time, logs=None, start_async=True):
         self.names = list(names)
         self.ports = ports or {n: M.resolve(n)["port"] for n in self.names}
         self.data = Path(data or M.DATA)
         self.listening, self.start_fn, self.stop_fn, self.precheck, self.clock = listening, start, stop, precheck, clock
+        self.start_async = start_async        # starts run in their own thread, so one slow start never holds up the others
         # Log file per module (and the gateway): <data>\\logs\\<module>.console.log, written by tools/run_module.py
         self.logs = logs or {n: Path(M.resolve(n)["data"]) / "logs" / f"{n}.console.log" for n in LOG_NAMES}
         self.lock = threading.Lock(); self.events = deque(maxlen=200); self._stop = threading.Event()
@@ -124,11 +128,14 @@ class Supervisor:
                 if s["state"] != "failed": s["state"] = "down"; self.event(n, "not running", "warn")
             if now >= max(s["down_since"] + GRACE_S, s["next_try"]): self._start(n, now)
 
-    def _start(self, n, now):
-        s = self.mods[n]; s.update(state="starting", last_start=now); s["starts"] += 1
+    def _start(self, n, now=None):
+        s = self.mods[n]; s.update(state="starting", last_start=self.clock()); s["starts"] += 1
         self.event(n, "starting")
-        try: self.start_fn(n)
-        except Exception as e: self.event(n, f"start failed: {e}", "warn")   # counted as a failed attempt after START_WAIT_S
+        def go():
+            try: self.start_fn(n)
+            except Exception as e: self.event(n, f"start failed: {e}", "warn")   # counted as a failed attempt after START_WAIT_S
+        if self.start_async: threading.Thread(target=go, daemon=True, name=f"start-{n}").start()
+        else: go()
 
     def run(self):
         log.info("supervisor started for %s", ", ".join(self.names))

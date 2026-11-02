@@ -13,6 +13,7 @@ param([string]$Only, [switch]$NoWait)
 $ErrorActionPreference = 'Continue'
 if (-not $NoWait) { $Host.UI.RawUI.WindowTitle = 'Drifter Boat Systems' }
 $plan = (& py (Join-Path $PSScriptRoot 'tools\modules.py') plan | Out-String) | ConvertFrom-Json
+$gwPlan = $plan.modules | Where-Object name -eq 'gateway'      # before -Only filters the list (one Python start: slow in session 0 after a boot)
 if ($Only) { $plan.modules = @($plan.modules | Where-Object name -eq $Only) }
 $runner = Join-Path $PSScriptRoot 'tools\run_module.py'
 $pyw = (Get-Command pyw.exe -ErrorAction SilentlyContinue).Source; if (-not $pyw) { $pyw = 'pyw.exe' }
@@ -30,11 +31,10 @@ function Start-Module($m) {
 
 if (-not $NoWait) { Write-Host "`n  Drifter Boat Systems`n" -ForegroundColor Cyan }
 # Every start goes through here (desktop icon, switch_module, the Drifter supervisor). A marker per module blocks a
-# second start while the first one is still coming up (MasterVolt needs up to a minute before it listens): two servers
+# second start while the first one is still coming up (MasterVolt took up to 3 min after a boot before it listened): two servers
 # would fight over the USB link and the Bluetooth radio. A hold file (set while a module is being moved) blocks the
 # full start-all; -Only (switch_module, supervisor) has checked it already.
 $marks = Join-Path $plan.data 'starting'; New-Item -ItemType Directory -Force $marks | Out-Null
-$gwPlan = (& py (Join-Path $PSScriptRoot 'tools\modules.py') plan | Out-String | ConvertFrom-Json).modules | Where-Object name -eq 'gateway'
 $gwCfg = Join-Path $gwPlan.data 'config.json'
 $supervised = (Test-Path $gwCfg) -and [bool]((Get-Content $gwCfg -Raw | ConvertFrom-Json).supervise)
 foreach ($m in $plan.modules) {
@@ -43,7 +43,7 @@ foreach ($m in $plan.modules) {
     if (-not $Only -and $supervised -and -not $m.task) { Write-Host ("  {0,-26} left to the supervisor" -f $m.title) -ForegroundColor DarkGray; continue }
     if (-not $Only -and (Test-Path (Join-Path $plan.data "hold\$($m.name)"))) { Write-Host ("  {0,-26} on hold (being moved), not started" -f $m.title) -ForegroundColor Yellow; continue }
     $mark = Join-Path $marks $m.name
-    if ((Test-Path $mark) -and ((Get-Date) - (Get-Item $mark).LastWriteTime).TotalSeconds -lt 120) { Write-Host ("  {0,-26} already starting" -f $m.title) -ForegroundColor DarkGray; continue }
+    if ((Test-Path $mark) -and ((Get-Date) - (Get-Item $mark).LastWriteTime).TotalSeconds -lt 300) { Write-Host ("  {0,-26} already starting" -f $m.title) -ForegroundColor DarkGray; continue }
     Set-Content -LiteralPath $mark -Value (Get-Date -Format s) -Encoding ascii
     Write-Host ("  {0,-26} starting ({1})..." -f $m.title, $where)
     try { Start-Module $m } catch { Write-Host "    could not start: $($_.Exception.Message)" -ForegroundColor Red; $m | Add-Member Failed $true }

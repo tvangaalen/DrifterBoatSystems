@@ -22,7 +22,7 @@ class Rig:
         self.up = {self.ports[n] for n in up}; self.started, self.stopped = [], []; self.clock = Clock()
         self.logs = {n: self.data / "logs" / f"{n}.console.log" for n in S.LOG_NAMES}
         self.sup = S.Supervisor(ports=self.ports, data=self.data, listening=lambda: set(self.up), start=self.started.append,
-                                stop=self._stop, precheck=precheck, clock=self.clock, logs=self.logs)
+                                stop=self._stop, precheck=precheck, clock=self.clock, logs=self.logs, start_async=False)
 
     def _stop(self, n): self.stopped.append(n); self.up.discard(self.ports[n])
     def tick(self, after=0): self.clock.go(after); self.sup.tick()
@@ -45,6 +45,19 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(r.started, ["energy"]); self.assertEqual(r.state("energy"), "starting")
         r.tick(S.TICK_S); self.assertEqual(r.started, ["energy"])              # no second start while it comes up
         r.up.add(8000); r.tick(40); self.assertEqual(r.state("energy"), "running"); self.assertEqual(r.sup.mods["energy"]["starts"], 1)
+
+    def test_a_slow_start_does_not_hold_up_the_others(self):
+        r = Rig(up=()); gate, seen = threading.Event(), []
+        def start(n):
+            seen.append(n)
+            if n == "energy": gate.wait(5)                                    # start_all.ps1 took 90 s in session 0 after a boot
+        r.sup.start_fn, r.sup.start_async = start, True
+        t0 = time.monotonic(); r.tick(); self.assertLess(time.monotonic() - t0, 1)
+        for _ in range(100):
+            if len(seen) == 4: break
+            time.sleep(0.01)
+        self.assertEqual(sorted(seen), ["anchor", "energy", "guard", "washer"]); gate.set()
+        self.assertEqual(r.sup.mods["washer"]["last_start"], r.clock.t)      # timed from its own start, not from a stale tick time
 
     def test_module_that_stops_later_is_started_after_grace(self):
         r = Rig(); r.tick(); r.up.discard(8000); r.tick(S.TICK_S)

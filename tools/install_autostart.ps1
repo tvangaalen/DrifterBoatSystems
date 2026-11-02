@@ -13,7 +13,7 @@
   2. Runs tools\session0_check.py once in that session (a temporary task): can it see the MasterBus USB Link and
      Bluetooth, and start a process the way the supervisor does? Read-only: it opens no device. If something fails,
      nothing is changed.
-  3. Changes the scheduled task DrifterBoatSystems: at startup (after 30 s), whether anybody is logged on or not,
+  3. Changes the scheduled task DrifterBoatSystems: at startup (after 2 min), whether anybody is logged on or not,
      restarted within a minute if it stops. The gateway's supervisor then starts MasterVolt, the anchor watch and the
      washer controller in that same session; BoatGuard has its own boot task already.
   Nothing is restarted now: the running servers carry on, and the new way applies from the next boot (or -Now).
@@ -80,7 +80,9 @@ $check | Format-List session, masterbus_usb, bluetooth_adapter, bluetooth_on, bl
 if (-not $check.ok -and -not $Force) { throw 'The check failed (see above): MasterVolt would not reach the MasterBus USB Link or the batteries in that session. Nothing was changed. (-Force installs anyway.)' }
 
 # 3. the boot task
-$trigger = New-ScheduledTaskTrigger -AtStartup; $trigger.Delay = 'PT30S'      # let USB and Bluetooth finish starting
+# 2 min: with 30 s the py launcher hung before starting Python on 2026-11-02 (the Store Python was not ready yet; BoatGuard,
+# started after 1 min, was fine), and a hung launcher keeps the task "running", so it is never restarted.
+$trigger = New-ScheduledTaskTrigger -AtStartup; $trigger.Delay = 'PT2M'
 # -User with -Password = "run whether the user is logged on or not" (logon type Password), not elevated
 Register-ScheduledTask -TaskName $Task -Action $action -Trigger $trigger -Settings $settings -RunLevel Limited `
     -User $User -Password $cred.GetNetworkCredential().Password -Force | Out-Null
