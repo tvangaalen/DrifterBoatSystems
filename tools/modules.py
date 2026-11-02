@@ -3,6 +3,7 @@
 Used by run_module.py, start_all.ps1 (through `py tools/modules.py plan`) and switch_module.ps1, later by the supervisor.
     py tools/modules.py plan             JSON: per module name, port, location, folder, command, environment
     py tools/modules.py set <m> <loc>    record that module <m> now runs from <loc> (legacy | drifter)
+A module missing from locations.json runs from Drifter: the old folders were archived on 2026-11-02.
 """
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ def locations() -> dict:
 
 
 def resolve(name: str, location: str | None = None) -> dict:
-    m = SPEC["modules"][name]; loc = location or locations().get(name, "legacy")
+    m = SPEC["modules"][name]; loc = location or locations().get(name, "drifter")
     if loc not in ("legacy", "drifter"): raise ValueError(f"{name}: unknown location {loc!r}")
     legacy = Path(os.path.expandvars(m["legacy"]))
     if loc == "legacy":

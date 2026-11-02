@@ -4,7 +4,7 @@
 # What it does: read-only pre-checks; copy the runtime files while the old server still runs; ask for confirmation;
 # stop the old server; copy again (final, consistent copy); check the CA is in place; point the scheduled task at
 # the new location; record the location; start the module and wait for its port. Copying never deletes or moves
-# anything in the old folder, so -Back is always possible (it starts the old folder again with its old files; changes
+# anything in the old folder, so -Back is possible (it starts the old folder again with its old files; changes
 # made in the meantime stay in C:\DrifterData). A switch restarts the module: Float protection or the anchor watch
 # pause for about a minute. Run it only when the user wants that.
 param([Parameter(Mandatory)][ValidateSet('energy', 'anchor', 'guard', 'washer', 'gateway')][string]$Module, [switch]$Back, [switch]$Yes)
