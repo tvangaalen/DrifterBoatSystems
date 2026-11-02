@@ -1,6 +1,6 @@
 # Mastervolt Energy - Manual
 
-**Version 2.1.3** - the complete guide to using, operating and maintaining the application. It explains what every screen
+**Version 2.2.0** - the complete guide to using, operating and maintaining the application. It explains what every screen
 shows, how every number is obtained, what the application does on its own (Float protection, Bluetooth recovery, history),
 which files it keeps, what to do when something goes wrong, and how the code is organised for whoever changes it next.
 
@@ -125,6 +125,13 @@ the PC's current addresses, and trusts it for the current Windows user. One-time
 address; the phone does not need to be set up again.
 
 ### 3.4 Starting and stopping
+
+**On the boat (Drifter Boat Systems, since 2.2.0)** the Windows service *Drifter* starts the server as
+`python -m mastervolt` and keeps it running; restart and stop it from the Drifter app's System page. It then serves plain
+HTTP on 127.0.0.1:8000 under the Drifter module contract: only the Drifter gateway on this PC calls it, with the token the
+service gives both (`X-Drifter-Token`; every request without it but `GET /health` is refused). The phone reaches the
+dashboard through the Drifter app, which serves HTTPS with a certificate from the same Mastervolt Local CA. The CA stays in
+`certs\` of this folder; never remove it. The rest of this section describes the stand-alone launchers.
 
 Double-click **`start_mastervolt_server.cmd`** (or run it from PowerShell). A console window opens, prepares the certificates,
 and starts the server on `https://<private address>:8000`, printing the address. Leave the window open: it is the server.

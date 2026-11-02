@@ -10,6 +10,19 @@ Unless an entry says otherwise, every release also bumps the application version
 
 ---
 
+## 2.2 — Drifter module contract
+
+### 2.2.0
+- **`python -m mastervolt`**, the way Drifter Boat Systems now runs the server: plain HTTP on 127.0.0.1:8000 (or a private
+  address in `MASTERVOLT_BIND`, never a public one) under the Drifter module contract (`mastervolt/api/contract.py`):
+  every request but `GET /health` must carry `X-Drifter-Token` equal to `DRIFTER_TOKEN`, which the Drifter service gives
+  the gateway and this server; without it everything else is refused (fail closed). `GET /health` reports the version and
+  uptime; JSON answers are never cached. MasterVolt keeps its own copy of the contract and does not import Drifter's
+  `common`. The phone reaches the server through the Drifter app's HTTPS, so on the boat no server certificate is issued
+  any more; the Mastervolt Local CA stays where it is (the Drifter certificate comes from it).
+- `create_app()`, MasterBus, DALY, Float protection and every route are unchanged (the golden tests pass as before); the
+  stand-alone launchers (`start_mastervolt_server.cmd`, `uvicorn app:app`) work as before. New `tests/test_contract.py`.
+
 ## 2.1 — Shore power history
 
 ### 2.1.3

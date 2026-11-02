@@ -1,6 +1,6 @@
 # MasterVolt YMS
 
-**Mastervolt Energy v2.1.3** — a private web app (installable iPhone PWA) that monitors and controls a boat's
+**Mastervolt Energy v2.2.0** — a private web app (installable iPhone PWA) that monitors and controls a boat's
 Mastervolt electrical system and its DALY battery management, from a Windows PC on the boat's LAN.
 
 > **On the boat (since 2026-11-02) MasterVolt is used through the Energy module of the Drifter app** ([DrifterBoatSystems](https://github.com/tvangaalen/DrifterBoatSystems), `modules/energy`), which shows everything of this app's own page: dashboard, controls, batteries, SOC calibration, Bluetooth diagnostics, history charts, reports and settings. Started by the Drifter supervisor (`DRIFTER_DATA` set), `start_mastervolt_server.cmd` makes the server listen on 127.0.0.1 only; this app's own page is then only reachable on the boat PC itself (https://127.0.0.1:8000/), as a fallback. Run without Drifter, it still listens on the LAN address as before.

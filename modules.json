@@ -9,9 +9,8 @@
     },
     "energy": {
       "name": "Energy (MasterVolt YMS)", "port": 8000, "dir": "modules\\energy",
-      "command": ["cmd", "/c", "start_mastervolt_server.cmd"],
-      "requires": ["certs\\ca-cert.pem", "certs\\ca-key.pem"],
-      "health": "https:/api/version", "precheck": "energy"
+      "command": [".venv\\Scripts\\python.exe", "-m", "mastervolt"],
+      "health": "http:/health", "precheck": "energy"
     },
     "anchor": {
       "name": "Anchor watch", "port": 8766, "dir": "modules\\anchor",
