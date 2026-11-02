@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.15
+
+### 0.15.0 — 2026-11-02
+
+Refactoring phase 2: the runtime.
+- **drifterd, the Windows service "Drifter"** (`drifterd.py`, stdlib only, on the plain python.org Python): runs the gateway and the four modules as its own child processes, each in its own kill-on-close job object (`common/proc.py`), writes their output to the console logs, keeps them running (the supervisor now lives here, not in the gateway) and answers the gateway on a control API (127.0.0.1:8099, token file). Windows starts it at boot (delayed), whether anybody is logged on or not, and restarts it after a crash. The service control code is ctypes, not pywin32: a virtual environment's python.exe is only a launcher, which a Windows service cannot be.
+- `tools/install_service.ps1` replaces `install_autostart.ps1`: session check, pre-checks, "Log on as a service", the service with restart-after-crash and start/stop rights for the user, and a switch-over that goes back to the scheduled task by itself when the app does not come up. `start_all.ps1` (the desktop icon) starts the service.
+- The gateway talks to drifterd (`DrifterdClient`): states, logs (now also the service's own), restart (also of the gateway) and switch-off, after its own pre-checks. Switch-off ends the modules, then the gateway and the service.
+- **Health checks** per module (display only): *not answering* on the System page when a server listens but does not answer.
+- Removed: the migration tools (`switch_module.ps1`, `prepare_live.ps1`, `locations.json`, legacy folders in `modules.json`), `stop_module.ps1` and the PowerShell/WMI start path (`start_all.ps1 -Only`). `tools/run_module.py` stays only for the fallback scheduled task.
+- Planned for phase 3 instead (it needs each module's server, rewritten on FastAPI there): a shared token between gateway and modules with plain HTTP on 127.0.0.1.
+
 ## 0.14
 
 ### 0.14.2 — 2026-11-02

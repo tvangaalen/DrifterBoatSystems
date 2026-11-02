@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.14.2 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.15.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
@@ -64,32 +64,20 @@ Then open **https://192.168.1.166:8100/** on the iPhone or iPad → Share → *A
 
 - Firewall: right-click `add_firewall_rule.cmd` → *Run as administrator* (TCP 8100, Private profile, local subnet and Teleport clients 192.168.2.x).
 - `config.json`: `bind`, `port`, `allowed_hosts` (extra host names, e.g. `"drifter.lan"`), the certificate files, `ca_file` (to check the module servers' certificates) and per module the server `url` and the `classic` page link.
-- **Desktop icon "Drifter Boat Systems"** (made by `tools\create_shortcut.ps1`, run from `C:\Drifter`; run it again if the icon does nothing) runs `start_all.ps1`: starts the scheduled task DrifterBoatSystems if it is not running and leaves the four modules to Drifter's supervisor, which starts them at once in its own session (a module started from the desktop would end at log-off). It never restarts a server that runs, waits up to 3 min, shows the status and opens the app. With the supervisor off it starts every module itself, as before.
-- **Starting without anybody logged on:** run `powershell -NoProfile -ExecutionPolicy Bypass -File tools\install_autostart.ps1` once from an *elevated* PowerShell in `C:\Drifter`. It asks for your Windows password (Task Scheduler needs it for a task that runs while nobody is logged on), first checks in that session that the MasterBus USB Link, Bluetooth and starting processes work (read-only; nothing is changed if not), then makes **DrifterBoatSystems** the one scheduled task: it starts the gateway (`.venv\Scripts\pythonw.exe tools\run_module.py gateway`) 2 min after boot, whether anybody is logged on or not, restarted within a minute if it stops. The supervisor starts all four modules in that session. The old BoatGuard task is removed. `-Status` shows what runs in which session, `-Remove` goes back to starting at log-on, `-Now` moves the gateway at once. That session has no desktop: no console windows and no sound on the PC (the anchor watch's PC beep is silent; the alarm on the iPhone/iPad and the push alerts are unchanged). Until it is installed, the task starts the gateway at log-on.
+- **The Drifter service.** `drifterd.py` runs as the Windows service **Drifter** ("Drifter Boat Systems"): it starts at boot (delayed), whether anybody is logged on or not, runs the gateway and the four modules as its own processes (each in a kill-on-close job object), writes their output to `C:\DrifterData\<module>\logs\<module>.console.log` (the gateway: `C:\Drifter\logs\gateway.console.log`; its own: `C:\DrifterData\logs\drifterd.log`), and Windows restarts it after a crash. Install once from an *elevated* PowerShell in `C:\Drifter`: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\install_service.ps1`. It asks for your Windows password (the service runs as your account), checks USB, Bluetooth and process starts in a session without desktop, asks Drifter whether a restart is safe now, gives your account "Log on as a service", creates the service and lets your account start and stop it, then switches over (Float and the anchor watch pause about a minute) and goes back to the old scheduled task by itself if the app does not come up. `-Status` shows what runs, `-Remove` goes back to the scheduled task. There is no desktop in that session: no console windows (System → Show log) and no sound on the PC (the anchor watch's PC beep is silent; the alarm on the iPhone/iPad and the push alerts are unchanged).
+- **Desktop icon "Drifter Boat Systems"** (made by `tools\create_shortcut.ps1`, run from `C:\Drifter`; run it again if the icon does nothing) runs `start_all.ps1`: starts the service if it is stopped (after *Switch all systems off*), waits until every server answers (up to 4 min), shows the status and opens the app. It never restarts a running server.
 
 ## Supervisor
 
-With `"supervise": true` in `config.json` (the live setting) the gateway keeps the four servers running:
+drifterd keeps the four modules running (`supervisor.py`; the gateway it keeps running itself):
 
-- A server that runs is left alone. One that is not running when the supervisor starts is started at once; one that stops later after 30 s (the same way as the desktop icon does, outside the gateway's process tree, so restarting the gateway never takes a server down), then given 2.5 min to come up; failed starts are retried after 1, 2, 5, 10 and then every 15 min.
-- It never stops a server by itself. **System → Restart** stops and starts one on request, after a confirmation that says what pauses; MasterVolt is refused while a BMS control runs or Float is latched, the anchor watch while an alarm is active.
-- A server that stops is started again after 30 s (use *Switch all systems off* to stop everything). To keep a module stopped, create the file `C:\DrifterData\hold\<module>` (energy, anchor, guard, washer); `switch_module.ps1` does that itself while moving a module.
-- The System page shows each server's state, uptime and the supervisor's events.
-- **Logs instead of console windows:** every module runs without a window through `tools\run_module.py`, its output in `C:\DrifterData\<module>\logs\<module>.console.log` (the gateway: `C:\Drifter\logs\gateway.console.log`; the previous 5 MB move to `.log.1` at a start). System → **Show log** opens a module's log in its own window or tab (refreshes every 3 s while *Follow* is on). Started by Drifter, the MasterVolt and anchor watch start scripts skip their final `pause`.
-- **System → Switch all systems off** asks first (default *Leave on*; the list says what stops, e.g. that the anchor alarm stops when the anchor is set), is refused while a BMS control runs or the anchor watch has an alarm (a latched Float is no reason), then stops the washer, BoatGuard, anchor watch and MasterVolt and finally the gateway itself (exit code 0, so its task does not start it again). The page then says *All systems have been shut down* and closes on OK (a home-screen app or a tab the browser will not close shows a "switched off" page instead). Switches, chargers and the camera stay as they are. Start everything again with the desktop icon.
-
-## Moving the servers to `C:\Drifter` (one module at a time)
-
-Since 2026-11-01 every server runs from `C:\Drifter`, with its runtime files in `C:\DrifterData`. How the move works (and how to undo it per module):
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\prepare_live.ps1          # clone C:\Drifter, Python environments, C:\DrifterData (nothing is stopped)
-cd C:\Drifter
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch_module.ps1 washer  # then guard, anchor, energy, gateway
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch_module.ps1 washer -Back   # undo
-```
-
-`switch_module.ps1` checks first (energy: no BMS control busy, Float not latched; anchor: no alarm), copies the module's runtime files (settings, keys, state, history, logs; listed in `modules.json`) to `C:\DrifterData\<module>` and its certificates into `C:\Drifter`, asks for confirmation, stops the old server, copies once more, and starts the module from `C:\Drifter`. Nothing is deleted from the old folder. Each switch restarts that server for about a minute. On 2026-11-02 the old folders were moved to `C:\DrifterArchive\legacy-2026-11-02` (`modules.json` points there), so `-Back` is best effort now: the old anchor watch and BoatGuard certificate scripts look for the CA in `C:\Temp\mastervoltproject\certs`. Which module runs where is kept in `C:\DrifterData\locations.json`; `start_all.ps1` (the desktop icon) follows it.
+- A server that runs is left alone. One that is not running when drifterd starts is started at once; one that stops later is started again after 30 s, given 5 min to come up; failed starts are retried after 1, 2, 5, 10 and then every 15 min.
+- It never stops a server by itself. **System → Restart** stops and starts one on request, after a confirmation that says what pauses; MasterVolt is refused while a BMS control runs or Float is latched, the anchor watch while an alarm is active. A restart puts a freshly built Python environment in place (`tools\sync_envs.py --into .venv-next`).
+- **Health:** every 30 s drifterd asks each module a cheap question (`modules.json` `health`); a server that listens but does not answer is shown as *not answering* on the System page. That is display only: nothing is stopped or restarted because of it.
+- To keep a module stopped, create the file `C:\DrifterData\hold\<module>` (energy, anchor, guard, washer).
+- The System page shows each server's state, uptime, health and the supervisor's events; **Show log** opens a module's log (and the service's own log) in its own window or tab (refreshes every 3 s while *Follow* is on).
+- **System → Switch all systems off** asks first (default *Leave on*; the list says what stops, e.g. that the anchor alarm stops when the anchor is set), is refused while a BMS control runs or the anchor watch has an alarm (a latched Float is no reason), then stops the washer, BoatGuard, anchor watch and MasterVolt; 15 s later the gateway and the service end (the service stays stopped until the desktop icon or a boot starts it). The page then says *All systems have been shut down* and closes on OK (a home-screen app or a tab the browser will not close shows a "switched off" page instead). Switches, chargers and the camera stay as they are.
+- The gateway reaches drifterd on 127.0.0.1:8099 with the token in `C:\DrifterData\drifterd.token` (`config.json`: `supervise`, `drifterd`, `drifterd_token`).
 
 ## Development
 
