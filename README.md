@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.13.2 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.14.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
@@ -92,6 +92,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch_module.ps1 wash
 `switch_module.ps1` checks first (energy: no BMS control busy, Float not latched; anchor: no alarm), copies the module's runtime files (settings, keys, state, history, logs; listed in `modules.json`) to `C:\DrifterData\<module>` and its certificates into `C:\Drifter`, asks for confirmation, stops the old server, copies once more, and starts the module from `C:\Drifter`. Nothing is deleted from the old folder. Each switch restarts that server for about a minute. On 2026-11-02 the old folders were moved to `C:\DrifterArchive\legacy-2026-11-02` (`modules.json` points there), so `-Back` is best effort now: the old anchor watch and BoatGuard certificate scripts look for the CA in `C:\Temp\mastervoltproject\certs`. Which module runs where is kept in `C:\DrifterData\locations.json`; `start_all.ps1` (the desktop icon) follows it.
 
 ## Development
+
+**Python environments.** Everything runs on the python.org Python 3.12, never on the Microsoft Store Python (that one hung at boot in session 0 and cannot be started through Win32_Process Create). `pyproject.toml` lists each module's packages as a dependency group (`energy`, `anchor`, `guard`, `washer`; the gateway is stdlib only) and `uv.lock` fixes every version. `py -3.12 tools\sync_envs.py` builds `.venv` (gateway) and `modules\<name>\.venv` from the lock, nothing else; on the boat PC: `--into .venv-next`, then `--swap <module>` (hold, stop, swap, the supervisor starts it again). To change a package: edit `pyproject.toml`, `py -3.12 -m uv lock`, run the tests, rebuild. Needs `py -3.12 -m pip install --user uv`.
+
+**Checks.** `tests\run_all.py` (every suite, each in its module's environment), `ruff` (`pyproject.toml`; MasterVolt keeps its own, stricter configuration), `node --check` on `web\*.js`. GitHub runs all of them on every push (`.github/workflows/ci.yml`, Windows, environments from the lock), plus the privacy scan.
+
+**Privacy scan.** The repository is public. `tools\privacy_scan.py` refuses added lines that look like positions (5+ decimals), keys/tokens, MAC addresses, private keys or e-mail addresses, or contain an entry of the local deny list `C:\DrifterData\privacy_denylist.txt` (MMSI, serials, the owner's e-mail, anchorages; not in git). It runs before every commit (`.githooks\pre-commit`, active after `git config core.hooksPath .githooks`) and in CI (patterns only). Made-up test data may carry `privacy: ok`.
 
 `py tools/mock_upstreams.py --gateway` starts four fake servers with made-up data plus a gateway on http://127.0.0.1:8101/ (`tools/config.mock.json`). Use it for every UI test: it never contacts the boat. `py tools/mock_upstreams.py` alone starts only the fakes.
 

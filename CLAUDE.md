@@ -39,7 +39,7 @@ deploying by copying files are historical: version control is this repository an
 
 ## Conventions
 
-- Python 3.12+, Windows, `py` launcher. Gateway: stdlib only, dense style like the modules.
+- Python: the python.org **Python 3.12** in the environments built from `uv.lock` (`tools/sync_envs.py`): `.venv` for the gateway and tools, `modules/<name>/.venv` per module. Never the Microsoft Store Python (hung at boot in session 0, cannot be started through Win32_Process Create), never `pip install` into an environment by hand: add the package to its group in `pyproject.toml`, `py -3.12 -m uv lock`, rebuild. Gateway: stdlib only, dense style like the modules; `ruff check .` must pass.
 - Frontend: plain JS, no build step. `web/app.css` holds all colours as tokens per theme (light, dark, night, auto = device); modules never hard-code colours. New UI uses the existing components (`card`, `row`, `stats`, `hero`, `badge`, `btn`, `switch`, `seg`, `field`, `sheet`).
 - A page module registers with `Drifter.register({id, title, short, icon, every, background, load, render, mount, tile, badge})`; commands go through `Drifter.api(module, path, body)` and `Drifter.run(...)`, confirmations through `Drifter.confirm(...)`.
 - Check new layouts at 390 px (iPhone), 820 px portrait and 1180 px landscape (iPad), in light, dark and night.
@@ -47,9 +47,12 @@ deploying by copying files are historical: version control is this repository an
 ## Verifying
 
 ```powershell
-py tests/run_all.py          # gateway + every module's suite (MasterVolt ~2.5 min); `quick` skips MasterVolt's slow simulations
-node --check web\app.js      # and the other web\*.js files
+.venv\Scripts\python.exe tests\run_all.py   # every suite in its module's environment (MasterVolt ~3 min); `quick` skips its slow simulations
+py -3.12 -m ruff check .; py -3.12 -m ruff check modules\energy   # lint (MasterVolt with its own configuration)
+node --check web\app.js                      # and the other web\*.js files
 ```
+
+GitHub CI (`.github/workflows/ci.yml`) runs the same on every push, plus the privacy scan; check that it is green after pushing.
 
 Then the UI against the mocks (`drifter-mock`). `run_all.py` removes `__pycache__` folders afterwards.
 
@@ -57,7 +60,7 @@ Then the UI against the mocks (`drifter-mock`). `run_all.py` removes `__pycache_
 
 - Git repository in this folder, branch `main`, remote `origin` = https://github.com/tvangaalen/DrifterBoatSystems (**public**). Git: `C:\Program Files\Git\cmd\git.exe` if `git` is not on the PATH.
 - Repo-local identity `TvanG` with the GitHub no-reply address. Never put the user's real e-mail or other personal data in commits, files or tags.
-- **Everything committed is public.** Before every commit and push, scan the staged diff for positions (anchorages, tracks), MMSIs, keys/tokens, hardware serials and personal data, and read the result. Never commit `config.json`, `certs/`, `logs/`, module runtime files (each module's `.gitignore` lists them), captures, recordings, databases or backups.
+- **Everything committed is public.** The pre-commit hook (`tools/privacy_scan.py`, `git config core.hooksPath .githooks`, local deny list `C:\DrifterData\privacy_denylist.txt`) and CI scan every commit; never bypass them (`--no-verify`), and still read the staged diff yourself. Before every commit and push, scan the staged diff for positions (anchorages, tracks), MMSIs, keys/tokens, hardware serials and personal data, and read the result. Never commit `config.json`, `certs/`, `logs/`, module runtime files (each module's `.gitignore` lists them), captures, recordings, databases or backups.
 - Commit code and docs separately; imperative summary line, then what and why. Push only when the user asks or approved a release; never force-push.
 - Tags: the gateway/app as `vX.Y.Z`; a module release as `<module>/vX.Y.Z` (e.g. `energy/v2.1.3`), on the commit that bumps that module's version.
 - The old repositories (MasterVolt-YMS, OrcaCore2-AnchorWatch, BoatGuard, viomi-w1-controller) are archived: never push to them. Their old local folders are in `C:\DrifterArchive\legacy-2026-11-02`.

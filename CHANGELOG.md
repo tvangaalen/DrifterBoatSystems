@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14
+
+### 0.14.0 — 2026-11-02
+
+Refactoring phase 1: the foundation. No behaviour changes (every suite, including MasterVolt's golden tests, passes unchanged).
+- **One Python, one lockfile.** All servers run on the python.org Python 3.12 instead of the Microsoft Store Python 3.13 (which hung at boot in session 0). `pyproject.toml` has a dependency group per module and `uv.lock` fixes all 80 packages; `tools/sync_envs.py` builds the gateway's `.venv` and each module's `.venv` from it, and swaps a module's environment live (`--into .venv-next`, `--swap`). MasterVolt gets its own environment for the first time (it used the user's shared Store Python packages); `start_mastervolt_server.cmd` uses it when present. Pinned as they ran: starlette 1.6.0, websockets 13.1 for the anchor watch (14+ changed the client API); netifaces is left out for the washer as before.
+- The gateway, `start_all.ps1`, `stop_module.ps1` and `install_autostart.ps1` (both tasks, Drifter and BoatGuard) use these environments instead of the py launcher. Run `install_autostart.ps1` once more to move the scheduled tasks over.
+- **Lint:** `ruff` for the gateway, `common/`, `tools/`, `tests/` and the anchor, guard and washer modules (pyflakes and bugbear; the dense style stays); MasterVolt keeps its own black + ruff configuration. Four small findings fixed (unused imports, an f-string without placeholders).
+- **Privacy scan** automated: `tools/privacy_scan.py`, as pre-commit hook and in CI, with a local deny list outside git.
+- **CI** on GitHub (Windows): privacy scan, lint, JavaScript syntax and all hardware-free tests on every push.
+
 ## 0.13
 
 ### 0.13.2 — 2026-11-02
