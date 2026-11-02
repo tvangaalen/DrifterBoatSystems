@@ -49,7 +49,14 @@ def check_washer(status: dict) -> list:
     return [need("status_text" in status, f"washer answers: {status.get('power_text', '?')}, {status.get('status_text', '?')}")]
 
 
-RETRY = {"BMS units connected", "Bluetooth available", "Orca Core connected", "router reachable", "camera online", "washer answers"}
+# Right after a restart a server does not answer yet, the supervisor says "starting" and the gateway has not polled it yet:
+# those come right by themselves, so they are retried too. A 200 without the token, Float latched or an alarm is not.
+RETRY = {"BMS units connected", "Bluetooth available", "Orca Core connected", "router reachable", "camera online", "washer answers",
+         "/health: no answer", "supervisor:", "gateway reaches it", "app answers", "drifterd None"}
+
+
+def retryable(text: str) -> bool:
+    return any(text.startswith(p) for p in RETRY) or text.endswith("(HTTP 0)")   # HTTP 0: no answer yet
 
 
 class Live:
@@ -121,8 +128,8 @@ def main(argv=None) -> int:
     while True:
         systems = live.gw("/api/systems")[1] or {}
         results = {n: live.module(n, systems) for n in names}
-        pending = [t for r in results.values() for ok, t in r if not ok and any(t.startswith(p) for p in RETRY)]
-        hard = [t for r in results.values() for ok, t in r if not ok and not any(t.startswith(p) for p in RETRY)]
+        pending = [t for r in results.values() for ok, t in r if not ok and retryable(t)]
+        hard = [t for r in results.values() for ok, t in r if not ok and not retryable(t)]
         if not pending or hard or time.time() >= deadline: break
         time.sleep(10)
     failed = 0

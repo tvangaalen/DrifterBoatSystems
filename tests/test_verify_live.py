@@ -34,9 +34,11 @@ class Checks(unittest.TestCase):
         self.assertTrue(self.failed(V.check_washer({})))
 
     def test_retry_only_for_checks_that_can_come_right(self):
-        retried = lambda t: any(t.startswith(p) for p in V.RETRY)  # noqa: E731
+        retried = V.retryable
         self.assertTrue(retried("BMS units connected: 0/3") and retried("Orca Core connected: timeout"))
+        self.assertTrue(retried("/health: no answer (HTTP 0)") and retried("supervisor: starting, health None") and retried("gateway reaches it: None"))
         self.assertFalse(retried("Float not latched") or retried("ALARM: Anchor drag") or retried("refused without token (HTTP 200)"))
+        self.assertTrue(retried("refused without token (HTTP 0)"))
 
 
 if __name__ == "__main__":
