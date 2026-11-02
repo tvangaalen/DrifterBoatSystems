@@ -16,7 +16,7 @@ app: [MANUAL.md](MANUAL.md). The rules for Claude Code (and for anyone): [../CLA
    │     ├── anchor  (FastAPI)              :8766  Orca Core 2 (read-only), NMEA :10110 on the LAN
    │     ├── guard   (BoatGuard, FastAPI)   :8095  UniFi router, EZVIZ camera, Pushover
    │     └── washer  (FastAPI)              :8080  VIOMI W1 (miio)
-   │  supervisor.py (start, restart on request, health)
+   │  supervisor.py (start, restart on request, health); the gateway's watchdog pushes alerts
    └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -86,7 +86,8 @@ environment by hand. Node (`package.json`: Playwright, TypeScript) is a developm
   `core/format.js` (escaping, numbers, the 24-hour clock), `core/ui.js` (shared fragments); one page module per system.
 - A page registers with `Drifter.register({id, title, short, icon, every, background, load, render, mount, tile, badge})`;
   commands go through `Drifter.api(module, path, body)` and `Drifter.run(...)`, confirmations through `Drifter.confirm(...)`.
-- All colours are tokens in `app.css` per theme (light, dark, night, auto). Times are always 24-hour.
+- All colours are tokens in `app.css` per theme (light, dark, night, auto). Times are always 24-hour. No fixed inline styles:
+  components, or the `u-*` utility classes at the end of `app.css` (only computed values stay inline).
 - `sw.js` caches only the shell; `api/` is never cached. Bump `CACHE` with every release.
 - `npm run typecheck` (`tsc --checkJs`, JSDoc types, `web/types.d.ts` for browser facts) must stay at 0 errors.
 - The user manual is `docs/MANUAL.md`; `py -3.12 tools\build_manual.py` turns it into `web/manual.html` (System → *Manual*,

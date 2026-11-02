@@ -98,6 +98,13 @@ Pushover or noforeignland.com keys). The System page says when it last copied th
   in `C:\Drifter\modules\guard`, `.venv\Scripts\python.exe -m guard login` or `-m guard pushover`; for the others the
   module's `*.example.json` shows the format.
 
+## 6a. Alerts
+
+The gateway pushes a message (Pushover) when a system has been down for 5 minutes, and when it is back. It needs the keys in
+`C:\DrifterData\gateway\pushover.json`: `{"token": "<app token>", "user": "<user key>"}` (an application token from
+pushover.net — a new application *Drifter*, or the one BoatGuard uses — and your user key), then restart the gateway.
+System → Alerts shows whether it is ready and has *Send test*. It never restarts or commands anything.
+
 ## 7. Phones and tablets
 
 - Install the app: Safari → https://192.168.1.166:8100/ → Share → *Add to Home Screen*.
@@ -115,6 +122,7 @@ Pushover or noforeignland.com keys). The System page says when it last copied th
 | *not answering* on the System page | the module's log | display only; *Restart* if it stays |
 | BMS units missing after a restart | wait 2–3 minutes | Bluetooth reconnects by itself; Batteries → Bluetooth diagnostics |
 | Service in *Start pending* for minutes | `C:\DrifterData\logs\drifterd.log` | `sc.exe stop Drifter`, then start; `tools\install_service.ps1 -Status` |
+| A push "Drifter: <system> down" | System page; that system's log | it is started again automatically; *Restart* if it stays down |
 | Everything gone after a Windows update | `sc.exe query Drifter`, the service's log | the service starts delayed at boot: give it 4 minutes |
 
 ## 9. Rebuilding the PC (or a new one)

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.22
+
+### 0.22.0 — 2026-11-02
+
+Improvements from the review of 2026-11-02.
+- **Alerts**: the gateway's watchdog sends a push message (Pushover) when a system has not been running, or not answering, for
+  5 minutes, and one when it is back (Energy and the anchor watch with high priority). It only reads drifterd's status; quiet
+  after *Switch all systems off* and for a module on hold. Keys in `C:\DrifterData\gateway\pushover.json`; System → Alerts shows
+  its state and has *Send test*. *Backup keys and tokens* copies that file too.
+- `verify_live.py` checks the app's certificate and the Mastervolt Local CA (fails 60 days before they end).
+- **MasterVolt 3.0.1** (no access log: ~3 MB a day less; the old stand-alone launchers removed) and **anchor watch 2.0.1**
+  (GPS diagnostics kept 30 days). `start_drifter.cmd` and `tools/run_module.py` are removed as well.
+- The app's templates have no fixed inline styles any more: 89 became utility classes in `app.css` (the 81 screenshots are
+  identical pixel for pixel). The System page's install text no longer mentions the modules' old certificates.
+- The tags `v0.16.0` and `washer/v4.0.0`, put on the wrong commit on 2026-11-02, are deleted (the user's OK).
+
 ## 0.21
 
 ### 0.21.1 — 2026-11-02

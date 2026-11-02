@@ -118,6 +118,8 @@ BoatGuard arms the EZVIZ camera when your iPhone leaves the boat's Wi-Fi, and di
   *Show log* opens its log; *Restart* restarts one after a confirmation that says what pauses. A restart is refused while
   a battery control runs or Float is latched (energy) or while the anchor watch has an alarm.
 - **Drifter:** the app's own server and the Drifter service, with their logs.
+- **Alerts:** a push message on your phone when a system has been down for 5 minutes, and when it is back. *Send test* checks
+  that it arrives; *Not set up* means the boat PC has no Pushover keys for it yet (see the runbook).
 - **Keys and tokens:** *Backup keys and tokens* copies the keys that cannot be made again without the services
   (Pushover, noforeignland.com, EZVIZ, the washer's token) to `C:\DrifterBackups` on the boat PC, replacing the previous
   copy, and says when it last did. Press it after one of them changed; nothing is copied unless you press it.
