@@ -18,7 +18,7 @@ deploying by copying files are historical: version control is this repository an
 - **Deploying** = commit and push here, then `git pull --ff-only` in `C:\Drifter`, then restart only the module that changed (stop it, then `C:\Drifter\start_all.ps1 -Only <module> -NoWait`; guard and gateway: `Stop-ScheduledTask`/`Start-ScheduledTask`). Never edit files in `C:\Drifter` directly. A web-only gateway change needs no restart (files are read per request).
 - `tools/run_module.py` puts itself in a kill-on-close job object and starts the server suspended, assigns it to the job explicitly, then resumes it (an inherited job is not enough: the real python behind the venv launcher escaped it), so stopping a scheduled task (or killing the runner) also stops the server under it. Without it BoatGuard's server outlived Stop-ScheduledTask and, in session 0, could not be stopped without admin rights (2026-11-01). Keep it.
 - Started outside any tool session: energy and anchor as minimised consoles under WmiPrvSE (`start_all.ps1`), washer hidden through `tools\run_module.py`, guard and gateway by their scheduled tasks (`BoatGuard` runs whether logged on or not, `DrifterBoatSystems` at logon), both running `tools\run_module.py`.
-- The old folders (`C:\Temp\mastervoltproject`, `..\OrcaCore2`, `..\BoatGuard`, `..\viomi-w1-controller`) are no longer used but kept for `tools\switch_module.ps1 <module> -Back`. Do not delete them without the user's go-ahead.
+- The old folders (`C:\Temp\mastervoltproject`, `..\OrcaCore2`, `..\BoatGuard`, `..\viomi-w1-controller`) were moved to `C:\DrifterArchive\legacy-2026-11-02` on 2026-11-02 with the user's go-ahead (`modules.json` `legacy` points there; a module missing from `locations.json` now means `drifter`). Deleting that archive is the user's call; never delete it yourself. Nothing live may refer to the old paths (the gateway's `ca_file` is `C:/Drifter/modules/energy/certs/ca-cert.pem`). An empty `..\viomi-w1-controller` folder may remain (it was held open); it can go once released.
 - The Mastervolt Local CA now also lives in `C:\Drifter\modules\energy\certs` (identical copy). Since 0.11.0 the gateway's, BoatGuard's and the anchor watch's certificate scripts read it there by default (`common/issue_cert.ps1`); MasterVolt's own `setup_local_https.ps1` uses it in place.
 
 ## Hard rules (app and gateway)
@@ -60,7 +60,7 @@ Then the UI against the mocks (`drifter-mock`). `run_all.py` removes `__pycache_
 - **Everything committed is public.** Before every commit and push, scan the staged diff for positions (anchorages, tracks), MMSIs, keys/tokens, hardware serials and personal data, and read the result. Never commit `config.json`, `certs/`, `logs/`, module runtime files (each module's `.gitignore` lists them), captures, recordings, databases or backups.
 - Commit code and docs separately; imperative summary line, then what and why. Push only when the user asks or approved a release; never force-push.
 - Tags: the gateway/app as `vX.Y.Z`; a module release as `<module>/vX.Y.Z` (e.g. `energy/v2.1.3`), on the commit that bumps that module's version.
-- The old repositories (MasterVolt-YMS, OrcaCore2-AnchorWatch, BoatGuard, viomi-w1-controller) are archived: never push to them. Their local folders next to this one are where the live servers still run from (see Migration).
+- The old repositories (MasterVolt-YMS, OrcaCore2-AnchorWatch, BoatGuard, viomi-w1-controller) are archived: never push to them. Their old local folders are in `C:\DrifterArchive\legacy-2026-11-02`.
 
 ## Releasing
 

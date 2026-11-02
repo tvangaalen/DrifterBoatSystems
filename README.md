@@ -87,7 +87,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch_module.ps1 wash
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch_module.ps1 washer -Back   # undo
 ```
 
-`switch_module.ps1` checks first (energy: no BMS control busy, Float not latched; anchor: no alarm), copies the module's runtime files (settings, keys, state, history, logs; listed in `modules.json`) to `C:\DrifterData\<module>` and its certificates into `C:\Drifter`, asks for confirmation, stops the old server, copies once more, and starts the module from `C:\Drifter`. Nothing is deleted from the old folder, so `-Back` always works. Each switch restarts that server for about a minute. Which module runs where is kept in `C:\DrifterData\locations.json`; `start_all.ps1` (the desktop icon) follows it.
+`switch_module.ps1` checks first (energy: no BMS control busy, Float not latched; anchor: no alarm), copies the module's runtime files (settings, keys, state, history, logs; listed in `modules.json`) to `C:\DrifterData\<module>` and its certificates into `C:\Drifter`, asks for confirmation, stops the old server, copies once more, and starts the module from `C:\Drifter`. Nothing is deleted from the old folder. Each switch restarts that server for about a minute. On 2026-11-02 the old folders were moved to `C:\DrifterArchive\legacy-2026-11-02` (`modules.json` points there), so `-Back` is best effort now: the old anchor watch and BoatGuard certificate scripts look for the CA in `C:\Temp\mastervoltproject\certs`. Which module runs where is kept in `C:\DrifterData\locations.json`; `start_all.ps1` (the desktop icon) follows it.
 
 ## Development
 
