@@ -39,7 +39,7 @@ def main():
     # the context manager: success, exception and time-out are recorded as ok / failed, exceptions still propagate
     log = BleEventLog()
     with log.timed("A", "notify"):
-        time.sleep(0.02)
+        time.sleep(0.05)  # not 0.02: Windows' clock steps ~15 ms and the average is rounded to 0.01 s (failed on CI)
     try:
         with log.timed("A", "notify"):
             raise TimeoutError("boom")
@@ -48,7 +48,7 @@ def main():
     else:
         raise AssertionError("the exception must propagate")
     t = log.snapshot()["counters"]["A"]["timings"]["notify"]
-    assert t["ok"] == 1 and t["failed"] == 1 and t["avg_ok_seconds"] >= 0.02
+    assert t["ok"] == 1 and t["failed"] == 1 and t["avg_ok_seconds"] >= 0.04
     print("timed(): success and failure recorded, exceptions propagate: OK")
 
     # a slow but successful connect is written to the event list, a normal one and a failed one are not
