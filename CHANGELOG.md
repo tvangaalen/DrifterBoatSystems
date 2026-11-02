@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13
+
+### 0.13.0 — 2026-11-02
+
+- **Every module runs without a window, with a log file**, so all of Drifter can run while nobody is logged on. MasterVolt and the anchor watch now start through `tools/run_module.py` like the others; output goes to `<data>\logs\<module>.console.log` (previous 5 MB kept as `.log.1`). The console-window switches of 0.12.0 are replaced by **System → Show log**: the module's log in its own window or tab (`web/log.html`, `GET /api/supervisor/log`), following the newest lines.
+- **Start at boot without logging on:** `tools/install_autostart.ps1` (run once, elevated; asks for the Windows password) checks in the boot session that the MasterBus USB Link, Bluetooth and process starts work (`tools/session0_check.py`, read-only), then makes the DrifterBoatSystems task start at boot whether anybody is logged on or not. The supervisor starts a module that is down at its own start at once (no 30 s grace); the desktop icon only starts the scheduled tasks when the supervisor is on and waits up to 3 min.
+- **Switch all systems off** no longer refuses while Float is latched (BMS control busy and an anchor alarm still refuse).
+- Overview, Energy tile: **Charger house / Alternator / Solar / DC load (−)**; Shore removed. Labels may wrap so the values stay aligned.
+- Anchor watch, GPS & links: the GPS in use also shows when it is **on hold** (the server marks the Core's GPS on static hold in the position; the row status "in use" hid it).
+- 24-hour clock everywhere: the washer schedule uses hour and minute lists instead of `<input type="time">` (which iOS shows with AM/PM in a 12-hour region); MasterVolt 2.1.3 shows the BMS card's time with `hourCycle: 'h23'`.
+
 ## 0.12
 
 ### 0.12.0 — 2026-11-02
