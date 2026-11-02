@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16
+
+### 0.16.0 — 2026-11-02
+
+Refactoring phase 3, the module contract; the washer first.
+- **The module contract** (`common/service.py`, for the FastAPI modules): plain HTTP on 127.0.0.1, a token on every request but `GET /health` (`X-Drifter-Token`; drifterd 1.1.0 makes a new one at every start and gives it to the gateway and every module as `DRIFTER_TOKEN`; without it a module refuses everything but `/health`), `/health` for drifterd's health check, no caching of JSON. The gateway sends the token with every upstream request (modules not yet on the contract ignore it) instead of the washer's own `X-Viomi-Request`.
+- **Washer controller 4.0.0**: the Flask controller (one 973-line file with module-level state) is now the package `modules/washer/washer` on FastAPI: config with a schema, device, events, schedule, diagnostics, API. `test_api_contract.py` pins down the API at HTTP level (15 tests: every route, status code and message, the schedule's life cycle, diagnostics, export) and passed against the Flask controller 3.8 and against 4.0; plus tests for the module contract and the config schema. drifterd starts it as `python -m washer` and checks `/health`. The Flask file stays one release for that comparison.
+
 ## 0.15
 
 ### 0.15.1 — 2026-11-02

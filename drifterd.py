@@ -29,7 +29,7 @@ from common.web import QuietServer  # noqa: E402
 import modules as M  # noqa: E402
 import supervisor as S  # noqa: E402
 
-VERSION = "1.0.1"
+VERSION = "1.1.0"
 CONTROL = ("127.0.0.1", 8099)
 SERVICE_NAME = "Drifter"
 log = logging.getLogger("drifter")
@@ -51,8 +51,9 @@ class Children:
     """The servers as children of drifterd, each in its own job object. An adopted server (running before drifterd
     started) is stopped through its listener and the launchers above it."""
 
-    def __init__(self, resolve=M.resolve):
+    def __init__(self, resolve=M.resolve, env: dict | None = None):
         self.resolve, self.jobs, self.procs, self.lock = resolve, {}, {}, threading.Lock()
+        self.env = env or {}                             # for every child: DRIFTER_TOKEN
 
     def start(self, name: str) -> None:
         m = self.resolve(name); folder = Path(m["folder"])
@@ -65,7 +66,7 @@ class Children:
         job = proc.new_job()
         with open(logf, "a", encoding="utf-8") as out:
             out.write(f"\n--- {time.strftime('%Y-%m-%d %H:%M:%S')} start by drifterd: {' '.join(m['command'])} in {folder}\n"); out.flush()
-            p = proc.start_in_job(job, cmd, cwd=folder, env={**os.environ, **m["env"]}, stdout=out, stderr=subprocess.STDOUT,
+            p = proc.start_in_job(job, cmd, cwd=folder, env={**os.environ, **m["env"], **self.env}, stdout=out, stderr=subprocess.STDOUT,
                                   stdin=subprocess.DEVNULL, creationflags=proc.NO_WINDOW)
         with self.lock:
             old = self.jobs.pop(name, None)
@@ -162,7 +163,8 @@ class Health:
 class Daemon:
     def __init__(self, data: Path = M.DATA):
         self.data = Path(data); self.token = ensure_token(self.data); self.stop = threading.Event(); self.started = time.time()
-        self.children = Children()
+        # the module token (common/service.py): new at every start, given to the gateway and every module in their environment
+        self.children = Children(env={"DRIFTER_TOKEN": secrets.token_hex(32)})
         specs = {n: M.resolve(n) for n in M.NAMES}
         self.gateway = Gateway(self.children, specs["gateway"]["port"])
         self.sup = S.Supervisor(names=M.MODULES, ports={n: specs[n]["port"] for n in M.MODULES}, data=self.data,

@@ -29,8 +29,8 @@
     },
     "washer": {
       "name": "Washer (VIOMI)", "port": 8080, "dir": "modules\\washer",
-      "command": [".venv\\Scripts\\python.exe", "viomi_web_english_v58.py"],
-      "health": "none"
+      "command": [".venv\\Scripts\\python.exe", "-m", "washer"],
+      "health": "http:/health"
     }
   }
 }

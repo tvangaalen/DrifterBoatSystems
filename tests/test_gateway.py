@@ -1,4 +1,5 @@
 """Gateway tests: route allowlist, host/origin/CSRF checks and passing requests on. Fake upstreams only, no boat."""
+import os
 import http.client, json, threading, unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -26,6 +27,7 @@ class Recorder(BaseHTTPRequestHandler):
 class GatewayTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        os.environ["DRIFTER_TOKEN"] = "gw-test-token"           # as drifterd gives it to the gateway
         cls.up = ThreadingHTTPServer(("127.0.0.1", 0), Recorder); threading.Thread(target=cls.up.serve_forever, daemon=True).start()
         u = f"http://127.0.0.1:{cls.up.server_address[1]}"
         cfg = drifter.load_config(drifter.Path("does-not-exist.json"))
@@ -92,9 +94,9 @@ class GatewayTest(unittest.TestCase):
     def test_upstream_host_and_washer_marker(self):
         self.post("/api/washer/api/start")
         h = Recorder.seen[-1]["headers"]
-        self.assertEqual(h["Host"], f"127.0.0.1:{self.up.server_address[1]}"); self.assertEqual(h["X-Viomi-Request"], "1")
+        self.assertEqual(h["Host"], f"127.0.0.1:{self.up.server_address[1]}"); self.assertEqual(h["X-Drifter-Token"], "gw-test-token")
         self.assertNotIn("Origin", h); self.assertNotIn("X-Drifter-Request", h)
-        self.post("/api/guard/api/test"); self.assertNotIn("X-Viomi-Request", Recorder.seen[-1]["headers"])
+        self.post("/api/guard/api/test"); self.assertEqual(Recorder.seen[-1]["headers"]["X-Drifter-Token"], "gw-test-token")   # every module
 
     def test_body_and_query_passed(self):
         self.post("/api/power/api/control/ac-limit", {"amps": 8})

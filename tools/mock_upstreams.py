@@ -6,7 +6,7 @@ Usage: py tools/mock_upstreams.py  (ports 18000 power, 18766 anchor, 18095 guard
 """
 from __future__ import annotations
 
-import json, math, random, sys, threading, time
+import json, math, os, random, sys, threading, time
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -331,7 +331,8 @@ def make(name, obj):
 
         def do_POST(self):
             n = int(self.headers.get("Content-Length") or 0); body = json.loads(self.rfile.read(n) or b"{}")
-            if name == "washer" and self.headers.get("X-Viomi-Request") != "1": return self._j(403, {"ok": False, "error": "missing X-Viomi-Request"})
+            if name == "washer" and self.headers.get("X-Drifter-Token") != os.environ.get("DRIFTER_TOKEN"):   # the module contract
+                return self._j(403, {"ok": False, "error": "Request not sent by the Drifter gateway"})
             if name == "anchor":
                 try: obj.command(body); return self._j(200, {"ok": True, "state": obj.state()})
                 except ValueError as e: return self._j(400, {"ok": False, "error": str(e)})
@@ -343,6 +344,7 @@ if __name__ == "__main__":
     for name, port, obj in (("power", 18000, Power()), ("anchor", 18766, Anchor()), ("guard", 18095, Guard()), ("washer", 18080, Washer())):
         s = ThreadingHTTPServer(("127.0.0.1", port), make(name, obj)); s.daemon_threads = True
         threading.Thread(target=s.serve_forever, daemon=True).start(); print(f"mock {name} on http://127.0.0.1:{port}")
+    os.environ.setdefault("DRIFTER_TOKEN", "mock-token")        # as drifterd gives it: the mock washer checks it
     if "--gateway" in sys.argv:          # also run the Drifter gateway against these mocks (config.mock.json, port 8101)
         import logging; sys.path.insert(0, str(ROOT)); import drifter
         logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S")

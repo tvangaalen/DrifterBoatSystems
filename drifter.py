@@ -16,7 +16,7 @@ Stdlib only.
 """
 from __future__ import annotations
 
-import argparse, http.client, json, logging, re, ssl, sys, threading, time, urllib.error, urllib.request
+import argparse, http.client, json, logging, os, re, ssl, sys, threading, time, urllib.error, urllib.request
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -25,7 +25,7 @@ from common import logs
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "0.15.1"
+VERSION = "0.16.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -67,8 +67,9 @@ ROUTES = {
     ],
 }
 COMPILED = {m: [(meth, re.compile(p + r"$")) for meth, p in rs] for m, rs in ROUTES.items()}
-# Extra headers the upstream needs from its "own page"; the gateway adds them after its own checks.
-UPSTREAM_HEADERS = {"washer": {"X-Viomi-Request": "1"}}
+# Every upstream request carries the module token (common/service.py), added after the gateway's own checks; drifterd
+# gives it in DRIFTER_TOKEN. Modules not yet on the module contract ignore it.
+TOKEN_HEADER = "X-Drifter-Token"
 GET_TIMEOUT, POST_TIMEOUT = 12, 90   # BMS/MOSFET writes over Bluetooth and the camera test can take long
 MAX_BODY = 64 * 1024
 STATIC_TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "application/javascript; charset=utf-8",
@@ -113,7 +114,7 @@ class Upstreams:
     stuck connection to one server then never affects another."""
 
     def __init__(self, cfg: dict):
-        self.mods = cfg["modules"]
+        self.mods = cfg["modules"]; self.token = os.environ.get("DRIFTER_TOKEN", "")
         self.ctx = ssl.create_default_context(cafile=cfg.get("ca_file")) if cfg.get("ca_file") else ssl.create_default_context()
         self.status = {m: {"ok": None, "error": None, "t": None, "ms": None} for m in self.mods}
         self.lock = threading.Lock()
@@ -122,7 +123,7 @@ class Upstreams:
         u = urlsplit(self.mods[module]["url"]); timeout = GET_TIMEOUT if method == "GET" else POST_TIMEOUT
         conn = (http.client.HTTPSConnection(u.hostname, u.port or 443, timeout=timeout, context=self.ctx) if u.scheme == "https"
                 else http.client.HTTPConnection(u.hostname, u.port or 80, timeout=timeout))
-        headers = {"Host": u.netloc, "Accept": "*/*", **UPSTREAM_HEADERS.get(module, {})}
+        headers = {"Host": u.netloc, "Accept": "*/*", TOKEN_HEADER: self.token}
         if gzip_ok: headers["Accept-Encoding"] = "gzip"   # passed through untouched (MasterVolt's history is ~2.5 MB of JSON)
         if body is not None: headers["Content-Type"] = ctype or "application/json"
         t0 = time.monotonic()
