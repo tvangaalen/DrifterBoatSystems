@@ -25,7 +25,7 @@ from common import logs
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "0.17.0"
+VERSION = "0.18.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -81,7 +81,7 @@ DEFAULT_CONFIG = {
     "drifterd": "http://127.0.0.1:8099", "drifterd_token": "C:/DrifterData/drifterd.token",
     "modules": {
         "power": {"name": "Energy", "url": "https://127.0.0.1:8000", "classic": None},
-        "anchor": {"name": "Anchor watch", "url": "https://127.0.0.1:8766", "classic": None},
+        "anchor": {"name": "Anchor watch", "url": "http://127.0.0.1:8766", "classic": None},
         "guard": {"name": "BoatGuard", "url": "http://127.0.0.1:8095", "classic": None},
         "washer": {"name": "Washer", "url": "http://127.0.0.1:8080", "classic": None},
     },

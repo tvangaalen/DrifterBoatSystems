@@ -15,12 +15,12 @@
     },
     "anchor": {
       "name": "Anchor watch", "port": 8766, "dir": "modules\\anchor",
-      "command": ["cmd", "/c", "start_anchor_watch.cmd"],
+      "command": [".venv\\Scripts\\python.exe", "-m", "anchor"],
       "data_args": ["--state", "{data}\\anchor_state.json", "--tile-cache", "{data}\\tile_cache", "--pushover", "{data}\\pushover.json",
                     "--still-alive", "{data}\\still_alive.json", "--aisstream", "{data}\\aisstream.json", "--nfl", "{data}\\nfl.json",
                     "--recordings", "{data}\\recordings", "--tide-cache", "{data}\\tide_cache.json",
-                    "--web-bind", "127.0.0.1", "--app-url", "https://192.168.1.166:8100/#anchor"],
-      "health": "https:/api/track?since=9999999999", "precheck": "anchor"
+                    "--bind", "auto", "--app-url", "https://192.168.1.166:8100/#anchor"],
+      "health": "http:/health", "precheck": "anchor"
     },
     "guard": {
       "name": "BoatGuard", "port": 8095, "dir": "modules\\guard",

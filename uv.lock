@@ -308,6 +308,10 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 anchor = [
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "starlette" },
+    { name = "uvicorn" },
     { name = "websockets", version = "13.1", source = { registry = "https://pypi.org/simple" } },
 ]
 dev = [
@@ -341,7 +345,13 @@ washer = [
 [package.metadata]
 
 [package.metadata.requires-dev]
-anchor = [{ name = "websockets", specifier = "==13.1" }]
+anchor = [
+    { name = "fastapi", specifier = "==0.141.1" },
+    { name = "httpx", specifier = "==0.28.1" },
+    { name = "starlette", specifier = "==1.6.0" },
+    { name = "uvicorn", specifier = "==0.52.4" },
+    { name = "websockets", specifier = "==13.1" },
+]
 dev = [
     { name = "black", specifier = "==26.5.1" },
     { name = "ruff", specifier = "==0.14.14" },

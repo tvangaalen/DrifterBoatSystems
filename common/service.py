@@ -46,6 +46,16 @@ def contract(app: FastAPI, module: str, version: str, token: str | None = None) 
     return app
 
 
+def start(app: FastAPI, host: str, port: int):
+    """Serve in a daemon thread (for a module whose main thread runs its own asyncio loops, like the anchor watch);
+    returns the uvicorn server: set `.should_exit = True` to stop it."""
+    import threading, uvicorn
+    server = uvicorn.Server(uvicorn.Config(app, host=net.check_bind(host, "bind"), port=port, log_config=None, access_log=False,
+                                           timeout_graceful_shutdown=5))
+    threading.Thread(target=server.run, name="api", daemon=True).start()
+    return server
+
+
 def run(app: FastAPI, port: int, bind_env: str) -> None:
     """Serve on 127.0.0.1 (or another private address in $bind_env, never a public one), plain HTTP."""
     import uvicorn

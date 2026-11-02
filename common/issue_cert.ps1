@@ -2,7 +2,7 @@
 # It never creates a CA, never writes into the CA folder (random serial instead of a serial file) and never touches the
 # Windows certificate store. Covers localhost, this PC's name, 127.0.0.1 and its private IPv4 addresses; 825 days
 # (the longest validity iOS accepts). Run again if the PC's LAN address changes, then restart that server.
-# Used by setup_https.ps1 (gateway), modules\guard\setup_https.ps1 and modules\anchor\setup_local_https.ps1.
+# Used by setup_https.ps1 (the gateway; the modules serve plain HTTP on 127.0.0.1 since the module contract).
 param(
     [Parameter(Mandatory)][string]$Name,     # file prefix: <Name>-cert.pem, <Name>-key.pem, <Name>-openssl.cnf
     [Parameter(Mandatory)][string]$Cn,       # certificate common name
