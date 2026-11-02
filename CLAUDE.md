@@ -36,13 +36,15 @@ deploying by copying files are historical: version control is this repository an
 - LAN only: never bind a public address, port-forward or tunnel. Remote access is UniFi Teleport (clients 192.168.2.x).
 - HTTPS certificates come from the existing Mastervolt Local CA through `common/issue_cert.ps1` (only reads the CA folder, refuses without it). Never create a new CA or write into the CA folder.
 - **Shared code goes in `common/`** (stdlib only, except `common/service.py`, the FastAPI module contract: token, `/health`, 127.0.0.1): network checks, HTTPS, logging, clock texts, Pushover posting, the certificate script. Change it with every user in mind (gateway, anchor, guard, washer) and run the whole `run_all.py`. Keep module behaviour in the module: alarm decisions, Pushover queues/priorities and retries stay where they are. MasterVolt does not import `common` (own package, golden tests, owner of the CA). A module imports it after `sys.path.insert(0, <repository root>)`; the live servers run from `C:\Drifter`, so `common/` is deployed with `git pull` like everything else, and a change there means restarting every module that uses it.
-- Times are always 24-hour (`hm`/`hms`/`dayTime` in `web/app.js`); never locale time defaults.
+- Times are always 24-hour (`hm`/`hms`/`dayTime` in `web/core/format.js`); never locale time defaults.
 - Live data is never cached by the service worker (`/api/` is skipped). Bump `CACHE` in `web/sw.js` with every release so home-screen apps update.
 
 ## Conventions
 
 - Python: the python.org **Python 3.12** in the environments built from `uv.lock` (`tools/sync_envs.py`): `.venv` for the gateway and tools, `modules/<name>/.venv` per module. Never the Microsoft Store Python (hung at boot in session 0, cannot be started through Win32_Process Create), never `pip install` into an environment by hand: add the package to its group in `pyproject.toml`, `py -3.12 -m uv lock`, rebuild. Gateway: stdlib only, dense style like the modules; `ruff check .` must pass.
 - Frontend: plain JS, no build step. `web/app.css` holds all colours as tokens per theme (light, dark, night, auto = device); modules never hard-code colours. New UI uses the existing components (`card`, `row`, `stats`, `hero`, `badge`, `btn`, `switch`, `seg`, `field`, `sheet`).
+- The app is ES modules loaded as they are (`web/main.js` → `web/core/*.js` and the page modules); a page starts with `import Drifter from "./core/app.js"`. New shared code goes in `web/core/`, with JSDoc types where the check needs them; `npm run typecheck` must stay at 0 errors. Node (`package.json`) is a development tool only: never add a build step or a runtime npm dependency.
+- **UI changes:** `npx playwright test` compares every page's DOM with `tests/ui/__snapshots__`. A change you intend updates them (`--update-snapshots`), and the diff shows what changed; re-record the fixtures (`RECORD=1`, delete `tests/ui/fixtures` first) only after changing the mock. For a refactor that must not change the look, take screenshots first (`SCREENS=1 npx playwright test --project chromium -g width --update-snapshots=missing`, kept locally) and compare after.
 - A page module registers with `Drifter.register({id, title, short, icon, every, background, load, render, mount, tile, badge})`; commands go through `Drifter.api(module, path, body)` and `Drifter.run(...)`, confirmations through `Drifter.confirm(...)`.
 - Check new layouts at 390 px (iPhone), 820 px portrait and 1180 px landscape (iPad), in light, dark and night.
 
@@ -51,7 +53,8 @@ deploying by copying files are historical: version control is this repository an
 ```powershell
 .venv\Scripts\python.exe tests\run_all.py   # every suite in its module's environment (MasterVolt ~3 min); `quick` skips its slow simulations
 py -3.12 -m ruff check .; py -3.12 -m ruff check modules\energy   # lint (MasterVolt with its own configuration)
-node --check web\app.js                      # and the other web\*.js files
+npm run typecheck                            # tsc --checkJs over web/ (JSDoc types; nothing is compiled)
+npx playwright test                          # the app in Chromium and WebKit on recorded mock data (tests/ui)
 ```
 
 GitHub CI (`.github/workflows/ci.yml`) runs the same on every push, plus the privacy scan. Do not wait for it after a push (about 5 minutes; the user's choice of 2026-11-02): run the full

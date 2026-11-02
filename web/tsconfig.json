@@ -1,0 +1,16 @@
+{
+  // Type check of the app's plain JavaScript (npm run typecheck): nothing is compiled, the browser loads web/ as it is.
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true
+  },
+  "include": ["main.js", "core/*.js", "energy.js", "anchor.js", "guard.js", "washer.js", "types.d.ts"]
+}

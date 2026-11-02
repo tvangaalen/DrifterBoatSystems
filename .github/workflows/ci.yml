@@ -1,4 +1,5 @@
-# Every push and pull request: privacy scan of what it adds, lint, JavaScript syntax and every hardware-free test,
+# Every push and pull request: privacy scan of what it adds, lint, the app's type check and browser tests (on the mock),
+# and every hardware-free test,
 # on Windows (the boat PC's platform) with the environments built from uv.lock. Nothing here touches the boat.
 name: CI
 on:
@@ -43,6 +44,14 @@ jobs:
           python -m uv run --frozen --no-default-groups --only-group dev ruff check modules/energy
       - name: JavaScript syntax
         shell: bash
-        run: for f in web/*.js; do node --check "$f"; done
+        run: for f in web/*.js web/core/*.js; do node --check "$f"; done
+      - name: Development tools (package-lock.json) and the type check of web/
+        run: |
+          npm ci
+          npm run typecheck
+      - name: Browser tests on the mock (Chromium, and WebKit as Safari on the iPhone)
+        run: |
+          npx playwright install chromium webkit
+          npx playwright test
       - name: Tests (MasterVolt without its slow simulations)
         run: .venv\Scripts\python.exe tests\run_all.py quick

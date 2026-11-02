@@ -74,11 +74,6 @@ try { const t = localStorage.getItem("drifter-theme"); if (t && t !== "auto") do
 <div class="scrim" id="dialog" aria-hidden="true"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dlgTitle" id="dlgSheet"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="app.js"></script>
-<script src="energy.js"></script>
-<script src="anchor.js"></script>
-<script src="guard.js"></script>
-<script src="washer.js"></script>
-<script>Drifter.start();</script>
+<script type="module" src="main.js"></script>
 </body>
 </html>
