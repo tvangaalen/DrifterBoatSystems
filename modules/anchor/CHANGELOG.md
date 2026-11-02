@@ -6,6 +6,11 @@ All notable changes to the Orca Core 2 Anchor Watch. Newest first.
 
 ## 2.0 — Package and FastAPI
 
+### 2.0.1
+- GPS diagnostics (`recordings/gps_held_*.jsonl`) older than 30 days are removed at start and once a day; the running
+  Core log (`core_gps_log.jsonl`) stays. They grew without limit (118 files, 53 MB). The alarm logic is unchanged.
+- `requirements.txt` is gone (the environment comes from the repository's `uv.lock`); `run.cmd` (the live reader) uses it.
+
 ### 2.0.0
 - **The package `anchor/` on FastAPI** instead of the single file `anchor_watch.py` with its stdlib server: `settings`,
   `geo`, `gps`, `ais`, `tide`, `chain`, `alerts`, `nfl`, `watch` (AnchorWatch and its loops), `tiles` and `api`, moved

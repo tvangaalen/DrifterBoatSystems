@@ -5,7 +5,7 @@ import logging
 
 
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 log = logging.getLogger("anchor")
 EARTH = 6371008.8
 FRESH_S = 10            # a position older than this is not used

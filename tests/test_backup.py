@@ -7,7 +7,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT), str(ROOT / "tools")]
 import backup as B  # noqa: E402
 
-KEYS = ["anchor/pushover.json", "anchor/nfl.json", "guard/pushover.json", "guard/ezviz_token.json", "washer/viomi_config.json"]
+KEYS = ["anchor/pushover.json", "anchor/nfl.json", "guard/pushover.json", "guard/ezviz_token.json", "washer/viomi_config.json",
+        "gateway/pushover.json"]
 
 
 class BackupTest(unittest.TestCase):
@@ -18,7 +19,7 @@ class BackupTest(unittest.TestCase):
 
     def test_copies_only_the_key_files(self):
         r = B.copy_keys(self.data, KEYS, self.dest)
-        self.assertEqual(r["copied"], KEYS[:-1]); self.assertEqual([m["file"] for m in r["missing"]], ["washer/viomi_config.json"])
+        self.assertEqual(r["copied"], KEYS[:-1]); self.assertEqual([m["file"] for m in r["missing"]], ["gateway/pushover.json"])
         copied = sorted(p.relative_to(self.dest).as_posix() for p in self.dest.rglob("*") if p.is_file())
         self.assertEqual(copied, sorted(KEYS[:-1]))                       # no positions, track or history; no .part left
         self.assertEqual((self.dest / "guard/ezviz_token.json").read_text(), "key of guard/ezviz_token.json")

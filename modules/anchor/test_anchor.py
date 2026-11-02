@@ -34,5 +34,16 @@ class ModuleContract(unittest.TestCase):
         self.assertEqual(TestClient(create_app(FakeWatch(), FakeTiles(), token="")).get("/api/state", headers={"X-Drifter-Token": ""}).status_code, 403)
 
 
+class Recordings(unittest.TestCase):
+    def test_older_than_30_days_go(self):
+        import os, tempfile, time
+        from anchor.__main__ import prune_recordings
+        d = Path(tempfile.mkdtemp()); now = time.time()
+        for name, age in (("gps_held_127_old.jsonl", 31), ("gps_held_127_new.jsonl", 29), ("core_gps_log.jsonl", 90), ("notes.txt", 90)):
+            f = d / name; f.write_text("{}"); os.utime(f, (now - age * 86400, now - age * 86400))
+        prune_recordings(d, 30, now)
+        self.assertEqual(sorted(f.name for f in d.iterdir()), ["core_gps_log.jsonl", "gps_held_127_new.jsonl", "notes.txt"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -23,21 +23,21 @@
 <div class="row" id="gTestRes" hidden=""></div></div></div>
 </div>
 <div class="stack">
-<h2 class="sec" style="margin-top:0">Settings</h2>
+<h2 class="u-mt-0 sec">Settings</h2>
 <form class="card" id="gSet" novalidate=""><div class="rows">
 <div class="row"><div class="k"><b>Arming delay</b><small>Phone away this long before the camera is armed</small></div>
 <label class="numf"><input class="field" type="number" inputmode="numeric" id="g_away_after_s" required="" step="1" min="30" max="3600"><span class="u">s</span></label></div>
 <div class="row"><div class="k"><b>Router check interval</b><small>How often the router's Wi-Fi clients are read</small></div>
 <label class="numf"><input class="field" type="number" inputmode="numeric" id="g_poll_s" required="" step="1" min="10" max="300"><span class="u">s</span></label></div>
 <div id="gSounds"><div class="row col"><div class="k"><b>Camera armed</b><small id="ghint-armed" class="hint">Sound per your iPhone settings</small></div>
-<div style="display:flex;gap:6px"><select class="field" id="gsnd-armed" style="flex:1" aria-label="Sound for Camera armed"><option value="">App default</option><option value="pushover">Pushover</option><option value="bike">Bike</option><option value="falling">Falling</option><option value="siren">Siren</option><option value="none">Silent</option></select>
-<select class="field" id="gpri-armed" style="flex:1" aria-label="Priority for Camera armed"><option value="-2">Lowest</option><option value="-1">Quiet</option><option value="0">Normal</option><option value="1">High</option><option value="2">Emergency</option></select>
+<div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="gsnd-armed" aria-label="Sound for Camera armed"><option value="">App default</option><option value="pushover">Pushover</option><option value="bike">Bike</option><option value="falling">Falling</option><option value="siren">Siren</option><option value="none">Silent</option></select>
+<select class="u-flex-1 field" id="gpri-armed" aria-label="Priority for Camera armed"><option value="-2">Lowest</option><option value="-1">Quiet</option><option value="0">Normal</option><option value="1">High</option><option value="2">Emergency</option></select>
 <button class="btn sec" type="button" id="gtry-armed" aria-label="Send a test notification">▶</button></div></div><div class="row col"><div class="k"><b>Camera disarmed</b><small id="ghint-disarmed" class="hint">Sound per your iPhone settings</small></div>
-<div style="display:flex;gap:6px"><select class="field" id="gsnd-disarmed" style="flex:1" aria-label="Sound for Camera disarmed"><option value="">App default</option><option value="pushover">Pushover</option><option value="bike">Bike</option><option value="falling">Falling</option><option value="siren">Siren</option><option value="none">Silent</option></select>
-<select class="field" id="gpri-disarmed" style="flex:1" aria-label="Priority for Camera disarmed"><option value="-2">Lowest</option><option value="-1">Quiet</option><option value="0">Normal</option><option value="1">High</option><option value="2">Emergency</option></select>
+<div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="gsnd-disarmed" aria-label="Sound for Camera disarmed"><option value="">App default</option><option value="pushover">Pushover</option><option value="bike">Bike</option><option value="falling">Falling</option><option value="siren">Siren</option><option value="none">Silent</option></select>
+<select class="u-flex-1 field" id="gpri-disarmed" aria-label="Priority for Camera disarmed"><option value="-2">Lowest</option><option value="-1">Quiet</option><option value="0">Normal</option><option value="1">High</option><option value="2">Emergency</option></select>
 <button class="btn sec" type="button" id="gtry-disarmed" aria-label="Send a test notification">▶</button></div></div><div class="row col"><div class="k"><b>Left the boat, monitoring OFF</b><small id="ghint-unguarded" class="hint">Sounds even during Pushover quiet hours</small></div>
-<div style="display:flex;gap:6px"><select class="field" id="gsnd-unguarded" style="flex:1" aria-label="Sound for Left the boat, monitoring OFF"><option value="">App default</option><option value="pushover">Pushover</option><option value="bike">Bike</option><option value="falling">Falling</option><option value="siren">Siren</option><option value="none">Silent</option></select>
-<select class="field" id="gpri-unguarded" style="flex:1" aria-label="Priority for Left the boat, monitoring OFF"><option value="-2">Lowest</option><option value="-1">Quiet</option><option value="0">Normal</option><option value="1">High</option><option value="2">Emergency</option></select>
+<div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="gsnd-unguarded" aria-label="Sound for Left the boat, monitoring OFF"><option value="">App default</option><option value="pushover">Pushover</option><option value="bike">Bike</option><option value="falling">Falling</option><option value="siren">Siren</option><option value="none">Silent</option></select>
+<select class="u-flex-1 field" id="gpri-unguarded" aria-label="Priority for Left the boat, monitoring OFF"><option value="-2">Lowest</option><option value="-1">Quiet</option><option value="0">Normal</option><option value="1">High</option><option value="2">Emergency</option></select>
 <button class="btn sec" type="button" id="gtry-unguarded" aria-label="Send a test notification">▶</button></div></div></div>
 <div class="row"><span class="hint" id="gSetMsg"></span><button class="btn" id="gSave" type="submit" disabled="">Save</button></div>
 </div></form>

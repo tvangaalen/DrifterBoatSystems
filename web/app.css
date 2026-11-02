@@ -332,3 +332,80 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 .ebar .eb{flex:1;height:10px;background:var(--bg2);border-radius:5px;overflow:hidden}.ebar .eb i{display:block;height:100%;border-radius:5px}
 .ebar .ev{width:110px;flex:none;text-align:right;font-weight:650;font-variant-numeric:tabular-nums}.ebar .ev small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
 @media (min-width:1024px){.grid.charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Utilities: what used to be inline style="" in the templates, one declaration each; !important keeps the precedence an
+   inline style had over the component rules. New UI should use the components above instead. */
+.u-ai-center{align-items:center !important}
+.u-ai-start{align-items:flex-start !important}
+.u-b-0{border:0 !important}
+.u-bg-bg{background:var(--bg) !important}
+.u-c-fg{color:var(--fg) !important}
+.u-c-muted{color:var(--muted) !important}
+.u-cur-pointer{cursor:pointer !important}
+.u-d-flex{display:flex !important}
+.u-fd-column{flex-direction:column !important}
+.u-flex-1{flex:1 !important}
+.u-fs-12{font-size:12px !important}
+.u-fs-13{font-size:13px !important}
+.u-fs-14{font-size:14px !important}
+.u-fs-15{font-size:15px !important}
+.u-fs-22{font-size:22px !important}
+.u-fs-30{font-size:30px !important}
+.u-fw-nowrap{flex-wrap:nowrap !important}
+.u-fw-wrap{flex-wrap:wrap !important}
+.u-fwt-600{font-weight:600 !important}
+.u-fwt-750{font-weight:750 !important}
+.u-gap-10{gap:10px !important}
+.u-gap-12{gap:12px !important}
+.u-gap-16{gap:16px !important}
+.u-gap-18{gap:18px !important}
+.u-gap-4{gap:4px !important}
+.u-gap-6{gap:6px !important}
+.u-gap-8{gap:8px !important}
+.u-h-12{height:12px !important}
+.u-h-26{height:26px !important}
+.u-jc-between{justify-content:space-between !important}
+.u-jc-center{justify-content:center !important}
+.u-ls-0_02em{letter-spacing:-.02em !important}
+.u-m-0{margin:0 !important}
+.u-m-0-0-12{margin:0 0 12px !important}
+.u-m-0-0-6{margin:0 0 6px !important}
+.u-m-0-0-8{margin:0 0 8px !important}
+.u-m-0-2-10{margin:0 2px 10px !important}
+.u-m-0-4{margin:0 4px !important}
+.u-m-10-2-0{margin:10px 2px 0 !important}
+.u-m-14-0{margin:14px 0 !important}
+.u-m-18-0{margin:18px 0 !important}
+.u-m-4-0-14{margin:4px 0 14px !important}
+.u-m-4-16-12{margin:4px 16px 12px !important}
+.u-m-6-0-0{margin:6px 0 0 !important}
+.u-m-8-0-0{margin:8px 0 0 !important}
+.u-m-8-2-0{margin:8px 2px 0 !important}
+.u-maxw-460{max-width:460px !important}
+.u-maxw-62pc{max-width:62% !important}
+.u-maxw-720{max-width:720px !important}
+.u-mb-12{margin-bottom:12px !important}
+.u-minh-100vh{min-height:100vh !important}
+.u-minh-28{min-height:28px !important}
+.u-minw-120{min-width:120px !important}
+.u-minw-160{min-width:160px !important}
+.u-minw-180{min-width:180px !important}
+.u-minw-250{min-width:250px !important}
+.u-mt-0{margin-top:0 !important}
+.u-mt-10{margin-top:10px !important}
+.u-mt-12{margin-top:12px !important}
+.u-mt-14{margin-top:14px !important}
+.u-mt-6{margin-top:6px !important}
+.u-mt-8{margin-top:8px !important}
+.u-p-0{padding:0 !important}
+.u-p-0-16-14{padding:0 16px 14px !important}
+.u-p-0-16-8{padding:0 16px 8px !important}
+.u-p-10-0-0{padding:10px 0 0 !important}
+.u-p-24{padding:24px !important}
+.u-pl-18{padding-left:18px !important}
+.u-pt-0{padding-top:0 !important}
+.u-ta-center{text-align:center !important}
+.u-ta-left{text-align:left !important}
+.u-w-130{width:130px !important}
+.u-w-150{width:150px !important}
+.u-w-26{width:26px !important}

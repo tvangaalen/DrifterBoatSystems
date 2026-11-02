@@ -8,20 +8,20 @@
 <button class="btn sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device">Sound off</button>
 </div>
 <section data-page="power"><div id="eDown"></div>
-<div class="seg" role="tablist" style="margin:4px 0 14px;max-width:460px" id="eViews">
+<div class="u-m-4-0-14 u-maxw-460 seg" role="tablist" id="eViews">
 <button type="button" data-view="now" aria-pressed="true">Now</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
 <div id="eNow">
-<div class="card pad" style="margin-bottom:12px"><div class="btns eq"><button class="btn sec" type="button" data-mode="motor" aria-pressed="false">Motor</button><button class="btn sec" type="button" data-mode="anchor" aria-pressed="false">Anchor</button><button class="btn sec" type="button" data-mode="marina" aria-pressed="false">Marina</button><button class="btn sec" type="button" data-mode="sail" aria-pressed="false">Sail</button></div>
-<p class="hint" style="margin:8px 2px 0">Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
+<div class="u-mb-12 card pad"><div class="btns eq"><button class="btn sec" type="button" data-mode="motor" aria-pressed="false">Motor</button><button class="btn sec" type="button" data-mode="anchor" aria-pressed="false">Anchor</button><button class="btn sec" type="button" data-mode="marina" aria-pressed="false">Marina</button><button class="btn sec" type="button" data-mode="sail" aria-pressed="false">Sail</button></div>
+<p class="u-m-8-2-0 hint">Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
 <div class="grid g2l">
 <div class="stack">
-<div class="card pad" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+<div class="u-d-flex u-gap-18 u-ai-center u-fw-wrap card pad">
 <div class="gauge" style="--p:72.5;--c:var(--batt)"><b>73<small>%</small></b></div>
-<div style="flex:1;min-width:180px"><div class="muted" style="font-weight:600;font-size:13px">House battery · MLI · 960 Ah</div>
-<div style="font-size:30px;font-weight:750;letter-spacing:-.02em" class="num">+145 W</div>
+<div class="u-flex-1 u-minw-180"><div class="u-fwt-600 u-fs-13 muted">House battery · MLI · 960 Ah</div>
+<div class="u-fs-30 u-fwt-750 u-ls-0_02em num">+145 W</div>
 <div class="muted">13.17 V · 11.0 A · charging · 21.5 °C</div>
-<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge wrap ok">Bulk allowed · Float when a cell reaches 3550 mV (now 3341 mV)</span></div>
-<div class="hint" style="margin-top:6px">Highest cell 3341 mV (BATTERY 1) · spread 18 mV · DALY 12 s old</div></div>
+<div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ok">Bulk allowed · Float when a cell reaches 3550 mV (now 3341 mV)</span></div>
+<div class="u-mt-6 hint">Highest cell 3341 mV (BATTERY 1) · spread 18 mV · DALY 12 s old</div></div>
 </div>
 <div class="stats s4">
 <div class="stat"><div class="l"><svg class="i"><use href="#i-sun"></use></svg> Solar</div><div class="n">261 W</div><div class="s">Bulk</div></div>
@@ -53,7 +53,7 @@
 <div class="row"><div class="k"><b>Charger House</b><small>Off</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger" checked=""><i></i></label></div>
 <div class="row"><div class="k"><b>AC IN support</b><small>Inverter helps when shore power is limited</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-support"><i></i></label></div>
 <div class="row"><div class="k"><b>AC input limit</b><small>Now 10 A · 3–15 A</small></div>
-<div style="display:flex;gap:6px;align-items:center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">10 A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
+<div class="u-d-flex u-gap-6 u-ai-center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">10 A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
 <button class="btn sm" type="button" id="ec-limit" disabled="">Set</button></div></div>
 </div></div>
 <div class="card"><div class="hd"><svg class="i"><use href="#i-engine"></use></svg><h3>Charging &amp; engine</h3></div><div class="rows">
@@ -61,6 +61,6 @@
 <div class="row"><div class="k"><b>Solar</b><small>SCM solar charger</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-solar" checked=""><i></i></label></div><div class="row"><div class="k"><b>Charger Start</b><small>Mass charger to start battery</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_start" checked=""><i></i></label></div><div class="row"><div class="k"><b>Charger Bowthruster</b><small>Mass charger to bow battery</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_bow"><i></i></label></div>
 <div class="row"><div class="k"><b>Engine ECU</b><small>Switching off stops a running engine</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-engine_ecu" checked=""><i></i></label></div>
 </div></div>
-<p class="hint" style="margin:0 4px">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
+<p class="u-m-0-4 hint">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
 </div>
 </div></div><div id="eBatt" hidden=""></div><div id="eHist" hidden=""></div><div id="eSet" hidden=""></div></section>

@@ -4,16 +4,12 @@ The application uses a private certificate authority stored only on the Mastervo
 
 ## PC
 
-Run `start_mastervolt_server.cmd`. It automatically:
+`setup_local_https.ps1` creates the private **Mastervolt Local CA** once (or reuses it) in `certs\`. The Drifter app's
+certificate is issued from it (`setup_https.ps1` of Drifter Boat Systems, through `common\issue_cert.ps1`); MasterVolt itself
+serves plain HTTP on 127.0.0.1 since 2.2.0. Never delete or recreate the CA: every device would have to be set up again.
 
-1. creates or reuses the private **Mastervolt Local CA**;
-2. issues a fresh server certificate for localhost, the computer name, and all current local IPv4 addresses;
-3. trusts the CA for the current Windows user;
-4. selects a private RFC1918 LAN address and starts Uvicorn on HTTPS port 8000 bound only to that address.
-
-The first time, double-click `install_pc_certificate.cmd` from Windows Explorer. It trusts the public CA for the interactive Windows/browser account and opens the correct HTTPS address automatically. This separate one-click step is needed when the server was deployed by a service or sandbox account. No copying or command-line input is required.
-
-Afterward, open the `https://...:8000` address displayed by the start script. When no private LAN address is available, it falls back to `127.0.0.1` for PC-only access.
+To let a browser on this PC trust it, double-click `install_pc_certificate.cmd` once (it trusts the CA for the current
+Windows user).
 
 ## iPhone — required once
 
@@ -22,8 +18,6 @@ Afterward, open the `https://...:8000` address displayed by the start script. Wh
 3. Allow the configuration profile download, then stop the temporary installer with Ctrl+C.
 4. On the iPhone, open **Settings → General → VPN & Device Management** and install **Mastervolt Local CA**.
 5. Open **Settings → General → About → Certificate Trust Settings** and enable full trust for **Mastervolt Local CA**.
-6. Open the app using the matching local address, for example `https://192.168.1.20:8000`.
+6. Open the Drifter app, for example `https://192.168.1.166:8100/`.
 
 The temporary port 8001 helper is also bound only to the selected private address. It serves only the public CA certificate and runs only until Ctrl+C is pressed. The CA private key is never served and remains in `certs\ca-key.pem` on the PC.
-
-If the PC receives a different local IP address, restart the HTTPS server so it issues a server certificate containing the new address. The CA does not change, so the iPhone profile does not need to be installed again.

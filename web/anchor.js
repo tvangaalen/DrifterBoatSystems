@@ -87,7 +87,7 @@ const m = {
   tile() {
     const s = m.state.data; if (!s) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const a = s.anchor, b = s.boat || {}, h = hero(s);
-    return `<div class="big ${h.cls === "bad" ? "badc" : ""}" style="font-size:22px">${a && s.distance != null && h.cls !== "bad" ? `${f0(s.distance)} <small>/ ${f0(a.radius)} m</small>` : esc(h.title)}</div>
+    return `<div class="u-fs-22 big ${h.cls === "bad" ? "badc" : ""}">${a && s.distance != null && h.cls !== "bad" ? `${f0(s.distance)} <small>/ ${f0(a.radius)} m</small>` : esc(h.title)}</div>
       <div class="line">${esc(a ? h.title + " · max " + f0(s.max_dist) + " m" : h.sub)}</div>
       <div class="minis"><div class="mini"><div class="l">Depth</div><div class="n">${b.depth != null ? f1(b.depth) + " m" : "–"}</div></div>
       <div class="mini"><div class="l">Wind</div><div class="n">${b.tws != null ? f0(b.tws) + " kn" : "–"}</div></div>
@@ -95,8 +95,8 @@ const m = {
   },
   mount(el) {
     el.innerHTML = `<div id="aDown"></div>
-      <div style="display:flex;gap:8px;align-items:center;margin:4px 0 14px;flex-wrap:wrap">
-        <div class="seg" style="flex:1;min-width:250px;max-width:460px" id="aViews"><button type="button" data-aview="watch" aria-pressed="true">Watch</button><button type="button" data-aview="gps" aria-pressed="false">GPS &amp; links</button><button type="button" data-aview="settings" aria-pressed="false">Settings</button></div>
+      <div class="u-d-flex u-gap-8 u-ai-center u-m-4-0-14 u-fw-wrap">
+        <div class="u-flex-1 u-minw-250 u-maxw-460 seg" id="aViews"><button type="button" data-aview="watch" aria-pressed="true">Watch</button><button type="button" data-aview="gps" aria-pressed="false">GPS &amp; links</button><button type="button" data-aview="settings" aria-pressed="false">Settings</button></div>
         <button class="btn sec sm" type="button" data-sound aria-pressed="false" title="Sound alarms on this device (keeps the screen on)">${icon("alert")} Sound off</button></div>
       <div id="aWatch"><div class="grid g2l">
         <div class="stack">
@@ -105,10 +105,10 @@ const m = {
               <button class="btn" type="button" id="aSea" aria-pressed="true">Seamarks</button>
               <button class="btn" type="button" id="aFit" title="Fit circle and boat, and follow">${icon("anchor")} Fit</button>
               <button class="btn" type="button" id="aWindy" title="Weather forecast on Windy.com for the boat's position">${icon("wave")} Windy</button></div>
-            <div class="movebar" id="aMovebar" hidden><div class="hint" style="color:var(--fg)">Tap the map or nudge 1 m: <b id="aMoveOff">not moved yet</b></div>
+            <div class="movebar" id="aMovebar" hidden><div class="u-c-fg hint">Tap the map or nudge 1 m: <b id="aMoveOff">not moved yet</b></div>
               <div class="btns"><button class="btn sec sm" type="button" data-nudge="W" aria-label="West 1 m">←</button><button class="btn sec sm" type="button" data-nudge="N" aria-label="North 1 m">↑</button>
               <button class="btn sec sm" type="button" data-nudge="S" aria-label="South 1 m">↓</button><button class="btn sec sm" type="button" data-nudge="E" aria-label="East 1 m">→</button>
-              <span style="flex:1"></span><button class="btn sm" type="button" id="aMoveSave">Save</button><button class="btn sec sm" type="button" id="aMoveCancel">Cancel</button></div></div>
+              <span class="u-flex-1"></span><button class="btn sm" type="button" id="aMoveSave">Save</button><button class="btn sec sm" type="button" id="aMoveCancel">Cancel</button></div></div>
           </div>
           <div class="trackbar"><span class="hint" id="aTrackInfo">Track: –</span><button class="btn ghost sm" type="button" id="aNewTrack">Start new track</button></div>
         </div>
@@ -118,7 +118,7 @@ const m = {
         </div></div>
         <div class="tiles" id="aTiles"></div>
         <h2 class="sec">Events</h2><div class="card"><div class="log" id="aLog"></div></div>
-        <p class="hint" style="text-align:center;margin:14px 0" id="aFoot">Not for navigation.</p></div>
+        <p class="u-ta-center u-m-14-0 hint" id="aFoot">Not for navigation.</p></div>
       <div id="aGps" hidden></div><div id="aSet" hidden></div>`;
     el.addEventListener("click", onClick);
     el.addEventListener("input", e => { if (e.target.closest("#aSetForm")) { setDirty = true; validate(); } else if (e.target.matches("#aRode,#aFree")) scope(); });
@@ -136,7 +136,7 @@ const m = {
     });
   },
   render() {
-    $("aDown").innerHTML = m.state.err ? D.downCard(m) + '<div style="height:12px"></div>' : "";
+    $("aDown").innerHTML = m.state.err ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
     document.querySelectorAll("#aViews button").forEach(b => b.setAttribute("aria-pressed", b.dataset.aview === view));
     $("aWatch").hidden = view !== "watch"; $("aGps").hidden = view !== "gps"; $("aSet").hidden = view !== "settings";
     const s = m.state.data; if (!s) return;
@@ -184,7 +184,7 @@ function initMap(lib) {
   ly.circle = L.circle([0, 0], {radius: 1, weight: 2, dashArray: "8 6", interactive: false});
   ly.maxc = L.circle([0, 0], {radius: 1, weight: 1, dashArray: "2 5", fill: false, interactive: false});
   ly.rode = L.polyline([], {weight: 1.5, interactive: false});
-  ly.anchor = L.marker([0, 0], {icon: L.divIcon({className: "boaticon", html: `<svg viewBox="0 0 24 24" class="i" style="width:26px;height:26px"><use href="#i-anchor"/></svg>`, iconSize: [26, 26], iconAnchor: [13, 13]}), interactive: false, keyboard: false});
+  ly.anchor = L.marker([0, 0], {icon: L.divIcon({className: "boaticon", html: `<svg viewBox="0 0 24 24" class="u-w-26 u-h-26 i"><use href="#i-anchor"/></svg>`, iconSize: [26, 26], iconAnchor: [13, 13]}), interactive: false, keyboard: false});
   ly.boat = L.marker([0, 0], {icon: L.divIcon({className: "boaticon", html: "", iconSize: [36, 36], iconAnchor: [18, 18]}), interactive: false, keyboard: false, zIndexOffset: 1000});
   ly.track = L.layerGroup().addTo(map); ly.ais = L.layerGroup().addTo(map);
   map.on("dragstart zoomstart", () => { if (!m._fitting) follow = false; });
@@ -273,19 +273,19 @@ function renderWatch(s) {
   if (!$("aCtl").dataset.mode || $("aCtl").dataset.mode !== (a ? "watch" : "drop")) {
     $("aCtl").dataset.mode = a ? "watch" : "drop";
     $("aCtl").innerHTML = a ? `
-      <div class="row" style="border:0;padding-top:0"><div class="k"><b>Watching</b><small id="aSetAt"></small></div>
+      <div class="u-b-0 u-pt-0 row"><div class="k"><b>Watching</b><small id="aSetAt"></small></div>
         <div class="stepper"><button type="button" data-rad="-5" aria-label="Smaller radius">−5</button><output class="num" id="aRad"></output><button type="button" data-rad="5" aria-label="Larger radius">+5</button></div></div>
-      <div class="btns eq" style="margin-top:6px"><button class="btn sec" type="button" id="aMove">Move anchor</button><button class="btn sec" type="button" data-silence="5" id="aSil">Silence 5 min</button></div>
-      <div class="btns eq" style="margin-top:8px"><button class="btn danger" type="button" id="aRaise">Anchor up – stop watch</button></div>`
+      <div class="u-mt-6 btns eq"><button class="btn sec" type="button" id="aMove">Move anchor</button><button class="btn sec" type="button" data-silence="5" id="aSil">Silence 5 min</button></div>
+      <div class="u-mt-8 btns eq"><button class="btn danger" type="button" id="aRaise">Anchor up – stop watch</button></div>`
     : `<div class="seg" id="aDropMode"><button type="button" data-dmode="here" aria-pressed="true">Dropping now</button><button type="button" data-dmode="ahead" aria-pressed="false">Already lying to it</button></div>
-      <div class="rows" style="padding:0">
+      <div class="u-p-0 rows">
         <div class="row" id="aAheadRow" hidden><span class="k">Anchor ahead of the bow</span><label class="numf"><input class="field" type="number" id="aAhead" min="0" max="2000" step="1" value="30" inputmode="decimal"><span class="u">m</span></label></div>
         <div class="row"><span class="k">Alarm radius</span><label class="numf"><input class="field" type="number" id="aDropRad" min="5" max="2000" step="1" inputmode="decimal" value="${f0(s.settings.default_radius)}"><span class="u">m</span></label></div></div>
       <details class="scope"><summary>Work out the radius from the rode</summary>
-        <div class="rows" style="padding:0"><div class="row"><span class="k">Rode out</span><label class="numf"><input class="field" type="number" id="aRode" min="0" step="1" inputmode="decimal"><span class="u">m</span></label></div>
+        <div class="u-p-0 rows"><div class="row"><span class="k">Rode out</span><label class="numf"><input class="field" type="number" id="aRode" min="0" step="1" inputmode="decimal"><span class="u">m</span></label></div>
         <div class="row"><span class="k">Bow height above water</span><label class="numf"><input class="field" type="number" id="aFree" min="0" step="0.1" inputmode="decimal"><span class="u">m</span></label></div></div>
         <p class="hint" id="aScope"></p><button class="btn sec sm" type="button" id="aUseScope">Use this radius</button></details>
-      <div class="btns eq" style="margin-top:12px"><button class="btn" type="button" id="aDrop">${icon("anchor")} Drop anchor &amp; start watch</button></div>`;
+      <div class="u-mt-12 btns eq"><button class="btn" type="button" id="aDrop">${icon("anchor")} Drop anchor &amp; start watch</button></div>`;
     if (!a) { let /** @type {number | string} */ r = 40, /** @type {number | string} */ f = s.settings.bow_height ?? 1.2; try { r = localStorage.getItem("drifter-aRode") || r; f = localStorage.getItem("drifter-aFree") || f; } catch (e) {} $("aRode").value = r; $("aFree").value = f; }
   }
   if (a) {
@@ -386,7 +386,7 @@ function tideChart(c, now, lv, P) {   // depth (or sea level) 6 h back to 24 h a
 }
 function tideCard(s) {
   const T = s.tide || {}, P = s.depth_plan || {};
-  if (!T.available) return `<div class="card pad tidecard"><div class="l muted" style="font-weight:600;font-size:12px">Tide</div><div class="hint">${esc(T.error ? "no tide data: " + T.error : "no tide data yet")}</div></div>`;
+  if (!T.available) return `<div class="card pad tidecard"><div class="u-fwt-600 u-fs-12 l muted">Tide</div><div class="hint">${esc(T.error ? "no tide data: " + T.error : "no tide data yet")}</div></div>`;
   const dp = P.available && P.curve && P.curve.length > 1, curve = dp ? P.curve : T.curve;
   const chart = curve && curve.length > 1 ? tideChart(curve, s.time, dp ? P.now : T.level, dp ? P : null) : "";
   const range = T.range != null ? ` · range ${Math.round(T.range * 100)} cm` : "";
@@ -417,8 +417,8 @@ function renderGps(s) {
       <div class="rows"><div class="row"><span class="hint">${use ? `In use: <b>${esc(use.name)}</b>${held(use) ? ' <span class="badge warn">hold</span>' : ""}${use.sats ? " · " + use.sats + " sats" : ""}${use.hdop != null ? " · HDOP " + use.hdop : ""}` : '<span class="badc">No usable GPS</span>'} · tried from top to bottom; changes are saved at once</span></div>
       ${rows.map((r, i) => { const [cls, txt] = GPS_ST[held(r) ? "in_use_hold" : r.status] || GPS_ST.inactive, act = !["inactive", "never"].includes(r.status);
         const det = act ? [r.sats ? r.sats + " sats" : "", r.hdop != null ? "HDOP " + r.hdop : ""].filter(Boolean).join(" · ") : r.last_seen != null ? "last seen " + ago(r.last_seen) + " ago" : "";
-        return `<div class="row gpsrow"><span class="gnum">${i + 1}</span><div class="k" style="flex:1"><b>${esc(r.name)}</b><small>source ${esc(r.source)} · <span class="${cls ? cls === "ok" ? "good" : cls === "warn" ? "warnc" : "badc" : ""}">${txt}</span>${det ? " · " + esc(det) : ""}</small></div>
-          <div class="btns" style="flex-wrap:nowrap">${act ? "" : `<button class="btn sec sm" type="button" data-forget="${esc(r.source)}" aria-label="Remove ${esc(r.name)}">✕</button>`}
+        return `<div class="row gpsrow"><span class="gnum">${i + 1}</span><div class="u-flex-1 k"><b>${esc(r.name)}</b><small>source ${esc(r.source)} · <span class="${cls ? cls === "ok" ? "good" : cls === "warn" ? "warnc" : "badc" : ""}">${txt}</span>${det ? " · " + esc(det) : ""}</small></div>
+          <div class="u-fw-nowrap btns">${act ? "" : `<button class="btn sec sm" type="button" data-forget="${esc(r.source)}" aria-label="Remove ${esc(r.name)}">✕</button>`}
           <button class="btn sec sm" type="button" data-gmove="${i}" data-d="-1" aria-label="Move ${esc(r.name)} up" ${i ? "" : "disabled"}>▲</button><button class="btn sec sm" type="button" data-gmove="${i}" data-d="1" aria-label="Move ${esc(r.name)} down" ${i < rows.length - 1 ? "" : "disabled"}>▼</button></div></div>`; }).join("") || `<div class="empty">No GPS seen yet</div>`}
       <div class="row"><span class="hint">A GPS whose position has not changed for 60 s is skipped as frozen (the Orca Core's own GPS, 254, keeps its fix while the boat lies still and moves it on after about 10 m: shown as hold). A phone with GPS2IP shows up as Network GPS and is skipped when it is more than 100 m from the other GPS. Only a GPS that is not active can be removed; it comes back when it is seen again.</span></div></div></div>
     <div class="card"><div class="hd"><h3>AIS targets</h3><span class="muted">${(s.ais || []).length}</span></div><div class="rows">
@@ -427,22 +427,22 @@ function renderGps(s) {
     <div class="stack"><div class="card"><div class="hd"><h3>Connections</h3></div><div class="rows">
       <div class="row"><span class="k">Orca Core</span><span class="v">${s.core.connected ? `<span class="good">Connected</span><small>last data ${ago(s.core.last_message_age)} ago</small>` : `<span class="badc">Not connected</span><small>${esc(s.core.last_error || "")}</small>`}</span></div>
       <div class="row"><span class="k">AIS (Core)</span><span class="v">${aisDown(s) ? `<span class="warnc">Down</span><small>${s.ais_stream.last_message_age != null ? "last data " + ago(s.ais_stream.last_message_age) + " ago" : "no data yet"}</small>` : '<span class="good">Connected</span>'}</span></div>
-      <div class="row col"><div style="display:flex;justify-content:space-between;gap:8px"><span class="k">Push alerts (Pushover)</span><span class="v">${status(ps.configured, ps.last_sent ? "last sent " + hm(ps.last_sent) : "ready", ps.last_error, "pushover.json on the watch PC")}</span></div>
+      <div class="row col"><div class="u-d-flex u-jc-between u-gap-8"><span class="k">Push alerts (Pushover)</span><span class="v">${status(ps.configured, ps.last_sent ? "last sent " + hm(ps.last_sent) : "ready", ps.last_error, "pushover.json on the watch PC")}</span></div>
         <span class="hint">Anchor drag = emergency alert that repeats every 30 s (up to 3 h) until acknowledged in Pushover; GPS/Core lost, depth and wind = high priority.</span>
         <div class="btns"><button class="btn sec sm" data-act="push_test" type="button">Send test</button><button class="btn sec sm" id="aAlarmTest" type="button">Test alarm</button><button class="btn sec sm" data-act="push_alarm_stop" type="button">Stop test alarm</button></div></div>
-      <div class="row col"><div style="display:flex;justify-content:space-between;gap:8px"><span class="k">Still-alive check</span><span class="v">${!al.configured ? status(false, "", "", "still_alive.json on the watch PC") : !mins ? "Off" : status(true, `pings every ${Math.round((al.every_s || 300) / 60)} min${al.last_ok ? ", last " + hm(al.last_ok) : ""}`, al.last_error)}</span></div>
+      <div class="row col"><div class="u-d-flex u-jc-between u-gap-8"><span class="k">Still-alive check</span><span class="v">${!al.configured ? status(false, "", "", "still_alive.json on the watch PC") : !mins ? "Off" : status(true, `pings every ${Math.round((al.every_s || 300) / 60)} min${al.last_ok ? ", last " + hm(al.last_ok) : ""}`, al.last_error)}</span></div>
         ${al.note ? `<span class="hint warnc">To do: ${esc(al.note)}</span>` : ""}<div class="btns"><button class="btn sec sm" data-act="alive_check" type="button">Ping now</button></div></div>
-      <div class="row col"><div style="display:flex;justify-content:space-between;gap:8px"><span class="k">Internet AIS</span><span class="v">${!na.configured ? status(false, "", "", "aisstream.json on the watch PC") : !s.settings.internet_ais ? "Off" : status(true, na.connected ? `${na.ships} ships${na.last_message ? " · last " + hm(na.last_message) : ""}` : "connecting…", na.last_error)}</span></div>
+      <div class="row col"><div class="u-d-flex u-jc-between u-gap-8"><span class="k">Internet AIS</span><span class="v">${!na.configured ? status(false, "", "", "aisstream.json on the watch PC") : !s.settings.internet_ais ? "Off" : status(true, na.connected ? `${na.ships} ships${na.last_message ? " · last " + hm(na.last_message) : ""}` : "connecting…", na.last_error)}</span></div>
         <div class="btns"><button class="btn sec sm" data-act="net_ais_check" type="button">Reconnect</button></div></div>
-      <div class="row col"><div style="display:flex;justify-content:space-between;gap:8px"><span class="k">noforeignland.com</span><span class="v">${!nf.configured ? status(false, "", "", "nfl.json on the watch PC") : !s.settings.nfl_tracking && !s.settings.nfl_on_anchor ? "Off" : status(true, nf.sent_t ? `last position ${dayTime(nf.sent_t)}${nf.last_ok ? ` (${nf.last_count} points)` : ""}` : "ready", nf.last_error)}</span></div>
+      <div class="row col"><div class="u-d-flex u-jc-between u-gap-8"><span class="k">noforeignland.com</span><span class="v">${!nf.configured ? status(false, "", "", "nfl.json on the watch PC") : !s.settings.nfl_tracking && !s.settings.nfl_on_anchor ? "Off" : status(true, nf.sent_t ? `last position ${dayTime(nf.sent_t)}${nf.last_ok ? ` (${nf.last_count} points)` : ""}` : "ready", nf.last_error)}</span></div>
         <div class="btns"><button class="btn sec sm" data-act="nfl_send" type="button">Send now</button></div></div>
       <div class="row"><span class="k">Network GPS</span><span class="v">${!nm.on ? "Off on this server" : nm.error ? `<span class="badc">${esc(nm.error)}</span>` : nm.port ? `<span class="good">Listening</span><small>port ${nm.port}, UDP and TCP</small>` : "opening…"}</span></div>
       <div class="row"><span class="k">Anchor watch</span><span class="v">v${esc(s.version)}<small>${(s.track_points || 0).toLocaleString("en-GB")} track points</small></span></div>
     </div></div>
-    <div class="card pad"><h3 style="margin:0 0 6px;font-size:15px">Credits</h3><ul class="hint" style="margin:0;padding-left:18px">
+    <div class="card pad"><h3 class="u-m-0-0-6 u-fs-15">Credits</h3><ul class="u-m-0 u-pl-18 hint">
       <li>Street map © OpenStreetMap contributors (ODbL)</li><li>Satellite imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community</li>
       <li>Seamarks © OpenSeaMap contributors (CC BY-SA)</li><li>Tide: weather data by Open-Meteo.com (CC BY 4.0)</li><li>Internet AIS: aisstream.io</li><li>Map library: Leaflet © Vladimir Agafonkin (BSD-2-Clause)</li></ul>
-      <p class="hint" style="margin:8px 0 0">Charts, tide and AIS are not for navigation.</p></div></div></div>`;
+      <p class="u-m-8-0-0 hint">Charts, tide and AIS are not for navigation.</p></div></div></div>`;
 }
 
 // ---------------------------------------------------------------- settings view
@@ -459,14 +459,14 @@ function renderSettings(s) {
   box.innerHTML = `<form id="aSetForm" novalidate><div class="grid g2">
     <div class="stack"><div class="card"><div class="hd"><h3>Alarms</h3></div><div class="rows">${group("Alarms")}</div></div>
       <div class="card"><div class="hd"><h3>Boat</h3></div><div class="rows">
-        <div class="row"><div class="k"><b>My MMSI</b><small>Never shown as an AIS target; 9 digits or empty</small></div><input class="field" id="as-own_mmsi" inputmode="numeric" maxlength="9" style="width:130px" value="${esc(v.own_mmsi)}"></div>
+        <div class="row"><div class="k"><b>My MMSI</b><small>Never shown as an AIS target; 9 digits or empty</small></div><input class="u-w-130 field" id="as-own_mmsi" inputmode="numeric" maxlength="9" value="${esc(v.own_mmsi)}"></div>
         <div id="aMmsiSug">${sug}</div>${group("Boat")}</div></div></div>
     <div class="stack"><div class="card"><div class="hd"><h3>Other</h3></div><div class="rows">${group("Other")}
         <div class="row"><div class="k"><b>Position format</b></div><select class="field" id="as-pos_format"><option value="dmm">DD° MM.mmm′</option><option value="dms">DD° MM′ SS.s″</option><option value="dd">DD.ddddd°</option></select></div>
-        <div class="row col"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div class="k"><b>Minimum chain formula</b></div><input class="field" id="as-chain_formula" style="width:150px" value="${esc(v.chain_formula)}" autocomplete="off" spellcheck="false"></div>
+        <div class="row col"><div class="u-d-flex u-jc-between u-gap-10 u-ai-center"><div class="k"><b>Minimum chain formula</b></div><input class="u-w-150 field" id="as-chain_formula" value="${esc(v.chain_formula)}" autocomplete="off" spellcheck="false"></div>
           <span class="hint">D = max water depth next 24 h, B = bow height, LOA. Numbers, + − * / (or x) and brackets, e.g. 3*D + LOA or 5*(D+B). Rounded up to whole metres.</span></div></div></div>
       <div class="card"><div class="hd"><h3>Network GPS</h3></div><div class="rows">${group("GPS")}</div></div>
-      <div class="card pad" style="display:flex;gap:10px;align-items:center"><span class="hint" id="aSetMsg" style="flex:1"></span><button class="btn" type="submit" id="aSetSave" disabled>Save settings</button></div></div>
+      <div class="u-d-flex u-gap-10 u-ai-center card pad"><span class="u-flex-1 hint" id="aSetMsg"></span><button class="btn" type="submit" id="aSetSave" disabled>Save settings</button></div></div>
   </div></form>`;
   $("as-pos_format").value = v.pos_format; validate();
 }

@@ -21,11 +21,12 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from common import logs
+from common import logs, pushover
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
+from common.pushover import KEY_RE
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "0.21.1"
+VERSION = "0.22.0"
 HERE = Path(__file__).resolve().parent
 sys.path.append(str(HERE / "tools"))              # tools/backup.py for "Backup keys and tokens"
 STATIC = HERE / "web"
@@ -80,6 +81,7 @@ DEFAULT_CONFIG = {
     "certfile": None, "keyfile": None, "ca_file": None,
     "supervise": False,   # the System page talks to drifterd (the service); only the live config turns it on
     "drifterd": "http://127.0.0.1:8099", "drifterd_token": "C:/DrifterData/drifterd.token",
+    "alerts_pushover": None,   # Pushover keys for the watchdog; default <DRIFTER_DATA>\\gateway\\pushover.json (live only)
     "modules": {
         "power": {"name": "Energy", "url": "http://127.0.0.1:8000", "classic": None},
         "anchor": {"name": "Anchor watch", "url": "http://127.0.0.1:8766", "classic": None},
@@ -140,6 +142,73 @@ class Upstreams:
 
     def _mark(self, module, ok, err, t0):
         with self.lock: self.status[module] = {"ok": ok, "error": err, "t": time.time(), "ms": round((time.monotonic() - t0) * 1000)}
+
+
+class Watchdog:
+    """A push message (Pushover) when a system has not been running, or not answering its health check, for DOWN_S, and
+    one when it is back. It only reads drifterd's status every CHECK_S: it never restarts, stops or commands anything.
+    Quiet while the user switched everything off and for a module on hold. The keys are {"token", "user"} in
+    <DRIFTER_DATA>\\gateway\\pushover.json (`alerts_pushover` in config.json); without them it only logs."""
+    DOWN_S, CHECK_S = 300, 60
+    NAMES = {"energy": "Energy", "anchor": "Anchor watch", "guard": "BoatGuard", "washer": "Washer"}
+    WHY = {"energy": "Float protection and the battery connections are off while it is down.",
+           "anchor": "The anchor alarm and its push alerts are off while it is down."}
+    HIGH = {"energy", "anchor"}                          # Pushover priority 1: sounds even in quiet hours
+
+    def __init__(self, sup, key_file, clock=time.time, send=None):
+        self.sup, self.key_file, self.clock = sup, Path(key_file), clock
+        self.send = send or self._post
+        self.down: dict[str, float] = {}; self.alerted: set[str] = set(); self.error = None
+
+    def keys(self) -> dict | None:
+        try: k = json.loads(self.key_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError): return None
+        return k if all(KEY_RE.match(str(k.get(f, ""))) for f in ("token", "user")) else None
+
+    def _post(self, title: str, message: str, priority: int) -> None:
+        k = self.keys()
+        if not k: log.warning("alert not sent (no Pushover keys in %s): %s", self.key_file, message); return
+        try: pushover.post("messages.json", {"token": k["token"], "user": k["user"], "title": title, "message": message,
+                                             "priority": priority}, agent=f"Drifter/{VERSION}"); self.error = None
+        except (OSError, pushover.PushoverError) as e: self.error = str(e); log.warning("alert not sent: %s", e)
+
+    def check(self) -> None:
+        snap = self.sup.snapshot(); now = self.clock()
+        if snap.get("error"): return                     # drifterd not reachable: nothing reliable to say
+        if (snap.get("shutdown") or {}).get("state") in ("running", "done"): self.down.clear(); return
+        for name, m in (snap.get("modules") or {}).items():
+            bad = not m.get("held") and (m.get("state") != "running" or (m.get("health") or {}).get("ok") is False)
+            title = self.NAMES.get(name, name)
+            if bad:
+                since = self.down.setdefault(name, now)
+                if name not in self.alerted and now - since >= self.DOWN_S:
+                    self.alerted.add(name)
+                    what = "is not running" if m.get("state") != "running" else "is not answering"
+                    self.send(f"Drifter: {title} down", f"{title} {what} since {time.strftime('%H:%M', time.localtime(since))}. "
+                              f"{self.WHY.get(name, '')} Drifter keeps trying to start it.".replace("  ", " "), 1 if name in self.HIGH else 0)
+            else:
+                since = self.down.pop(name, None)
+                if name in self.alerted:
+                    self.alerted.discard(name)
+                    self.send(f"Drifter: {title} back", f"{title} is running again (down {round((now - since) / 60)} min).", 0)
+
+    def test(self) -> None:
+        if not self.keys(): raise ValueError(f"no Pushover keys in {self.key_file}")
+        self._post("Drifter: test", "Alerts from Drifter Boat Systems reach this phone.", 0)
+        if self.error: raise ValueError(self.error)
+
+    def status(self) -> dict:
+        return {"configured": self.keys() is not None, "file": str(self.key_file), "error": self.error,
+                "down": sorted(self.alerted), "after_min": self.DOWN_S // 60}
+
+    def start(self) -> None:
+        def loop():
+            while True:
+                time.sleep(self.CHECK_S)
+                try: self.check()
+                except Exception: log.exception("watchdog")
+        threading.Thread(target=loop, daemon=True, name="watchdog").start()
+        log.info("alerts: %s", "Pushover ready" if self.keys() else f"no Pushover keys in {self.key_file}: alerts are only logged")
 
 
 def make_precheck(up: Upstreams):
@@ -219,7 +288,7 @@ def backup_info() -> dict | None:
         log.warning("back-up info: %s", e); return None
 
 
-def make_handler(cfg: dict, up: Upstreams, sup=None):
+def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
     extra_hosts = list(cfg.get("allowed_hosts") or [])
     systems = {m: {"name": mv["name"], "classic": mv.get("classic")} for m, mv in cfg["modules"].items()}
 
@@ -258,7 +327,8 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             if path == "/api/systems":
                 with up.lock: st = {m: dict(v) for m, v in up.status.items()}
                 return self._json({"version": VERSION, "systems": systems, "upstream": st,
-                                   "supervisor": sup.snapshot() if sup else {"enabled": False}, "backup": backup_info()})
+                                   "supervisor": sup.snapshot() if sup else {"enabled": False}, "backup": backup_info(),
+                                   "alerts": dog.status() if dog else None})
             if path == "/": path = "/index.html"
             f = (STATIC / path.lstrip("/")).resolve()
             if STATIC.resolve() in f.parents and f.is_file() and f.suffix in STATIC_TYPES:
@@ -284,6 +354,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             if path == "/api/supervisor/restart": return self._restart()
             if path == "/api/supervisor/shutdown": return self._shutdown()
             if path == "/api/backup-keys": return self._backup_keys()
+            if path == "/api/alerts/test": return self._alert_test()
             if not (path.startswith("/api/") and path.count("/") >= 2 and path.split("/")[2] in up.mods): return self._json({"error": "not found"}, 404)
             self._proxy("POST", path, query)
 
@@ -294,6 +365,12 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             try: sup.restart(str(name))
             except ValueError as e: return self._json({"error": str(e)}, 409)
             log.info("restart of %s requested from the app", name); return self._json({"ok": True, "module": name}, 202)
+
+        def _alert_test(self):
+            if not dog: return self._json({"error": "alerts run only on the boat PC's live app"}, 409)
+            try: dog.test()
+            except ValueError as e: return self._json({"error": str(e)}, 409)
+            return self._json({"ok": True})
 
         def _backup_keys(self):
             """The System page's "Backup keys and tokens": copies the key files to the back-up folder (tools/backup.py).
@@ -338,7 +415,11 @@ def serve(cfg: dict, supervisor=None) -> Server:
     up = Upstreams(cfg)
     if supervisor is None and cfg.get("supervise"):
         supervisor = DrifterdClient(cfg["drifterd"], Path(cfg["drifterd_token"]), make_precheck(up))
-    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor))
+    dog = None
+    if cfg.get("supervise") and supervisor is not None:   # the live gateway only: a mock never sends alerts
+        key = cfg.get("alerts_pushover") or Path(os.environ.get("DRIFTER_DATA") or "C:/DrifterData") / "gateway" / "pushover.json"
+        dog = Watchdog(supervisor, key); dog.start()
+    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor, dog))
     scheme = "http"
     if cfg.get("certfile"): use_tls(srv, tls_context(cfg["certfile"], cfg["keyfile"])); scheme = "https"
     log.info("Drifter Boat Systems %s on %s://%s:%d/", VERSION, scheme, cfg["bind"], cfg["port"])

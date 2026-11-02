@@ -25,12 +25,11 @@ def main():
         ).is_file(), f"the manual mentions py -m {module[0]}.{module[1]}, which does not exist"
     assert (PATHS.base / "mastervolt" / "reports" / "battery_health.py").is_file()
     for name in (
-        "start_mastervolt_server.cmd",
-        "run.ps1",
         "setup_local_https.ps1",
         "control_maps.json",
         "mastershunt_config_maps.json",
-        "requirements.txt",
+        "install_iphone_certificate.cmd",
+        "install_pc_certificate.cmd",
     ):
         assert (PATHS.base / name).is_file(), f"the manual mentions {name}"
     for doc in (
@@ -38,7 +37,6 @@ def main():
         "docs/local-https.md",
         "docs/VERIFIED_FIELD_MAP.txt",
         "tools/find_masterbus_usb.ps1",
-        "tools/install_autostart.ps1",
         "tools/ecu_capture_session.ps1",
     ):
         assert (PATHS.base / doc).is_file(), f"the manual mentions {doc}"

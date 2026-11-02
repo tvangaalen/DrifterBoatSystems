@@ -8,8 +8,8 @@
 <button class="btn sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device">Sound off</button>
 </div>
 <section data-page="anchor"><div id="aDown"></div>
-<div style="display:flex;gap:8px;align-items:center;margin:4px 0 14px;flex-wrap:wrap">
-<div class="seg" style="flex:1;min-width:250px;max-width:460px" id="aViews"><button type="button" data-aview="watch" aria-pressed="true">Watch</button><button type="button" data-aview="gps" aria-pressed="false">GPS &amp; links</button><button type="button" data-aview="settings" aria-pressed="false">Settings</button></div>
+<div class="u-d-flex u-gap-8 u-ai-center u-m-4-0-14 u-fw-wrap">
+<div class="u-flex-1 u-minw-250 u-maxw-460 seg" id="aViews"><button type="button" data-aview="watch" aria-pressed="true">Watch</button><button type="button" data-aview="gps" aria-pressed="false">GPS &amp; links</button><button type="button" data-aview="settings" aria-pressed="false">Settings</button></div>
 <button class="btn sec sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device (keeps the screen on)"><svg class="i"><use href="#i-alert"></use></svg> Sound off</button></div>
 <div id="aWatch"><div class="grid g2l">
 <div class="stack">
@@ -19,14 +19,14 @@
 <div class="stack">
 <div class="hero " id="aHero"><div class="lamp"></div><div class="grow"><b id="aHeroT">Anchor not set</b><span id="aHeroS">Drop the anchor to start the watch</span></div><div class="herobig num" id="aHeroBig"></div></div>
 <div class="card pad" id="aCtl" data-mode="drop"><div class="seg" id="aDropMode"><button type="button" data-dmode="here" aria-pressed="true">Dropping now</button><button type="button" data-dmode="ahead" aria-pressed="false">Already lying to it</button></div>
-<div class="rows" style="padding:0">
+<div class="u-p-0 rows">
 <div class="row" id="aAheadRow" hidden=""><span class="k">Anchor ahead of the bow</span><label class="numf"><input class="field" type="number" id="aAhead" min="0" max="2000" step="1" value="30" inputmode="decimal"><span class="u">m</span></label></div>
 <div class="row"><span class="k">Alarm radius</span><label class="numf"><input class="field" type="number" id="aDropRad" min="5" max="2000" step="1" inputmode="decimal" value="40"><span class="u">m</span></label></div></div>
 <details class="scope"><summary>Work out the radius from the rode</summary>
-<div class="rows" style="padding:0"><div class="row"><span class="k">Rode out</span><label class="numf"><input class="field" type="number" id="aRode" min="0" step="1" inputmode="decimal"><span class="u">m</span></label></div>
+<div class="u-p-0 rows"><div class="row"><span class="k">Rode out</span><label class="numf"><input class="field" type="number" id="aRode" min="0" step="1" inputmode="decimal"><span class="u">m</span></label></div>
 <div class="row"><span class="k">Bow height above water</span><label class="numf"><input class="field" type="number" id="aFree" min="0" step="0.1" inputmode="decimal"><span class="u">m</span></label></div></div>
 <p class="hint" id="aScope">Depth 6.40 m + bow 1.20 m → scope 5.3:1. Rode reaches ~39 m; with the GPS→bow offset, 10 % and 5 m GPS margin: <b>49 m</b>.</p><button class="btn sec sm" type="button" id="aUseScope" data-r="49">Use this radius</button></details>
-<div class="btns eq" style="margin-top:12px"><button class="btn" type="button" id="aDrop"><svg class="i"><use href="#i-anchor"></use></svg> Drop anchor &amp; start watch</button></div></div>
+<div class="u-mt-12 btns eq"><button class="btn" type="button" id="aDrop"><svg class="i"><use href="#i-anchor"></use></svg> Drop anchor &amp; start watch</button></div></div>
 </div></div>
 <div class="tiles" id="aTiles"><div class="stats tilegrid"><div class="stat "><div class="l">Depth</div><div class="n">6.40<small>m</small></div><div class="s">water depth</div></div><div class="stat "><div class="l">True wind</div><div class="n">12<small>kn</small></div><div class="s">from 230° SW</div></div><div class="stat "><div class="l">AIS closest</div><div class="n">240<small>m</small></div><div class="s">MOCK VESSEL · 1 within 600 m</div></div><div class="stat "><div class="l">SOG</div><div class="n">0.3<small>kn</small></div><div class="s">&nbsp;</div></div><div class="stat wide "><div class="l">Heading</div><div class="n">163<small>°T</small></div><div class="s">&nbsp;</div></div><div class="stat wide"><div class="l">Sun</div><div class="n">↑ 09:52 &nbsp;↓ 19:37<small></small></div><div class="s">sunset in 3 h 09 min</div></div><div class="stat wide"><div class="l">Position <span class="badge ok">GPS OK</span></div><div class="n pos">50° 00.000′ N<br>029° 59.985′ W</div><div class="s">GPS Orca Core · 11 sats · HDOP 0.8</div></div></div><div class="card pad tidecard" title="Marine model sea level incl. tide and weather; not for navigation">
 <div class="thead"><span class="l">Tide · depth next 24 h</span><b class="num">now 6.40 m</b></div><svg class="tchart" viewBox="0 0 654 130" role="img" aria-label="depth from 6 hours ago to 24 hours ahead"><path class="area" d="M42.0 81.9L62.2 87.7L82.4 85.1L102.6 74.7L122.8 59.1L143.0 42.2L163.2 28.2L183.4 20.7L203.6 21.5L223.8 30.5L244.0 45.3L264.2 62.3L284.4 77.2L304.6 86.2L324.8 87.2L345.0 79.9L365.2 66.0L385.4 49.1L405.6 33.5L425.8 22.9L446.0 20.1L466.2 25.8L486.4 38.6L506.6 55.1L526.8 71.4L547.0 83.3L567.2 87.9L587.4 83.9L607.6 72.4L627.8 56.3L648.0 39.6L648.0 96L42.0 96Z"></path><path class="curve" d="M42.0 81.9L62.2 87.7L82.4 85.1L102.6 74.7L122.8 59.1L143.0 42.2L163.2 28.2L183.4 20.7L203.6 21.5L223.8 30.5L244.0 45.3L264.2 62.3L284.4 77.2L304.6 86.2L324.8 87.2L345.0 79.9L365.2 66.0L385.4 49.1L405.6 33.5L425.8 22.9L446.0 20.1L466.2 25.8L486.4 38.6L506.6 55.1L526.8 71.4L547.0 83.3L567.2 87.9L587.4 83.9L607.6 72.4L627.8 56.3L648.0 39.6"></path><line class="lim" x1="42" x2="648" y1="18.2" y2="18.2"></line><text x="37" y="22.2" text-anchor="end">7.40</text><line class="lim" x1="42" x2="648" y1="82.5" y2="82.5"></line><text x="37" y="86.5" text-anchor="end">5.60</text><circle cx="325.9" cy="82.5" r="3.2"></circle><text x="325.9" y="116" text-anchor="middle">low 00:31</text><circle cx="203.6" cy="18.2" r="3.2"></circle><text x="203.6" y="116" text-anchor="middle">high 18:28</text><line class="now" x1="163.2" x2="163.2" y1="8" y2="96"></line><circle cx="163.2" cy="53.9" r="3.6"></circle><text x="168.2" y="17">now</text></svg>
@@ -37,5 +37,5 @@
 <div class="kl hint"><span>draught 1.60 m</span><span>water 5.60 m at 00:31</span></div></div>
 <div class="hint">from the sounder · tide by Open-Meteo.com</div></div></div>
 <h2 class="sec">Events</h2><div class="card"><div class="log" id="aLog"><div class=""><time>16:18</time><span class="msg">Anchor watch started (mock)</span></div></div></div>
-<p class="hint" style="text-align:center;margin:14px 0" id="aFoot">Anchor watch mock · not for navigation</p></div>
+<p class="u-ta-center u-m-14-0 hint" id="aFoot">Anchor watch mock · not for navigation</p></div>
 <div id="aGps" hidden=""></div><div id="aSet" hidden=""></div></section>

@@ -3,7 +3,7 @@ DRIFTER_TOKEN): plain HTTP on 127.0.0.1:8000 under the Drifter module contract (
 it through the Drifter app, whose gateway serves HTTPS, so MasterVolt needs no server certificate of its own here.
 
 MASTERVOLT_BIND may name another address, but only localhost or a private (RFC 1918) one: the API has no login.
-The standalone launchers (`start_mastervolt_server.cmd`, HTTPS, its own page) still run `uvicorn app:app`.
+This is the only way the server is started (the old stand-alone launchers are gone since 3.0.1).
 """
 
 from __future__ import annotations
@@ -33,8 +33,10 @@ def bind_address() -> str:
 
 def main() -> None:
     host = bind_address()
-    # timeout_graceful_shutdown: a browser keep-alive connection must not keep the server from exiting (CLAUDE.md)
-    uvicorn.run(add_contract(create_app()), host=host, port=PORT, timeout_graceful_shutdown=5)
+    # timeout_graceful_shutdown: a browser keep-alive connection must not keep the server from exiting (CLAUDE.md).
+    # No access log: the gateway asks every few seconds, which made ~42,000 lines (3 MB) a day in the console log and hid
+    # the real messages; the application's own log (logs\server.log) is unchanged.
+    uvicorn.run(add_contract(create_app()), host=host, port=PORT, timeout_graceful_shutdown=5, access_log=False)
 
 
 if __name__ == "__main__":

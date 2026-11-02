@@ -1,9 +1,9 @@
 # MasterVolt YMS
 
-**Mastervolt Energy v3.0.0** — a private server (its page is the Energy module of the Drifter app) that monitors and controls a boat's
+**Mastervolt Energy v3.0.1** — a private server (its page is the Energy module of the Drifter app) that monitors and controls a boat's
 Mastervolt electrical system and its DALY battery management, from a Windows PC on the boat's LAN.
 
-> **On the boat (since 2026-11-02) MasterVolt is used through the Energy module of the Drifter app** ([DrifterBoatSystems](https://github.com/tvangaalen/DrifterBoatSystems), `modules/energy`), which shows everything of this app's own page: dashboard, controls, batteries, SOC calibration, Bluetooth diagnostics, history charts, reports and settings. Started by the Drifter supervisor (`DRIFTER_DATA` set), `start_mastervolt_server.cmd` makes the server listen on 127.0.0.1 only; this app's own page is then only reachable on the boat PC itself (https://127.0.0.1:8000/), as a fallback. Run without Drifter, it still listens on the LAN address as before.
+> **MasterVolt is used through the Energy module of the Drifter app** ([DrifterBoatSystems](https://github.com/tvangaalen/DrifterBoatSystems), `modules/energy`): dashboard, controls, batteries, SOC calibration, Bluetooth diagnostics, history charts, reports and settings. The Drifter service runs this server (`python -m mastervolt`, 127.0.0.1:8000 only); since 3.0 it has no page of its own.
 
 - **MasterBus** over the Mastervolt USB Link: CombiMaster (shore power, inverter, charger), Solar ChargeMaster,
   Alpha Pro alternator regulator, Mass chargers, MasterShunts and the Yanmar engine ECU interface.
@@ -27,16 +27,11 @@ Swipe left/right moves between pages on touch devices. A light UI (for sunlight)
 
 ## Run
 
-Requirements: Windows with the Mastervolt USB Link and a Bluetooth adapter, Python 3.12 or newer, OpenSSL for the certificate set-up.
-
-```powershell
-py -m pip install -r requirements.txt
-.\start_mastervolt_server.cmd        # HTTPS on the private LAN address, port 8000 (first-time phone set-up: docs/local-https.md)
-```
-
-`.\run.ps1` starts a plain-HTTP development server on all interfaces (trusted networks only). The server needs exclusive use of
-the MasterBus USB Link and the Bluetooth radio: close MasterAdjust and the diagnostic tools first. Before the first start after
-changing control code, check the mappings with `py -m tools.show_fields` (`engine_ecu` must show `verified True`, address `3AE394`, field `43`).
+On the boat the Drifter service runs it (`python -m mastervolt`, plain HTTP on 127.0.0.1:8000 under the Drifter module
+contract); see the Drifter runbook. The environment comes from the repository's `uv.lock` (`tools\sync_envs.py`). Never start
+a second server by hand: it needs exclusive use of the MasterBus USB Link and the Bluetooth radio (close MasterAdjust and the
+diagnostic tools first). Before the first start after changing control code, check the mappings with `py -m tools.show_fields`
+(`engine_ecu` must show `verified True`, address `3AE394`, field `43`).
 
 ## Safety model
 
@@ -53,7 +48,6 @@ changing control code, check the mappings with `py -m tools.show_fields` (`engin
 ## Project layout
 
 ```text
-app.py                  entry point for the launchers (uvicorn app:app)
 mastervolt/             the application
   masterbus/              USB protocol, bus I/O, controls, energy model, Float protection, polling service
   bluetooth/              DALY protocol, radio coordinator, BMS and balancer workers, event log

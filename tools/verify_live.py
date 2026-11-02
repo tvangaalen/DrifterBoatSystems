@@ -51,6 +51,27 @@ def check_washer(status: dict) -> list:
 
 # Right after a restart a server does not answer yet, the supervisor says "starting" and the gateway has not polled it yet:
 # those come right by themselves, so they are retried too. A 200 without the token, Float latched or an alarm is not.
+WARN_DAYS = 60                                      # a certificate this close to its end fails the check
+
+
+def cert_end(f) -> float:
+    """When the PEM certificate in `f` ends (seconds since the epoch)."""
+    return ssl.cert_time_to_seconds(ssl._ssl._test_decode_cert(str(f))["notAfter"])
+
+
+def check_certificates(files: dict, now: float | None = None, end_of=cert_end) -> list:
+    """files: name -> PEM path. Fails a certificate that is missing or ends within WARN_DAYS (the app and the CA: an
+    expired one locks every phone out until it is renewed)."""
+    out, now = [], now or time.time()
+    for name, f in files.items():
+        try: end = end_of(f)
+        except (OSError, KeyError, ValueError, ssl.SSLError): out.append(need(False, f"{name} certificate unreadable: {f}")); continue
+        days = (end - now) / 86400
+        out.append(need(days > WARN_DAYS, f"{name} certificate valid until {time.strftime('%Y-%m-%d', time.localtime(end))}"
+                                         + ("" if days > WARN_DAYS else f" ({max(0, days):.0f} days left: renew it, docs/RUNBOOK.md)")))
+    return out
+
+
 RETRY = {"BMS units connected", "Bluetooth available", "Orca Core connected", "router reachable", "camera online", "washer answers",
          "/health: no answer", "supervisor:", "gateway reaches it", "app answers", "drifterd None"}
 
@@ -65,6 +86,7 @@ class Live:
         ca = cfg.get("ca_file")
         self.ctx = ssl.create_default_context(cafile=ca) if ca and Path(ca).exists() else ssl._create_unverified_context()
         self.specs = specs
+        self.certs = {}                                 # name -> PEM file, set by main()
 
     def get(self, url: str, timeout=10):
         """(status, parsed JSON or None); status 0 = no answer."""
@@ -81,7 +103,8 @@ class Live:
         if name == "gateway":
             code, _ = self.gw("/api/systems")
             sup = (systems.get("supervisor") or {})
-            return [need(code == 200, f"app answers on {self.base}"), need((sup.get("drifterd") or {}).get("version"), f"drifterd {(sup.get('drifterd') or {}).get('version')}")]
+            return [need(code == 200, f"app answers on {self.base}"), need((sup.get("drifterd") or {}).get("version"), f"drifterd {(sup.get('drifterd') or {}).get('version')}")] \
+                + check_certificates(self.certs)
         code, h = self.get(f"http://127.0.0.1:{port}/health")
         out.append(need(code == 200 and h and h.get("ok"), f"/health: {h.get('version')} up {h.get('uptime_s')} s" if h else f"/health: no answer (HTTP {code})"))
         code, _ = self.get(f"http://127.0.0.1:{port}{PROBE[name]}")
@@ -125,6 +148,8 @@ def main(argv=None) -> int:
     if bad := [n for n in names if n not in NAMES]: ap.error(f"unknown module: {', '.join(bad)}")
     cfg = json.loads(Path(a.config).read_text(encoding="utf-8"))
     live, deadline, t0 = Live(cfg, specs(cfg)), time.time() + a.wait, time.time()
+    home = Path(a.config).parent
+    live.certs = {"app": home / cfg.get("certfile", "certs/drifter-cert.pem"), "Mastervolt Local CA": home / "modules/energy/certs/ca-cert.pem"}
     while True:
         systems = live.gw("/api/systems")[1] or {}
         results = {n: live.module(n, systems) for n in names}

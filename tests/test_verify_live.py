@@ -33,6 +33,15 @@ class Checks(unittest.TestCase):
         self.assertEqual(self.failed(V.check_washer({"power_text": "Off", "status_text": "Standby"})), [])
         self.assertTrue(self.failed(V.check_washer({})))
 
+    def test_certificates(self):
+        import tempfile
+        bad = V.check_certificates({"missing": Path(tempfile.gettempdir()) / "no-such-cert.pem"})
+        self.assertFalse(bad[0][0]); self.assertIn("unreadable", bad[0][1])
+        end = 1_900_000_000.0
+        self.assertTrue(V.check_certificates({"app": "x"}, now=end - 90 * 86400, end_of=lambda f: end)[0][0])
+        late = V.check_certificates({"app": "x"}, now=end - 10 * 86400, end_of=lambda f: end)[0]
+        self.assertFalse(late[0]); self.assertIn("10 days left", late[1])
+
     def test_retry_only_for_checks_that_can_come_right(self):
         retried = V.retryable
         self.assertTrue(retried("BMS units connected: 0/3") and retried("Orca Core connected: timeout"))

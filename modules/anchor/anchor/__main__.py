@@ -1,7 +1,7 @@
 """python -m anchor: the anchor watch (read-only on the Orca Core). Started by drifterd with DRIFTER_TOKEN and the data
 paths of modules.json; the API listens on 127.0.0.1 (plain HTTP, only the Drifter gateway calls it), network GPS (NMEA)
 on --bind, the boat LAN address. The asyncio data loops run in the main thread, the API in its own."""
-import argparse, asyncio, socket, threading
+import argparse, asyncio, socket, threading, time
 from pathlib import Path
 
 import anchor  # noqa: F401  (first: puts the repository root and this folder on sys.path)
@@ -18,6 +18,28 @@ from anchor.tiles import TileCache
 from anchor.watch import AnchorWatch, core_info_loop, sound_loop, watch_loop
 
 HERE = Path(__file__).resolve().parents[1]
+
+
+KEEP_RECORDINGS_DAYS = 30
+
+
+def prune_recordings(folder: Path, days: int = KEEP_RECORDINGS_DAYS, now: float | None = None) -> list[Path]:
+    """Removes GPS diagnostics (gps_held_*.jsonl) older than `days`; the running Core log (core_gps_log.jsonl) and anything
+    else in the folder stay. Only housekeeping: the watch never reads these files."""
+    cutoff, gone = (now or time.time()) - days * 86400, []
+    for f in Path(folder).glob("gps_held_*.jsonl"):
+        try:
+            if f.stat().st_mtime < cutoff: f.unlink(); gone.append(f)
+        except OSError: pass
+    if gone: log.info("Recordings: removed %d older than %d days", len(gone), days)
+    return gone
+
+
+def keep_pruning(folder: Path) -> None:
+    def loop():
+        while True:
+            prune_recordings(folder); time.sleep(86400)
+    threading.Thread(target=loop, daemon=True, name="recordings").start()
 
 
 def lan_address() -> str:
@@ -69,6 +91,7 @@ def main():
     log.info("Internet AIS: %s", "aisstream.io ready" if watch.netais.configured else f"off ({Path(a.aisstream).name} missing or invalid)")
     server = start(create_app(watch, TileCache(a.tile_cache)), a.web_bind, a.port)
     threading.Thread(target=sound_loop, args=(watch,), daemon=True).start()
+    keep_pruning(Path(a.recordings))
     log.info("Anchor Watch %s: API http://%s:%d/, network GPS on %s (Core %s)", VERSION, a.web_bind, a.port, a.bind, a.host)
 
     async def run():

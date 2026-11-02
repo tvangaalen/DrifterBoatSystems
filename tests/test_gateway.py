@@ -80,7 +80,7 @@ class GatewayTest(unittest.TestCase):
         code, _ = self.req("POST", "/api/backup-keys", {}); self.assertEqual(code, 403)            # the app's header is required
         code, data = self.post("/api/backup-keys")                                              # supervise is off here: never copies
         self.assertEqual(code, 409); self.assertIn(b"live app", data)
-        j = json.loads(self.req("GET", "/api/systems")[1]); self.assertEqual(j["backup"]["count"], 5)
+        j = json.loads(self.req("GET", "/api/systems")[1]); self.assertEqual(j["backup"]["count"], 6)
 
     def test_post_needs_json(self):
         code, _ = self.req("POST", "/api/guard/api/test", None, {"X-Drifter-Request": "1", "Content-Type": "text/plain"}); self.assertEqual(code, 415)

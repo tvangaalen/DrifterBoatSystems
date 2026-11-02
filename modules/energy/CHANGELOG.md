@@ -12,6 +12,15 @@ Unless an entry says otherwise, every release also bumps the application version
 
 ## 3.0 — No page of its own
 
+### 3.0.1
+- No access log any more: the Drifter gateway asks every few seconds, which wrote about 42,000 lines (3 MB) a day into the
+  console log, which is only rotated at a start, and hid the real messages. The application's own log is unchanged.
+- The old stand-alone launchers are removed: `start_mastervolt_server.cmd`, `run.ps1` (plain HTTP on every interface),
+  `app.py` (`uvicorn app:app`), `tools/install_autostart.ps1` (a boot task that would compete with the Drifter service) and
+  the `requirements*.txt` files (the environment comes from the repository's `uv.lock`). Started by hand, each of them
+  would have run a second server fighting the Drifter service's one for the USB Link and the Bluetooth radio. The CA
+  scripts stay (`setup_local_https.ps1`, `install_iphone_certificate.cmd`, `install_pc_certificate.cmd`).
+
 ### 3.0.0
 - **The classic page is removed** (`static/`: `index.html`, its scripts and styles, the service worker, the manifest, the
   icons and product photos; `tools/cache_product_images.py`; `.prettierrc.json`). The page is the Energy module of the Drifter

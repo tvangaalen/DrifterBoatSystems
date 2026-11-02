@@ -61,7 +61,7 @@ const m = {
   tile() {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const h = d.storage.house, s = d.sources, t = d.totals;
-    return `<div style="display:flex;align-items:center;gap:16px"><div class="gauge sm" style="--p:${h.soc ?? 0}"><b>${num(h.soc)}<small>%</small></b></div>
+    return `<div class="u-d-flex u-ai-center u-gap-16"><div class="gauge sm" style="--p:${h.soc ?? 0}"><b>${num(h.soc)}<small>%</small></b></div>
       <div><div class="big">${W(h.power)}</div><div class="line">House ${num(h.voltage, 2)} V · ${num(h.current, 1)} A ${h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : ""}</div></div></div>
       <div class="minis m4"><div class="mini"><div class="l">Charger house</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
       <div class="mini"><div class="l">Alternator</div><div class="n">${W((s.alternator || {}).power)}</div></div>
@@ -70,7 +70,7 @@ const m = {
   },
   mount(el) {
     el.innerHTML = `<div id="eDown"></div>
-      <div class="seg" role="tablist" style="margin:4px 0 14px;max-width:460px" id="eViews">
+      <div class="u-m-4-0-14 u-maxw-460 seg" role="tablist" id="eViews">
         <button type="button" data-view="now" aria-pressed="true">Now</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
       <div id="eNow"></div><div id="eBatt" hidden></div><div id="eHist" hidden></div><div id="eSet" hidden></div>`;
     el.addEventListener("click", onClick); el.addEventListener("change", onChange);
@@ -78,7 +78,7 @@ const m = {
     el.addEventListener("submit", e => { if (e.target.id === "eSetForm") { e.preventDefault(); saveSettings(); } });
   },
   render() {
-    $("eDown").innerHTML = m.state.err ? D.downCard(m) + '<div style="height:12px"></div>' : "";
+    $("eDown").innerHTML = m.state.err ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
     document.querySelectorAll("#eViews button").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view));
     $("eNow").hidden = view !== "now"; $("eBatt").hidden = view !== "batt"; $("eHist").hidden = view !== "history"; $("eSet").hidden = view !== "settings";
     if (view === "now") renderNow(); else if (view === "batt") renderBatt(); else if (view === "history") renderHistory(); else renderSettings();
@@ -110,17 +110,17 @@ function renderNow() {
     return `<div class="row"><div class="k"><b>${label}</b><small>${cfg && cfg.verified ? hint : "Not mapped/verified yet"}</small></div>${sw("ec-" + name, cfg && cfg.current, cfg && cfg.verified ? "" : "disabled")}</div>`; };
   const lim = limitDraft ?? (cm.ac_input_limit != null ? Math.round(cm.ac_input_limit) : null);
   box.innerHTML = `
-    <div class="card pad" style="margin-bottom:12px"><div class="btns eq">${Object.keys(MODES).map(k => `<button class="btn sec" type="button" data-mode="${k}" aria-pressed="${d.active_mode === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div>
-      <p class="hint" style="margin:8px 2px 0">${d.active_mode ? `${esc(d.active_mode[0].toUpperCase() + d.active_mode.slice(1))} mode is active (until a single control changes). ` : ""}Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
+    <div class="u-mb-12 card pad"><div class="btns eq">${Object.keys(MODES).map(k => `<button class="btn sec" type="button" data-mode="${k}" aria-pressed="${d.active_mode === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div>
+      <p class="u-m-8-2-0 hint">${d.active_mode ? `${esc(d.active_mode[0].toUpperCase() + d.active_mode.slice(1))} mode is active (until a single control changes). ` : ""}Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
     <div class="grid g2l">
       <div class="stack">
-        <div class="card pad" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+        <div class="u-d-flex u-gap-18 u-ai-center u-fw-wrap card pad">
           <div class="gauge" style="--p:${h.soc ?? 0};--c:${h.soc != null && h.soc < 20 ? "var(--bad)" : h.soc != null && h.soc < 35 ? "var(--warn)" : "var(--batt)"}"><b>${num(h.soc)}<small>%</small></b></div>
-          <div style="flex:1;min-width:180px"><div class="muted" style="font-weight:600;font-size:13px">House battery · ${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""}</div>
-            <div style="font-size:30px;font-weight:750;letter-spacing:-.02em" class="num">${h.power != null && h.power > 0 ? "+" : ""}${W(h.power)}</div>
+          <div class="u-flex-1 u-minw-180"><div class="u-fwt-600 u-fs-13 muted">House battery · ${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""}</div>
+            <div class="u-fs-30 u-fwt-750 u-ls-0_02em num">${h.power != null && h.power > 0 ? "+" : ""}${W(h.power)}</div>
             <div class="muted">${num(h.voltage, 2)} V · ${num(h.current, 1)} A · ${charging ? "charging" : h.current < -0.3 ? "discharging" : "idle"}${h.temperature != null ? ` · ${num(h.temperature, 1)} °C` : ""}</div>
-            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge wrap ${fc}">${esc(ft)}</span>${h.soc == null ? `<span class="badge warn">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span>` : ""}</div>
-            <div class="hint" style="margin-top:6px">Highest cell ${num(h.max_cell_mv)} mV${h.max_cell_battery ? ` (${esc(h.max_cell_battery)})` : ""} · spread ${num(h.max_spread_mv)} mV${socAge}</div></div>
+            <div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ${fc}">${esc(ft)}</span>${h.soc == null ? `<span class="badge warn">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span>` : ""}</div>
+            <div class="u-mt-6 hint">Highest cell ${num(h.max_cell_mv)} mV${h.max_cell_battery ? ` (${esc(h.max_cell_battery)})` : ""} · spread ${num(h.max_spread_mv)} mV${socAge}</div></div>
         </div>
         <div class="stats s4">
           <div class="stat"><div class="l">${icon("sun")} Solar</div><div class="n">${W(s.solar.power)}</div><div class="s">${esc(s.solar.state || "–")}</div></div>
@@ -141,7 +141,7 @@ function renderNow() {
           <div class="row"><div class="k"><b>Charger House</b><small>${esc(s.charger_house.charge_state || "–")}</small></div>${sw("ec-charger", on(cm.charger_enabled))}</div>
           <div class="row"><div class="k"><b>AC IN support</b><small>Inverter helps when shore power is limited</small></div>${sw("ec-support", on(cm.ac_support_enabled))}</div>
           <div class="row"><div class="k"><b>AC input limit</b><small>Now ${cm.ac_input_limit != null ? num(cm.ac_input_limit) + " A" : "–"} · 3–15 A</small></div>
-            <div style="display:flex;gap:6px;align-items:center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">${lim ?? "–"} A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
+            <div class="u-d-flex u-gap-6 u-ai-center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">${lim ?? "–"} A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
             <button class="btn sm" type="button" id="ec-limit" ${limitDraft == null || limitDraft === Math.round(cm.ac_input_limit) || busy.has("ec-limit") ? "disabled" : ""}>Set</button></div></div>
         </div></div>
         <div class="card"><div class="hd">${icon("engine")}<h3>Charging &amp; engine</h3></div><div class="rows">
@@ -149,7 +149,7 @@ function renderNow() {
           ${dev("solar", "Solar", "SCM solar charger")}${dev("charger_start", "Charger Start", "Mass charger to start battery")}${dev("charger_bow", "Charger Bowthruster", "Mass charger to bow battery")}
           ${dev("engine_ecu", "Engine ECU", "Switching off stops a running engine")}
         </div></div>
-        <p class="hint" style="margin:0 4px">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
+        <p class="u-m-0-4 hint">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
       </div>
     </div>`;
 }
@@ -166,7 +166,7 @@ function renderBatt() {
     const st = b.state === "connected" ? (age != null && age > 120 ? ["warn", `stale · ${D.dur(age)}`] : ["ok", age != null ? `${D.dur(age)} ago` : "connected"]) : [b.error ? "bad" : "", b.state.replace(/_/g, " ")];
     return `<div class="card"><div class="hd">${icon("batt")}<h3>${esc(name[0] + name.slice(1).toLowerCase())}</h3><span class="badge ${st[0]}">${esc(st[1])}</span>
         <button class="iconbtn" type="button" data-bms-refresh="${n}" aria-label="Read ${esc(name)} now">${icon("refresh")}</button></div>
-      ${b.error ? `<div class="err" style="padding:0 16px 8px">${esc(b.error)}</div>` : ""}
+      ${b.error ? `<div class="u-p-0-16-8 err">${esc(b.error)}</div>` : ""}
       <div class="rows">
         <div class="row"><span class="k">State of charge</span><span class="v">${num(b.state_of_charge_percent, 1)}%<small>${num(b.remaining_capacity_ah, 1)} Ah left</small></span>
           <button class="btn sec sm" type="button" data-soc="${n}" ${cs.busy || b.state !== "connected" ? "disabled" : ""}>Set SOC</button></div>
@@ -187,7 +187,7 @@ function renderBatt() {
     const st = dv.stale ? ["warn", "stale"] : dv.error ? ["bad", "error"] : dv.state === "connected" || cells.length ? ["ok", dv.last_success_age_seconds != null ? `${D.dur(dv.last_success_age_seconds)} ago` : "ok"] : ["", dv.state || "–"];
     return `<div class="card"><div class="hd">${icon("refresh")}<h3>${esc(name)}</h3><span class="badge ${st[0]}">${esc(st[1])}</span>
         <button class="iconbtn" type="button" data-bal-refresh="${n}" aria-label="Read ${esc(name)} now">${icon("refresh")}</button></div>
-      ${dv.error ? `<div class="err" style="padding:0 16px 8px">${esc(dv.error)}</div>` : ""}
+      ${dv.error ? `<div class="u-p-0-16-8 err">${esc(dv.error)}</div>` : ""}
       <div class="rows"><div class="row"><span class="k">Balancing</span><span class="v">${v.balance_active ? `<span class="warnc">active</span>${v.balance_position != null ? `<small>position ${esc(v.balance_position)}</small>` : ""}` : v.valid_frame_count ? "idle" : "–"}</span></div>
         <div class="row"><span class="k">Pack</span><span class="v">${num(v.pack_voltage_v, 2)} V${v.reported_current_a != null ? ` · ${num(v.reported_current_a, 2)} A` : ""}<small>${(v.temperatures_c || []).map(x => num(x, 0) + " °C").join(" · ")}</small></span></div>
         <div class="row"><span class="k">Cell delta</span><span class="v ${v.cell_delta_mv > 50 ? "warnc" : ""}">${num(v.cell_delta_mv ?? (hi != null ? hi - lo : null))} mV<small>${v.average_cell_mv != null ? `average ${num(v.average_cell_mv)} mV` : ""}</small></span></div>
@@ -195,12 +195,12 @@ function renderBatt() {
       ${cells.length ? `<div class="cells">${cells.map((x, i) => `<div class="cell ${x === hi && hi !== lo ? "hi" : x === lo && hi !== lo ? "lo" : ""}"><div class="cn">${i + 1}</div><div class="cv">${(x / 1000).toFixed(3)}</div></div>`).join("")}</div>` : ""}</div>`;
   };
   box.innerHTML = `
-    <div class="card pad" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <div class="u-mb-12 u-d-flex u-gap-8 u-fw-wrap u-ai-center card pad">
       <button class="btn sec sm" type="button" id="bms-all-refresh">${icon("refresh")} Read all</button>
       <button class="btn sec sm" type="button" data-all="charge-on">All charge ON</button><button class="btn sec sm" type="button" data-all="charge-off">All charge OFF</button>
       <button class="btn sec sm" type="button" data-all="discharge-on">All discharge ON</button><button class="btn sec sm" type="button" data-all="discharge-off">All discharge OFF</button>
       <button class="btn sec sm" type="button" data-soc="all" ${cs.busy ? "disabled" : ""}>Set all SOC</button>
-      <span class="hint" style="flex:1;min-width:160px">${cs.busy ? `<span class="warnc">${esc(cs.message || cs.phase || "Bluetooth busy…")}</span>` : `${bms.connected_count ?? "–"} connected · read every ${bms.refresh_interval_seconds ?? "–"} s`}</span></div>
+      <span class="u-flex-1 u-minw-160 hint">${cs.busy ? `<span class="warnc">${esc(cs.message || cs.phase || "Bluetooth busy…")}</span>` : `${bms.connected_count ?? "–"} connected · read every ${bms.refresh_interval_seconds ?? "–"} s`}</span></div>
     <div class="grid g3">${names.map(bcard).join("")}</div>
     <h2 class="sec">Balancers</h2><div class="grid g3">${Object.entries(devs).map(balcard).join("") || `<div class="empty">No balancer data</div>`}</div>
     ${bleCard()}`;
@@ -354,8 +354,8 @@ function renderCharts() {
     <div class="ebars"><h4>Sources</h4>${bars([...c.sources.map(x => { const i = SRC_META.findIndex(m => m[0] === x.key); return {label: (SRC_META[i] || [, x.key])[1], color: (SRC_META[i] || [, , "#888"])[2], i, wh: x.wh, avg: x.avg_w}; }),
       ...(c.shore ? [{label: "Shore (AC in)", color: "#0b62c4", i: 4, wh: c.shore.wh, avg: c.shore.avg_w}] : [])])}</div>
     <div class="ebars"><h4>DC consumers</h4>${bars(c.consumers.map(x => { const i = LOAD_META.findIndex(m => m[0] === x.key); return {label: (LOAD_META[i] || [, x.key])[1], color: (LOAD_META[i] || [, , "#888"])[2], i, wh: x.wh, avg: x.avg_w}; }))}</div>
-    <div class="ebars"><h4>Batteries</h4>${(c.batteries || []).map((x, i) => `<div class="ebar"><span class="el">${esc(x.key[0] + x.key.slice(1).toLowerCase())}</span><span class="ev" style="flex:1;text-align:left">charged ${(x.charge_wh / 1000).toFixed(2)} kWh · discharged ${(x.discharge_wh / 1000).toFixed(2)} kWh</span></div>`).join("")}</div>
-    <p class="hint" style="margin:6px 0 0">${D.dayTime(Date.parse(c.start))} – ${D.dayTime(Date.parse(c.end))} · from the full-resolution history on the server${c.sources_covered_seconds != null && c.span_seconds ? ` · data for ${Math.round(c.sources_covered_seconds / c.span_seconds * 100)} % of the time` : ""}</p>`;
+    <div class="ebars"><h4>Batteries</h4>${(c.batteries || []).map((x, i) => `<div class="ebar"><span class="el">${esc(x.key[0] + x.key.slice(1).toLowerCase())}</span><span class="u-flex-1 u-ta-left ev">charged ${(x.charge_wh / 1000).toFixed(2)} kWh · discharged ${(x.discharge_wh / 1000).toFixed(2)} kWh</span></div>`).join("")}</div>
+    <p class="u-m-6-0-0 hint">${D.dayTime(Date.parse(c.start))} – ${D.dayTime(Date.parse(c.end))} · from the full-resolution history on the server${c.sources_covered_seconds != null && c.span_seconds ? ` · data for ${Math.round(c.sources_covered_seconds / c.span_seconds * 100)} % of the time` : ""}</p>`;
 }
 window.addEventListener("resize", () => { if (view === "history" && D.visibleIs("power")) renderCharts(); });
 window.addEventListener("drifter-theme", () => { if (view === "history") renderCharts(); });
@@ -364,20 +364,20 @@ function renderHistory() {
   const box = $("eHist"), r = report || {}, h = hstat || {}, MB = v => v == null ? "–" : v >= 1e9 ? (v / 1e9).toFixed(2) + " GB" : (v / 1e6).toFixed(0) + " MB";
   if (!box.dataset.built) {
     box.dataset.built = "1";
-    box.innerHTML = `<div class="seg" id="eRange" style="max-width:460px;margin-bottom:12px">${RANGES.map(([h, l]) => `<button type="button" data-hours="${h}" aria-pressed="${h === hours}">${l}</button>`).join("")}</div>
+    box.innerHTML = `<div class="u-maxw-460 u-mb-12 seg" id="eRange">${RANGES.map(([h, l]) => `<button type="button" data-hours="${h}" aria-pressed="${h === hours}">${l}</button>`).join("")}</div>
       <div class="grid g2 charts" id="eCharts"></div>
       <h2 class="sec">Energy in this period</h2><div class="card pad" id="eContrib"></div>
       <h2 class="sec">Reports and data</h2>
       <div class="grid g2l"><div class="stack">
         <div class="card"><div class="hd">${icon("batt")}<h3>Battery health report</h3></div><div class="rows">
           <div class="row"><div class="k"><small>Analyses the stored battery history: cell connection resistance, current sharing, alarms, cell balance, balancers and usage. Runs in a separate low-priority process on the boat PC.</small></div></div>
-          <div class="row"><span class="k">Days to analyse</span><div style="display:flex;gap:8px;align-items:center"><label class="numf"><input class="field" type="number" id="eRepDays" min="1" max="365" step="1" value="7" inputmode="numeric"><span class="u">days</span></label>
+          <div class="row"><span class="k">Days to analyse</span><div class="u-d-flex u-gap-8 u-ai-center"><label class="numf"><input class="field" type="number" id="eRepDays" min="1" max="365" step="1" value="7" inputmode="numeric"><span class="u">days</span></label>
             <button class="btn sm" type="button" id="eRepRun">Run report</button></div></div>
           <div class="row" id="eRepStatus"></div></div>
           <div class="mdreport" id="eRepOut" hidden></div></div></div>
       <div class="stack"><div class="card"><div class="hd"><h3>History database</h3></div><div class="rows" id="eHStat"></div></div>
         <div class="card pad"><a class="btn sec" href="api/power/manual" target="_blank" rel="noopener">${icon("ext")} Open the manual</a>
-          <p class="hint" style="margin:8px 0 0">The complete MasterVolt user manual, in a new window.</p></div></div></div>`;
+          <p class="u-m-8-0-0 hint">The complete MasterVolt user manual, in a new window.</p></div></div></div>`;
   }
   const running = r.state === "running";
   $("eRepRun").disabled = running;
@@ -401,7 +401,7 @@ function renderSettings() {
   if (!settings) { box.innerHTML = `<div class="empty">Loading settings…</div>`; return; }
   if (box.dataset.built && setDirty) return;
   box.dataset.built = "1";
-  box.innerHTML = `<form class="card" id="eSetForm" novalidate style="max-width:720px"><div class="rows">
+  box.innerHTML = `<form class="u-maxw-720 card" id="eSetForm" novalidate><div class="rows">
     ${SETTINGS.map(([k, l, h, lo, hi, step, u]) => lo === undefined
       ? `<div class="row"><div class="k"><b>${l}</b><small>${h}</small></div>${D.sw("es-" + k, settings[k])}</div>`
       : `<div class="row"><div class="k"><b>${l}</b>${h ? `<small>${h}</small>` : ""}</div><label class="numf"><input class="field" type="number" inputmode="decimal" id="es-${k}" min="${lo}" max="${hi}" step="${step}" value="${settings[k] ?? ""}" required><span class="u">${u}</span></label></div>`).join("")}
@@ -506,9 +506,9 @@ async function onClick(e) {
 async function setSoc(target, btn) {
   const who = target === "all" ? "all batteries" : `Battery ${target}`;
   const v = await D.sheet(`<h3 id="dlgTitle"><span class="warnicon">%</span>Set SOC – ${esc(who)}</h3><p>Choose the state of charge to write to ${esc(who)}. Cancel is selected by default.</p>
-    <div class="btns eq" style="flex-direction:column;margin-top:10px"><button class="btn sec" data-value="charge">Set SOC – Charge % (from the cell voltages)</button>
+    <div class="u-fd-column u-mt-10 btns eq"><button class="btn sec" data-value="charge">Set SOC – Charge % (from the cell voltages)</button>
     <button class="btn sec" data-value="discharge">Set SOC – Discharge % (from the cell voltages)</button><button class="btn sec" data-value="100">Set SOC 100%</button></div>
-    <div class="row" style="border:0;padding:10px 0 0"><span class="k">Manual value</span><div style="display:flex;gap:6px;align-items:center"><label class="numf"><input class="field" id="socManual" type="number" min="0" max="100" step="0.1" inputmode="decimal"><span class="u">%</span></label>
+    <div class="u-b-0 u-p-10-0-0 row"><span class="k">Manual value</span><div class="u-d-flex u-gap-6 u-ai-center"><label class="numf"><input class="field" id="socManual" type="number" min="0" max="100" step="0.1" inputmode="decimal"><span class="u">%</span></label>
       <button class="btn sm" id="socManualSet" type="button">Set</button></div></div><p class="err" id="socErr" hidden></p>
     <div class="acts"><button class="btn sec" data-value="cancel" data-default>Cancel</button></div>`);
   if (!v || v === "cancel") return;

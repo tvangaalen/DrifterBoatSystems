@@ -38,7 +38,7 @@ const m = {
   tile() {
     const s = m.state.data; if (!s) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const h = m.hero(s), cam = s.camera || {};
-    return `<div class="big" style="font-size:22px">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div>
+    return `<div class="u-fs-22 big">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div>
       <div class="minis"><div class="mini"><div class="l">Phone</div><div class="n ${s.present ? "good" : "warnc"}">${s.present == null ? "–" : s.present ? "On board" : "Away"}</div></div>
       <div class="mini"><div class="l">Camera</div><div class="n ${cam.armed ? "badc" : ""}">${cam.armed == null ? "–" : cam.armed ? "Armed" : "Disarmed"}</div></div>
       <div class="mini"><div class="l">Battery</div><div class="n">${cam.battery == null ? "–" : cam.battery + "%"}</div></div></div>`;
@@ -60,7 +60,7 @@ const m = {
           <div class="row" id="gTestRes" hidden></div></div></div>
       </div>
       <div class="stack">
-        <h2 class="sec" style="margin-top:0">Settings</h2>
+        <h2 class="u-mt-0 sec">Settings</h2>
         <form class="card" id="gSet" novalidate><div class="rows">
           <div class="row"><div class="k"><b>Arming delay</b><small>Phone away this long before the camera is armed</small></div>
             <label class="numf"><input class="field" type="number" inputmode="numeric" id="g_away_after_s" required step="1"><span class="u">s</span></label></div>
@@ -84,7 +84,7 @@ const m = {
     built = true;
   },
   render() {
-    const s = m.state.data; $("gDown").innerHTML = D.downCard(m) ? D.downCard(m) + '<div style="height:12px"></div>' : "";
+    const s = m.state.data; $("gDown").innerHTML = D.downCard(m) ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
     if (!s) return;
     const now = Date.now() / 1000, cam = s.camera || {}, h = m.hero(s);
     $("gHero").className = "hero " + h.cls; $("gHeroT").textContent = h.title; $("gHeroS").textContent = h.sub;
@@ -132,8 +132,8 @@ function buildSounds(s) {
   for (const [e, title] of Object.entries(s.events)) {
     const row = document.createElement("div"); row.className = "row col";
     row.innerHTML = `<div class="k"><b>${esc(title)}</b><small id="ghint-${e}"></small></div>
-      <div style="display:flex;gap:6px"><select class="field" id="gsnd-${e}" style="flex:1" aria-label="Sound for ${esc(title)}">${s.sound_options.map(o => `<option value="${esc(o)}">${esc(label(o))}</option>`).join("")}</select>
-      <select class="field" id="gpri-${e}" style="flex:1" aria-label="Priority for ${esc(title)}">${prios.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("")}</select>
+      <div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="gsnd-${e}" aria-label="Sound for ${esc(title)}">${s.sound_options.map(o => `<option value="${esc(o)}">${esc(label(o))}</option>`).join("")}</select>
+      <select class="u-flex-1 field" id="gpri-${e}" aria-label="Priority for ${esc(title)}">${prios.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("")}</select>
       <button class="btn sec" type="button" id="gtry-${e}" aria-label="Send a test notification">▶</button></div>`;
     box.appendChild(row);
     $("gpri-" + e).addEventListener("change", () => prioHint(m.state.data, e));

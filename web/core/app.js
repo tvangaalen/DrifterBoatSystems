@@ -122,7 +122,7 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => setT
 const themeSeg = () => `<div class="seg" role="group" aria-label="Theme">${THEMES.map(([k, l]) => `<button type="button" data-theme-btn="${k}" aria-pressed="${getTheme() === k}">${l}</button>`).join("")}</div>`;
 document.addEventListener("click", e => { const b = e.target.closest("[data-theme-btn]"); if (b) setTheme(b.dataset.themeBtn); });
 $("themeBtn").addEventListener("click", () => sheet(`<h3 id="dlgTitle">Display</h3><p>Auto follows the iPhone or iPad (light or dark). Night is dim red on black, to keep your night vision.</p>
-  <div style="margin-top:14px">${themeSeg()}</div><div class="acts"><button class="btn" data-close>Done</button></div>`));
+  <div class="u-mt-14">${themeSeg()}</div><div class="acts"><button class="btn" data-close>Done</button></div>`));
 
 // Runs a command: busy state on the control, toast with the result, then a fresh read from the server.
 async function run(m, el, fn, okMsg) {
@@ -172,23 +172,33 @@ function supState(s) {
     down: `<span class="badge bad">not running</span>`, failed: `<span class="badge bad">failed · next try in ${dur(s.next_try_in)}</span>`,
     held: `<span class="badge warn">on hold</span>`}[s.state] || `<span class="badge">${esc(s.state)}</span>`;
 }
+// Alerts: the gateway pushes a message (Pushover) when a system is down for a few minutes, and when it is back.
+function alertsCard(a) {
+  const st = !a.configured ? `Not set up: put the Pushover keys ({"token": "…", "user": "…"}) in ${esc(a.file)}, then restart Drifter.`
+    : a.error ? `<span class="badc">Last alert failed: ${esc(a.error)}</span>`
+    : a.down.length ? `<span class="badc">Down now: ${esc(a.down.join(", "))}</span>` : `<span class="good">Ready</span>`;
+  return `<h2 class="sec">Alerts</h2><div class="card pad"><p class="u-m-0-2-10 hint">A push message when a system has been down for ${esc(a.after_min)} minutes, and when it is back. ${st}</p>
+    <button class="btn sec" type="button" id="sysAlertTest" ${a.configured ? "" : "disabled"}>Send test</button></div>`;
+}
+
 // "Backup keys and tokens": the gateway copies the key files to the back-up folder on the boat PC (tools/backup.py), only
 // when the user presses it. The card says where to and when it last happened.
 function backupCard(b) {
   return `<h2 class="sec">Keys and tokens</h2><div class="card pad"><button class="btn sec" type="button" id="sysBackup">Backup keys and tokens</button>
-    <p class="hint" style="margin:10px 2px 0">Copies the Pushover, noforeignland.com, EZVIZ and washer keys (${esc(b.count)} files) to ${esc(b.dest)} on the boat PC,
+    <p class="u-m-10-2-0 hint">Copies the Pushover, noforeignland.com, EZVIZ and washer keys (${esc(b.count)} files) to ${esc(b.dest)} on the boat PC,
     replacing the previous copy. ${b.last ? `Last copied ${esc(dayTime(b.last))}.` : "Not copied yet."}</p></div>`;
 }
 async function renderSystem(el) {
-  el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="hint" style="margin:10px 2px 0">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p></div>
+  el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="u-m-10-2-0 hint">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p></div>
     <h2 class="sec">Systems</h2><div class="card"><div class="rows" id="sysRows"><div class="empty">Loading…</div></div></div>
     <div id="sysEvWrap" hidden><h2 class="sec">Supervisor events</h2><div class="card"><div class="log" id="sysEvents"></div></div></div>
-    <div id="sysOffWrap" hidden><h2 class="sec">Switch off</h2><div class="card pad"><p class="hint" style="margin:0 0 12px">Stops every system's server and this app's server on the boat PC. Switches, chargers and the camera stay as they are. Start everything again with the <b>Drifter Boat Systems</b> icon on the boat PC's desktop.</p>
+    <div id="sysOffWrap" hidden><h2 class="sec">Switch off</h2><div class="card pad"><p class="u-m-0-0-12 hint">Stops every system's server and this app's server on the boat PC. Switches, chargers and the camera stay as they are. Start everything again with the <b>Drifter Boat Systems</b> icon on the boat PC's desktop.</p>
       <button class="btn danger" type="button" id="sysOff">${icon("off")} Switch all systems off</button></div></div>
+    <div id="sysAlertsWrap"></div>
     <div id="sysBackupWrap"></div>
-    <h2 class="sec">Help</h2><div class="card pad"><a class="btn sec" href="manual.html">${icon("ext")} Manual</a><p class="hint" style="margin:10px 2px 0">What every page shows and does.</p></div>
-    <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="hint" style="margin:0">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's local certificate (the same one used for Energy, Anchor watch and BoatGuard).</p></div>
-    <p class="hint" style="text-align:center;margin:18px 0" id="sysVer"></p>`;
+    <h2 class="sec">Help</h2><div class="card pad"><a class="btn sec" href="manual.html">${icon("ext")} Manual</a><p class="u-m-10-2-0 hint">What every page shows and does.</p></div>
+    <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="u-m-0 hint">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's own certificate authority (Mastervolt Local CA) once; the manual says how.</p></div>
+    <p class="u-ta-center u-m-18-0 hint" id="sysVer"></p>`;
   el.onclick = e => {
     const b = e.target.closest("[data-restart]"); if (b) restartModule(b.dataset.restart, b);
     const l = e.target.closest("[data-log]");
@@ -198,6 +208,7 @@ async function renderSystem(el) {
     }
     if (e.target.closest("#sysOff")) switchAllOff(e.target.closest("#sysOff"));
     if (e.target.closest("#sysBackup")) backupKeys(e.target.closest("#sysBackup"));
+    if (e.target.closest("#sysAlertTest")) alertTest(e.target.closest("#sysAlertTest"));
   };
   await refreshSystem();
   clearInterval(sysTimer); sysTimer = setInterval(() => { if (current === "system" && !document.hidden) refreshSystem(); else if (current !== "system") clearInterval(sysTimer); }, 5000);
@@ -212,20 +223,21 @@ async function refreshSystem() {
     const name = SUP_NAME[m.id] || m.id, s = sup && sup.modules[name];
     const st = m.state.err ? `<span class="badc">Not reachable</span><small>${esc(m.state.err.message)}</small>`
       : m.state.data ? `<span class="good">Connected</span><small>${u && u.ms != null ? `${u.ms} ms · ` : ""}${hms(m.state.t)}</small>` : "–";
-    return `<div class="row col"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+    return `<div class="row col"><div class="u-d-flex u-jc-between u-gap-12 u-ai-start">
         <div class="k"><b>${esc(m.title)}</b>${c ? `<a href="${esc(c)}" target="_blank" rel="noopener" class="hint">Open classic page ↗</a>` : ""}</div><div class="v">${st}</div></div>
-      ${s ? `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">${supState(s)}
-        <span class="hint" style="flex:1;min-width:120px">${s.last_event ? `${esc(dayTime(s.last_event.t))} ${esc(s.last_event.text)}` : ""}</span>
-        <span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="${name}">Show log</button>
+      ${s ? `<div class="u-d-flex u-jc-between u-gap-10 u-ai-center u-fw-wrap">${supState(s)}
+        <span class="u-flex-1 u-minw-120 hint">${s.last_event ? `${esc(dayTime(s.last_event.t))} ${esc(s.last_event.text)}` : ""}</span>
+        <span class="u-d-flex u-gap-8"><button class="btn sec sm" type="button" data-log="${name}">Show log</button>
         <button class="btn sec sm" type="button" data-restart="${name}" ${s.busy || s.held || s.state === "starting" ? "disabled" : ""}>${icon("refresh")} Restart</button></span></div>` : ""}</div>`;
   }).join("") + (sup && sup.error ? `<div class="row"><span class="badc">${esc(sup.error)}</span></div>` : "")
     + (sup ? `<div class="row"><div class="k"><b>Drifter</b><span class="hint">this app's server on the boat PC${sup.drifterd ? ` · service drifterd ${esc(sup.drifterd.version)}, running since ${esc(dayTime(sup.drifterd.started))}` : ""}</span></div>
-        <span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="gateway">Show log</button>${sup.drifterd ? `<button class="btn sec sm" type="button" data-log="drifterd">Service log</button>` : ""}</span></div>`
+        <span class="u-d-flex u-gap-8"><button class="btn sec sm" type="button" data-log="gateway">Show log</button>${sup.drifterd ? `<button class="btn sec sm" type="button" data-log="drifterd">Service log</button>` : ""}</span></div>`
     : `<div class="row"><span class="hint">The supervisor is off: servers are not restarted automatically.</span></div>`);
   $("sysEvWrap").hidden = !sup || !sup.events.length;
   $("sysOffWrap").hidden = !sup; $("sysOff").disabled = !!(sup && sup.shutdown && sup.shutdown.state === "running");
   if (sup) $("sysEvents").innerHTML = sup.events.slice().reverse().slice(0, 30).map(e => `<div class="${e.kind === "bad" ? "bad" : e.kind === "warn" ? "warn" : ""}"><time>${esc(dayTime(e.t))}</time><span class="msg"><b>${esc(e.module)}</b> ${esc(e.text)}</span></div>`).join("");
   const busy = $("sysBackup") && $("sysBackup").disabled;           // never replace the button while it is copying
+  if ($("sysAlertsWrap") && !($("sysAlertTest") && $("sysAlertTest").disabled)) $("sysAlertsWrap").innerHTML = sup && sysInfo.alerts ? alertsCard(sysInfo.alerts) : "";
   if ($("sysBackupWrap") && !busy) $("sysBackupWrap").innerHTML = sup && sysInfo.backup ? backupCard(sysInfo.backup) : "";
   $("sysVer").textContent = `Drifter Boat Systems ${sysInfo ? "v" + sysInfo.version : ""}`;
 }
@@ -235,6 +247,11 @@ async function restartModule(name, btn) {
   try { await run(null, btn, () => fetch("api/supervisor/restart", {method: "POST", headers: {"Content-Type": "application/json", "X-Drifter-Request": "1"}, body: JSON.stringify({module: name})})
     .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`); return j; }), `Restarting ${m ? m.title : name}…`); }
   catch (e) {}
+  refreshSystem();
+}
+
+async function alertTest(btn) {
+  try { await run(null, btn, () => sysPost("api/alerts/test", {}), "Test alert sent: check your phone"); } catch (e) {}
   refreshSystem();
 }
 
@@ -277,14 +294,14 @@ async function switchAllOff(btn) {
   const msg = failed && failed.length ? `Not everything could be shut down (${failed.map(n => `${n}: ${last.failed[n]}`).join("; ")}). The others are off. Press OK to close the application.`
     : last && last.state === "done" || (last && last.stopped.length >= last.total) ? "All systems have been shut down. Press OK to close the application."
     : "Drifter no longer answers, so not every system could be confirmed off. Press OK to close the application.";
-  await sheet(`<h3 id="dlgTitle">${failed && failed.length ? "Partly shut down" : "Shut down"}</h3><p style="color:var(--fg)">${esc(msg)}</p><div class="acts"><button class="btn" data-value="ok" data-default>OK</button></div>`);
+  await sheet(`<h3 id="dlgTitle">${failed && failed.length ? "Partly shut down" : "Shut down"}</h3><p class="u-c-fg">${esc(msg)}</p><div class="acts"><button class="btn" data-value="ok" data-default>OK</button></div>`);
   closeApp();
 }
 function closeApp() {
   try { window.close(); } catch (e) {}
   // Browsers only let a page close a window that a script opened; otherwise (and in a home-screen app) leave a quiet page.
   setTimeout(() => { document.title = "Drifter Boat Systems (off)";
-    document.body.innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:var(--bg);color:var(--fg)"><div><h2 style="margin:0 0 8px">Drifter is switched off</h2><p style="color:var(--muted);margin:0">You can close this tab or app now. Start the systems again with the Drifter Boat Systems icon on the boat PC.</p></div></div>`; }, 300);
+    document.body.innerHTML = `<div class="u-minh-100vh u-d-flex u-ai-center u-jc-center u-p-24 u-ta-center u-bg-bg u-c-fg"><div><h2 class="u-m-0-0-8">Drifter is switched off</h2><p class="u-c-muted u-m-0">You can close this tab or app now. Start the systems again with the Drifter Boat Systems icon on the boat PC.</p></div></div>`; }, 300);
 }
 
 function start() {

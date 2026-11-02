@@ -56,3 +56,12 @@ test("Backup keys and tokens sends one request and says what it copied", async (
   await expect(page.locator("#toast")).toContainText("files copied");
   expect(posts.map(p => p.url)).toEqual(["/api/backup-keys"]);
 });
+
+test("Alerts: Send test sends one request", async ({ page }) => {
+  const posts: Posted[] = [];
+  await setUp(page, { posts });
+  await open(page, "#system", null);
+  await page.locator("#sysAlertTest").click();
+  await expect(page.locator("#toast")).toContainText("Test alert sent");
+  expect(posts.map(p => p.url)).toEqual(["/api/alerts/test"]);
+});

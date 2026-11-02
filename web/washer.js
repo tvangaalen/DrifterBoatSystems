@@ -46,9 +46,9 @@ const m = {
   },
   tile() {
     const d = m.state.data;
-    if (offline() || !d) return `<div class="big" style="font-size:22px">Offline</div><div class="line">${lastSeen ? `Last seen ${hm(lastSeen)}` : esc(m.state.err ? m.state.err.message : "")}</div>`;
+    if (offline() || !d) return `<div class="u-fs-22 big">Offline</div><div class="line">${lastSeen ? `Last seen ${hm(lastSeen)}` : esc(m.state.err ? m.state.err.message : "")}</div>`;
     const s = display(d), act = ACTIVE.includes(Number(d.status)) || Number(d.status) === 26, sc = d.schedule;
-    return `<div class="big" style="font-size:22px">${esc(s.text)}${act && d.left_time != null ? ` <small>· ${d.left_time} min left</small>` : ""}</div>
+    return `<div class="u-fs-22 big">${esc(s.text)}${act && d.left_time != null ? ` <small>· ${d.left_time} min left</small>` : ""}</div>
       <div class="line">${esc(d.mode_text || "")}${sc && sc.status === "pending" ? ` · starts ${hm(sc.start_at)}` : ""}</div>
       <div class="minis"><div class="mini"><div class="l">Temperature</div><div class="n">${d.temperature == null ? "–" : d.temperature === 0 ? "Cold" : d.temperature + " °C"}</div></div>
       <div class="mini"><div class="l">Spin</div><div class="n">${d.spin ?? "–"}</div></div><div class="mini"><div class="l">Ready at</div><div class="n">${act && d.left_time != null ? hm(Date.now() + d.left_time * 60000) : "–"}</div></div></div>`;
@@ -61,25 +61,25 @@ const m = {
         <div class="stats" id="wStats"></div>
         <div class="card pad"><div class="btns eq">
           <button class="btn" id="wStart" type="button">Start</button><button class="btn sec" id="wPause" type="button">Pause</button></div>
-          <div class="btns eq" style="margin-top:8px"><button class="btn sec" id="wOn" type="button">Power on</button><button class="btn sec" id="wOff" type="button">Power off</button></div>
-          <p class="hint" id="wMsg" style="margin:10px 2px 0"></p></div>
+          <div class="u-mt-8 btns eq"><button class="btn sec" id="wOn" type="button">Power on</button><button class="btn sec" id="wOff" type="button">Power off</button></div>
+          <p class="u-m-10-2-0 hint" id="wMsg"></p></div>
         <div class="card"><div class="hd"><h3>Diagnostics</h3><span id="wDiagSum"></span>
           <button class="iconbtn" type="button" id="wRefresh" aria-label="Read the washer now">${icon("refresh")}</button></div>
           <div class="rows" id="wChecks"><div class="empty">Loading…</div></div>
-          <div class="stats" id="wInfo" style="margin:4px 16px 12px"></div>
-          <div class="btns" style="padding:0 16px 14px"><button class="btn sec sm" id="wDiag" type="button">${icon("refresh")} Recheck</button>
+          <div class="u-m-4-16-12 stats" id="wInfo"></div>
+          <div class="u-p-0-16-14 btns"><button class="btn sec sm" id="wDiag" type="button">${icon("refresh")} Recheck</button>
             <a class="btn sec sm" href="api/washer/diagnostics/export" download="viomi_diagnostics.json">Export</a></div></div>
       </div>
       <div class="stack">
         <div class="card"><div class="hd"><h3>Program</h3></div><div class="rows">
-          <div class="row"><span class="k">Program</span><select class="field" id="wProg" style="max-width:62%">${PROGRAMS.map(([v, n]) => `<option value="${v}">${esc(n)}</option>`).join("")}</select></div>
+          <div class="row"><span class="k">Program</span><select class="u-maxw-62pc field" id="wProg">${PROGRAMS.map(([v, n]) => `<option value="${v}">${esc(n)}</option>`).join("")}</select></div>
           <div class="row"><span class="k">Temperature</span><select class="field" id="wTemp"></select></div>
           <div class="row"><span class="k">Rinses</span><select class="field" id="wRinse"></select></div>
           <div class="row"><span class="k">Spin <small>set by the program</small></span><span class="v" id="wSpin">–</span></div>
           <div class="row"><span class="hint" id="wSetMsg"></span><button class="btn" id="wSet" type="button">Set</button></div></div></div>
         <div class="card"><div class="hd"><h3>Schedule</h3></div><div class="rows">
           <div id="wSchedEdit"><div class="row"><select class="field" id="wSchedMode" aria-label="Schedule type"><option value="finish">Finish at</option><option value="start">Start at</option></select>
-            <span style="display:flex;align-items:center;gap:4px"><select class="field" id="wSchedH" aria-label="Hour">${Array.from({length: 24}, (_, i) => `<option>${D.pad(i)}</option>`).join("")}</select>:<select class="field" id="wSchedM" aria-label="Minutes">${Array.from({length: 12}, (_, i) => `<option>${D.pad(i * 5)}</option>`).join("")}</select></span></div>
+            <span class="u-d-flex u-ai-center u-gap-4"><select class="field" id="wSchedH" aria-label="Hour">${Array.from({length: 24}, (_, i) => `<option>${D.pad(i)}</option>`).join("")}</select>:<select class="field" id="wSchedM" aria-label="Minutes">${Array.from({length: 12}, (_, i) => `<option>${D.pad(i * 5)}</option>`).join("")}</select></span></div>
             <div class="row"><span class="hint">Uses the program set on the washer now. The washer must be on and idle.</span><button class="btn" id="wSched" type="button">Schedule</button></div></div>
           <div class="row" id="wSchedSum" hidden><span class="k" id="wSchedText"></span><button class="btn sec sm" id="wSchedCancel" type="button">Cancel</button></div></div></div>
       </div>
@@ -112,7 +112,7 @@ const m = {
   },
   render() {
     const down = m.state.err && !offline() ? D.downCard(m) : "";
-    $("wDown").innerHTML = down ? down + '<div style="height:12px"></div>' : "";
+    $("wDown").innerHTML = down ? down + '<div class="u-h-12"></div>' : "";
     const d = lastGood;
     if (offline() || !d) {
       $("wHero").className = "hero warn"; $("wHeroT").textContent = offline() ? "Washer offline" : "Not connected";
@@ -175,9 +175,9 @@ function renderDiag() {
     <small>${esc(c.detail)}</small></div></div>`;
   const checks = diag.checks || [], ok = checks.filter(c => c.ok), open = $("wChecks").querySelector("details[open]") != null;
   $("wChecks").innerHTML = checks.filter(c => !c.ok).map(row).join("") +   // problems first and always visible; passed checks folded
-    (ok.length ? `<details class="row col" ${open ? "open" : ""}><summary class="k" style="cursor:pointer;min-height:28px"><span class="good">✓</span> ${ok.length} checks OK</summary>${ok.map(row).join("")}</details>` : "");
+    (ok.length ? `<details class="row col" ${open ? "open" : ""}><summary class="u-cur-pointer u-minh-28 k"><span class="good">✓</span> ${ok.length} checks OK</summary>${ok.map(row).join("")}</details>` : "");
   $("wInfo").innerHTML = [["Controller", diag.controller_version], ["Uptime", diag.uptime], ["Washer", diag.washer_ip], ["PC", diag.pc_ip], ["Model", diag.model || "unknown"], ["Firmware", diag.firmware || "unknown"]]
-    .map(([l, v]) => `<div class="stat"><div class="l">${l}</div><div class="s" style="color:var(--fg);font-weight:600;font-size:14px">${esc(v ?? "–")}</div></div>`).join("");
+    .map(([l, v]) => `<div class="stat"><div class="l">${l}</div><div class="u-c-fg u-fwt-600 u-fs-14 s">${esc(v ?? "–")}</div></div>`).join("");
 }
 function renderEvents() {
   $("wLog").innerHTML = events.length ? events.map(e => `<div class="${/FAIL|BLOCKED|OFFLINE/.test(e.event + e.detail) ? "bad" : ""}"><time>${esc(e.time)}</time>

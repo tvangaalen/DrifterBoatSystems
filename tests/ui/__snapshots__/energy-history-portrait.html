@@ -8,20 +8,20 @@
 <button class="btn sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device">Sound off</button>
 </div>
 <section data-page="power"><div id="eDown"></div>
-<div class="seg" role="tablist" style="margin:4px 0 14px;max-width:460px" id="eViews">
+<div class="u-m-4-0-14 u-maxw-460 seg" role="tablist" id="eViews">
 <button type="button" data-view="now" aria-pressed="false">Now</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="true">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
 <div id="eNow" hidden="">
-<div class="card pad" style="margin-bottom:12px"><div class="btns eq"><button class="btn sec" type="button" data-mode="motor" aria-pressed="false">Motor</button><button class="btn sec" type="button" data-mode="anchor" aria-pressed="false">Anchor</button><button class="btn sec" type="button" data-mode="marina" aria-pressed="false">Marina</button><button class="btn sec" type="button" data-mode="sail" aria-pressed="false">Sail</button></div>
-<p class="hint" style="margin:8px 2px 0">Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
+<div class="u-mb-12 card pad"><div class="btns eq"><button class="btn sec" type="button" data-mode="motor" aria-pressed="false">Motor</button><button class="btn sec" type="button" data-mode="anchor" aria-pressed="false">Anchor</button><button class="btn sec" type="button" data-mode="marina" aria-pressed="false">Marina</button><button class="btn sec" type="button" data-mode="sail" aria-pressed="false">Sail</button></div>
+<p class="u-m-8-2-0 hint">Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
 <div class="grid g2l">
 <div class="stack">
-<div class="card pad" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+<div class="u-d-flex u-gap-18 u-ai-center u-fw-wrap card pad">
 <div class="gauge" style="--p:72.5;--c:var(--batt)"><b>73<small>%</small></b></div>
-<div style="flex:1;min-width:180px"><div class="muted" style="font-weight:600;font-size:13px">House battery · MLI · 960 Ah</div>
-<div style="font-size:30px;font-weight:750;letter-spacing:-.02em" class="num">+145 W</div>
+<div class="u-flex-1 u-minw-180"><div class="u-fwt-600 u-fs-13 muted">House battery · MLI · 960 Ah</div>
+<div class="u-fs-30 u-fwt-750 u-ls-0_02em num">+145 W</div>
 <div class="muted">13.17 V · 11.0 A · charging · 21.5 °C</div>
-<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge wrap ok">Bulk allowed · Float when a cell reaches 3550 mV (now 3341 mV)</span></div>
-<div class="hint" style="margin-top:6px">Highest cell 3341 mV (BATTERY 1) · spread 18 mV · DALY 12 s old</div></div>
+<div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ok">Bulk allowed · Float when a cell reaches 3550 mV (now 3341 mV)</span></div>
+<div class="u-mt-6 hint">Highest cell 3341 mV (BATTERY 1) · spread 18 mV · DALY 12 s old</div></div>
 </div>
 <div class="stats s4">
 <div class="stat"><div class="l"><svg class="i"><use href="#i-sun"></use></svg> Solar</div><div class="n">261 W</div><div class="s">Bulk</div></div>
@@ -53,7 +53,7 @@
 <div class="row"><div class="k"><b>Charger House</b><small>Off</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger" checked=""><i></i></label></div>
 <div class="row"><div class="k"><b>AC IN support</b><small>Inverter helps when shore power is limited</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-support"><i></i></label></div>
 <div class="row"><div class="k"><b>AC input limit</b><small>Now 10 A · 3–15 A</small></div>
-<div style="display:flex;gap:6px;align-items:center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">10 A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
+<div class="u-d-flex u-gap-6 u-ai-center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">10 A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
 <button class="btn sm" type="button" id="ec-limit" disabled="">Set</button></div></div>
 </div></div>
 <div class="card"><div class="hd"><svg class="i"><use href="#i-engine"></use></svg><h3>Charging &amp; engine</h3></div><div class="rows">
@@ -61,9 +61,9 @@
 <div class="row"><div class="k"><b>Solar</b><small>SCM solar charger</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-solar" checked=""><i></i></label></div><div class="row"><div class="k"><b>Charger Start</b><small>Mass charger to start battery</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_start" checked=""><i></i></label></div><div class="row"><div class="k"><b>Charger Bowthruster</b><small>Mass charger to bow battery</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_bow"><i></i></label></div>
 <div class="row"><div class="k"><b>Engine ECU</b><small>Switching off stops a running engine</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-engine_ecu" checked=""><i></i></label></div>
 </div></div>
-<p class="hint" style="margin:0 4px">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
+<p class="u-m-0-4 hint">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
 </div>
-</div></div><div id="eBatt" hidden=""></div><div id="eHist" data-built="1"><div class="seg" id="eRange" style="max-width:460px;margin-bottom:12px"><button type="button" data-hours="6" aria-pressed="false">6 h</button><button type="button" data-hours="24" aria-pressed="true">24 h</button><button type="button" data-hours="72" aria-pressed="false">3 d</button><button type="button" data-hours="168" aria-pressed="false">7 d</button><button type="button" data-hours="744" aria-pressed="false">31 d</button></div>
+</div></div><div id="eBatt" hidden=""></div><div id="eHist" data-built="1"><div class="u-maxw-460 u-mb-12 seg" id="eRange"><button type="button" data-hours="6" aria-pressed="false">6 h</button><button type="button" data-hours="24" aria-pressed="true">24 h</button><button type="button" data-hours="72" aria-pressed="false">3 d</button><button type="button" data-hours="168" aria-pressed="false">7 d</button><button type="button" data-hours="744" aria-pressed="false">31 d</button></div>
 <div class="grid g2 charts" id="eCharts" data-built="1"><div class="card chartcard"><div class="hd"><h3>State of charge</h3><span class="muted">%</span></div>
 <div class="legend" id="eChSocLeg"><span><i style="background:#11c5c8"></i>Total</span><span><i style="background:#f4a631"></i>Battery 1</span><span><i style="background:#65d92f"></i>Battery 2</span><span><i style="background:#ff6262"></i>Battery 3</span></div><div class="chartwrap no-swipe"><canvas id="eChSoc" width="320" height="190"></canvas><div class="cross" hidden=""></div><div class="charttip" hidden=""></div></div></div><div class="card chartcard"><div class="hd"><h3>Sources</h3><span class="muted">W</span></div>
 <div class="legend" id="eChSrcLeg"><span><i style="background:#a78bfa"></i>Charger House</span><span><i style="background:#f4a631"></i>Alternator</span><span><i style="background:#65d92f"></i>Solar</span></div><div class="chartwrap no-swipe"><canvas id="eChSrc" width="320" height="190"></canvas><div class="cross" hidden=""></div><div class="charttip" hidden=""></div></div></div><div class="card chartcard"><div class="hd"><h3>DC consumers</h3><span class="muted">W</span></div>
@@ -73,13 +73,13 @@
 <h2 class="sec">Energy in this period</h2><div class="card pad" id="eContrib">
 <div class="ebars"><h4>Sources</h4><div class="ebar"><span class="el">Charger House</span><span class="eb"><i style="width:34.1%;background:#a78bfa"></i></span><span class="ev">1.16 kWh<small>49 W avg</small></span></div><div class="ebar"><span class="el">Alternator</span><span class="eb"><i style="width:100.0%;background:#f4a631"></i></span><span class="ev">3.42 kWh<small>142 W avg</small></span></div><div class="ebar"><span class="el">Solar</span><span class="eb"><i style="width:44.5%;background:#65d92f"></i></span><span class="ev">1.52 kWh<small>63 W avg</small></span></div><div class="ebar"><span class="el">Shore (AC in)</span><span class="eb"><i style="width:57.9%;background:#0b62c4"></i></span><span class="ev">1.98 kWh<small>82 W avg</small></span></div></div>
 <div class="ebars"><h4>DC consumers</h4><div class="ebar"><span class="el">Inverter</span><span class="eb"><i style="width:0.0%;background:#a78bfa"></i></span><span class="ev">0.00 kWh<small>0 W avg</small></span></div><div class="ebar"><span class="el">Charger Start</span><span class="eb"><i style="width:3.4%;background:#65d92f"></i></span><span class="ev">0.09 kWh<small>4 W avg</small></span></div><div class="ebar"><span class="el">Charger Bow</span><span class="eb"><i style="width:3.9%;background:#34d399"></i></span><span class="ev">0.10 kWh<small>4 W avg</small></span></div><div class="ebar"><span class="el">Engine ECU</span><span class="eb"><i style="width:12.5%;background:#f4a631"></i></span><span class="ev">0.33 kWh<small>14 W avg</small></span></div><div class="ebar"><span class="el">Alt. field</span><span class="eb"><i style="width:5.8%;background:#fb7185"></i></span><span class="ev">0.15 kWh<small>6 W avg</small></span></div><div class="ebar"><span class="el">Other DC</span><span class="eb"><i style="width:100.0%;background:#60a5fa"></i></span><span class="ev">2.62 kWh<small>109 W avg</small></span></div></div>
-<div class="ebars"><h4>Batteries</h4><div class="ebar"><span class="el">Battery 1</span><span class="ev" style="flex:1;text-align:left">charged 0.95 kWh · discharged 0.58 kWh</span></div><div class="ebar"><span class="el">Battery 2</span><span class="ev" style="flex:1;text-align:left">charged 0.95 kWh · discharged 0.58 kWh</span></div><div class="ebar"><span class="el">Battery 3</span><span class="ev" style="flex:1;text-align:left">charged 0.95 kWh · discharged 0.58 kWh</span></div></div>
-<p class="hint" style="margin:6px 0 0">01-11 16:28 – 16:28 · from the full-resolution history on the server · data for 97 % of the time</p></div>
+<div class="ebars"><h4>Batteries</h4><div class="ebar"><span class="el">Battery 1</span><span class="u-flex-1 u-ta-left ev">charged 0.95 kWh · discharged 0.58 kWh</span></div><div class="ebar"><span class="el">Battery 2</span><span class="u-flex-1 u-ta-left ev">charged 0.95 kWh · discharged 0.58 kWh</span></div><div class="ebar"><span class="el">Battery 3</span><span class="u-flex-1 u-ta-left ev">charged 0.95 kWh · discharged 0.58 kWh</span></div></div>
+<p class="u-m-6-0-0 hint">01-11 16:28 – 16:28 · from the full-resolution history on the server · data for 97 % of the time</p></div>
 <h2 class="sec">Reports and data</h2>
 <div class="grid g2l"><div class="stack">
 <div class="card"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Battery health report</h3></div><div class="rows">
 <div class="row"><div class="k"><small>Analyses the stored battery history: cell connection resistance, current sharing, alarms, cell balance, balancers and usage. Runs in a separate low-priority process on the boat PC.</small></div></div>
-<div class="row"><span class="k">Days to analyse</span><div style="display:flex;gap:8px;align-items:center"><label class="numf"><input class="field" type="number" id="eRepDays" min="1" max="365" step="1" value="7" inputmode="numeric"><span class="u">days</span></label>
+<div class="row"><span class="k">Days to analyse</span><div class="u-d-flex u-gap-8 u-ai-center"><label class="numf"><input class="field" type="number" id="eRepDays" min="1" max="365" step="1" value="7" inputmode="numeric"><span class="u">days</span></label>
 <button class="btn sm" type="button" id="eRepRun">Run report</button></div></div>
 <div class="row" id="eRepStatus"><span class="hint">No report yet</span></div></div>
 <div class="mdreport" id="eRepOut" hidden=""></div></div></div>
@@ -89,4 +89,4 @@
 <div class="row"><span class="k">File size</span><span class="v">1.77 GB<small>at full retention ~1.75 GB · reusable 20 MB</small></span></div>
 <div class="row"><span class="k">Free disk</span><span class="v">290.96 GB</span></div></div></div>
 <div class="card pad"><a class="btn sec" href="api/power/manual" target="_blank" rel="noopener"><svg class="i"><use href="#i-ext"></use></svg> Open the manual</a>
-<p class="hint" style="margin:8px 0 0">The complete MasterVolt user manual, in a new window.</p></div></div></div></div><div id="eSet" hidden=""></div></section>
+<p class="u-m-8-0-0 hint">The complete MasterVolt user manual, in a new window.</p></div></div></div></div><div id="eSet" hidden=""></div></section>

@@ -1,6 +1,6 @@
 # Mastervolt Energy - Manual
 
-**Version 3.0.0** - the complete guide to using, operating and maintaining the application. It explains what every screen
+**Version 3.0.1** - the complete guide to using, operating and maintaining the application. It explains what every screen
 shows, how every number is obtained, what the application does on its own (Float protection, Bluetooth recovery, history),
 which files it keeps, what to do when something goes wrong, and how the code is organised for whoever changes it next.
 
@@ -97,24 +97,15 @@ MOSFETs. These rules are built in and are the reason the code is cautious.
 ### 3.1 Requirements
 
 * Windows 10/11 with the **Mastervolt USB Link** attached and a **Bluetooth adapter**.
-* **Python 3.12 or newer** (the `py` launcher).
+* The python.org **Python 3.12** with the environment built from the repository's `uv.lock`
+  (`py -3.12 tools\sync_envs.py` in the Drifter Boat Systems checkout; never `pip install` by hand).
 * OpenSSL (on `PATH`, or in the FireDaemon OpenSSL folder) for the certificate set-up.
-* A phone or browser on the same private network.
-
-```powershell
-py -m pip install -r requirements.txt      # fastapi, uvicorn, hidapi, bleak
-```
 
 ### 3.2 Folders
 
-Keep two copies if you develop on the boat PC (the arrangement used on this boat):
-
-* the **source** folder (here: in Google Drive) holds the code and Git history;
-* the **live** folder (`C:\Temp\mastervoltproject`) is what the server runs from. It holds the real `user_settings.json`, the
-  history database `data\history.sqlite3`, `backups\`, `certs\` and `logs\`.
-
-Never run the server from a cloud-synchronised folder: the database is hundreds of megabytes and changes constantly. Section 8.4
-describes how code gets from the source to the live folder.
+* The code: `C:\Drifter\modules\energy` (a git checkout of Drifter Boat Systems; never edited by hand).
+* The runtime files: `C:\DrifterData\energy` — `user_settings.json`, the history database `data\history.sqlite3`,
+  `backups\` and `logs\`. The CA stays in `certs\` of the code folder.
 
 ### 3.3 HTTPS and the phone
 
@@ -130,28 +121,12 @@ and trust) is in `docs/local-https.md`. This server itself serves plain HTTP on 
 HTTP on 127.0.0.1:8000 under the Drifter module contract: only the Drifter gateway on this PC calls it, with the token the
 service gives both (`X-Drifter-Token`; every request without it but `GET /health` is refused). The phone reaches the
 dashboard through the Drifter app, which serves HTTPS with a certificate from the same Mastervolt Local CA. The CA stays in
-`certs\` of this folder; never remove it. The rest of this section describes the stand-alone launchers.
+`certs\` of this folder; never remove it. There is no other way to start it: never start a second server by hand, it would compete for the USB Link and the
+Bluetooth radio.
 
-Double-click **`start_mastervolt_server.cmd`** (or run it from PowerShell). A console window opens, prepares the certificates,
-and starts the server on `https://<private address>:8000`, printing the address. Leave the window open: it is the server.
-Everything the application logs appears there. Stop it with **Ctrl+C**.
-
-* After a stop or crash, simply start it again; nothing needs repairing. Float protection is not active while the server is
-  stopped.
-* A server that "does not respond" while its process is alive: run `netstat -ano | findstr :8000`. No `LISTENING` line means it
-  is stuck shutting down (an open browser connection can hold it); end the process and start it again. The launcher already limits
-  that wait (`--timeout-graceful-shutdown 5`).
-* `run.ps1` starts a plain-HTTP development server on all interfaces. Use it only on a trusted network.
-
-**Starting automatically when the PC boots.** `tools\install_autostart.ps1` registers a scheduled task that starts the server 30 seconds
-after every boot, before anybody has logged on. Run it once from an **elevated** PowerShell (Run as administrator) in the folder the
-server runs from. Windows blocks unsigned scripts, so start it with `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\install_autostart.ps1` (this one command only; the system policy stays as it is); it asks for the Windows password of the account that runs the server and checks it before changing anything.
-The account matters: Python and its packages are installed for one user, so only that user can run the server. The password goes
-to Task Scheduler, which stores it protected; the script saves it nowhere. `-Status` shows the task and whether the server answers,
-`-Remove` removes the task. Two limits: a boot-time task has no desktop, so there is no console window (look at `logs\`), and Windows
-may refuse Bluetooth or USB access to a session without a desktop - after the first reboot check that the BMS page shows the
-batteries connected. If it does not, remove the task and start the server at log-on instead (a task with an *At log on* trigger, or a
-shortcut in the Startup folder).
+* After a stop or crash the service starts it again within a minute; Float protection is not active while it is stopped.
+* A server that "does not respond" while its process is alive: `netstat -ano | findstr :8000`. No `LISTENING` line means it
+  is stuck shutting down; *Restart* it from the System page. It limits that wait itself (`timeout_graceful_shutdown=5`).
 
 Before the first start after changing control code, check the mappings:
 
@@ -497,7 +472,6 @@ silently: the first occurrence of each problem is logged with its traceback, rep
 
 | Path | What it is | In Git? |
 |---|---|---|
-| `app.py` | entry point for the launchers (`uvicorn app:app`) | yes |
 | `mastervolt/` | the application package | yes |
 | `control_maps.json` | the verified on/off control mappings | yes |
 | `mastershunt_config_maps.json` | battery type/capacity fields found by name (written at start-up) | yes |
@@ -511,7 +485,7 @@ silently: the first occurrence of each problem is logged with its traceback, rep
 | `tests\` | the hardware-free test suite and the golden files | yes |
 | `tools\` | diagnostic command-line tools | yes |
 | `docs\` | this manual, hardware notes, the verified field map, device schemas, archive | yes |
-| `start_mastervolt_server.cmd`, `run.ps1`, `setup_local_https.ps1`, `install_*_certificate.cmd` | launchers and certificate set-up | yes |
+| `setup_local_https.ps1`, `install_iphone_certificate.cmd`, `install_pc_certificate.cmd` | the Mastervolt Local CA and setting up a phone or the PC's browser to trust it | yes |
 
 Never commit or print `certs\*-key.pem`, `user_settings.json`, `backups\`, `data\*.sqlite3` or generated reports: the repository
 is public.
@@ -568,7 +542,7 @@ Nothing to do: leave the server window open. Open the app on the phone. If the s
 | `charger_house Bulk verify failed` in the Float status | the charger did not confirm Bulk (it may be off, or in another stage) | check the CombiMaster; the protection retries on the next resume |
 | History page shows old data | the server was stopped; or the page is cached | press **Update**; the server refreshes its cache every minute |
 | Page does not update after an upgrade | the phone still has the old version of the Drifter app | close and reopen the app |
-| The server window closed by itself | the process crashed, or was started from a tool that ended | start it again with `start_mastervolt_server.cmd` and look at `logs\server.log` |
+| Energy shows *Not reachable* | the server stopped or crashed | the Drifter service starts it again within a minute; look at `C:\DrifterData\energy\logs\` |
 
 ### 8.3 Bluetooth tuning
 
@@ -580,24 +554,10 @@ without measuring: they are the safety net against a hung Windows call.
 
 ### 8.4 Updating the live server
 
-The live folder is edited only by deployment. Procedure used on this boat:
-
-1. In the **source** folder: change, run `py -m tests.run_all`, commit.
-2. **Compare** the live code with the commit you last deployed; if the live folder differs, stop and import the differences first.
-3. **Back up** what you will overwrite to a sibling folder, `C:\Temp\mastervoltproject_pre_<version>_<timestamp>`.
-4. Copy the changed files: the `mastervolt` package for a code change (the page is the Drifter app's, deployed with it).
-   Never copy runtime files (`user_settings.json`, `data\`, `backups\`, `certs\`).
-5. Restart the server **only when Python changed**, and only when no battery control is running and Float is not latched
-   (`GET /api/bms` → `control_status.busy` is false; `GET /api/energy` → `high_soc_float_policy.float_latched` is false): a restart
-   pauses Float protection for the minute it takes.
-6. Verify: the version in `GET /api/version`, the balancers recovering, no errors in the console; push the commit to GitHub.
-
-**Rollback:** stop the server, copy the files from the backup folder back over the live folder, start it.
-
-Starting the server from an automation tool: create the process outside the tool's own process tree (for example through
-`Invoke-CimMethod Win32_Process Create` running `cmd.exe /c "C:\Temp\mastervoltproject\start_mastervolt_server.cmd"`), otherwise
-it can disappear when the tool's session ends. The launcher limits the graceful-shutdown wait to 5 s so an open browser
-connection cannot keep a stopping server alive.
+The server runs from the Drifter Boat Systems checkout `C:\Drifter`; deploying is `git pull` there and a restart from the
+app's System page, which first checks that no battery control runs and Float is not latched (a restart pauses Float
+protection for the minute it takes). The procedure, verification and rollback are in the Drifter runbook
+(`docs/RUNBOOK.md` of the repository, section 5).
 
 ### 8.5 Data care
 
@@ -700,7 +660,7 @@ development tools only; the server needs neither. Install them outside the proje
 
 ```powershell
 py -m pip install --target C:\Temp\mv_devtools black ruff
-$env:PYTHONPATH = "C:\Temp\mv_devtools"; py -m black mastervolt tests tools app.py; py -m ruff check mastervolt tests tools app.py
+$env:PYTHONPATH = "C:\Temp\mv_devtools"; py -m black mastervolt tests tools; py -m ruff check mastervolt tests tools
 ```
 
 Edit source files with an editor or a UTF-8-safe script. Do not edit them with Windows PowerShell 5.1 `Get-Content`/`Set-Content`:
@@ -726,7 +686,6 @@ All run from the project folder with the server **stopped**; the read-only ones 
 | `py -m tools.alpha_stop_charge_watch` | watch the Alpha Pro *Stop charge* fields while you change them in MasterView (read-only) |
 | `py -m tools.capture_hid --seconds 30` | print the raw HID reports from the Link (read-only) |
 | `py -m tools.reversible_write_test <device> --confirm-write` | **writes**: switches a charger, the ECU or Solar to the opposite state, verifies, restores |
-| `tools\install_autostart.ps1` | register (or `-Remove`, `-Status`) the scheduled task that starts the server at boot; needs an elevated PowerShell |
 | `tools\find_masterbus_usb.ps1`, `tools\ecu_capture_session.ps1` | find the USB Link; guided USBPcap capture of MasterAdjust |
 
 ---

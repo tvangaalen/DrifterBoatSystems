@@ -1,4 +1,4 @@
-"""The FastAPI application factory. The root `app.py` calls `create_app()` once for `uvicorn app:app`."""
+"""The FastAPI application factory. `python -m mastervolt` (`__main__.py`) calls `create_app()` once."""
 
 from __future__ import annotations
 
