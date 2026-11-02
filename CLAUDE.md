@@ -51,7 +51,9 @@ py -3.12 -m ruff check .; py -3.12 -m ruff check modules\energy   # lint (Master
 node --check web\app.js                      # and the other web\*.js files
 ```
 
-GitHub CI (`.github/workflows/ci.yml`) runs the same on every push, plus the privacy scan; check that it is green after pushing.
+GitHub CI (`.github/workflows/ci.yml`) runs the same on every push, plus the privacy scan. Do not wait for it after a push (about 5 minutes; the user's choice of 2026-11-02): run the full
+local suite before committing, push, carry on (deploy included), and check the run's result once at the end of the turn
+(`gh run list --limit 1`); a failed run also reaches the user by e-mail. Never skip CI or the privacy hook.
 
 Then the UI against the mocks (`drifter-mock`). `run_all.py` removes `__pycache__` folders afterwards.
 
