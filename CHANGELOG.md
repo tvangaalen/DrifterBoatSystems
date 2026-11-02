@@ -2,6 +2,10 @@
 
 ## 0.14
 
+### 0.14.1 — 2026-11-02
+
+- A restart from the app puts a module's new Python environment in place when `tools/sync_envs.py --into .venv-next` built one: the supervisor swaps it between stopping and starting. Only it can do that: the servers run in session 0, and a process of another logon session may not stop them (the first live switch failed that way, nothing changed). `sync_envs.py --swap <module>` now just asks the gateway for that restart (same pre-checks as the System page).
+
 ### 0.14.0 — 2026-11-02
 
 Refactoring phase 1: the foundation. No behaviour changes (every suite, including MasterVolt's golden tests, passes unchanged).

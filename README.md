@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.14.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.14.1 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
@@ -93,7 +93,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch_module.ps1 wash
 
 ## Development
 
-**Python environments.** Everything runs on the python.org Python 3.12, never on the Microsoft Store Python (that one hung at boot in session 0 and cannot be started through Win32_Process Create). `pyproject.toml` lists each module's packages as a dependency group (`energy`, `anchor`, `guard`, `washer`; the gateway is stdlib only) and `uv.lock` fixes every version. `py -3.12 tools\sync_envs.py` builds `.venv` (gateway) and `modules\<name>\.venv` from the lock, nothing else; on the boat PC: `--into .venv-next`, then `--swap <module>` (hold, stop, swap, the supervisor starts it again). To change a package: edit `pyproject.toml`, `py -3.12 -m uv lock`, run the tests, rebuild. Needs `py -3.12 -m pip install --user uv`.
+**Python environments.** Everything runs on the python.org Python 3.12, never on the Microsoft Store Python (that one hung at boot in session 0 and cannot be started through Win32_Process Create). `pyproject.toml` lists each module's packages as a dependency group (`energy`, `anchor`, `guard`, `washer`; the gateway is stdlib only) and `uv.lock` fixes every version. `py -3.12 tools\sync_envs.py` builds `.venv` (gateway) and `modules\<name>\.venv` from the lock, nothing else; on the boat PC: `--into .venv-next`, then `--swap <module>` (or Restart on the System page): the supervisor puts `.venv-next` in place between stopping and starting the module (only it can stop the servers in their session). To change a package: edit `pyproject.toml`, `py -3.12 -m uv lock`, run the tests, rebuild. Needs `py -3.12 -m pip install --user uv`.
 
 **Checks.** `tests\run_all.py` (every suite, each in its module's environment), `ruff` (`pyproject.toml`; MasterVolt keeps its own, stricter configuration), `node --check` on `web\*.js`. GitHub runs all of them on every push (`.github/workflows/ci.yml`, Windows, environments from the lock), plus the privacy scan.
 
