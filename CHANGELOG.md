@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.21
+
+### 0.21.0 — 2026-11-02
+
+Refactoring phase 5: documentation and operations.
+- **User manual in the app** (English, the user's choice): System → *Manual* opens `web/manual.html`, built from `docs/MANUAL.md` by `tools/build_manual.py` (MasterVolt's renderer, the app's stylesheet and theme, a "‹ Drifter" button back). It describes every page, the alarms, the safety questions and the System page.
+- **Runbook** (`docs/RUNBOOK.md`) and **developer guide** (`docs/DEVELOPER.md`); the README is a short overview linking to them.
+- **One CLAUDE.md**: the rules of MasterVolt and the anchor watch moved into the root CLAUDE.md; their own CLAUDE.md files are gone.
+- **Nightly back-up of the keys** (drifterd 1.3.0, `tools/backup.py`): at 03:30, only the Pushover, noforeignland.com, EZVIZ and washer keys (the user's choice: no positions, track or history), to `C:\DrifterBackups`, 7 daily and 4 weekly kept. The System page shows the newest back-up and a failed one, with its log.
+- `tools/verify_live.py` waits for the start-up states after a restart (no answer yet, "starting", not yet polled) instead of failing at once.
+- MasterVolt's leftover product photos are removed from `C:\Drifter`.
+
 ## 0.20
 
 ### 0.20.0 — 2026-11-02

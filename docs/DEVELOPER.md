@@ -89,6 +89,9 @@ environment by hand. Node (`package.json`: Playwright, TypeScript) is a developm
 - All colours are tokens in `app.css` per theme (light, dark, night, auto). Times are always 24-hour.
 - `sw.js` caches only the shell; `api/` is never cached. Bump `CACHE` with every release.
 - `npm run typecheck` (`tsc --checkJs`, JSDoc types, `web/types.d.ts` for browser facts) must stay at 0 errors.
+- The user manual is `docs/MANUAL.md`; `py -3.12 tools\build_manual.py` turns it into `web/manual.html` (System → *Manual*,
+  the app's theme, a "‹ Drifter" button back). `tests/test_manual.py` fails until the page is rebuilt. Change the manual with
+  every change a user can see.
 
 ## 5. Tests
 
