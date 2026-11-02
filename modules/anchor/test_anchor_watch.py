@@ -9,6 +9,7 @@ from unittest import mock
 
 from anchor_watch import AnchorWatch, InternetAIS, NoForeignLand, Pushover, StillAlive, TileCache, read_ais, dist_bearing_m, offset, HOLD_SOON_S
 from orca_reader import Store
+from common import pushover   # on sys.path through anchor_watch
 
 LAT, LON = 39.0, 1.5        # an arbitrary point at sea; the tests only use positions relative to it
 
@@ -708,7 +709,7 @@ class PushoverTest(unittest.TestCase):
         self.assertEqual(len(self.posts), 3); self.assertIsNone(self.p.last_error); self.assertEqual(self.events, [])
 
     def test_bad_key_is_not_retried_and_logged(self):
-        err = urllib.error.HTTPError("u", 400, "Bad Request", {}, io.BytesIO(b'{"errors":["application token is invalid"]}'))
+        err = pushover.PushoverError(400, "application token is invalid")
         self.p.alarm("drag", "Anchor drag", "x", 1000); self.run_queue([err])
         self.assertEqual(len(self.posts), 1); self.assertIn("application token is invalid", self.p.last_error)
         self.assertTrue(self.events and "not delivered" in self.events[0])

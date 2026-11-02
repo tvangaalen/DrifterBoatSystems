@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, Response
-import ipaddress
 import socket
+import sys
 import threading
 import os
 import json
@@ -8,7 +8,8 @@ import time
 from collections import deque
 from datetime import datetime, timedelta
 from pathlib import Path
-from urllib.parse import urlsplit
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # the repository root: common/ (shared with the Drifter gateway)
+from common import net, timefmt  # noqa: E402
 try:
     from miio.miot_device import MiotDevice
     MIIO_IMPORT_ERROR = None
@@ -20,7 +21,7 @@ except Exception as exc:
 DATA_DIR = Path(os.environ["DRIFTER_DATA"].strip()) / "washer" if os.environ.get("DRIFTER_DATA", "").strip() else Path(__file__).resolve().parent
 CONFIG_PATH = DATA_DIR / "viomi_config.json"
 EXPECTED_MODEL = "viomi.washer.w1"
-CONTROLLER_VERSION = "3.8-v59"
+CONTROLLER_VERSION = "3.8-v60"
 REQUEST_MARKER_HEADER = "X-Viomi-Request"
 
 CONFIG = {}
@@ -51,7 +52,7 @@ SCHEDULE_LAST_MONITOR_AT = 0.0
 
 def log_event(event, detail="", duration_ms=None):
     entry = {
-        "time": time.strftime("%H:%M:%S"),
+        "time": timefmt.hms(),
         "event": str(event),
         "detail": str(detail),
     }
@@ -720,30 +721,12 @@ def run_startup_checks():
     LAST_DIAGNOSTICS = result
     return result
 
-def _request_hostname():
-    host = (request.host or "").lower()
-    if host.startswith("["):
-        return host[1:host.find("]")]
-    return host.rsplit(":", 1)[0]
-
-def _host_allowed(hostname):
-    # Reject DNS-rebinding names: only IP literals, this PC's own names and
-    # explicitly configured names may address the controller.
-    try:
-        ipaddress.ip_address(hostname)
-        return True
-    except ValueError:
-        pass
-    own = socket.gethostname().lower()
-    allowed = {"localhost", own, own + ".local"}
-    allowed.update(str(h).lower() for h in (CONFIG.get("allowed_hosts") or []))
-    return hostname in allowed
-
 @app.before_request
 def reject_foreign_requests():
-    hostname = _request_hostname()
-    if not _host_allowed(hostname):
-        log_event("BLOCKED", f"Host {hostname} · {request.path}")
+    # Reject DNS-rebinding names: only IP literals, this PC's own names and
+    # explicitly configured names may address the controller.
+    if not net.host_allowed(request.host, CONFIG.get("allowed_hosts") or []):
+        log_event("BLOCKED", f"Host {net.request_host(request.host)} · {request.path}")
         return jsonify({"ok": False, "error": "Host not allowed"}), 403
 
     if request.method != "POST":
@@ -752,7 +735,7 @@ def reject_foreign_requests():
     # A custom header cannot be sent cross-site without a CORS preflight,
     # which this server never approves; the Origin check is a second line.
     origin = request.headers.get("Origin")
-    if origin and urlsplit(origin).netloc.lower() != (request.host or "").lower():
+    if not net.same_origin(origin, request.host):
         log_event("BLOCKED", f"Origin {origin} · {request.path}")
         return jsonify({"ok": False, "error": "Cross-origin request rejected"}), 403
     if request.headers.get(REQUEST_MARKER_HEADER) != "1":
@@ -978,11 +961,7 @@ def local_ip():
 def bind_address():
     """Only the Drifter gateway on this PC talks to the controller, so it listens on localhost. VIOMI_BIND may name
     another loopback or private (RFC 1918) address; never a public interface or all interfaces."""
-    addr = (os.environ.get("VIOMI_BIND") or "127.0.0.1").strip()
-    ip = ipaddress.ip_address(addr)
-    if not (ip.is_loopback or (ip.is_private and not ip.is_unspecified and not ip.is_link_local)):
-        raise SystemExit(f"VIOMI_BIND {addr}: only localhost or a private LAN address is allowed")
-    return addr
+    return net.check_bind(os.environ.get("VIOMI_BIND") or "127.0.0.1", "VIOMI_BIND")
 
 if __name__ == "__main__":
     host = bind_address()

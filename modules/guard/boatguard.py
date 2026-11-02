@@ -12,10 +12,11 @@ Arming goes through the EZVIZ cloud (pyezviz), using a saved session token: the 
 from __future__ import annotations
 
 import json, logging, os, re, subprocess, sys, threading, time
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[1]))  # the repository root: common/ (shared with the Drifter gateway)
+from common import logs, pushover, timefmt  # noqa: E402
 # Runtime files (settings, state, tokens, logs): next to the code, or in DRIFTER_DATA\guard when Drifter Boat Systems sets it.
 DATA = Path(os.environ["DRIFTER_DATA"].strip()) / "guard" if os.environ.get("DRIFTER_DATA", "").strip() else HERE
 CONFIG, STATE, TOKEN = DATA / "config.json", DATA / "state.json", DATA / "ezviz_token.json"
@@ -117,8 +118,6 @@ class Camera:
 class Pushover:
     """iPhone notifications via the Pushover API. Sent from a background thread with retries, so a slow or
     unreachable internet connection never holds up the poll loop or the camera."""
-    URL = "https://api.pushover.net/1/messages.json"
-
     def __init__(self, path: Path = PUSHOVER):
         self.path = path
 
@@ -137,15 +136,13 @@ class Pushover:
         if sound: data["sound"] = sound  # empty: the sound chosen in the Pushover app
         if priority == 2: data.update(retry=EMERGENCY_RETRY_S, expire=expire or EMERGENCY_EXPIRE_S)  # required by Pushover
         def post() -> bool:
-            import requests
             for attempt in range(5):
-                try:
-                    r = requests.post(self.URL, data=data, timeout=15)
-                    if r.status_code == 200: log.info("notification sent: %s", title); return True
-                    if 400 <= r.status_code < 500:  # wrong key/token: retrying won't help
-                        log.error("notification rejected by Pushover (%d): %s", r.status_code, r.json().get("errors")); return False
+                try: pushover.post("messages.json", data, "BoatGuard"); log.info("notification sent: %s", title); return True
+                except pushover.PushoverError as e:
+                    if e.code < 500:  # wrong key/token: retrying won't help
+                        log.error("notification rejected by Pushover (%d): %s", e.code, e.detail); return False
+                    err = e
                 except Exception as e: err = e
-                else: err = f"HTTP {r.status_code}"
                 time.sleep(min(60, 5 * 2 ** attempt))
             log.error("notification not sent after 5 tries: %s (%s)", title, err); return False
 
@@ -190,7 +187,7 @@ class Guard:
         except Exception: log.exception("notification failed")  # a notification problem must never stop the guard
 
     def hm(self, t: float) -> str:
-        return time.strftime("%H:%M", time.localtime(t))  # 24-hour clock
+        return timefmt.hm(t)
 
     def _apply(self, armed: bool, reason: str = "") -> bool:
         try: self.camera.set_armed(armed)
@@ -380,12 +377,7 @@ class Guard:
 
 
 def setup_logging() -> None:
-    (DATA / "logs").mkdir(parents=True, exist_ok=True)
-    fmt = logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%d %H:%M:%S")  # 24-hour clock
-    fh = RotatingFileHandler(DATA / "logs" / "boatguard.log", maxBytes=1_000_000, backupCount=5, encoding="utf-8")
-    hs = [fh] + ([logging.StreamHandler()] if sys.stderr else [])  # pythonw (scheduled task) has no console
-    for h in hs: h.setFormatter(fmt); log.addHandler(h)
-    log.setLevel(logging.INFO)
+    logs.setup(log, DATA / "logs" / "boatguard.log")  # pythonw (scheduled task) has no console: file only
 
 
 def login(cfg: dict) -> None:

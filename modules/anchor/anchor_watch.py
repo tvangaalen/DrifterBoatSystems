@@ -51,20 +51,24 @@ fetched by this PC and kept in tile_cache/, so
 areas viewed while online still show offline. Only tiles a page asks for are fetched; nothing is bulk-downloaded.
 """
 
-import argparse, asyncio, ipaddress, json, logging, math, os, queue, re, ssl, sys, threading, time, urllib.error, urllib.parse, urllib.request
+import argparse, asyncio, ipaddress, json, logging, math, os, queue, re, sys, threading, time, urllib.error, urllib.parse, urllib.request
 from datetime import datetime, timezone
 from collections import deque
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
 import websockets
 
 from orca_reader import AIS_PATH, CORE_SOURCE, KN, RAD, SENSORS_PATH, Store, devices_loop, stream_loop
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # the repository root: common/ (shared with the Drifter gateway)
+from common import logs, net, pushover   # noqa: E402
+from common.web import QuietServer as Server, tls_context, use_tls   # noqa: E402
+
 try: import winsound
 except ImportError: winsound = None
 
-VERSION = "1.17.0"
+VERSION = "1.17.1"
 HERE = Path(__file__).resolve().parent
 log = logging.getLogger("anchor")
 EARTH = 6371008.8
@@ -569,13 +573,12 @@ class Pushover:
     alarm checks. An emergency message (priority 2) repeats on the phone until it is acknowledged; its receipt is kept
     so it can be cancelled when the alarm clears, is silenced in the app, or the anchor is raised.
     """
-    API = "https://api.pushover.net/1"
     PRIORITY = {"drag": 2, "gps": 1, "core": 1, "depth": 1, "wind": 1, "ais": 1}   # 2 = emergency, 1 = high
     # Emergency: repeat every 30 s (Pushover's minimum) for up to 3 h (its maximum) until acknowledged in the app.
     # iOS caps one notification's sound at 30 s, so this is as close to "rings until I stop it" as a push can get.
     RETRY_S, EXPIRE_S = 30, 10800
     TEST_EXPIRE_S = 600                                                 # a forgotten test alarm stops after 10 min
-    KEY_RE = re.compile(r"^[A-Za-z0-9]{30}$")
+    KEY_RE = pushover.KEY_RE
     BACKOFF_S = (5, 15, 45)
 
     def __init__(self, cfg_file, page_url=None, on_event=None, start=True):
@@ -625,10 +628,7 @@ class Pushover:
         self.q.put(("send", None, {"title": "Anchor Watch test", "priority": 0, "timestamp": int(time.time()),
                                    "message": "Push alerts work. Anchor drag alarms arrive as emergency alerts that repeat until acknowledged."}))
 
-    def _post(self, path, fields):
-        req = urllib.request.Request(f"{self.API}/{path}", data=urllib.parse.urlencode(fields).encode(), method="POST",
-                                     headers={"User-Agent": f"OrcaCore2-AnchorWatch/{VERSION}"})
-        with urllib.request.urlopen(req, timeout=15) as r: return json.loads(r.read() or b"{}")
+    def _post(self, path, fields): return pushover.post(path, fields, f"OrcaCore2-AnchorWatch/{VERSION}")
 
     def _do(self, op, key, msg):
         if op == "cancel":
@@ -654,10 +654,8 @@ class Pushover:
         if not self.configured: return
         for attempt in range(len(self.BACKOFF_S) + 1):
             try: self._do(op, key, msg); self.last_error = None; return
-            except urllib.error.HTTPError as e:
-                try: detail = "; ".join(json.loads(e.read()).get("errors", [])) or e.reason
-                except Exception: detail = e.reason
-                self.last_error = f"Pushover refused: HTTP {e.code} {detail}"
+            except pushover.PushoverError as e:
+                self.last_error = str(e)
                 if e.code < 500: break                         # bad key or request: retrying will not help
             except Exception as e: self.last_error = f"{type(e).__name__}: {e}"
             if attempt < len(self.BACKOFF_S): time.sleep(self.BACKOFF_S[attempt])
@@ -1705,20 +1703,9 @@ def make_handler(watch, tiles):
     return Handler
 
 
-class Server(ThreadingHTTPServer):
-    daemon_threads = True
-
-    def handle_error(self, request, client_address):
-        # Phones dropping connections and clients that do not trust the certificate are normal, not crashes
-        if isinstance(sys.exc_info()[1], (ssl.SSLError, ConnectionError, TimeoutError)): return
-        super().handle_error(request, client_address)
-
-
 def check_bind(addr):
     """Only loopback or a private (RFC 1918) LAN address: the watch must never listen on a public interface."""
-    ip = ipaddress.ip_address(addr)
-    if not (ip.is_loopback or (ip.is_private and not ip.is_unspecified and not ip.is_link_local)):
-        raise SystemExit(f"--bind {addr}: only localhost or a private LAN address (10.x, 172.16-31.x, 192.168.x) is allowed")
+    net.check_bind(addr, "--bind")
 
 
 def main():
@@ -1745,7 +1732,7 @@ def main():
     a = ap.parse_args()
     check_bind(a.bind); a.web_bind = a.web_bind or a.bind; check_bind(a.web_bind)
     if bool(a.certfile) != bool(a.keyfile): ap.error("--certfile and --keyfile go together")
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S")
+    logs.setup()
 
     store = Store(); watch = AnchorWatch(store, a.state, diag_dir=a.recordings)
     page_url = a.app_url or f"{'https' if a.certfile else 'http'}://{a.web_bind}:{a.port}/"
@@ -1766,11 +1753,7 @@ def main():
     log.info("Internet AIS: %s", "aisstream.io ready" if watch.netais.configured else f"off ({Path(a.aisstream).name} missing or invalid)")
     server = Server((a.web_bind, a.port), make_handler(watch, TileCache(a.tile_cache)))
     scheme = "http"
-    if a.certfile:
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-        ctx.load_cert_chain(a.certfile, a.keyfile)
-        # handshake in the request thread (first read), not in accept(), so one slow client cannot block the others
-        server.socket = ctx.wrap_socket(server.socket, server_side=True, do_handshake_on_connect=False); scheme = "https"
+    if a.certfile: use_tls(server, tls_context(a.certfile, a.keyfile)); scheme = "https"
     threading.Thread(target=server.serve_forever, daemon=True).start()
     threading.Thread(target=sound_loop, args=(watch,), daemon=True).start()
     log.info("Anchor Watch %s: API %s://%s:%d/, network GPS on %s (Core %s)", VERSION, scheme, a.web_bind, a.port, a.bind, a.host)

@@ -15,12 +15,16 @@ Stdlib only.
 """
 from __future__ import annotations
 
-import argparse, http.client, ipaddress, json, logging, re, socket, ssl, sys, threading, time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import argparse, http.client, json, logging, re, ssl, sys, threading, time
+from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlsplit
 
-VERSION = "0.10.0"
+from common import logs
+from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
+from common.web import QuietServer as Server, tls_context, use_tls
+
+VERSION = "0.11.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -81,26 +85,8 @@ DEFAULT_CONFIG = {
 }
 
 
-def check_bind(addr: str) -> None:
-    """Only loopback or a private LAN address: the gateway has no login and must never listen on a public interface."""
-    ip = ipaddress.ip_address(addr)
-    if not (ip.is_loopback or (ip.is_private and not ip.is_unspecified and not ip.is_link_local)):
-        raise SystemExit(f"bind {addr}: only localhost or a private LAN address (10.x, 172.16-31.x, 192.168.x) is allowed")
-
-
 def route_allowed(module: str, method: str, path: str) -> bool:
     return any(m == method and rx.match(path) for m, rx in COMPILED.get(module, ()))
-
-
-def host_allowed(host_header: str, extra: list[str]) -> bool:
-    """IP literals, localhost, this PC's own name (also .local) and configured names; anything else may be DNS rebinding."""
-    h = (host_header or "").strip().lower()
-    h = h[1:h.find("]")] if h.startswith("[") else h.rsplit(":", 1)[0]
-    if not h: return False
-    try: ipaddress.ip_address(h); return True
-    except ValueError: pass
-    own = socket.gethostname().lower()
-    return h in {"localhost", own, own + ".local", *(x.lower() for x in extra)}
 
 
 def load_config(path: Path) -> dict:
@@ -226,7 +212,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             if not self._guard(): return
             path, _, query = self.path.partition("?")
             origin = self.headers.get("Origin")
-            if origin and urlsplit(origin).netloc.lower() != (self.headers.get("Host") or "").lower():
+            if not same_origin(origin, self.headers.get("Host")):
                 log.warning("blocked origin %s for %s", origin, path); return self._json({"error": "cross-origin request rejected"}, 403)
             if self.headers.get("X-Drifter-Request") != "1": return self._json({"error": "request not sent by the Drifter page"}, 403)
             if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json": return self._json({"error": "json only"}, 415)
@@ -262,15 +248,6 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
     return H
 
 
-class Server(ThreadingHTTPServer):
-    daemon_threads = True
-
-    def handle_error(self, request, client_address):
-        # Phones dropping connections and clients that do not trust the certificate are normal, not crashes.
-        if isinstance(sys.exc_info()[1], (ssl.SSLError, ConnectionError, TimeoutError)): return
-        super().handle_error(request, client_address)
-
-
 def serve(cfg: dict, supervisor=None) -> Server:
     check_bind(cfg["bind"])
     up = Upstreams(cfg)
@@ -279,11 +256,7 @@ def serve(cfg: dict, supervisor=None) -> Server:
         supervisor = Supervisor(precheck=make_precheck(up)); supervisor.start_thread()
     srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor))
     scheme = "http"
-    if cfg.get("certfile"):
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-        ctx.load_cert_chain(cfg["certfile"], cfg["keyfile"])
-        # Handshake in the request thread, not in accept(), so one slow client cannot block the others.
-        srv.socket = ctx.wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False); scheme = "https"
+    if cfg.get("certfile"): use_tls(srv, tls_context(cfg["certfile"], cfg["keyfile"])); scheme = "https"
     log.info("Drifter Boat Systems %s on %s://%s:%d/", VERSION, scheme, cfg["bind"], cfg["port"])
     return srv
 
@@ -294,11 +267,7 @@ def main():
     ap.add_argument("--bind", help="localhost or this PC's private LAN address (overrides the config)")
     ap.add_argument("--port", type=int, help="port (overrides the config)")
     a = ap.parse_args()
-    log_file = None
-    if sys.stderr is None:               # pythonw (scheduled task): no console, so log to logs/drifter.log
-        (HERE / "logs").mkdir(exist_ok=True); log_file = HERE / "logs" / "drifter.log"
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S",
-                        **({"filename": log_file, "encoding": "utf-8"} if log_file else {}))
+    logs.setup(file=HERE / "logs" / "drifter.log" if sys.stderr is None else None)   # pythonw (scheduled task): no console
     cfg = load_config(Path(a.config))
     if a.bind: cfg["bind"] = a.bind
     if a.port: cfg["port"] = a.port

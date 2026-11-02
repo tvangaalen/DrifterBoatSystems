@@ -8,11 +8,13 @@ Stdlib only: no extra packages.
 """
 from __future__ import annotations
 
-import ipaddress, json, logging, os, ssl, threading, time
+import ipaddress, json, logging, os, ssl, sys, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[1]))  # the repository root: common/ (shared with the Drifter gateway)
+from common import net, web  # noqa: E402
 DATA = Path(os.environ["DRIFTER_DATA"].strip()) / "guard" if os.environ.get("DRIFTER_DATA", "").strip() else HERE  # same rule as boatguard.py
 LOG = DATA / "logs" / "boatguard.log"
 CERT, KEY = HERE / "certs" / "boatguard-cert.pem", HERE / "certs" / "boatguard-key.pem"
@@ -80,8 +82,7 @@ def make_handler(guard):
 
 def tls_context() -> ssl.SSLContext | None:
     if not (CERT.exists() and KEY.exists()): return None
-    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-    ctx.load_cert_chain(CERT, KEY); return ctx
+    return web.tls_context(CERT, KEY)
 
 
 def serve(guard, cfg: dict) -> None:
@@ -92,7 +93,7 @@ def serve(guard, cfg: dict) -> None:
     if w.get("host"):
         try:
             ip = ipaddress.ip_address(w["host"])
-            if ip.is_private and not ip.is_loopback and not ip.is_unspecified and not ip.is_link_local: hosts.add(str(ip))
+            if net.is_lan(ip) and not ip.is_loopback: hosts.add(str(ip))
             else: log.warning("web: %s is not a private LAN address; serving on localhost only", ip)
         except ValueError: log.warning("web: host %r is not an IP address; serving on localhost only", w["host"])
     try: ctx = tls_context()
@@ -102,7 +103,6 @@ def serve(guard, cfg: dict) -> None:
     for h in sorted(hosts):
         try: srv = ThreadingHTTPServer((h, port), handler)
         except OSError as e: log.error("web: cannot listen on %s:%d: %s", h, port, e); continue
-        # Handshake in the request thread, not in the accept loop, so one slow client can't block the page.
-        if ctx: srv.socket = ctx.wrap_socket(srv.socket, server_side=True, do_handshake_on_connect=False)
+        if ctx: web.use_tls(srv, ctx)
         threading.Thread(target=srv.serve_forever, daemon=True, name=f"web-{h}").start()
         log.info("web on %s://%s:%d/", "https" if ctx else "http", h, port)
