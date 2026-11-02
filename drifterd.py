@@ -29,7 +29,7 @@ from common.web import QuietServer  # noqa: E402
 import modules as M  # noqa: E402
 import supervisor as S  # noqa: E402
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 CONTROL = ("127.0.0.1", 8099)
 SERVICE_NAME = "Drifter"
 log = logging.getLogger("drifter")
@@ -136,12 +136,12 @@ class Health:
     shown as such on the System page; nothing is stopped or restarted because of it."""
     PERIOD_S, TIMEOUT_S = 30, 8
 
-    def __init__(self, specs: dict, clock=time.time):
-        self.specs, self.clock, self.state = specs, clock, {}
+    def __init__(self, specs, clock=time.time):
+        self.specs, self.clock, self.state = specs, clock, {}     # {name: (scheme, path) or None}, or a function giving that dict
         self.ctx = ssl.create_default_context(); self.ctx.check_hostname = False; self.ctx.verify_mode = ssl.CERT_NONE   # 127.0.0.1 only
 
     def check(self, name: str, port: int, up: set) -> dict:
-        spec = self.specs.get(name)
+        spec = (self.specs() if callable(self.specs) else self.specs).get(name)
         if port not in up: return {"ok": None, "detail": "not listening"}
         if not spec: return {"ok": True, "detail": "port only"}
         scheme, path = spec
@@ -170,7 +170,7 @@ class Daemon:
         self.sup = S.Supervisor(names=M.MODULES, ports={n: specs[n]["port"] for n in M.MODULES}, data=self.data,
                                 start=self.children.start, stop=lambda n: self.children.stop(n, specs[n]["port"]),
                                 logs={**{n: Path(specs[n]["log"]) for n in M.NAMES}, "drifterd": self.data / "logs" / "drifterd.log"}, folders={n: Path(specs[n]["folder"]) for n in M.MODULES})
-        self.health = Health({n: specs[n]["health"] for n in M.NAMES if specs[n]["health"]})
+        self.health = Health(lambda: {n: M.resolve(n)["health"] for n in M.NAMES})   # modules.json as it is now
         self.ports = {n: specs[n]["port"] for n in M.NAMES}
 
     def status(self) -> dict:

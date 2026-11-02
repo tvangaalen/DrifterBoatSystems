@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.17
+
+### 0.17.0 — 2026-11-02
+
+Refactoring phase 3: BoatGuard.
+- **BoatGuard 2.0.0**: the package `modules/guard/guard` on FastAPI with the module contract (plain HTTP on 127.0.0.1:8095, token, `/health`): `config.py` (schema of config.json: a mistake stops it with the field and the reason), `router.py`, `camera.py`, `notify.py`, `core.py` (the presence logic of 1.x, unchanged: generated from boatguard.py) and `api.py`. `test_api_contract.py` (8 tests: status, log, monitoring, every settings refusal, notification tests, the camera test, refused requests) passed against the stdlib server of 1.x and against 2.0; `test_core.py` is the self-test of 1.x on the package. `python -m guard run | login | pushover | status | arm | disarm`. Its HTTPS certificate, firewall script, start script and own requirements file are gone; `requests` leaves its environment (Pushover goes through `common/pushover.py`). boatguard.py and boatguard_web.py stay one release for the comparison.
+- drifterd 1.2.0 reads modules.json at every start and health check: a module's new command or health check applies at its next restart, without restarting the service.
+- The gateway's default address for BoatGuard is http://127.0.0.1:8095.
+
 ## 0.16
 
 ### 0.16.1 — 2026-11-02

@@ -75,6 +75,6 @@ A module: follow that module's own release steps (version places, its CHANGELOG)
 - Refactoring, plan of 2026-11-02 (user's choices: a real Windows service, FastAPI for every module, python.org Python, no frontend build step):
   1. **Done (0.14.x):** one Python 3.12 and `uv.lock`, ruff, privacy hook, CI; one scheduled task; the Store Python removed.
   2. **Done (0.15.0):** drifterd as the Windows service, the supervisor inside it, health checks, migration tools removed.
-  3. **In progress (0.16.0: the washer done, 4.0.0):** module contract, per module (washer, guard, anchor, energy): a package on FastAPI, one config file with a schema, logging from `common`, `/health`, plain HTTP on 127.0.0.1 with a shared token from the gateway (then certificates only for the gateway). MasterBus/DALY code, Float and `AnchorWatch.tick` stay as they are (characterization and golden tests first).
+  3. **In progress (washer 4.0 in 0.16.0, BoatGuard 2.0 in 0.17.0):** module contract, per module (washer, guard, anchor, energy): a package on FastAPI, one config file with a schema, logging from `common`, `/health`, plain HTTP on 127.0.0.1 with a shared token from the gateway (then certificates only for the gateway). MasterBus/DALY code, Float and `AnchorWatch.tick` stay as they are (characterization and golden tests first).
   4. Frontend: ES modules, shared components, `tsc --checkJs`, Playwright tests on the mock; the classic frontends removed.
   5. Docs and operations: one Dutch user manual, English developer docs, one CLAUDE.md, a runbook, backups of `C:\DrifterData`.

@@ -24,8 +24,8 @@
     },
     "guard": {
       "name": "BoatGuard", "port": 8095, "dir": "modules\\guard",
-      "command": [".venv\\Scripts\\pythonw.exe", "boatguard.py", "run"],
-      "health": "https:/api/log?n=1"
+      "command": [".venv\\Scripts\\python.exe", "-m", "guard", "run"],
+      "health": "http:/health"
     },
     "washer": {
       "name": "Washer (VIOMI)", "port": 8080, "dir": "modules\\washer",

@@ -10,19 +10,18 @@ Tested with a UniFi UDR Max 5G (Qualcomm Wi-Fi, `wlanconfig`) and an EZVIZ C3A b
 
 ## Setup
 
-Requirements: Windows, Python 3.12+, OpenSSH client, and SSH key access to the router as root.
+Version 2.0.0: a Python package on FastAPI with Drifter's module contract (`guard/`: `config.py` with the schema of `config.json`, `router.py`, `camera.py`, `notify.py`, `core.py` with the presence logic, `api.py`). On the boat the Drifter service (drifterd) runs it as `.venv\Scripts\python.exe -m guard run`; the environment comes from Drifter's `uv.lock` (`py -3.12 tools\sync_envs.py guard`). Requirements: Windows, the OpenSSH client and SSH key access to the router as root.
 
 ```powershell
-py -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-copy config.example.json config.json           # then fill in phone MAC, router key path and camera serial
-.venv\Scripts\python.exe boatguard.py login    # once: EZVIZ e-mail, password, and the verification code if asked
-.venv\Scripts\python.exe boatguard.py pushover # optional: Pushover keys (sends a test notification)
-.venv\Scripts\python.exe boatguard.py status   # is the phone on board?
-.venv\Scripts\python.exe boatguard.py arm      # test the camera (then: disarm)
-.venv\Scripts\python.exe boatguard_self_test.py
-start_boatguard.cmd                            # run the service in a console
+copy config.example.json C:\DrifterData\guard\config.json   # then fill in phone MAC, router key path and camera serial
+.venv\Scripts\python.exe -m guard login     # once: EZVIZ e-mail, password, and the verification code if asked
+.venv\Scripts\python.exe -m guard pushover  # optional: Pushover keys (sends a test notification)
+.venv\Scripts\python.exe -m guard status    # is the phone on board?
+.venv\Scripts\python.exe -m guard arm       # test the camera (then: disarm)
+.venv\Scripts\python.exe test_core.py; .venv\Scripts\python.exe -m unittest test_guard
 ```
+
+`config.json` is checked against the schema at the start; a mistake stops BoatGuard with the field and the reason (in its log).
 
 To find the phone's address, run `wlanconfig <ap> list sta` on the router while only the phone is connected, or look it up in the router's client list.
 
@@ -30,7 +29,7 @@ Logs are in `logs\boatguard.log` (24-hour timestamps). `state.json` remembers wh
 
 ## The page (in Drifter) and the API
 
-While BoatGuard runs, it serves its API on **https://127.0.0.1:8095/** (localhost only: the Drifter gateway on the same PC uses it; `"web": {"host": "<private LAN address>"}` adds one LAN address on purpose). The BoatGuard page in Drifter shows:
+While BoatGuard runs, it serves its API on **http://127.0.0.1:8095/** (`GUARD_BIND` may name another private address, never a public one). Only the Drifter gateway on the same PC uses it: every request but `GET /health` must carry the token drifterd gives the gateway and the modules (`X-Drifter-Token`); without it BoatGuard refuses. The BoatGuard module of the Drifter app shows:
 
 - the current status: whether the phone is on board, the countdown to arming, what EZVIZ reports for the camera (armed, battery), and the router check;
 - a **Monitoring** switch. *Off* means BoatGuard never arms the camera; it also disarms a camera BoatGuard armed. The setting is kept in `state.json` and survives a restart;
@@ -42,13 +41,9 @@ After BoatGuard arms or disarms the camera, the page shows the new state at once
 
 API: `GET /api/status`, `/api/log?n=`; `POST` (JSON only) `/api/enabled`, `/api/settings`, `/api/notify-test`, `/api/test`. There is no password; it never listens on a public address. The port is set in `config.json` under `"web": {"port": 8095}`.
 
-**HTTPS:** `setup_https.ps1 [-CaDir <folder>]` creates `certs\boatguard-cert.pem`/`-key.pem` through Drifter's `common\issue_cert.ps1`, signed by the Mastervolt Local CA (`ca-cert.pem` + `ca-key.pem`; default folder `modules\energy\certs` of the Drifter checkout). The certificate covers localhost, the PC's name, 127.0.0.1 and its private IPv4 addresses, and is valid for 825 days (the most iOS accepts). The iPhone must trust that CA (install it as a profile, then Settings → General → About → Certificate Trust Settings). Run the script again if the PC's LAN address changes, then restart BoatGuard. Without a certificate the page falls back to plain HTTP, and the log says so.
-
-**Firewall:** not needed any more (localhost only); the iPhone reaches BoatGuard through Drifter. `add_firewall_rule.cmd` is only for a configured `web.host`.
-
 ## Notifications (Pushover)
 
-`boatguard.py pushover` asks for the Pushover User Key and API Token (hidden input), stores them in `pushover.json` and sends a test notification. The keys are read again for every notification, so no restart is needed. Notifications:
+`python -m guard pushover` asks for the Pushover User Key and API Token (hidden input), stores them in `pushover.json` and sends a test notification. The keys are read again for every notification, so no restart is needed. Notifications:
 
 - **Camera armed** / **Camera disarmed**, whenever BoatGuard itself arms or disarms the camera (with the reason);
 - **Left the boat, monitoring OFF**: the phone has been away for the arming delay while monitoring was off. Sent once per departure, also across restarts (`unguarded_sent` in `state.json`), and not when you switched monitoring off yourself while already away.
@@ -71,21 +66,11 @@ Sending happens in the background, up to 5 tries. A failed notification never bl
 
 ## Autostart
 
-Register a scheduled task that starts BoatGuard without a window when you sign in, and restarts it if it crashes (run in PowerShell from the BoatGuard folder):
-
-```powershell
-$dir = (Get-Location).Path
-$a = New-ScheduledTaskAction -Execute "$dir\.venv\Scripts\pythonw.exe" -Argument 'boatguard.py run' -WorkingDirectory $dir
-$t = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
-$s = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartInterval (New-TimeSpan -Minutes 1) -RestartCount 999 -MultipleInstances IgnoreNew
-Register-ScheduledTask -TaskName BoatGuard -Action $a -Trigger $t -Settings $s
-```
-
-Restart it after a code or `config.json` change with `Stop-ScheduledTask BoatGuard; Start-ScheduledTask BoatGuard`. To run it straight from boot, without anyone signing in: in Task Scheduler, open BoatGuard → *Run whether user is logged on or not*, and enter the Windows password when asked.
+The Drifter service (drifterd) starts BoatGuard at boot, whether anybody is logged on or not, and starts it again if it stops; its own scheduled task of 1.x is gone. After a code or `config.json` change: Restart on the System page of the Drifter app.
 
 ## Notes
 
 - On iOS, Settings → Wi-Fi → (boat network) → **Private Wi-Fi Address** must stay *Off* or *Fixed*. *Rotating* changes the address, and BoatGuard would think the phone left.
 - If a UniFi firmware update wipes the router's SSH key, `status` reports "router not readable" and BoatGuard changes nothing until the key is added back.
 - If the EZVIZ session expires, the log shows arm errors. Run `login` again.
-- `config.json`, `state.json`, `ezviz_token.json`, `pushover.json`, `certs/` and `logs/` hold personal data and keys, and are kept out of git.
+- `config.json`, `state.json`, `ezviz_token.json`, `pushover.json` and `logs/` hold personal data and keys, and are kept out of git.

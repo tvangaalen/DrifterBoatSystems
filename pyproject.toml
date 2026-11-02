@@ -13,7 +13,8 @@ dependencies = []
 # MasterVolt YMS; starlette as it ran on 2026-11-02, httpx for its tests (starlette's TestClient)
 energy = ["fastapi==0.141.1", "starlette==1.6.0", "uvicorn[standard]==0.52.4", "hidapi==0.15.0", "bleak==3.0.2", "httpx==0.28.1"]
 anchor = ["websockets==13.1"]   # 14+ changed the client API; the anchor watch is tested on 13.1
-guard = ["pyezviz==0.2.2.3", "requests==2.34.2"]
+# BoatGuard on FastAPI since 2.0 (stdlib server until 1.x); pyezviz brings requests itself
+guard = ["pyezviz==0.2.2.3", "fastapi==0.141.1", "starlette==1.6.0", "uvicorn==0.52.4", "httpx==0.28.1"]
 # the washer on FastAPI since 4.0 (Flask until 3.8)
 washer = ["fastapi==0.141.1", "starlette==1.6.0", "uvicorn==0.52.4", "httpx==0.28.1", "python-miio==0.5.12", "micloud==0.6"]
 dev = ["ruff==0.14.14", "black==26.5.1"]   # black: MasterVolt's formatter

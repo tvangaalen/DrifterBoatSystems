@@ -1,8 +1,9 @@
-"""Hardware-free test of BoatGuard's presence state machine (fake router, fake camera, fake clock)."""
+"""Hardware-free test of BoatGuard's presence state machine (fake router, fake camera, fake clock): guard.core and guard.router."""
 import tempfile
 from pathlib import Path
 
-from boatguard import Guard, RouterError, classify_ssh_error
+from guard.core import Guard
+from guard.router import RouterError, classify_ssh_error
 
 PHONE = "02:00:00:aa:bb:cc"
 CFG = {"phone_macs": [PHONE.upper()], "away_after_s": 300, "disarm_on_return": True, "test_settle_s": 0, "ezviz": {"camera_serial": "X"}}

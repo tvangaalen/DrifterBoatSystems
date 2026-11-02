@@ -331,7 +331,7 @@ def make(name, obj):
 
         def do_POST(self):
             n = int(self.headers.get("Content-Length") or 0); body = json.loads(self.rfile.read(n) or b"{}")
-            if name == "washer" and self.headers.get("X-Drifter-Token") != os.environ.get("DRIFTER_TOKEN"):   # the module contract
+            if name in ("washer", "guard") and self.headers.get("X-Drifter-Token") != os.environ.get("DRIFTER_TOKEN"):   # the module contract
                 return self._j(403, {"ok": False, "error": "Request not sent by the Drifter gateway"})
             if name == "anchor":
                 try: obj.command(body); return self._j(200, {"ok": True, "state": obj.state()})

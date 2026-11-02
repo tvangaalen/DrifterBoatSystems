@@ -15,8 +15,14 @@ NAMES = tuple(SPEC["modules"])                       # gateway first: drifterd s
 MODULES = tuple(n for n in NAMES if n != "gateway")
 
 
+def spec() -> dict:
+    """modules.json as it is now: drifterd reads it at every start and health check, so a changed command or health
+    check applies at that module's next restart (a git pull plus a restart, without restarting the service)."""
+    return json.loads((ROOT / "modules.json").read_text(encoding="utf-8"))
+
+
 def resolve(name: str, live: Path | None = None, data: Path | None = None) -> dict:
-    m = SPEC["modules"][name]; live = Path(live or LIVE); base = Path(data or DATA)
+    m = spec()["modules"][name]; live = Path(live or LIVE); base = Path(data or DATA)
     folder = (live / m["dir"]).resolve()
     data_dir = folder if m.get("runtime_in_code") else base / name
     args = [a.replace("{data}", str(data_dir)) for a in m.get("data_args", [])]

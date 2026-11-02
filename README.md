@@ -1,13 +1,13 @@
 # Drifter Boat Systems
 
-Version 0.16.1 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.17.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
 |---|---|---|---|
 | **Energy** | Mastervolt (MasterBus), DALY BMS and balancers | MasterVolt YMS, `127.0.0.1:8000` | `modules/energy` |
 | **Anchor watch** | Orca Core 2 anchor alarm, GPS, AIS, tide | Anchor watch, `127.0.0.1:8766` (network GPS stays on the LAN) | `modules/anchor` |
-| **BoatGuard** | EZVIZ camera armed when the iPhone leaves the boat | BoatGuard, `127.0.0.1:8095` (no page of its own) | `modules/guard` |
+| **BoatGuard** | EZVIZ camera armed when the iPhone leaves the boat | BoatGuard, `127.0.0.1:8095` (FastAPI, module contract) | `modules/guard` |
 | **Washer** | VIOMI W1 washing machine and its schedule | VIOMI controller, `127.0.0.1:8080` (no page of its own) | `modules/washer` |
 
 The modules were separate repositories until 2026-11-01 (MasterVolt-YMS, OrcaCore2-AnchorWatch, BoatGuard,
