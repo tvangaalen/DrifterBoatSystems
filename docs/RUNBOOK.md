@@ -28,8 +28,7 @@ All times are 24-hour. Paths are the boat PC's.
 
 ## 2. Every day
 
-- **The app:** System page — every system *running*, health ok, the *Back-up of the keys* row green (newest back-up less
-  than 30 hours old).
+- **The app:** System page — every system *running*, health ok.
 - **One command** on the PC checks everything in about a second (read-only):
 
   ```powershell
@@ -63,9 +62,9 @@ protection is paused until then. The anchor watch is back within about 30 s.
 
 ## 4. Logs
 
-- App → System → *Show log* per module, *Service log* for drifterd, and the back-up's log.
+- App → System → *Show log* per module, *Service log* for drifterd.
 - Files: `C:\DrifterData\<module>\logs\<module>.console.log`, `C:\DrifterData\logs\drifterd.log`,
-  `C:\DrifterData\logs\backup.log`, `C:\Drifter\logs\gateway.console.log`; MasterVolt also `C:\DrifterData\energy\logs\`.
+  `C:\Drifter\logs\gateway.console.log`; MasterVolt also `C:\DrifterData\energy\logs\`.
 
 ## 5. Updating (deploy)
 
@@ -82,20 +81,20 @@ boat PC:
 
 A changed address of a module (`config.json` → `modules.<name>.url`) needs a gateway restart.
 
-## 6. Back-up of the keys
+## 6. Back-up of the keys and tokens
 
-Every night at 03:30 drifterd runs `tools\backup.py`: a zip of only the keys that cannot be made again without the
-services themselves — `anchor\pushover.json`, `anchor\nfl.json`, `guard\pushover.json`, `guard\ezviz_token.json`,
-`washer\viomi_config.json` (the list is `backup.files` in `modules.json`). Positions, the track and the MasterVolt
-history are deliberately not backed up. Zips go to **`C:\DrifterBackups`** (`drifter-YYYYMMDD-HHMM.zip`, with a
-`manifest.json`); the newest of each of the last 7 days and 4 weeks are kept.
+Only on request: System → **Backup keys and tokens** copies the keys that cannot be made again without the services
+themselves — `anchor\pushover.json`, `anchor\nfl.json`, `guard\pushover.json`, `guard\ezviz_token.json`,
+`washer\viomi_config.json` (the list is `backup.files` in `modules.json`) — to **`C:\DrifterBackups`**, in the
+same folders as in `C:\DrifterData`, replacing the previous copy. Nothing runs on a schedule, and positions, the track
+and the MasterVolt history are not copied (the user's choice). Press it after a key changed (a new EZVIZ login, new
+Pushover or noforeignland.com keys). The System page says when it last copied them. By hand on the PC:
+`py -3.12 C:\Drifter\tools\backup.py`.
 
-- Copy to Google Drive: the service cannot see drive G: (it exists only in a logged-on session). In **Google Drive for
-  desktop** → Settings → *My Computer* → *Add folder*, add `C:\DrifterBackups` once: it is then copied whenever you are
-  logged on.
-- Now, by hand: `py -3.12 C:\Drifter\tools\backup.py run`; list them: `... backup.py list`.
-- **Restore** a key file: copy it from the zip to `C:\DrifterData\<module>\` (the zip's folders match), then *Restart*
-  that module: it reads its keys at start. If the key itself expired (EZVIZ session, Pushover keys), make a new one instead:
+- Copy to Google Drive: add `C:\DrifterBackups` once in **Google Drive for desktop** → Settings → *My Computer* →
+  *Add folder*; it is then copied whenever you are logged on.
+- **Restore** a key file: copy it from `C:\DrifterBackups\<module>\` to `C:\DrifterData\<module>\`, then *Restart* that
+  module: it reads its keys at start. If the key itself expired (EZVIZ session, Pushover keys), make a new one instead:
   in `C:\Drifter\modules\guard`, `.venv\Scripts\python.exe -m guard login` or `-m guard pushover`; for the others the
   module's `*.example.json` shows the format.
 
@@ -115,7 +114,6 @@ history are deliberately not backed up. Zips go to **`C:\DrifterBackups`** (`dri
 | A system shows *Not reachable* | System page state; its log | it restarts by itself within a minute; otherwise *Restart* |
 | *not answering* on the System page | the module's log | display only; *Restart* if it stays |
 | BMS units missing after a restart | wait 2–3 minutes | Bluetooth reconnects by itself; Batteries → Bluetooth diagnostics |
-| Back-up row red | System → Back-up → *Show log* | run `backup.py run` by hand to see the error |
 | Service in *Start pending* for minutes | `C:\DrifterData\logs\drifterd.log` | `sc.exe stop Drifter`, then start; `tools\install_service.ps1 -Status` |
 | Everything gone after a Windows update | `sc.exe query Drifter`, the service's log | the service starts delayed at boot: give it 4 minutes |
 
@@ -124,7 +122,7 @@ history are deliberately not backed up. Zips go to **`C:\DrifterBackups`** (`dri
 1. Install Git and the python.org **Python 3.12** (never the Microsoft Store Python), then `py -3.12 -m pip install --user uv`.
 2. `git clone https://github.com/tvangaalen/DrifterBoatSystems C:\Drifter`, then `py -3.12 tools\sync_envs.py`.
 3. Put back `C:\DrifterData` (from the old disk if possible: settings, the anchor, the history) and the key files from
-   the newest back-up (section 6). Put back `C:\Drifter\modules\energy\certs` (the Mastervolt Local CA) from the old disk;
+   `C:\DrifterBackups` (section 6). Put back `C:\Drifter\modules\energy\certs` (the Mastervolt Local CA) from the old disk;
    without it every phone needs the new CA (section 7) and `setup_local_https.ps1` makes a new one.
 4. `config.json` from `config.example.json` (bind = this PC's LAN address, `supervise: true`), then `setup_https.ps1`
    (the app's certificate from the CA).

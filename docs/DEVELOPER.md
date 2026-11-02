@@ -16,7 +16,7 @@ app: [MANUAL.md](MANUAL.md). The rules for Claude Code (and for anyone): [../CLA
    │     ├── anchor  (FastAPI)              :8766  Orca Core 2 (read-only), NMEA :10110 on the LAN
    │     ├── guard   (BoatGuard, FastAPI)   :8095  UniFi router, EZVIZ camera, Pushover
    │     └── washer  (FastAPI)              :8080  VIOMI W1 (miio)
-   │  supervisor.py (start, restart on request, health), nightly back-up of the keys
+   │  supervisor.py (start, restart on request, health)
    └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -49,7 +49,7 @@ Every module server (`common/service.py` for anchor, guard and washer; MasterVol
 
 ```
 drifter.py, drifterd.py, supervisor.py   gateway, service, supervisor
-modules.json                             per server: folder, command, port, health, pre-check; the back-up schedule
+modules.json                             per server: folder, command, port, health, pre-check; the key files to back up
 web/                                     the app: index.html, app.css, main.js, core/*.js, energy/anchor/guard/washer.js
 modules/energy   MasterVolt YMS (package mastervolt/, its own tests and manual docs/MANUAL.md)
 modules/anchor   anchor watch (package anchor/, orca_reader.py)

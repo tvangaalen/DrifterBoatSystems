@@ -2,6 +2,13 @@
 
 ## 0.21
 
+### 0.21.1 — 2026-11-02
+
+- **Backup keys and tokens** on the System page replaces the nightly back-up of 0.21.0 (never deployed; the user's choice):
+  it copies the Pushover, noforeignland.com, EZVIZ and washer keys to `C:\DrifterBackups` (the same folders as in
+  `C:\DrifterData`, replacing the previous copy) only when pressed, through the gateway (`POST /api/backup-keys`, only on the
+  live gateway), and shows when it last did. drifterd stays 1.2.0: no schedule and no service restart for a back-up.
+
 ### 0.21.0 — 2026-11-02
 
 Refactoring phase 5: documentation and operations.
