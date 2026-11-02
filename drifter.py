@@ -25,8 +25,9 @@ from common import logs
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "0.21.0"
+VERSION = "0.21.1"
 HERE = Path(__file__).resolve().parent
+sys.path.append(str(HERE / "tools"))              # tools/backup.py for "Backup keys and tokens"
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
 
@@ -209,6 +210,15 @@ class DrifterdClient:
         return j
 
 
+def backup_info() -> dict | None:
+    """Where "Backup keys and tokens" copies to and when it last did (tools/backup.py), for the System page."""
+    try:
+        import backup
+        c = backup.config(); return {"dest": str(c["dest"]), "count": len(c["files"]), "last": backup.last_copy(c["dest"], c["files"])}
+    except Exception as e:                                # the page must never fail because of this
+        log.warning("back-up info: %s", e); return None
+
+
 def make_handler(cfg: dict, up: Upstreams, sup=None):
     extra_hosts = list(cfg.get("allowed_hosts") or [])
     systems = {m: {"name": mv["name"], "classic": mv.get("classic")} for m, mv in cfg["modules"].items()}
@@ -248,7 +258,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             if path == "/api/systems":
                 with up.lock: st = {m: dict(v) for m, v in up.status.items()}
                 return self._json({"version": VERSION, "systems": systems, "upstream": st,
-                                   "supervisor": sup.snapshot() if sup else {"enabled": False}})
+                                   "supervisor": sup.snapshot() if sup else {"enabled": False}, "backup": backup_info()})
             if path == "/": path = "/index.html"
             f = (STATIC / path.lstrip("/")).resolve()
             if STATIC.resolve() in f.parents and f.is_file() and f.suffix in STATIC_TYPES:
@@ -273,6 +283,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json": return self._json({"error": "json only"}, 415)
             if path == "/api/supervisor/restart": return self._restart()
             if path == "/api/supervisor/shutdown": return self._shutdown()
+            if path == "/api/backup-keys": return self._backup_keys()
             if not (path.startswith("/api/") and path.count("/") >= 2 and path.split("/")[2] in up.mods): return self._json({"error": "not found"}, 404)
             self._proxy("POST", path, query)
 
@@ -283,6 +294,16 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             try: sup.restart(str(name))
             except ValueError as e: return self._json({"error": str(e)}, 409)
             log.info("restart of %s requested from the app", name); return self._json({"ok": True, "module": name}, 202)
+
+        def _backup_keys(self):
+            """The System page's "Backup keys and tokens": copies the key files to the back-up folder (tools/backup.py).
+            Only where the gateway runs the live system (supervise on): a mock or test gateway never copies real keys."""
+            if not cfg.get("supervise"): return self._json({"error": "only on the boat PC's live app"}, 409)
+            import backup
+            c = backup.config(); r = backup.copy_keys(backup.M.DATA, c["files"], c["dest"])
+            log.info("keys and tokens copied to %s: %d of %d%s", r["dest"], len(r["copied"]), len(c["files"]),
+                     "".join(f"; {m['file']} not copied ({m['error']})" for m in r["missing"]))
+            return self._json({"ok": not r["missing"], **r}, 200 if r["copied"] else 500)
 
         def _shutdown(self):
             """Switch all systems off: every module server stops, then the gateway itself (see serve)."""

@@ -1,6 +1,6 @@
 // Caches only the app shell, so the home-screen app opens instantly. Live data (api/...) is never cached:
 // a stale energy or anchor reading must never look current. A new CACHE name makes iPhones load a new version.
-const CACHE = "drifter-v0.21.0-shell";
+const CACHE = "drifter-v0.21.1-shell";
 const SHELL = ["./", "app.css", "main.js", "core/app.js", "core/api.js", "core/dialogs.js", "core/format.js", "core/ui.js",
   "energy.js", "anchor.js", "guard.js", "washer.js", "manual.html", "manifest.webmanifest", "icons/icon.svg", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });

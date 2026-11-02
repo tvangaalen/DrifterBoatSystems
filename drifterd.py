@@ -3,8 +3,7 @@
 Starts the gateway and the four module servers as its own child processes, each in its own kill-on-close job object
 (stopping a server, or drifterd ending, also ends everything it started), writes their output to
 <data>\\logs\\<module>.console.log, keeps them running (supervisor.py: start after a crash with back-off, never stop on its
-own), checks their health for the System page (display only), makes the nightly back-up of the key files (tools/backup.py,
-at backup.at of modules.json), and answers the gateway on a local control API.
+own), checks their health for the System page (display only), and answers the gateway on a local control API.
 
     python drifterd.py run         in the foreground (development; never next to the service)
     python drifterd.py service     how Windows starts it (installed by tools/install_service.ps1, service "Drifter")
@@ -20,7 +19,6 @@ from __future__ import annotations
 
 import ctypes, json, logging, os, secrets, ssl, subprocess, sys, threading, time, urllib.request
 from ctypes import wintypes
-from datetime import datetime
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
@@ -28,11 +26,10 @@ ROOT = Path(__file__).resolve().parent
 sys.path[:0] = [str(ROOT), str(ROOT / "tools")]
 from common import logs, proc  # noqa: E402
 from common.web import QuietServer  # noqa: E402
-import backup as B  # noqa: E402
 import modules as M  # noqa: E402
 import supervisor as S  # noqa: E402
 
-VERSION = "1.3.0"
+VERSION = "1.2.0"
 CONTROL = ("127.0.0.1", 8099)
 SERVICE_NAME = "Drifter"
 log = logging.getLogger("drifter")
@@ -163,36 +160,6 @@ class Health:
             self.state[n] = r
 
 
-class Backup:
-    """Starts tools/backup.py once a night at backup.at (modules.json) as its own process, never two at once; the System
-    page shows the newest back-up and a failed run."""
-
-    def __init__(self, data: Path, start=None, now=None):
-        self.data = Path(data); self.now = now or datetime.now; self.proc = None; self.failed = None
-        self.start = start or (lambda: subprocess.Popen([sys.executable, str(ROOT / "tools" / "backup.py"), "run"], cwd=str(ROOT),
-                                                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                                        creationflags=proc.NO_WINDOW))
-        self.next = B.next_run(B.config()["at"], self.now())
-
-    def tick(self) -> None:
-        if self.proc is not None and self.proc.poll() is not None:
-            rc = self.proc.returncode; self.proc = None
-            self.failed = None if rc == 0 else {"t": time.time(), "code": rc}
-            (log.info if rc == 0 else log.error)("drifterd: back-up %s", "done" if rc == 0 else f"FAILED (exit {rc}), see logs\\backup.log")
-        if self.proc is None and self.now() >= self.next:
-            self.next = B.next_run(B.config()["at"], self.now())
-            try: self.proc = self.start(); log.info("drifterd: back-up started")
-            except OSError as e: self.failed = {"t": time.time(), "code": str(e)}; log.error("drifterd: back-up could not start: %s", e)
-
-    def snapshot(self) -> dict:
-        dest = B.config()["dest"]
-        try: found = B.backups(dest)
-        except OSError: found = []
-        last = {"t": found[-1][1].stat().st_mtime, "file": found[-1][1].name} if found else None
-        return {"dest": str(dest), "next": self.next.timestamp(), "running": self.proc is not None, "last": last, "count": len(found),
-                "failed": self.failed}
-
-
 class Daemon:
     def __init__(self, data: Path = M.DATA):
         self.data = Path(data); self.token = ensure_token(self.data); self.stop = threading.Event(); self.started = time.time()
@@ -202,17 +169,15 @@ class Daemon:
         self.gateway = Gateway(self.children, specs["gateway"]["port"])
         self.sup = S.Supervisor(names=M.MODULES, ports={n: specs[n]["port"] for n in M.MODULES}, data=self.data,
                                 start=self.children.start, stop=lambda n: self.children.stop(n, specs[n]["port"]),
-                                logs={**{n: Path(specs[n]["log"]) for n in M.NAMES}, "drifterd": self.data / "logs" / "drifterd.log",
-                                      "backup": self.data / "logs" / "backup.log"}, folders={n: Path(specs[n]["folder"]) for n in M.MODULES})
+                                logs={**{n: Path(specs[n]["log"]) for n in M.NAMES}, "drifterd": self.data / "logs" / "drifterd.log"}, folders={n: Path(specs[n]["folder"]) for n in M.MODULES})
         self.health = Health(lambda: {n: M.resolve(n)["health"] for n in M.NAMES})   # modules.json as it is now
         self.ports = {n: specs[n]["port"] for n in M.NAMES}
-        self.backup = Backup(self.data)
 
     def status(self) -> dict:
         snap = self.sup.snapshot()
         for n, m in snap["modules"].items(): m["health"] = self.health.state.get(n)
         return {"drifterd": {"version": VERSION, "pid": os.getpid(), "started": self.started},
-                "gateway": {**self.gateway.snapshot(), "health": self.health.state.get("gateway")}, "backup": self.backup.snapshot(), **snap}
+                "gateway": {**self.gateway.snapshot(), "health": self.health.state.get("gateway")}, **snap}
 
     def finish_shutdown(self) -> None:
         """After "switch all systems off": the page reads the result through the gateway for 15 s, then everything ends."""
@@ -271,8 +236,6 @@ class Daemon:
         try:
             while not self.stop.wait(S.TICK_S):
                 self.gateway.tick()
-                try: self.backup.tick()
-                except Exception: log.exception("drifterd: back-up scheduling failed")
                 if time.time() >= next_health:
                     next_health = time.time() + Health.PERIOD_S
                     threading.Thread(target=self.health.run_once, args=(self.ports,), daemon=True).start()

@@ -361,9 +361,6 @@ if __name__ == "__main__":
 
         class MockSupervisor(supervisor.Supervisor):
             def shutdown_all(self, on_done=None): super().shutdown_all(None)
-            def snapshot(self):   # drifterd adds its nightly back-up (made-up values)
-                return {**super().snapshot(), "backup": {"dest": "C:\\DrifterBackups", "next": time.time() + 9 * 3600, "running": False,
-                        "last": {"t": time.time() - 15 * 3600, "file": "drifter-20261102-0330.zip"}, "count": 9, "failed": None}}
         fake = MockSupervisor(ports={"energy": 18000 + OFF, "anchor": 18766 + OFF, "guard": 18095 + OFF, "washer": 18080 + OFF}, data=tmp, logs=logs,
                               start=lambda n: logging.info("mock supervisor: would start %s", n),
                               stop=lambda n: (logging.info("mock supervisor: would stop %s", n), time.sleep(1)))

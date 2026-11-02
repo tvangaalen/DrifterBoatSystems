@@ -47,3 +47,12 @@ test("Restart a module: Cancel is the default", async ({ page }) => {
   await page.keyboard.press("Escape");
   expect(posts).toEqual([]);
 });
+
+test("Backup keys and tokens sends one request and says what it copied", async ({ page }) => {
+  const posts: Posted[] = [];
+  await setUp(page, { posts });
+  await open(page, "#system", null);
+  await page.locator("#sysBackup").click();
+  await expect(page.locator("#toast")).toContainText("files copied");
+  expect(posts.map(p => p.url)).toEqual(["/api/backup-keys"]);
+});

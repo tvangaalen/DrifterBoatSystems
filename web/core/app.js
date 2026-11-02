@@ -172,14 +172,12 @@ function supState(s) {
     down: `<span class="badge bad">not running</span>`, failed: `<span class="badge bad">failed · next try in ${dur(s.next_try_in)}</span>`,
     held: `<span class="badge warn">on hold</span>`}[s.state] || `<span class="badge">${esc(s.state)}</span>`;
 }
-// The nightly back-up of the key files (drifterd runs tools/backup.py): the newest one, the next run, and a failed or missing one in red.
-function backupRow(b) {
-  const stale = !b.last || Date.now() / 1000 - b.last.t > 30 * 3600;
-  const st = b.failed ? `<span class="badc">last run failed</span><small>see its log</small>`
-    : b.running ? `<span class="badge warn">running…</span>`
-    : b.last ? `<span class="${stale ? "badc" : "good"}">${esc(dayTime(b.last.t))}</span>` : `<span class="badc">none yet</span>`;
-  return `<div class="row"><div class="k"><b>Back-up of the keys</b><span class="hint">Pushover, NFL, EZVIZ, washer · every night, ${esc(b.count)} kept in ${esc(b.dest)} · next ${esc(dayTime(b.next))}</span></div>
-    <div class="v">${st}</div><span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="backup">Show log</button></span></div>`;
+// "Backup keys and tokens": the gateway copies the key files to the back-up folder on the boat PC (tools/backup.py), only
+// when the user presses it. The card says where to and when it last happened.
+function backupCard(b) {
+  return `<h2 class="sec">Keys and tokens</h2><div class="card pad"><button class="btn sec" type="button" id="sysBackup">Backup keys and tokens</button>
+    <p class="hint" style="margin:10px 2px 0">Copies the Pushover, noforeignland.com, EZVIZ and washer keys (${esc(b.count)} files) to ${esc(b.dest)} on the boat PC,
+    replacing the previous copy. ${b.last ? `Last copied ${esc(dayTime(b.last))}.` : "Not copied yet."}</p></div>`;
 }
 async function renderSystem(el) {
   el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="hint" style="margin:10px 2px 0">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p></div>
@@ -187,6 +185,7 @@ async function renderSystem(el) {
     <div id="sysEvWrap" hidden><h2 class="sec">Supervisor events</h2><div class="card"><div class="log" id="sysEvents"></div></div></div>
     <div id="sysOffWrap" hidden><h2 class="sec">Switch off</h2><div class="card pad"><p class="hint" style="margin:0 0 12px">Stops every system's server and this app's server on the boat PC. Switches, chargers and the camera stay as they are. Start everything again with the <b>Drifter Boat Systems</b> icon on the boat PC's desktop.</p>
       <button class="btn danger" type="button" id="sysOff">${icon("off")} Switch all systems off</button></div></div>
+    <div id="sysBackupWrap"></div>
     <h2 class="sec">Help</h2><div class="card pad"><a class="btn sec" href="manual.html">${icon("ext")} Manual</a><p class="hint" style="margin:10px 2px 0">What every page shows and does.</p></div>
     <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="hint" style="margin:0">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's local certificate (the same one used for Energy, Anchor watch and BoatGuard).</p></div>
     <p class="hint" style="text-align:center;margin:18px 0" id="sysVer"></p>`;
@@ -198,6 +197,7 @@ async function renderSystem(el) {
       if (standalone) location.href = `log.html#${l.dataset.log}`; else window.open(`log.html#${l.dataset.log}`, `drifter-log-${l.dataset.log}`);
     }
     if (e.target.closest("#sysOff")) switchAllOff(e.target.closest("#sysOff"));
+    if (e.target.closest("#sysBackup")) backupKeys(e.target.closest("#sysBackup"));
   };
   await refreshSystem();
   clearInterval(sysTimer); sysTimer = setInterval(() => { if (current === "system" && !document.hidden) refreshSystem(); else if (current !== "system") clearInterval(sysTimer); }, 5000);
@@ -221,11 +221,12 @@ async function refreshSystem() {
   }).join("") + (sup && sup.error ? `<div class="row"><span class="badc">${esc(sup.error)}</span></div>` : "")
     + (sup ? `<div class="row"><div class="k"><b>Drifter</b><span class="hint">this app's server on the boat PC${sup.drifterd ? ` · service drifterd ${esc(sup.drifterd.version)}, running since ${esc(dayTime(sup.drifterd.started))}` : ""}</span></div>
         <span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="gateway">Show log</button>${sup.drifterd ? `<button class="btn sec sm" type="button" data-log="drifterd">Service log</button>` : ""}</span></div>`
-      + (sup.backup ? backupRow(sup.backup) : "")
     : `<div class="row"><span class="hint">The supervisor is off: servers are not restarted automatically.</span></div>`);
   $("sysEvWrap").hidden = !sup || !sup.events.length;
   $("sysOffWrap").hidden = !sup; $("sysOff").disabled = !!(sup && sup.shutdown && sup.shutdown.state === "running");
   if (sup) $("sysEvents").innerHTML = sup.events.slice().reverse().slice(0, 30).map(e => `<div class="${e.kind === "bad" ? "bad" : e.kind === "warn" ? "warn" : ""}"><time>${esc(dayTime(e.t))}</time><span class="msg"><b>${esc(e.module)}</b> ${esc(e.text)}</span></div>`).join("");
+  const busy = $("sysBackup") && $("sysBackup").disabled;           // never replace the button while it is copying
+  if ($("sysBackupWrap") && !busy) $("sysBackupWrap").innerHTML = sup && sysInfo.backup ? backupCard(sysInfo.backup) : "";
   $("sysVer").textContent = `Drifter Boat Systems ${sysInfo ? "v" + sysInfo.version : ""}`;
 }
 async function restartModule(name, btn) {
@@ -234,6 +235,11 @@ async function restartModule(name, btn) {
   try { await run(null, btn, () => fetch("api/supervisor/restart", {method: "POST", headers: {"Content-Type": "application/json", "X-Drifter-Request": "1"}, body: JSON.stringify({module: name})})
     .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`); return j; }), `Restarting ${m ? m.title : name}…`); }
   catch (e) {}
+  refreshSystem();
+}
+
+async function backupKeys(btn) {
+  try { await run(null, btn, () => sysPost("api/backup-keys", {}), r => `${(r.copied || []).length} files copied to ${r.dest || "the back-up folder"}`); } catch (e) {}
   refreshSystem();
 }
 
