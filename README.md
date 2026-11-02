@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.15.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.15.1 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |

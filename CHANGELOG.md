@@ -2,6 +2,12 @@
 
 ## 0.15
 
+### 0.15.1 — 2026-11-02
+
+The first install of the service hung, and every server stayed stopped until it was fixed:
+- drifterd 1.0.1: the Windows service calls have full ctypes signatures. Without them the 64-bit status handle was passed as a 32-bit number, "running" never reached Windows and the service hung in Start Pending; the exception was lost inside the callback. Every failure in the service code is now logged.
+- `install_service.ps1`: TLS 1.2 for the pre-checks (Windows PowerShell 5.1 did not offer it, so they failed and the script went on: now it stops when Drifter runs but cannot be asked); `sc.exe start` instead of `Start-Service`, which waited without end, so the automatic way back never came; a hanging service is ended before it is replaced; the way back runs drifterd from a boot task (the old gateway task no longer starts the modules).
+
 ### 0.15.0 — 2026-11-02
 
 Refactoring phase 2: the runtime.
@@ -167,7 +173,8 @@ Supervisor: the gateway keeps the module servers running.
 
 All five servers moved to `C:\Drifter` / `C:\DrifterData` (washer, BoatGuard, anchor watch, MasterVolt, gateway).
 
-- `switch_module.ps1`: checks (and where allowed sets) the scheduled task before stopping anything; scheduled tasks run `toolsun_module.py`, which follows `locations.json`, so a switch never edits a task; stops the launchers above a server too (no console window left at "pause"); a launcher that already exited no longer aborts the switch; safety net: any failure after stopping the old server starts it again from the old folder.
+- `switch_module.ps1`: checks (and where allowed sets) the scheduled task before stopping anything; scheduled tasks run `tools
+un_module.py`, which follows `locations.json`, so a switch never edits a task; stops the launchers above a server too (no console window left at "pause"); a launcher that already exited no longer aborts the switch; safety net: any failure after stopping the old server starts it again from the old folder.
 - `modules.json`: MasterVolt's product photos are copied on switch-over; `prepare_live.ps1` installs without the pip cache.
 
 ### 0.3.0 — 2026-11-01
