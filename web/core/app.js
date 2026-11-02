@@ -187,6 +187,7 @@ async function renderSystem(el) {
     <div id="sysEvWrap" hidden><h2 class="sec">Supervisor events</h2><div class="card"><div class="log" id="sysEvents"></div></div></div>
     <div id="sysOffWrap" hidden><h2 class="sec">Switch off</h2><div class="card pad"><p class="hint" style="margin:0 0 12px">Stops every system's server and this app's server on the boat PC. Switches, chargers and the camera stay as they are. Start everything again with the <b>Drifter Boat Systems</b> icon on the boat PC's desktop.</p>
       <button class="btn danger" type="button" id="sysOff">${icon("off")} Switch all systems off</button></div></div>
+    <h2 class="sec">Help</h2><div class="card pad"><a class="btn sec" href="manual.html">${icon("ext")} Manual</a><p class="hint" style="margin:10px 2px 0">What every page shows and does.</p></div>
     <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="hint" style="margin:0">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's local certificate (the same one used for Energy, Anchor watch and BoatGuard).</p></div>
     <p class="hint" style="text-align:center;margin:18px 0" id="sysVer"></p>`;
   el.onclick = e => {

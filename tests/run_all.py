@@ -25,6 +25,7 @@ SUITES = [  # (name, folder, command)
     ("drifterd", ROOT, [sys.executable, "tests/test_drifterd.py"]),
     ("verify-live", ROOT, [sys.executable, "tests/test_verify_live.py"]),
     ("backup", ROOT, [sys.executable, "tests/test_backup.py"]),
+    ("manual", ROOT, [sys.executable, "tests/test_manual.py"]),
     ("energy", ROOT / "modules/energy", [python("energy"), "-m", "tests.run_all"] + (["quick"] if QUICK else [])),
     ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch", "test_anchor"]),
     ("guard", ROOT / "modules/guard", [python("guard"), "test_core.py"]),
