@@ -1006,7 +1006,6 @@ class InternetAISTest(unittest.TestCase):
     def test_reconnects_after_a_drop_and_keeps_the_new_connection(self):
         # 2026-10-18: after one dropped connection the next one was broken off again right after aisstream's
         # SubscriptionConfirmation, because the old error was still set; internet AIS never came back.
-        import websockets
         self.n.last_error = "connection closed: no close frame received or sent"     # left over from the drop
         events = []; self.n.on_event = lambda t, k: events.append(t)
         sent, sleeps = self.run_loop([{"MessageType": "SubscriptionConfirmation"},

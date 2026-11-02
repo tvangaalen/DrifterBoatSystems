@@ -733,7 +733,7 @@ class StillAlive:
         else: self._request(f"{self.HC_API}/{m[1]}/pause", b"", hdr)
         self.synced = minutes; self.sync_note = None
         if self.reported is not None and minutes != self.reported:
-            self.on_event(f"Still-alive check on healthchecks.io " + (f"set to {minutes:g} min" if minutes else "paused"), "info")
+            self.on_event("Still-alive check on healthchecks.io " + (f"set to {minutes:g} min" if minutes else "paused"), "info")
         self.reported = minutes
 
     def step(self, now=None):

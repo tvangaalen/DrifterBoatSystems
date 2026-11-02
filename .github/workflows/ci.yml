@@ -1,0 +1,45 @@
+# Every push and pull request: privacy scan of what it adds, lint, JavaScript syntax and every hardware-free test,
+# on Windows (the boat PC's platform) with the environments built from uv.lock. Nothing here touches the boat.
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Privacy scan (what this push adds; the local deny list is not available here, so patterns only)
+        shell: bash
+        run: |
+          base="${{ github.event.before }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then base="${{ github.event.pull_request.base.sha }}"; fi
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then base="HEAD~1"; fi
+          python tools/privacy_scan.py --range "$base..HEAD"
+      - name: Tools
+        run: python -m pip install --disable-pip-version-check "uv==0.9.30"
+      - name: Environments from uv.lock
+        run: python tools/sync_envs.py
+      - name: Lint (ruff; MasterVolt's files with its own configuration)
+        shell: bash
+        env:
+          UV_PROJECT_ENVIRONMENT: .venv-dev   # not the gateway's .venv
+        run: |
+          python -m uv run --frozen --no-default-groups --only-group dev ruff check .
+          python -m uv run --frozen --no-default-groups --only-group dev ruff check modules/energy
+      - name: JavaScript syntax
+        shell: bash
+        run: for f in web/*.js; do node --check "$f"; done
+      - name: Tests (MasterVolt without its slow simulations)
+        run: .venv\Scripts\python.exe tests\run_all.py quick

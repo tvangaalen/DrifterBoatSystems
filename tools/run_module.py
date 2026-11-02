@@ -72,6 +72,8 @@ def main(name):
                   f"{'' if job else ' (no job object: the server may outlive this runner)'}\n"); out.flush()
         cmd = m["command"][:]; exe = Path(m["folder"]) / cmd[0]
         if exe.exists(): cmd[0] = str(exe)              # .venv\Scripts\python.exe relative to the module folder
+        elif cmd[0].startswith(".venv"):                # environment not built yet (tools/sync_envs.py): the py launcher
+            cmd[0] = "pyw" if cmd[0].endswith("pythonw.exe") else "py"; out.write(f"(no {exe}: using {cmd[0]})\n"); out.flush()
         p = start_in_job(job, cmd, cwd=m["folder"], env={**os.environ, **m["env"]}, stdout=out, stderr=subprocess.STDOUT,
                          stdin=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
         return p.wait()

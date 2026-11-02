@@ -36,7 +36,8 @@ def main(result: Path):
     marker = Path(tempfile.gettempdir()) / f"drifter_s0_{os.getpid()}.txt"; child = marker.with_suffix(".py")
     child.write_text("import ctypes, os, sys\ns = ctypes.c_ulong(); ctypes.windll.kernel32.ProcessIdToSessionId(os.getpid(), ctypes.byref(s))\n"
                      "open(sys.argv[1], 'w').write(str(s.value))\n", encoding="utf-8")
-    pyw = shutil.which("pyw") or r"C:\Windows\pyw.exe"   # as start_all.ps1 does: WMI cannot start the Store Python alias itself
+    venv = Path(__file__).resolve().parent.parent / ".venv" / "Scripts" / "pythonw.exe"   # as start_all.ps1 does
+    pyw = str(venv) if venv.exists() else shutil.which("pyw") or r"C:\Windows\pyw.exe"
     line = f'"{pyw}" "{child}" "{marker}"'.replace("'", "''")
     ps = f"(Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{{CommandLine = '{line}'}}).ReturnValue"
     try:

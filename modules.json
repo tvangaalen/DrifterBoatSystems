@@ -41,7 +41,7 @@
     "gateway": {
       "name": "Drifter app", "port": 8100, "task": "DrifterBoatSystems",
       "legacy": "%USERPROFILE%\\Claude working folder\\DrifterBoatSystems", "dir": ".",
-      "command": ["pyw", "drifter.py"],
+      "command": [".venv\\Scripts\\pythonw.exe", "drifter.py"],
       "runtime": [], "code_runtime": ["config.json", "certs"], "runtime_in_code": true
     }
   }

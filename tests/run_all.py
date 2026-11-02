@@ -20,6 +20,7 @@ SUITES = [  # (name, folder, command)
     ("gateway", ROOT, [sys.executable, "tests/test_gateway.py"]),
     ("supervisor", ROOT, [sys.executable, "tests/test_supervisor.py"]),
     ("common", ROOT, [sys.executable, "tests/test_common.py"]),
+    ("privacy-scan", ROOT, [sys.executable, "tests/test_privacy_scan.py"]),
     ("run-module", ROOT, [sys.executable, "tests/test_run_module.py"]),
     ("energy", ROOT / "modules/energy", [python("energy"), "-m", "tests.run_all"] + (["quick"] if QUICK else [])),
     ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch", "test_api"]),

@@ -5,6 +5,6 @@ logs/
 *.tmp
 
 # Python
-.venv/
+.venv*/
 __pycache__/
 *.pyc

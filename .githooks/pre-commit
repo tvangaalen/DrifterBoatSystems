@@ -1,0 +1,4 @@
+#!/bin/sh
+# Privacy scan of the staged changes before every commit: this repository is public (tools/privacy_scan.py).
+# Active through: git config core.hooksPath .githooks
+exec py tools/privacy_scan.py

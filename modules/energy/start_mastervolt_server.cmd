@@ -13,11 +13,16 @@ if errorlevel 1 (
 )
 
 echo.
-py -c "import bleak" >nul 2>nul
-if errorlevel 1 (
-  echo Installing the DALY Bluetooth component for the current Windows user...
-  py -m pip install --user "bleak>=2.0,<4"
-  if errorlevel 1 echo WARNING: BLE component installation failed. The Mastervolt dashboard will still start, but the BMS page will report Bluetooth unavailable.
+rem Drifter Boat Systems builds .venv from its uv.lock (tools\sync_envs.py, python.org Python 3.12): use it when present.
+set "PY=py"
+if exist "%~dp0.venv\Scripts\python.exe" set "PY=%~dp0.venv\Scripts\python.exe"
+if not exist "%~dp0.venv\Scripts\python.exe" (
+  py -c "import bleak" >nul 2>nul
+  if errorlevel 1 (
+    echo Installing the DALY Bluetooth component for the current Windows user...
+    py -m pip install --user "bleak>=2.0,<4"
+    if errorlevel 1 echo WARNING: BLE component installation failed. The Mastervolt dashboard will still start, but the BMS page will report Bluetooth unavailable.
+  )
 )
 
 echo Starting Mastervolt HTTPS web server...
@@ -31,7 +36,7 @@ echo.
 echo Press Ctrl+C to stop the server.
 echo.
 
-py -m uvicorn app:app --host %MASTERVOLT_BIND% --port 8000 --ssl-keyfile "%~dp0certs\server-key.pem" --ssl-certfile "%~dp0certs\server-cert.pem" --timeout-graceful-shutdown 5
+"%PY%" -m uvicorn app:app --host %MASTERVOLT_BIND% --port 8000 --ssl-keyfile "%~dp0certs\server-key.pem" --ssl-certfile "%~dp0certs\server-cert.pem" --timeout-graceful-shutdown 5
 
 echo.
 echo Web server stopped.

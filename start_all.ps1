@@ -12,11 +12,14 @@
 param([string]$Only, [switch]$NoWait)
 $ErrorActionPreference = 'Continue'
 if (-not $NoWait) { $Host.UI.RawUI.WindowTitle = 'Drifter Boat Systems' }
-$plan = (& py (Join-Path $PSScriptRoot 'tools\modules.py') plan | Out-String) | ConvertFrom-Json
+# Python: the gateway's environment (python.org 3.12, built from uv.lock by tools\sync_envs.py); py only as a fallback.
+$venv = Join-Path $PSScriptRoot '.venv\Scripts'
+$py = if (Test-Path "$venv\python.exe") { "$venv\python.exe" } else { 'py' }
+$plan = (& $py (Join-Path $PSScriptRoot 'tools\modules.py') plan | Out-String) | ConvertFrom-Json
 $gwPlan = $plan.modules | Where-Object name -eq 'gateway'      # before -Only filters the list (one Python start: slow in session 0 after a boot)
 if ($Only) { $plan.modules = @($plan.modules | Where-Object name -eq $Only) }
 $runner = Join-Path $PSScriptRoot 'tools\run_module.py'
-$pyw = (Get-Command pyw.exe -ErrorAction SilentlyContinue).Source; if (-not $pyw) { $pyw = 'pyw.exe' }
+$pyw = if (Test-Path "$venv\pythonw.exe") { "$venv\pythonw.exe" } else { (Get-Command pyw.exe -ErrorAction SilentlyContinue).Source }
 
 function Listening($port) { [bool](Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) }
 function Launch($line, $dir, $show) {

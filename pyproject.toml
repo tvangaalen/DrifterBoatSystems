@@ -1,0 +1,45 @@
+# Drifter Boat Systems: one lockfile (uv.lock) for the gateway and the four module servers.
+# Each module's packages are a dependency group; tools/sync_envs.py builds every environment from the lock on the
+# python.org Python 3.12 (never the Microsoft Store Python: it hung at boot in session 0 and cannot be started through
+# Win32_Process Create): the gateway in .venv, each module in modules/<name>/.venv.
+[project]
+name = "drifter-boat-systems"
+version = "0.14.0"
+description = "One web app for the boat's systems: gateway, supervisor and shared code (stdlib only)"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+# MasterVolt YMS; starlette as it ran on 2026-11-02, httpx for its tests (starlette's TestClient)
+energy = ["fastapi==0.141.1", "starlette==1.6.0", "uvicorn[standard]==0.52.4", "hidapi==0.15.0", "bleak==3.0.2", "httpx==0.28.1"]
+anchor = ["websockets==13.1"]   # 14+ changed the client API; the anchor watch is tested on 13.1
+guard = ["pyezviz==0.2.2.3", "requests==2.34.2"]
+washer = ["Flask==3.1.3", "python-miio==0.5.12", "micloud==0.6"]
+dev = ["ruff==0.14.14", "black==26.5.1"]   # black: MasterVolt's formatter
+
+[tool.uv]
+package = false              # nothing is built or installed: the code runs from the checkout
+default-groups = []
+# each module has its own environment, so their versions may differ (uvicorn[standard] brings websockets 17)
+conflicts = [
+    [{ group = "energy" }, { group = "anchor" }],
+]
+# python-miio 0.5.12 asks for netifaces, which needs a C compiler on Windows for Python 3.12; the washer controller does
+# not use it (modules/washer/README.md). This marker is never true, so it is never installed.
+override-dependencies = ["netifaces; sys_platform == 'never'"]
+
+# Lint for the gateway, common/, tools/, tests/ and the anchor, guard and washer modules. MasterVolt (modules/energy)
+# has its own, stricter configuration (black + ruff) in its pyproject.toml, which ruff uses for files below it.
+[tool.ruff]
+line-length = 160
+target-version = "py312"
+extend-exclude = ["web/vendor", "modules/energy"]
+
+[tool.ruff.lint]
+# syntax errors, pyflakes (unused or undefined names) and bugbear; not pycodestyle: the dense one-line style is deliberate
+select = ["E9", "F", "B"]
+ignore = [
+    "B007",   # an unused loop variable named i is fine
+    "B904",   # raise ... from: the handlers turn errors into messages for the page on purpose
+    "B905",   # zip(strict=): the lengths are equal by construction where it is used
+]

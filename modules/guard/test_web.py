@@ -1,5 +1,5 @@
 """BoatGuard API tests with a fake guard (no router, no camera, no Pushover): no page, JSON-only commands, localhost bind."""
-import http.client, json, logging, ssl, sys, unittest
+import http.client, json, logging, sys, unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))

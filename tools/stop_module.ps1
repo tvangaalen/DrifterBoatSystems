@@ -4,7 +4,10 @@
 # Usage: powershell -NoProfile -ExecutionPolicy Bypass -File tools\stop_module.ps1 <module>   exit 0 = stopped, 1 = port still in use
 param([Parameter(Mandatory)][string]$Module)
 $ErrorActionPreference = 'Stop'
-$m = (& py (Join-Path $PSScriptRoot 'modules.py') plan | Out-String | ConvertFrom-Json).modules | Where-Object name -eq $Module
+# Python: the gateway's environment (python.org 3.12, built from uv.lock by tools\sync_envs.py); py only as a fallback.
+$venv = Join-Path (Split-Path -Parent $PSScriptRoot) '.venv\Scripts'
+$py = if (Test-Path "$venv\python.exe") { "$venv\python.exe" } else { 'py' }
+$m = (& $py (Join-Path $PSScriptRoot 'modules.py') plan | Out-String | ConvertFrom-Json).modules | Where-Object name -eq $Module
 if (-not $m) { Write-Host "unknown module $Module"; exit 2 }
 function Listener($port) { (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess }
 

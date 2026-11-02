@@ -1,6 +1,6 @@
 """common/ tests: LAN-only binding, DNS rebinding, same origin, 24-hour clock, logging, Pushover posting (fake
 urlopen, nothing is sent) and the certificate script's refusal without the CA (it must never create one)."""
-import io, json, logging, subprocess, sys, tempfile, time, unittest, urllib.error
+import io, logging, subprocess, sys, tempfile, time, unittest, urllib.error
 from pathlib import Path
 from unittest import mock
 

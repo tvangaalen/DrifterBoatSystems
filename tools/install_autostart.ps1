@@ -24,8 +24,10 @@ param([switch]$Status, [switch]$Remove, [switch]$Now, [switch]$Force)
 $ErrorActionPreference = 'Stop'
 $Task = 'DrifterBoatSystems'
 $Root = Split-Path -Parent $PSScriptRoot
-$Pyw = (Get-Command pyw.exe -ErrorAction SilentlyContinue).Source; if (-not $Pyw) { $Pyw = 'C:\Windows\pyw.exe' }
-$Py = (Get-Command py.exe -ErrorAction SilentlyContinue).Source; if (-not $Py) { $Py = 'C:\Windows\py.exe' }
+# The environments built from uv.lock (tools\sync_envs.py) on the python.org Python 3.12, not the py launcher: the Store
+# Python behind it hung at boot in session 0.
+$Pyw = Join-Path $Root '.venv\Scripts\pythonw.exe'
+$Py = Join-Path $Root 'modules\energy\.venv\Scripts\python.exe'     # has hidapi and bleak for the check
 $User = "$env:USERDOMAIN\$env:USERNAME"
 
 function Show-Status {
@@ -46,6 +48,7 @@ if ($Status) { Show-Status; return }
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $admin) { throw 'Run this from an elevated PowerShell (right-click PowerShell, Run as administrator).' }
 if (-not (Test-Path (Join-Path $Root 'drifter.py'))) { throw "Run it from the Drifter folder (C:\Drifter): $Root has no drifter.py." }
+foreach ($p in $Pyw, $Py) { if (-not (Test-Path $p)) { throw "$p missing: build the environments first (py -3.12 tools\sync_envs.py)." } }
 
 $action = New-ScheduledTaskAction -Execute $Pyw -Argument "`"$Root\tools\run_module.py`" gateway" -WorkingDirectory $Root
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -MultipleInstances IgnoreNew `
@@ -66,7 +69,7 @@ if (-not $ctx.ValidateCredentials($env:USERNAME, $cred.GetNetworkCredential().Pa
 # 2. the read-only check, in the session the boot task will run in
 $result = Join-Path $env:TEMP "drifter_session0_check.json"; Remove-Item $result -ErrorAction SilentlyContinue
 $checkTask = 'Drifter session check (temporary)'
-$checkAction = New-ScheduledTaskAction -Execute $Py -Argument "-3.13 `"$Root\tools\session0_check.py`" `"$result`"" -WorkingDirectory $Root
+$checkAction = New-ScheduledTaskAction -Execute $Py -Argument "`"$Root\tools\session0_check.py`" `"$result`"" -WorkingDirectory $Root
 Register-ScheduledTask -TaskName $checkTask -Action $checkAction -User $User -Password $cred.GetNetworkCredential().Password `
     -Settings (New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 3)) -Force | Out-Null
 try {
@@ -87,6 +90,12 @@ $trigger = New-ScheduledTaskTrigger -AtStartup; $trigger.Delay = 'PT2M'
 Register-ScheduledTask -TaskName $Task -Action $action -Trigger $trigger -Settings $settings -RunLevel Limited `
     -User $User -Password $cred.GetNetworkCredential().Password -Force | Out-Null
 "`n$Task now starts at boot, whether anybody is logged on or not."
+# BoatGuard's own boot task: the same runner and Python (it used the py launcher); 1 min after boot, as before
+$guardAction = New-ScheduledTaskAction -Execute $Pyw -Argument "`"$Root\tools\run_module.py`" guard" -WorkingDirectory $Root
+$guardTrigger = New-ScheduledTaskTrigger -AtStartup; $guardTrigger.Delay = 'PT1M'
+Register-ScheduledTask -TaskName 'BoatGuard' -Action $guardAction -Trigger $guardTrigger -Settings $settings -RunLevel Limited `
+    -User $User -Password $cred.GetNetworkCredential().Password -Force | Out-Null
+"BoatGuard: same runner and Python (applies from its next start)."
 if ($Now) {
     Write-Host 'Restarting the Drifter gateway in that session now (the module servers keep running until their next restart)...'
     Stop-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue; Start-Sleep 3; Start-ScheduledTask -TaskName $Task; Start-Sleep 15
