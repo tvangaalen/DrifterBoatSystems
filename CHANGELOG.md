@@ -2,6 +2,10 @@
 
 ## 0.19
 
+### 0.19.1 — 2026-11-02
+
+- `tools/verify_live.py`: one read-only check of the live system after a deploy or restart (health and version, 403 without the token, supervisor and gateway state, and per module: energy - 3 BMS units connected, no BMS control busy, Float not latched; anchor - Orca Core, network GPS, Pushover, still-alive, no alarm; guard - router and camera; washer - status). Takes about a second; waits only for what can still come right. Not a gateway change: the app stays 0.19.0.
+
 ### 0.19.0 — 2026-11-02
 
 Refactoring phase 3: energy, the last module.
