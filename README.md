@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.10.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.11.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
@@ -17,6 +17,7 @@ viomi-w1-controller, now archived on GitHub); their full history and release tag
 drifter.py        gateway: serves web/ and passes the app's requests on to the module servers
 web/              the app (HTML/CSS/JS, no build step)
 modules/<name>/   each system's server, with its own README, CLAUDE.md, tests and changelog
+common/           code shared by the gateway and the modules (network checks, HTTPS, logging, Pushover, certificates)
 tests/run_all.py  every hardware-free test of the gateway and all modules
 tools/            mock servers for testing the app without the boat
 ```
@@ -91,5 +92,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch_module.ps1 wash
 ## Development
 
 `py tools/mock_upstreams.py --gateway` starts four fake servers with made-up data plus a gateway on http://127.0.0.1:8101/ (`tools/config.mock.json`). Use it for every UI test: it never contacts the boat. `py tools/mock_upstreams.py` alone starts only the fakes.
+
+Shared code lives in `common/` (stdlib only): `net.py` (LAN-only bind check, DNS-rebinding and same-origin checks), `web.py` (HTTPS context, quiet threading server), `logs.py` (one log format with the 24-hour clock, rotating log file), `timefmt.py`, `pushover.py` (posting to Pushover; each module keeps its own key file, queue and retries) and `issue_cert.ps1` (a server certificate from the existing Mastervolt Local CA, by default from `modules\energy\certs`; it refuses to run without that CA and never creates one). The gateway, the anchor watch, BoatGuard and the washer controller use it; MasterVolt keeps its own code (it owns the CA and its launcher). A module finds `common` by putting the repository root on `sys.path`.
 
 Files: `drifter.py` (gateway), `web/index.html` (shell), `web/app.css` (design system and themes), `web/app.js` (routing, polling, dialogs, overview, System page), `web/energy.js`, `anchor.js`, `guard.js`, `washer.js` (modules), `web/sw.js` (app-shell cache; live data is never cached).

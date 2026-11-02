@@ -6,6 +6,13 @@ All notable changes to the Orca Core 2 Anchor Watch. Newest first.
 
 ## 1.17 — The page moves into Drifter
 
+### 1.17.1
+- Bind check, HTTPS, logging and posting to Pushover come from Drifter's shared `common/` package; the alarm logic,
+  the Pushover queue, priorities and retries are unchanged. `setup_local_https.ps1` calls `common/issue_cert.ps1`:
+  same certificate files and `bind-address.txt`, the certificate now lists only private addresses, and the CA is read
+  from `modules\energy\certs` of the same checkout by default (`ANCHOR_CA_DIR` still overrides it). Log lines carry
+  the date.
+
 ### 1.17.0
 - **No page of its own any more**: the anchor watch page is the Anchor watch module of the Drifter app (Drifter Boat
   Systems), with everything the old page did. `static/anchor.html`, the manifest and the app icons are removed;

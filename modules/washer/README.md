@@ -1,6 +1,6 @@
 # VIOMI W1 webcontroller
 
-Lokale Flask-controller voor de VIOMI W1 (`viomi.washer.w1`), versie `3.8-v59`: de API achter de module **Washer** van de Drifter-app (status, bediening, diagnostiek en een server-side scheduler). Sinds 3.8 heeft de controller geen eigen webpagina meer; de bediening zit in Drifter.
+Lokale Flask-controller voor de VIOMI W1 (`viomi.washer.w1`), versie `3.8-v60`: de API achter de module **Washer** van de Drifter-app (status, bediening, diagnostiek en een server-side scheduler). Sinds 3.8 heeft de controller geen eigen webpagina meer; de bediening zit in Drifter.
 
 Onderdeel van [DrifterBoatSystems](https://github.com/tvangaalen/DrifterBoatSystems) (`modules/washer`); de oude repository viomi-w1-controller is gearchiveerd.
 
@@ -48,5 +48,7 @@ Uitgangspunt is `viomi_web_english_v57.py` uit de ChatGPT-chat **V48 Creation Re
 Versie `3.7-v58` voegt alleen de bescherming tegen verzoeken van andere websites toe (CSRF en DNS-rebinding); bediening en schedulerlogica zijn ongewijzigd.
 
 Versie `3.8-v59` verwijdert de eigen webpagina's (controller en opstartdiagnose, plus de app-iconen), voegt `GET /api/diagnostics` toe voor de Drifter-app en laat de server standaard alleen op `127.0.0.1` luisteren. Bediening, validatie en schedulerlogica zijn ongewijzigd.
+
+Versie `3.8-v60` haalt de bind-, host- en origin-controles uit Drifters gedeelde `common/net.py` in plaats van een eigen kopie; het gedrag is gelijk.
 
 De bron is op syntax en ingebouwde geheimen gecontroleerd. Er is geen verbinding met de wasmachine gemaakt en er zijn geen opdrachten aan de wasmachine verzonden.

@@ -42,7 +42,7 @@ After BoatGuard arms or disarms the camera, the page shows the new state at once
 
 API: `GET /api/status`, `/api/log?n=`; `POST` (JSON only) `/api/enabled`, `/api/settings`, `/api/notify-test`, `/api/test`. There is no password; it never listens on a public address. The port is set in `config.json` under `"web": {"port": 8095}`.
 
-**HTTPS:** `setup_https.ps1 [-CaDir <folder>]` creates `certs\boatguard-cert.pem`/`-key.pem`, signed by a local CA (`ca-cert.pem` + `ca-key.pem` in that folder). The certificate covers localhost, the PC's name, 127.0.0.1 and its private IPv4 addresses, and is valid for 825 days (the most iOS accepts). The iPhone must trust that CA (install it as a profile, then Settings → General → About → Certificate Trust Settings). Run the script again if the PC's LAN address changes, then restart BoatGuard. Without a certificate the page falls back to plain HTTP, and the log says so.
+**HTTPS:** `setup_https.ps1 [-CaDir <folder>]` creates `certs\boatguard-cert.pem`/`-key.pem` through Drifter's `common\issue_cert.ps1`, signed by the Mastervolt Local CA (`ca-cert.pem` + `ca-key.pem`; default folder `modules\energy\certs` of the Drifter checkout). The certificate covers localhost, the PC's name, 127.0.0.1 and its private IPv4 addresses, and is valid for 825 days (the most iOS accepts). The iPhone must trust that CA (install it as a profile, then Settings → General → About → Certificate Trust Settings). Run the script again if the PC's LAN address changes, then restart BoatGuard. Without a certificate the page falls back to plain HTTP, and the log says so.
 
 **Firewall:** not needed any more (localhost only); the iPhone reaches BoatGuard through Drifter. `add_firewall_rule.cmd` is only for a configured `web.host`.
 

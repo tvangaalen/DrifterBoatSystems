@@ -20,7 +20,7 @@ Not for navigation.
 Double-click `start_anchor_watch.cmd`. It:
 
 1. runs `setup_local_https.ps1`, which issues this app's certificate from the existing **Mastervolt Local CA**
-   (`C:\Temp\mastervoltproject\certs`, override with the `ANCHOR_CA_DIR` environment variable). An iPhone that
+   (`modules\energy\certs` of the Drifter checkout, through `common\issue_cert.ps1`; override with the `ANCHOR_CA_DIR` environment variable). An iPhone that
    already trusts that CA for MasterVolt YMS opens the anchor watch with no change. The script never creates a CA,
    never writes into the CA folder and never touches the Windows certificate store;
 2. creates `.venv` on first run;

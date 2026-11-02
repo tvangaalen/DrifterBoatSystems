@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.11
+
+### 0.11.0 — 2026-11-02
+
+Shared code into `common/` (migration step 5).
+
+- `common/net.py`: one LAN-only bind check, DNS-rebinding check and same-origin check, used by the gateway, the anchor watch (1.17.1), BoatGuard and the washer controller (3.8-v60) instead of four copies.
+- `common/web.py`: HTTPS context and the quiet threading server (gateway, anchor watch, BoatGuard). `common/logs.py` + `common/timefmt.py`: one log format with date and 24-hour time; the gateway's log file under the scheduled task now rotates (1 MB × 5) instead of growing without limit.
+- `common/pushover.py`: posting to Pushover for the anchor watch and BoatGuard. Each keeps its own key file, queue, priorities and retries; BoatGuard no longer needs `requests` for it.
+- `common/issue_cert.ps1`: one certificate script from the Mastervolt Local CA (random serial, nothing written to the CA folder, refuses without the CA). The gateway's `setup_https.ps1`, BoatGuard's `setup_https.ps1` and the anchor watch's `setup_local_https.ps1` call it; their default CA folder is now `modules\energy\certs` of the same checkout instead of the old `C:\Temp\mastervoltproject\certs`.
+- MasterVolt (energy) unchanged. New `tests/test_common.py` (suite `common` in `run_all.py`).
+
 ## 0.10
 
 ### 0.10.0 — 2026-11-02
