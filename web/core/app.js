@@ -172,6 +172,15 @@ function supState(s) {
     down: `<span class="badge bad">not running</span>`, failed: `<span class="badge bad">failed · next try in ${dur(s.next_try_in)}</span>`,
     held: `<span class="badge warn">on hold</span>`}[s.state] || `<span class="badge">${esc(s.state)}</span>`;
 }
+// The nightly back-up of the key files (drifterd runs tools/backup.py): the newest one, the next run, and a failed or missing one in red.
+function backupRow(b) {
+  const stale = !b.last || Date.now() / 1000 - b.last.t > 30 * 3600;
+  const st = b.failed ? `<span class="badc">last run failed</span><small>see its log</small>`
+    : b.running ? `<span class="badge warn">running…</span>`
+    : b.last ? `<span class="${stale ? "badc" : "good"}">${esc(dayTime(b.last.t))}</span>` : `<span class="badc">none yet</span>`;
+  return `<div class="row"><div class="k"><b>Back-up of the keys</b><span class="hint">Pushover, NFL, EZVIZ, washer · every night, ${esc(b.count)} kept in ${esc(b.dest)} · next ${esc(dayTime(b.next))}</span></div>
+    <div class="v">${st}</div><span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="backup">Show log</button></span></div>`;
+}
 async function renderSystem(el) {
   el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="hint" style="margin:10px 2px 0">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p></div>
     <h2 class="sec">Systems</h2><div class="card"><div class="rows" id="sysRows"><div class="empty">Loading…</div></div></div>
@@ -211,6 +220,7 @@ async function refreshSystem() {
   }).join("") + (sup && sup.error ? `<div class="row"><span class="badc">${esc(sup.error)}</span></div>` : "")
     + (sup ? `<div class="row"><div class="k"><b>Drifter</b><span class="hint">this app's server on the boat PC${sup.drifterd ? ` · service drifterd ${esc(sup.drifterd.version)}, running since ${esc(dayTime(sup.drifterd.started))}` : ""}</span></div>
         <span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="gateway">Show log</button>${sup.drifterd ? `<button class="btn sec sm" type="button" data-log="drifterd">Service log</button>` : ""}</span></div>`
+      + (sup.backup ? backupRow(sup.backup) : "")
     : `<div class="row"><span class="hint">The supervisor is off: servers are not restarted automatically.</span></div>`);
   $("sysEvWrap").hidden = !sup || !sup.events.length;
   $("sysOffWrap").hidden = !sup; $("sysOff").disabled = !!(sup && sup.shutdown && sup.shutdown.state === "running");

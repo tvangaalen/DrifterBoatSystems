@@ -2,6 +2,9 @@
   "_comment": "The servers drifterd runs (drifterd.py): code in <live>\\<dir>, runtime files in <data>\\<module> ({data}), output in <data>\\logs\\<module>.console.log; the gateway keeps config.json, certs and logs in its own folder (runtime_in_code). command runs in the module folder with DRIFTER_DATA set; data_args are appended. health = a cheap GET on 127.0.0.1 (shown on the System page; it never stops or restarts anything), none = only the port is checked. requires = files that must exist before a start (MasterVolt's certificate script would create a new CA without them). precheck = asked of the module before a restart or switch-off (drifter.py make_precheck).",
   "live": "C:\\Drifter",
   "data": "C:\\DrifterData",
+  "backup": {"at": "03:30", "dest": "C:\\DrifterBackups", "daily": 7, "weekly": 4,
+             "files": ["anchor\\pushover.json", "anchor\\nfl.json", "guard\\pushover.json", "guard\\ezviz_token.json", "washer\\viomi_config.json"],
+             "_comment": "tools/backup.py, started by drifterd every night at 'at' (24-hour): only these key files (relative to data), kept 'daily' days and 'weekly' weeks"},
   "modules": {
     "gateway": {
       "name": "Drifter app", "port": 8100, "dir": ".", "runtime_in_code": true,

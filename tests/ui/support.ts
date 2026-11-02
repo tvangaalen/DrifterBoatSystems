@@ -89,7 +89,12 @@ export async function settled(page: Page) {
 // The visible page as normalised HTML: what the app built, independent of how its code is organised.
 export async function snapshot(page: Page): Promise<string> {
   return page.evaluate(() => {
-    const parts = ["#title", "#sideNav", "#tabbar", "#alarmbar", "#pages section:not([hidden])"].map(s => document.querySelector(s)?.outerHTML ?? "");
+    // Leaflet's map panes are third-party markup whose tile order depends on load timing: only the map's own element counts.
+    const parts = ["#title", "#sideNav", "#tabbar", "#alarmbar", "#pages section:not([hidden])"].map(s => {
+      const el = document.querySelector(s)?.cloneNode(true) as HTMLElement | undefined;
+      el?.querySelectorAll(".leaflet-container").forEach(m => { m.innerHTML = ""; m.removeAttribute("style"); });
+      return el?.outerHTML ?? "";
+    });
     return parts.join("\n").replace(/>\s+</g, ">\n<").replace(/[ \t]+/g, " ");
   });
 }
