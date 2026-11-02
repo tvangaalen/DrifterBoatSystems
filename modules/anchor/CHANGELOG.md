@@ -6,6 +6,10 @@ All notable changes to the Orca Core 2 Anchor Watch. Newest first.
 
 ## 1.17 — The page moves into Drifter
 
+### 1.17.2
+- `start_anchor_watch.cmd` does not wait at `pause` when Drifter started it (`DRIFTER_DATA` set): its console window is
+  usually hidden then, and a waiting window would stay behind unseen.
+
 ### 1.17.1
 - Bind check, HTTPS, logging and posting to Pushover come from Drifter's shared `common/` package; the alarm logic,
   the Pushover queue, priorities and retries are unchanged. `setup_local_https.ps1` calls `common/issue_cert.ps1`:

@@ -1,6 +1,6 @@
 # Drifter Boat Systems
 
-Version 0.11.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
+Version 0.12.0 · one web app for the boat's systems, for iPhone and iPad (also works on a computer), and the code of
 every system behind it in one repository:
 
 | Module | System | Server it talks to | Code |
@@ -73,8 +73,10 @@ With `"supervise": true` in `config.json` (the live setting) the gateway keeps t
 
 - A server that runs is left alone. One that has not been listening for 30 s is started (the same way as the desktop icon does, outside the gateway's process tree, so restarting the gateway never takes a server down), then given 2.5 min to come up; failed starts are retried after 1, 2, 5, 10 and then every 15 min.
 - It never stops a server by itself. **System → Restart** stops and starts one on request, after a confirmation that says what pauses; MasterVolt is refused while a BMS control runs or Float is latched, the anchor watch while an alarm is active.
-- Closing a server's console window counts as "stopped": it is started again after 30 s. To keep a module stopped, create the file `C:\DrifterData\hold\<module>` (energy, anchor, guard, washer); `switch_module.ps1` does that itself while moving a module.
+- Closing a server's console window counts as "stopped": it is started again after 30 s (use *Switch all systems off* to stop everything). To keep a module stopped, create the file `C:\DrifterData\hold\<module>` (energy, anchor, guard, washer); `switch_module.ps1` does that itself while moving a module.
 - The System page shows each server's state, uptime and the supervisor's events.
+- **Console windows:** MasterVolt and the anchor watch run in a console window, hidden by default. System → *Console window on the boat PC* shows or hides each one; the choice is kept in `C:\DrifterData\consoles.json`, used by `start_all.ps1` and kept by the supervisor (it puts a window back if it differs). Started by Drifter, their start scripts no longer wait at `pause` when the server stops, so no hidden window is left behind.
+- **System → Switch all systems off** asks first (default *Leave on*; the list says what stops, e.g. that the anchor alarm stops when the anchor is set), is refused for the same reasons as a restart, then stops the washer, BoatGuard, anchor watch and MasterVolt and finally the gateway itself (exit code 0, so its task does not start it again). The page then says *All systems have been shut down* and closes on OK (a home-screen app or a tab the browser will not close shows a "switched off" page instead). Switches, chargers and the camera stay as they are. Start everything again with the desktop icon.
 
 ## Moving the servers to `C:\Drifter` (one module at a time)
 

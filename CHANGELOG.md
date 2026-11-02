@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12
+
+### 0.12.0 — 2026-11-02
+
+- **System → Switch all systems off.** Confirmation with *Leave on* as the default, listing what stops (Float protection; the anchor alarm when the anchor is set; BoatGuard's automatic arming; a scheduled wash). Refused like a restart (BMS control busy, Float latched, anchor alarm). The supervisor stops its loop, stops washer, BoatGuard, anchor watch and MasterVolt, and the gateway ends itself 15 s later with exit code 0 (its scheduled task does not restart it). The page shows the progress, then "All systems have been shut down. Press OK to close the application" and closes the tab on OK, or shows a "switched off" page where the browser does not allow that. Nothing is switched on the boat: inverter, chargers, alternator, Engine ECU and camera stay as they are.
+- **Console windows per system**, hidden by default: System → *Console window on the boat PC* for MasterVolt and the anchor watch. Kept in `C:\DrifterData\consoles.json`; `start_all.ps1` starts the consoles hidden or shown accordingly, the supervisor applies a change at once and keeps it. The window is found through the process listening on the module's port, not by title. Started by Drifter, both start scripts skip their final `pause` (anchor watch 1.17.2), so a stopped server leaves no hidden window behind.
+- Overview, Energy tile: **Alternator** power next to Solar and Shore; **DC load** shown as a negative value.
+
 ## 0.11
 
 ### 0.11.0 — 2026-11-02
