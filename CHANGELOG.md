@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.20
+
+### 0.20.0 — 2026-11-02
+
+Refactoring phase 4: the frontend.
+- **Browser tests** (Playwright, `tests/ui`): every page and view at 390, 820 and 1180 px on recorded mock data with the clock fixed, compared with DOM snapshots; no console errors; only 24-hour times; the safe defaults of the confirmations (Keep ECU ON, Leave on, Cancel) and that declining sends nothing; every page in WebKit (Safari on the iPhone). They never touch the live servers: their own mock (`--offset 1000`) and captured commands.
+- **The app as ES modules**: `web/app.js` split into `web/core` (format, api, dialogs, ui, app) and imported by the pages, `web/main.js` as the entry. The DOM of every page is unchanged and 81 screenshots (3 widths, 3 themes) are identical pixel for pixel.
+- **Type check**: `npm run typecheck` (`tsc --checkJs` over `web/`, JSDoc types) at 0 errors. Node is a development tool only (`package.json`); there is no build step.
+- **MasterVolt 3.0.0**: its classic page (`modules/energy/static`) is removed; the Energy page of this app is the only one. The API and everything behind it are unchanged.
+- The gateway accepts up to 64 waiting connections (it was 5: a page load with many files at once got connections refused, found by the browser tests).
+- CI runs the type check and the browser tests.
+
 ## 0.19
 
 ### 0.19.1 — 2026-11-02
