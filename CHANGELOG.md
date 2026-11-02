@@ -2,6 +2,12 @@
 
 ## 0.13
 
+### 0.13.2 — 2026-11-02
+
+- Desktop icon: a scheduled task whose server stops while the icon waits is started again. Clicked right after "Switch all systems off", the gateway still listened for its last 15 s, so it counted as "already running", then ended, and nothing started the other modules.
+- Log window: a **‹ Drifter** button goes back to the app (closes the log window, or opens the System page). In the home-screen app the log opens in place, since there are no tabs or back button there.
+- `tools/create_shortcut.ps1` (re)creates the desktop icon with the full path of powershell.exe; the icon on the OneDrive desktop had lost its target.
+
 ### 0.13.1 — 2026-11-02
 
 First boot without anybody logged on: BoatGuard, MasterVolt (USB Link and all three BMS over Bluetooth), the anchor watch and the washer all ran in session 0, but getting there was slow and fragile. Fixed:
