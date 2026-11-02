@@ -99,6 +99,16 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(r.state("washer"), "starting")
         r.up.add(8080); r.tick(5); self.assertEqual(r.state("washer"), "running")
 
+    def test_restart_swaps_in_a_new_python_environment(self):
+        r = Rig(); r.tick(); f = r.data / "washer"
+        (f / ".venv").mkdir(parents=True); (f / ".venv" / "old").write_text("3.13"); (f / ".venv-next").mkdir(); (f / ".venv-next" / "new").write_text("3.12")
+        r.sup.folders = {"washer": f}
+        r.sup.restart("washer"); self.wait_idle(r, "washer")
+        self.assertTrue((f / ".venv" / "new").exists()); self.assertTrue((f / ".venv-old" / "old").exists()); self.assertFalse((f / ".venv-next").exists())
+        self.assertEqual((r.stopped, r.started), (["washer"], ["washer"]))
+        r.sup.restart("washer"); self.wait_idle(r, "washer")                  # nothing new to swap: the environment stays
+        self.assertTrue((f / ".venv" / "new").exists()); self.assertTrue(Rig().sup.folders == {})
+
     def test_slow_server_after_restart_is_not_started_twice(self):
         r = Rig(); r.tick()
         gate = threading.Event()

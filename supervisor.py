@@ -19,7 +19,7 @@ Stdlib only.
 """
 from __future__ import annotations
 
-import logging, subprocess, sys, threading, time
+import logging, os, shutil, subprocess, sys, threading, time
 from collections import deque
 from pathlib import Path
 
@@ -68,7 +68,7 @@ def stop_module(name: str) -> None:
 
 class Supervisor:
     def __init__(self, names=SUPERVISED, ports=None, data=None, listening=listening_ports, start=start_module, stop=stop_module,
-                 precheck=None, clock=time.time, logs=None, start_async=True):
+                 precheck=None, clock=time.time, logs=None, start_async=True, folders=None):
         self.names = list(names)
         self.ports = ports or {n: M.resolve(n)["port"] for n in self.names}
         self.data = Path(data or M.DATA)
@@ -76,6 +76,8 @@ class Supervisor:
         self.start_async = start_async        # starts run in their own thread, so one slow start never holds up the others
         # Log file per module (and the gateway): <data>\\logs\\<module>.console.log, written by tools/run_module.py
         self.logs = logs or {n: Path(M.resolve(n)["data"]) / "logs" / f"{n}.console.log" for n in LOG_NAMES}
+        # module code folders, for swapping in a new Python environment at a restart (none for tests: no `ports` given)
+        self.folders = folders if folders is not None else {} if ports else {n: Path(M.resolve(n)["folder"]) for n in self.names}
         self.lock = threading.Lock(); self.events = deque(maxlen=200); self._stop = threading.Event()
         self.mods = {n: {"state": "unknown", "since": None, "down_since": None, "last_start": None, "attempts": 0, "next_try": 0.0,
                          "starts": 0, "busy": None, "last_event": None} for n in self.names}
@@ -198,11 +200,26 @@ class Supervisor:
         s["busy"] = "restart"
         threading.Thread(target=self._restart, args=(name,), daemon=True, name=f"restart-{name}").start()
 
+    def _swap_env(self, name):
+        """A restart puts a new Python environment in place when tools/sync_envs.py built one (<folder>/.venv-next):
+        only the supervisor, in the servers' own session, can stop them, so the swap happens here, between stop and start."""
+        folder = self.folders.get(name)
+        if not folder or not (folder / ".venv-next").exists(): return
+        nxt, cur, old = folder / ".venv-next", folder / ".venv", folder / ".venv-old"
+        for _ in range(20):                           # a launcher may hold files for a moment after the server ended
+            try:
+                if old.exists(): shutil.rmtree(old)
+                if cur.exists(): os.replace(cur, old)
+                os.replace(nxt, cur); self.event(name, "new Python environment in place (.venv-next)"); return
+            except OSError: time.sleep(1)
+        self.event(name, "could not swap in .venv-next (files in use); starting with the old environment", "warn")
+
     def _restart(self, name):
         s = self.mods[name]
         try:
             self.event(name, "restart requested from the app: stopping")
             self.stop_fn(name)
+            self._swap_env(name)
             (self.data / "starting" / name).unlink(missing_ok=True)   # stopped for sure: a new start is allowed
             s.update(attempts=0, next_try=0.0, down_since=None)
             self._start(name, self.clock())

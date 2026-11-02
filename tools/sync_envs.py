@@ -2,15 +2,16 @@
 modules/<name>/.venv with that module's dependency group. Exactly the locked versions, nothing else.
 
     py -3.12 tools/sync_envs.py                      every environment, in place (development; the servers must not run)
-    py -3.12 tools/sync_envs.py --into .venv-next    build next to the running ones (live), swapped in by --swap
-    py -3.12 tools/sync_envs.py --swap <module>      live: hold, stop the module, .venv -> .venv-old, .venv-next -> .venv,
-                                                     release the hold (the supervisor starts it again). gateway: by its task
+    py -3.12 tools/sync_envs.py --into .venv-next    build next to the running ones (live)
+    py -3.12 tools/sync_envs.py --swap <module>      live: ask Drifter to restart the module (same pre-checks as the System
+                                                     page); between stop and start the supervisor puts .venv-next in place.
+                                                     The gateway's own .venv: stop its task, rename, start it.
 
 Needs uv (`py -3.12 -m pip install --user uv`). The Microsoft Store Python is refused: it hung at boot in session 0.
 """
 from __future__ import annotations
 
-import os, shutil, subprocess, sys, time
+import os, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -36,29 +37,19 @@ def sync(name: str, into: str = ".venv") -> Path:
 
 
 def swap(name: str) -> None:
-    """Live switch of one module to its freshly built .venv-next (see the module docstring)."""
-    folder, _ = ENVS[name]; nxt, cur, old = folder / ".venv-next", folder / ".venv", folder / ".venv-old"
-    if not nxt.exists(): raise SystemExit(f"{nxt} missing: build it first with --into .venv-next")
-    sys.path.insert(0, str(ROOT / "tools")); import modules as M
-    hold = M.DATA / "hold" / name
-    if name == "gateway": raise SystemExit("the gateway's .venv is swapped while its task is stopped: see README (Python environments)")
-    hold.parent.mkdir(parents=True, exist_ok=True); hold.write_text("swapping Python environment", encoding="utf-8")
+    """Live: restart the module through the gateway; the supervisor swaps .venv-next in between stop and start (it runs
+    in the servers' session, which another logon session may not stop)."""
+    import json, ssl, urllib.error, urllib.request
+    if name == "gateway": raise SystemExit("the gateway's .venv is swapped while its task is stopped (README, Python environments)")
+    if not (ENVS[name][0] / ".venv-next").exists(): raise SystemExit(f"{ENVS[name][0] / '.venv-next'} missing: build it first with --into .venv-next")
+    cfg = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
+    ctx = ssl.create_default_context(cafile=cfg.get("ca_file")) if cfg.get("certfile") else None
+    url = f"{'https' if ctx else 'http'}://{cfg['bind']}:{cfg['port']}/api/supervisor/restart"
+    req = urllib.request.Request(url, data=json.dumps({"module": name}).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "X-Drifter-Request": "1"})
     try:
-        r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ROOT / "tools/stop_module.ps1"), name],
-                           capture_output=True, text=True, timeout=120)
-        print(f"{name}: stop: {(r.stdout or r.stderr).strip()}")
-        if r.returncode: raise SystemExit(f"{name} did not stop; nothing swapped")
-        for _ in range(20):                           # a launcher may hold files for a moment after the server ended
-            try:
-                if old.exists(): shutil.rmtree(old)
-                if cur.exists(): os.replace(cur, old)
-                os.replace(nxt, cur); break
-            except OSError: time.sleep(1)
-        else: raise SystemExit(f"{name}: could not swap the environments (files in use)")
-        print(f"{name}: new environment in place ({cur})")
-    finally:
-        hold.unlink(missing_ok=True); (M.DATA / "starting" / name).unlink(missing_ok=True)
-    print(f"{name}: hold released; the supervisor starts it within a few seconds")
+        with urllib.request.urlopen(req, context=ctx, timeout=20) as r: print(f"{name}: restart requested ({r.status}); watch the System page")
+    except urllib.error.HTTPError as e: raise SystemExit(f"{name}: refused: {json.loads(e.read() or b'{}').get('error', e.code)}")
 
 
 if __name__ == "__main__":
