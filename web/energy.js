@@ -27,6 +27,7 @@
   let view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
   const busy = new Set();
   const on = v => v != null && +v >= .5;
+  const outW = v => v == null || !isFinite(+v) ? "–" : Math.round(Math.abs(+v)) ? "−" + W(Math.abs(+v)) : W(0);   // power going out, shown negative
 
   const m = {
     id: "power", title: "Energy", short: "Energy", icon: "power", every: 3000, background: 6000,
@@ -61,9 +62,10 @@
       const h = d.storage.house, s = d.sources, t = d.totals;
       return `<div style="display:flex;align-items:center;gap:16px"><div class="gauge sm" style="--p:${h.soc ?? 0}"><b>${num(h.soc)}<small>%</small></b></div>
         <div><div class="big">${W(h.power)}</div><div class="line">House ${num(h.voltage, 2)} V · ${num(h.current, 1)} A ${h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : ""}</div></div></div>
-        <div class="minis"><div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
+        <div class="minis m4"><div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
         <div class="mini"><div class="l">Shore</div><div class="n">${s.shore.connected ? W(s.shore.power) : "–"}</div></div>
-        <div class="mini"><div class="l">DC load</div><div class="n">${W(t.consumer_power)}</div></div></div>`;
+        <div class="mini"><div class="l">Alternator</div><div class="n">${W((s.alternator || {}).power)}</div></div>
+        <div class="mini"><div class="l">DC load</div><div class="n">${outW(t.consumer_power)}</div></div></div>`;
     },
     mount(el) {
       el.innerHTML = `<div id="eDown"></div>

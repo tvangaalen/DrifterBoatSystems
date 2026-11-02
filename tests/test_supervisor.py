@@ -110,6 +110,55 @@ class SupervisorTest(unittest.TestCase):
         r.sup.restart("guard"); self.wait_idle(r, "guard")
         self.assertEqual(r.started, []); self.assertIn("restart failed", r.sup.mods["guard"]["last_event"]["text"])
 
+    def test_shutdown_all_stops_everything_and_nothing_restarts(self):
+        r = Rig(); r.tick(); done = threading.Event()
+        r.sup.shutdown_all(on_done=done.set); self.assertTrue(done.wait(2))
+        self.assertEqual(r.stopped, ["washer", "guard", "anchor", "energy"])
+        snap = r.sup.snapshot()["shutdown"]; self.assertEqual((snap["state"], snap["stopped"], snap["failed"]), ("done", r.stopped, {}))
+        for n in r.ports: self.assertEqual(r.state(n), "stopped")
+        r.sup.run()                                                            # the loop has been stopped: returns at once
+        for _ in range(20): r.tick(60)                                         # and even a tick never starts a module again
+        self.assertEqual(r.started, [])
+
+    def test_shutdown_refused_before_anything_stops(self):
+        def pre(n):
+            if n == "anchor": raise ValueError("Anchor drag: do not restart now")
+        r = Rig(precheck=pre); r.tick()
+        with self.assertRaisesRegex(ValueError, "Anchor drag"): r.sup.shutdown_all()
+        r2 = Rig(); r2.tick(); r2.sup.mods["energy"]["busy"] = "restart"
+        with self.assertRaisesRegex(ValueError, "restart is running"): r2.sup.shutdown_all()
+        self.assertEqual(r.stopped + r2.stopped, []); self.assertIsNone(r.sup.shutdown)
+        r.tick(S.GRACE_S); self.assertEqual(r.state("energy"), "running")    # the loop carries on after a refusal
+
+    def test_shutdown_reports_a_module_that_would_not_stop(self):
+        r = Rig(); r.tick(); done = threading.Event()
+        def stop(n):
+            if n == "guard": raise RuntimeError("port 8095 still in use")
+            r.stopped.append(n)
+        r.sup.stop_fn = stop; r.sup.shutdown_all(on_done=done.set); self.assertTrue(done.wait(2))
+        snap = r.sup.snapshot()["shutdown"]
+        self.assertEqual(snap["state"], "failed"); self.assertIn("guard", snap["failed"]); self.assertEqual(r.stopped, ["washer", "anchor", "energy"])
+
+    def test_console_windows_hidden_by_default_and_switchable(self):
+        win = {8000: True, 8766: True}; found = []
+        def find(port): found.append(port); return port if port in win else None
+        r = Rig(); r.sup.consoles = {"energy", "anchor"}
+        r.sup.find_fn, r.sup.alive_fn, r.sup.visible_fn = find, lambda h: h in win, lambda h: win[h]
+        r.sup.show_fn = lambda h, on: win.__setitem__(h, on)
+        r.tick(); self.assertEqual(win, {8000: False, 8766: False})              # default: hidden
+        self.assertEqual(r.sup.snapshot()["modules"]["energy"]["console"], {"show": False, "window": True})
+        r.sup.set_console("anchor", True); self.assertTrue(win[8766]); self.assertFalse(win[8000])
+        self.assertEqual(json.loads((r.data / "consoles.json").read_text()), {"anchor": True})
+        r.tick(5); self.assertTrue(win[8766])                                   # the loop keeps the choice
+        self.assertEqual(found.count(8766), 1)                                 # the window is looked up once per server start
+        del win[8766]; win[8767] = False; r.sup.find_fn = lambda port: 8767 if port == 8766 else find(port)
+        r.tick(5); self.assertTrue(win[8767])                                   # a new server's window gets the choice too
+        with self.assertRaisesRegex(ValueError, "no console"): r.sup.set_console("washer", True)
+        self.assertIsNone(r.sup.snapshot()["modules"]["washer"]["console"])
+
+    def test_tests_never_touch_real_windows(self):
+        self.assertEqual(Rig().sup.consoles, set())
+
     def test_netstat_parsing(self):
         out = "  TCP    0.0.0.0:8080   0.0.0.0:0   LISTENING   3080\n  TCP  192.168.1.166:8000  0.0.0.0:0  LISTENING  1\n  TCP  10.0.0.1:5000  1.2.3.4:443  ESTABLISHED  9\n  TCP  [::]:8095  [::]:0  LISTENING  4\n"
         orig = S.subprocess.run
@@ -145,6 +194,13 @@ class FakeSup:
     def restart(self, n):
         if n == "energy": raise ValueError("Float is latched: do not restart now")
         self.calls.append(n)
+    def shutdown_all(self, on_done=None):
+        if self.refuse: raise ValueError("Float is latched: do not restart now")
+        self.calls.append("shutdown"); self.on_done = on_done
+    def set_console(self, n, show):
+        if n == "washer": raise ValueError("washer has no console window")
+        self.calls.append((n, show))
+    refuse = False
 
 
 class ApiTest(unittest.TestCase):
@@ -167,6 +223,20 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(self.req(port, "POST", "/api/supervisor/restart", {"module": "washer"}, {"X-Drifter-Request": "1"})[0], 202)
         code, j = self.req(port, "POST", "/api/supervisor/restart", {"module": "energy"}, {"X-Drifter-Request": "1"})
         self.assertEqual(code, 409); self.assertIn("latched", j["error"]); self.assertEqual(sup.calls, ["washer"])
+
+    def test_shutdown_and_console_endpoints(self):
+        sup = FakeSup(); port = self.serve(sup); H = {"X-Drifter-Request": "1"}
+        self.assertEqual(self.req(port, "POST", "/api/supervisor/shutdown", {})[0], 403)                 # no X-Drifter-Request
+        self.assertEqual(self.req(port, "POST", "/api/supervisor/shutdown", {}, {**H, "Origin": "http://evil.example"})[0], 403)
+        self.assertEqual(sup.calls, [])
+        self.assertEqual(self.req(port, "POST", "/api/supervisor/shutdown", {}, H)[0], 202)
+        self.assertEqual(sup.calls, ["shutdown"]); self.assertTrue(callable(sup.on_done))            # the gateway ends itself afterwards
+        sup.refuse = True; code, j = self.req(port, "POST", "/api/supervisor/shutdown", {}, H)
+        self.assertEqual(code, 409); self.assertIn("latched", j["error"])
+        self.assertEqual(self.req(port, "POST", "/api/supervisor/console", {"module": "energy", "show": "yes"}, H)[0], 400)
+        self.assertEqual(self.req(port, "POST", "/api/supervisor/console", {"module": "washer", "show": True}, H)[0], 409)
+        self.assertEqual(self.req(port, "POST", "/api/supervisor/console", {"module": "energy", "show": True}, H)[0], 200)
+        self.assertEqual(sup.calls[-1], ("energy", True))
 
     def test_supervisor_off_by_default(self):
         port = self.serve(None)

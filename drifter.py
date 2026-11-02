@@ -3,7 +3,7 @@
 The gateway serves the app and passes the page's requests on to the four existing servers, which keep running
 unchanged and keep all their own logic (Float protection, anchor alarm, arming, washer schedule). The gateway makes
 no decisions and talks to no hardware itself. With "supervise" on, supervisor.py keeps the servers running (starts a
-stopped one, never stops a running one unless the user asks for a restart from the app).
+stopped one, never stops a running one unless the user asks for a restart, or to switch all systems off, from the app).
 
 Safety:
 - Only routes listed in ROUTES are passed on (method + path pattern per module); everything else gets 404.
@@ -24,7 +24,7 @@ from common import logs
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -159,7 +159,7 @@ def make_precheck(up: Upstreams):
     return check
 
 
-def make_handler(cfg: dict, up: Upstreams, sup=None):
+def make_handler(cfg: dict, up: Upstreams, sup=None, end_gateway=None):
     extra_hosts = list(cfg.get("allowed_hosts") or [])
     systems = {m: {"name": mv["name"], "classic": mv.get("classic")} for m, mv in cfg["modules"].items()}
 
@@ -217,6 +217,8 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             if self.headers.get("X-Drifter-Request") != "1": return self._json({"error": "request not sent by the Drifter page"}, 403)
             if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json": return self._json({"error": "json only"}, 415)
             if path == "/api/supervisor/restart": return self._restart()
+            if path == "/api/supervisor/shutdown": return self._shutdown()
+            if path == "/api/supervisor/console": return self._console()
             if not (path.startswith("/api/") and path.count("/") >= 2 and path.split("/")[2] in up.mods): return self._json({"error": "not found"}, 404)
             self._proxy("POST", path, query)
 
@@ -227,6 +229,22 @@ def make_handler(cfg: dict, up: Upstreams, sup=None):
             try: sup.restart(str(name))
             except ValueError as e: return self._json({"error": str(e)}, 409)
             log.info("restart of %s requested from the app", name); return self._json({"ok": True, "module": name}, 202)
+
+        def _shutdown(self):
+            """Switch all systems off: every module server stops, then the gateway itself (see serve)."""
+            if not sup: return self._json({"error": "the supervisor is off"}, 409)
+            try: sup.shutdown_all(on_done=end_gateway)
+            except ValueError as e: return self._json({"error": str(e)}, 409)
+            log.warning("switch all systems off requested from the app"); return self._json({"ok": True}, 202)
+
+        def _console(self):
+            if not sup: return self._json({"error": "the supervisor is off"}, 409)
+            try: b = json.loads(self._body or b"{}"); name, show = str(b.get("module")), b.get("show")
+            except (ValueError, AttributeError): return self._json({"error": "invalid JSON"}, 400)
+            if not isinstance(show, bool): return self._json({"error": "show must be true or false"}, 400)
+            try: sup.set_console(name, show)
+            except ValueError as e: return self._json({"error": str(e)}, 409)
+            return self._json({"ok": True, "module": name, "show": show})
 
         def _proxy(self, method: str, path: str, query: str):
             module = path.split("/")[2]; sub = path[len(f"/api/{module}"):] or "/"
@@ -254,7 +272,13 @@ def serve(cfg: dict, supervisor=None) -> Server:
     if supervisor is None and cfg.get("supervise"):
         from supervisor import Supervisor
         supervisor = Supervisor(precheck=make_precheck(up)); supervisor.start_thread()
-    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor))
+    srv = None
+
+    def end_gateway():
+        # After "switch all systems off": 15 s for the page to read the result, then serve_forever returns and the
+        # gateway exits with code 0, so its scheduled task does not start it again (the desktop icon does).
+        log.warning("all module servers stopped; the gateway ends in 15 s"); threading.Timer(15, srv.shutdown).start()
+    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor, end_gateway))
     scheme = "http"
     if cfg.get("certfile"): use_tls(srv, tls_context(cfg["certfile"], cfg["keyfile"])); scheme = "https"
     log.info("Drifter Boat Systems %s on %s://%s:%d/", VERSION, scheme, cfg["bind"], cfg["port"])

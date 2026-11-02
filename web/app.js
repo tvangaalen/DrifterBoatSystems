@@ -54,7 +54,7 @@ const Drifter = (() => {
   }
   async function poll(m, force) {
     clearTimeout(m.timer); m.timer = null;
-    if (!m.load) return;
+    if (!m.load || switchedOff) return;
     if (!m.state.loading || force) {
       m.state.loading = true;
       try { await m.load(); m.state.err = null; }
@@ -162,7 +162,7 @@ const Drifter = (() => {
     return new Promise(res => {
       if (dlgResolve) dlgResolve(null);
       dlgResolve = res; lastFocus = document.activeElement;
-      $("dlgSheet").innerHTML = html; $("dialog").classList.add("open"); $("dialog").setAttribute("aria-hidden", "false");
+      delete $("dlgSheet").dataset.lock; $("dlgSheet").innerHTML = html; $("dialog").classList.add("open"); $("dialog").setAttribute("aria-hidden", "false");
       requestAnimationFrame(() => { const f = $("dlgSheet").querySelector(focusSel || "[data-default]") || $("dlgSheet").querySelector("button"); f && f.focus(); });
     });
   }
@@ -171,10 +171,10 @@ const Drifter = (() => {
     const r = dlgResolve; dlgResolve = null; if (r) r(v); if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   $("dialog").addEventListener("click", e => {
-    if (e.target === $("dialog")) return closeSheet(null);              // tap outside = the safe choice (cancel)
+    if (e.target === $("dialog")) return $("dlgSheet").dataset.lock ? null : closeSheet(null);   // tap outside = the safe choice (cancel)
     const b = e.target.closest("[data-close],[data-value]"); if (b) closeSheet(b.dataset.value ?? null);
   });
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && dlgResolve) closeSheet(null); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && dlgResolve && !$("dlgSheet").dataset.lock) closeSheet(null); });
   // confirm(): the safe answer is the default button, Escape and tapping outside also choose it.
   async function confirm({title, text, note, items, ok = "OK", cancel = "Cancel", danger = false, safeDefault = true}) {
     const v = await sheet(`<h3 id="dlgTitle">${danger ? '<span class="warnicon">!</span>' : ""}${esc(title)}</h3>
@@ -225,7 +225,7 @@ const Drifter = (() => {
   // The supervisor (drifter.py) keeps the servers running; restarting one is the user's call, with a confirmation that
   // says what pauses. The server refuses (with the reason) while MasterVolt runs a BMS control or Float is latched, or
   // while the anchor watch has an alarm.
-  let sysInfo = null, sysTimer = null;
+  let sysInfo = null, sysTimer = null, switchedOff = false;
   const SUP_NAME = {power: "energy"};                       // page module id -> supervisor module name
   const RESTART_TEXT = {
     energy: ["Float protection and the BMS and balancer connections pause for about a minute.", "Refused while a BMS control runs or Float is latched."],
@@ -235,6 +235,7 @@ const Drifter = (() => {
   };
   function supState(s) {
     if (!s) return "";
+    if (s.busy === "shutdown") return s.state === "stopped" ? `<span class="badge">switched off</span>` : `<span class="badge warn">switching off…</span>`;
     if (s.busy) return `<span class="badge warn">restarting</span>`;
     return {running: `<span class="badge ok">running${s.uptime_s != null ? " · " + dur(s.uptime_s) : ""}</span>`, starting: `<span class="badge warn">starting…</span>`,
       down: `<span class="badge bad">not running</span>`, failed: `<span class="badge bad">failed · next try in ${dur(s.next_try_in)}</span>`,
@@ -244,13 +245,17 @@ const Drifter = (() => {
     el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="hint" style="margin:10px 2px 0">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p></div>
       <h2 class="sec">Systems</h2><div class="card"><div class="rows" id="sysRows"><div class="empty">Loading…</div></div></div>
       <div id="sysEvWrap" hidden><h2 class="sec">Supervisor events</h2><div class="card"><div class="log" id="sysEvents"></div></div></div>
+      <div id="sysOffWrap" hidden><h2 class="sec">Switch off</h2><div class="card pad"><p class="hint" style="margin:0 0 12px">Stops every system's server and this app's server on the boat PC. Switches, chargers and the camera stay as they are. Start everything again with the <b>Drifter Boat Systems</b> icon on the boat PC's desktop.</p>
+        <button class="btn danger" type="button" id="sysOff">${icon("off")} Switch all systems off</button></div></div>
       <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="hint" style="margin:0">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's local certificate (the same one used for Energy, Anchor watch and BoatGuard).</p></div>
       <p class="hint" style="text-align:center;margin:18px 0" id="sysVer"></p>`;
-    el.onclick = e => { const b = e.target.closest("[data-restart]"); if (b) restartModule(b.dataset.restart, b); };
+    el.onclick = e => { const b = e.target.closest("[data-restart]"); if (b) restartModule(b.dataset.restart, b); if (e.target.closest("#sysOff")) switchAllOff(e.target.closest("#sysOff")); };
+    el.onchange = e => { const c = e.target.closest("[data-console]"); if (c) setConsole(c.dataset.console, c.checked, c); };
     await refreshSystem();
     clearInterval(sysTimer); sysTimer = setInterval(() => { if (current === "system" && !document.hidden) refreshSystem(); else if (current !== "system") clearInterval(sysTimer); }, 5000);
   }
   async function refreshSystem() {
+    if (switchedOff) return;
     try { sysInfo = await (await fetch("api/systems", {cache: "no-store"})).json(); } catch (e) { sysInfo = null; }
     if (!$("sysRows")) return;
     const sup = sysInfo && sysInfo.supervisor && sysInfo.supervisor.enabled ? sysInfo.supervisor : null;
@@ -263,9 +268,12 @@ const Drifter = (() => {
           <div class="k"><b>${esc(m.title)}</b>${c ? `<a href="${esc(c)}" target="_blank" rel="noopener" class="hint">Open classic page ↗</a>` : ""}</div><div class="v">${st}</div></div>
         ${s ? `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">${supState(s)}
           <span class="hint" style="flex:1;min-width:120px">${s.last_event ? `${esc(dayTime(s.last_event.t))} ${esc(s.last_event.text)}` : ""}</span>
-          <button class="btn sec sm" type="button" data-restart="${name}" ${s.busy || s.held || s.state === "starting" ? "disabled" : ""}>${icon("refresh")} Restart</button></div>` : ""}</div>`;
+          <button class="btn sec sm" type="button" data-restart="${name}" ${s.busy || s.held || s.state === "starting" ? "disabled" : ""}>${icon("refresh")} Restart</button></div>` : ""}
+        ${s && s.console ? `<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span class="hint">Console window on the boat PC${s.console.window === false && s.state === "running" ? " (no window found)" : ""}</span>
+          ${sw(`con-${name}`, s.console.show, `data-console="${name}" aria-label="${esc(m.title)} console window"`)}</div>` : ""}</div>`;
     }).join("") + (sup ? "" : `<div class="row"><span class="hint">The supervisor is off: servers are not restarted automatically.</span></div>`);
     $("sysEvWrap").hidden = !sup || !sup.events.length;
+    $("sysOffWrap").hidden = !sup; $("sysOff").disabled = !!(sup && sup.shutdown && sup.shutdown.state === "running");
     if (sup) $("sysEvents").innerHTML = sup.events.slice().reverse().slice(0, 30).map(e => `<div class="${e.kind === "bad" ? "bad" : e.kind === "warn" ? "warn" : ""}"><time>${esc(dayTime(e.t))}</time><span class="msg"><b>${esc(e.module)}</b> ${esc(e.text)}</span></div>`).join("");
     $("sysVer").textContent = `Drifter Boat Systems ${sysInfo ? "v" + sysInfo.version : ""}`;
   }
@@ -276,6 +284,55 @@ const Drifter = (() => {
       .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`); return j; }), `Restarting ${m ? m.title : name}…`); }
     catch (e) {}
     refreshSystem();
+  }
+
+  async function setConsole(name, show, el) {
+    try { await run(null, el, () => sysPost("api/supervisor/console", {module: name, show}), show ? "Console window shown on the boat PC" : "Console window hidden"); }
+    catch (e) { el.checked = !show; }
+    refreshSystem();
+  }
+  const sysPost = (url, body) => fetch(url, {method: "POST", headers: {"Content-Type": "application/json", "X-Drifter-Request": "1"}, body: JSON.stringify(body)})
+    .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`); return j; });
+
+  // Switch all systems off: what stops is listed in the confirmation, whose default is "Leave on". The server refuses
+  // (with the reason) while a BMS control runs, Float is latched or the anchor watch has an alarm. Then every module
+  // server stops and the gateway ends itself; the page stops polling and offers to close.
+  async function switchAllOff(btn) {
+    const a = byId.anchor && byId.anchor.state.data, g = byId.guard && byId.guard.state.data, w = byId.washer && byId.washer.state.data;
+    const sched = w && w.schedule && ["pending", "starting"].includes(w.schedule.status);
+    const items = [
+      "Energy: Float protection and the BMS and balancer connections stop. Inverter, chargers, alternator and Engine ECU stay as they are.",
+      a && a.anchor ? "Anchor watch: the anchor is set. The anchor alarm and its push alerts stop." : "Anchor watch: stops (no anchor set).",
+      g && g.enabled ? "BoatGuard: monitoring is on, but the camera is no longer armed or disarmed automatically." : "BoatGuard: stops.",
+      sched ? "Washer: the scheduled start will not happen while the controller is off." : "Washer: the controller stops; a running program carries on in the washer.",
+      "This app's server on the boat PC stops too.",
+    ];
+    if (!(await confirm({title: "Switch all systems off?", items, note: "Start everything again with the Drifter Boat Systems icon on the boat PC. Refused while a BMS control runs, Float is latched or the anchor watch has an alarm.",
+      ok: "Switch off", cancel: "Leave on", danger: true}))) return;
+    try { await run(null, btn, () => sysPost("api/supervisor/shutdown", {})); } catch (e) { return; }
+    switchedOff = true; clearInterval(sysTimer); mods.forEach(m => { clearTimeout(m.timer); m.timer = null; });
+    const total = mods.length, t0 = Date.now(); let last = null, fails = 0;
+    sheet(`<h3 id="dlgTitle">Switching off…</h3><p id="offStep">Stopping the systems.</p>`); $("dlgSheet").dataset.lock = "1";
+    while (true) {
+      await new Promise(r => setTimeout(r, 1000));
+      try { const j = await (await fetch("api/systems", {cache: "no-store"})).json(); last = j.supervisor && j.supervisor.shutdown; fails = 0; }
+      catch (e) { fails++; }
+      const done = last && last.state !== "running", gone = fails >= 3 && last && last.stopped.length >= last.total;
+      if ($("offStep") && last) $("offStep").textContent = `${last.stopped.length} of ${last.total || total} stopped${last.stopped.length ? ": " + last.stopped.join(", ") : ""}.`;
+      if (done || gone || Date.now() - t0 > 120000) break;
+    }
+    const failed = last && last.failed && Object.keys(last.failed);
+    const msg = failed && failed.length ? `Not everything could be shut down (${failed.map(n => `${n}: ${last.failed[n]}`).join("; ")}). The others are off. Press OK to close the application.`
+      : last && last.state === "done" || (last && last.stopped.length >= last.total) ? "All systems have been shut down. Press OK to close the application."
+      : "Drifter no longer answers, so not every system could be confirmed off. Press OK to close the application.";
+    await sheet(`<h3 id="dlgTitle">${failed && failed.length ? "Partly shut down" : "Shut down"}</h3><p style="color:var(--fg)">${esc(msg)}</p><div class="acts"><button class="btn" data-value="ok" data-default>OK</button></div>`);
+    closeApp();
+  }
+  function closeApp() {
+    try { window.close(); } catch (e) {}
+    // Browsers only let a page close a window that a script opened; otherwise (and in a home-screen app) leave a quiet page.
+    setTimeout(() => { document.title = "Drifter Boat Systems (off)";
+      document.body.innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:var(--bg);color:var(--fg)"><div><h2 style="margin:0 0 8px">Drifter is switched off</h2><p style="color:var(--muted);margin:0">You can close this tab or app now. Start the systems again with the Drifter Boat Systems icon on the boat PC.</p></div></div>`; }, 300);
   }
 
   function start() {

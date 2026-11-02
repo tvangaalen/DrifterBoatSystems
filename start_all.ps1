@@ -3,7 +3,8 @@
 # A server that is already running is never restarted (a restart pauses Float protection and the anchor watch).
 # Processes are created through Win32_Process Create: they run in the user's session, outside the process tree of
 # whoever ran this script (servers started inside a tool session's tree disappeared when that session ended).
-# MasterVolt and the anchor watch get their usual console window (minimised); the rest runs without a window.
+# MasterVolt and the anchor watch get their usual console window, hidden unless it was switched on in the app (System
+# page, <data>\consoles.json); the rest runs without a window.
 # -Only <module>: start just that one (used by tools\switch_module.ps1); -NoWait: no waiting, status or browser.
 param([string]$Only, [switch]$NoWait)
 $ErrorActionPreference = 'Continue'
@@ -24,7 +25,7 @@ function Start-Module($m) {
     if ($m.console) {
         $cmd = ($m.command | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '
         if ($m.env.DRIFTER_DATA) { $cmd = "cmd.exe /c `"set `"DRIFTER_DATA=$($m.env.DRIFTER_DATA)`" && $($cmd -replace '^cmd /c ', '')`"" }
-        Launch $cmd $m.folder 7; return                              # 7 = minimised, not activated
+        Launch $cmd $m.folder $(if ($m.show_console) { 4 } else { 0 }); return   # 4 = shown, not activated; 0 = hidden
     }
     Launch "`"$pyw`" `"$runner`" $($m.name)" $m.folder 0             # 0 = hidden; output in <data>\logs\<module>.console.log
 }

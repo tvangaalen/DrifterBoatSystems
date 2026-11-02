@@ -68,7 +68,7 @@ from common.web import QuietServer as Server, tls_context, use_tls   # noqa: E40
 try: import winsound
 except ImportError: winsound = None
 
-VERSION = "1.17.1"
+VERSION = "1.17.2"
 HERE = Path(__file__).resolve().parent
 log = logging.getLogger("anchor")
 EARTH = 6371008.8

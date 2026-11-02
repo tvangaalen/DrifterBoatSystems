@@ -346,11 +346,18 @@ if __name__ == "__main__":
     if "--gateway" in sys.argv:          # also run the Drifter gateway against these mocks (config.mock.json, port 8101)
         import logging; sys.path.insert(0, str(ROOT)); import drifter
         logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S")
-        # A supervisor that only watches the mock ports and only pretends to stop/start: it can never touch a real server.
+        # A supervisor that only watches the mock ports and only pretends to stop/start or show/hide console windows: it can
+        # never touch a real server or window. "Switch all systems off" runs through, but the mock gateway stays up.
         import supervisor, tempfile
-        fake = supervisor.Supervisor(ports={"energy": 18000, "anchor": 18766, "guard": 18095, "washer": 18080}, data=tempfile.mkdtemp(),
-                                     start=lambda n: logging.info("mock supervisor: would start %s", n),
-                                     stop=lambda n: (logging.info("mock supervisor: would stop %s", n), time.sleep(1)))
+        windows = {18000: False, 18766: False}          # pretend console windows: port -> visible
+
+        class MockSupervisor(supervisor.Supervisor):
+            def shutdown_all(self, on_done=None): super().shutdown_all(None)
+        fake = MockSupervisor(ports={"energy": 18000, "anchor": 18766, "guard": 18095, "washer": 18080}, data=tempfile.mkdtemp(),
+                              start=lambda n: logging.info("mock supervisor: would start %s", n),
+                              stop=lambda n: (logging.info("mock supervisor: would stop %s", n), time.sleep(1)),
+                              consoles={"energy", "anchor"}, find=lambda port: port if port in windows else None, alive=lambda h: True,
+                              visible=lambda h: windows[h], show=lambda h, on: (windows.__setitem__(h, on), logging.info("mock console %s %s", h, on)))
         fake.start_thread()
         drifter.serve(drifter.load_config(Path(__file__).resolve().parent / "config.mock.json"), supervisor=fake).serve_forever()
     threading.Event().wait()

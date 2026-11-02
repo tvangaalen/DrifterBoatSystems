@@ -2,12 +2,13 @@
 setlocal
 title Mastervolt HTTPS Web Server
 cd /d "%~dp0"
+rem Started by Drifter (DRIFTER_DATA set) the window is usually hidden: never wait at "pause" then.
 
 echo Preparing local HTTPS certificates...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_local_https.ps1"
 if errorlevel 1 (
   echo HTTPS certificate setup failed.
-  pause
+  if not defined DRIFTER_DATA pause
   exit /b 1
 )
 
@@ -34,4 +35,4 @@ py -m uvicorn app:app --host %MASTERVOLT_BIND% --port 8000 --ssl-keyfile "%~dp0c
 
 echo.
 echo Web server stopped.
-pause
+if not defined DRIFTER_DATA pause
