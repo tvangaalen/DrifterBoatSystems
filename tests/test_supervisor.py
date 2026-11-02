@@ -20,8 +20,9 @@ class Rig:
         self.tmp = tempfile.TemporaryDirectory(); self.data = Path(self.tmp.name)
         self.ports = {"energy": 8000, "anchor": 8766, "guard": 8095, "washer": 8080}
         self.up = {self.ports[n] for n in up}; self.started, self.stopped = [], []; self.clock = Clock()
+        self.logs = {n: self.data / "logs" / f"{n}.console.log" for n in S.LOG_NAMES}
         self.sup = S.Supervisor(ports=self.ports, data=self.data, listening=lambda: set(self.up), start=self.started.append,
-                                stop=self._stop, precheck=precheck, clock=self.clock)
+                                stop=self._stop, precheck=precheck, clock=self.clock, logs=self.logs)
 
     def _stop(self, n): self.stopped.append(n); self.up.discard(self.ports[n])
     def tick(self, after=0): self.clock.go(after); self.sup.tick()
@@ -39,13 +40,17 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(r.started, []); self.assertEqual(r.stopped, [])
         self.assertIn("adopted", r.sup.mods["energy"]["last_event"]["text"])
 
-    def test_down_module_started_after_grace_then_running(self):
-        r = Rig(up=("anchor", "guard", "washer")); r.tick()
+    def test_down_at_start_is_started_at_once(self):
+        r = Rig(up=("anchor", "guard", "washer")); r.tick()                   # e.g. after a boot: nobody else starts it
+        self.assertEqual(r.started, ["energy"]); self.assertEqual(r.state("energy"), "starting")
+        r.tick(S.TICK_S); self.assertEqual(r.started, ["energy"])              # no second start while it comes up
+        r.up.add(8000); r.tick(40); self.assertEqual(r.state("energy"), "running"); self.assertEqual(r.sup.mods["energy"]["starts"], 1)
+
+    def test_module_that_stops_later_is_started_after_grace(self):
+        r = Rig(); r.tick(); r.up.discard(8000); r.tick(S.TICK_S)
         self.assertEqual(r.state("energy"), "down"); self.assertEqual(r.started, [])
         r.tick(S.GRACE_S - 1); self.assertEqual(r.started, [])
         r.tick(1); self.assertEqual(r.started, ["energy"]); self.assertEqual(r.state("energy"), "starting")
-        r.tick(S.TICK_S); self.assertEqual(r.started, ["energy"])              # no second start while it comes up
-        r.up.add(8000); r.tick(40); self.assertEqual(r.state("energy"), "running"); self.assertEqual(r.sup.mods["energy"]["starts"], 1)
 
     def test_failed_starts_back_off(self):
         r = Rig(up=()); r.tick(); r.tick(S.GRACE_S)
@@ -121,7 +126,7 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(r.started, [])
 
     def test_shutdown_refused_before_anything_stops(self):
-        def pre(n):
+        def pre(n, why="restart"):
             if n == "anchor": raise ValueError("Anchor drag: do not restart now")
         r = Rig(precheck=pre); r.tick()
         with self.assertRaisesRegex(ValueError, "Anchor drag"): r.sup.shutdown_all()
@@ -139,25 +144,15 @@ class SupervisorTest(unittest.TestCase):
         snap = r.sup.snapshot()["shutdown"]
         self.assertEqual(snap["state"], "failed"); self.assertIn("guard", snap["failed"]); self.assertEqual(r.stopped, ["washer", "anchor", "energy"])
 
-    def test_console_windows_hidden_by_default_and_switchable(self):
-        win = {8000: True, 8766: True}; found = []
-        def find(port): found.append(port); return port if port in win else None
-        r = Rig(); r.sup.consoles = {"energy", "anchor"}
-        r.sup.find_fn, r.sup.alive_fn, r.sup.visible_fn = find, lambda h: h in win, lambda h: win[h]
-        r.sup.show_fn = lambda h, on: win.__setitem__(h, on)
-        r.tick(); self.assertEqual(win, {8000: False, 8766: False})              # default: hidden
-        self.assertEqual(r.sup.snapshot()["modules"]["energy"]["console"], {"show": False, "window": True})
-        r.sup.set_console("anchor", True); self.assertTrue(win[8766]); self.assertFalse(win[8000])
-        self.assertEqual(json.loads((r.data / "consoles.json").read_text()), {"anchor": True})
-        r.tick(5); self.assertTrue(win[8766])                                   # the loop keeps the choice
-        self.assertEqual(found.count(8766), 1)                                 # the window is looked up once per server start
-        del win[8766]; win[8767] = False; r.sup.find_fn = lambda port: 8767 if port == 8766 else find(port)
-        r.tick(5); self.assertTrue(win[8767])                                   # a new server's window gets the choice too
-        with self.assertRaisesRegex(ValueError, "no console"): r.sup.set_console("washer", True)
-        self.assertIsNone(r.sup.snapshot()["modules"]["washer"]["console"])
-
-    def test_tests_never_touch_real_windows(self):
-        self.assertEqual(Rig().sup.consoles, set())
+    def test_log_tail(self):
+        r = Rig(); f = r.logs["anchor"]; f.parent.mkdir()
+        self.assertEqual(r.sup.log_tail("anchor")["exists"], False)
+        f.write_text("".join(f"10:{i:02d} line {i}\n" for i in range(50)), encoding="utf-8")
+        j = r.sup.log_tail("anchor", 5); self.assertEqual(j["lines"], [f"10:{i:02d} line {i}" for i in range(45, 50)])
+        f.write_bytes(("x" * 99 + "\n").encode() * 8000 + b"last \xe2\x82\xac line\n")                # 800 KB: only the tail is read
+        j = r.sup.log_tail("anchor", 3); self.assertEqual(j["lines"][-1], "last \u20ac line"); self.assertEqual(len(j["lines"]), 3)
+        self.assertEqual(len(r.sup.log_tail("gateway", 10)["lines"]), 0)
+        with self.assertRaisesRegex(ValueError, "unknown log"): r.sup.log_tail("..\\config")
 
     def test_netstat_parsing(self):
         out = "  TCP    0.0.0.0:8080   0.0.0.0:0   LISTENING   3080\n  TCP  192.168.1.166:8000  0.0.0.0:0  LISTENING  1\n  TCP  10.0.0.1:5000  1.2.3.4:443  ESTABLISHED  9\n  TCP  [::]:8095  [::]:0  LISTENING  4\n"
@@ -181,7 +176,10 @@ class PrecheckTest(unittest.TestCase):
               "/api/state": {"alarms": []}}
         drifter.make_precheck(FakeUp(ok))("energy"); drifter.make_precheck(FakeUp(ok))("anchor"); drifter.make_precheck(FakeUp({}))("washer")
         with self.assertRaisesRegex(ValueError, "BMS control"): drifter.make_precheck(FakeUp({**ok, "/api/bms": {"control_status": {"busy": True}}}))("energy")
-        with self.assertRaisesRegex(ValueError, "latched"): drifter.make_precheck(FakeUp({**ok, "/api/energy": {"high_soc_float_policy": {"float_latched": True}}}))("energy")
+        latched = FakeUp({**ok, "/api/energy": {"high_soc_float_policy": {"float_latched": True}}})
+        with self.assertRaisesRegex(ValueError, "latched"): drifter.make_precheck(latched)("energy")
+        drifter.make_precheck(latched)("energy", "shutdown")                     # switching everything off is allowed with Float latched
+        with self.assertRaisesRegex(ValueError, "BMS control"): drifter.make_precheck(FakeUp({**ok, "/api/bms": {"control_status": {"busy": True}}}))("energy", "shutdown")
         with self.assertRaisesRegex(ValueError, "Anchor drag"): drifter.make_precheck(FakeUp({**ok, "/api/state": {"alarms": [{"text": "Anchor drag"}]}}))("anchor")
 
     def test_unreachable_server_may_be_restarted(self):
@@ -197,9 +195,9 @@ class FakeSup:
     def shutdown_all(self, on_done=None):
         if self.refuse: raise ValueError("Float is latched: do not restart now")
         self.calls.append("shutdown"); self.on_done = on_done
-    def set_console(self, n, show):
-        if n == "washer": raise ValueError("washer has no console window")
-        self.calls.append((n, show))
+    def log_tail(self, n, lines):
+        if n not in ("energy", "gateway"): raise ValueError(f"unknown log {n}")
+        return {"module": n, "lines": [f"line {i}" for i in range(lines)]}
     refuse = False
 
 
@@ -224,7 +222,7 @@ class ApiTest(unittest.TestCase):
         code, j = self.req(port, "POST", "/api/supervisor/restart", {"module": "energy"}, {"X-Drifter-Request": "1"})
         self.assertEqual(code, 409); self.assertIn("latched", j["error"]); self.assertEqual(sup.calls, ["washer"])
 
-    def test_shutdown_and_console_endpoints(self):
+    def test_shutdown_and_log_endpoints(self):
         sup = FakeSup(); port = self.serve(sup); H = {"X-Drifter-Request": "1"}
         self.assertEqual(self.req(port, "POST", "/api/supervisor/shutdown", {})[0], 403)                 # no X-Drifter-Request
         self.assertEqual(self.req(port, "POST", "/api/supervisor/shutdown", {}, {**H, "Origin": "http://evil.example"})[0], 403)
@@ -233,10 +231,8 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(sup.calls, ["shutdown"]); self.assertTrue(callable(sup.on_done))            # the gateway ends itself afterwards
         sup.refuse = True; code, j = self.req(port, "POST", "/api/supervisor/shutdown", {}, H)
         self.assertEqual(code, 409); self.assertIn("latched", j["error"])
-        self.assertEqual(self.req(port, "POST", "/api/supervisor/console", {"module": "energy", "show": "yes"}, H)[0], 400)
-        self.assertEqual(self.req(port, "POST", "/api/supervisor/console", {"module": "washer", "show": True}, H)[0], 409)
-        self.assertEqual(self.req(port, "POST", "/api/supervisor/console", {"module": "energy", "show": True}, H)[0], 200)
-        self.assertEqual(sup.calls[-1], ("energy", True))
+        code, j = self.req(port, "GET", "/api/supervisor/log?module=energy&lines=3"); self.assertEqual((code, j["lines"]), (200, ["line 0", "line 1", "line 2"]))
+        self.assertEqual(self.req(port, "GET", "/api/supervisor/log?module=..%5Cconfig")[0], 404)
 
     def test_supervisor_off_by_default(self):
         port = self.serve(None)

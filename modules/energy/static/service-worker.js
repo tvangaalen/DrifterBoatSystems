@@ -1,7 +1,7 @@
 // Offline shell for the installed iPhone PWA: network first, the cached copy when the server cannot be reached.
 // A new CACHE name (it carries the version) is what makes an installed PWA drop the old files and load the new ones.
 // SHELL lists everything index.html loads; tests/test_release.py checks that it stays in step with the page.
-const CACHE = 'mastervolt-v2.1.2-shell';
+const CACHE = 'mastervolt-v2.1.3-shell';
 const SHELL = [
   '/',
   '/static/index.html',

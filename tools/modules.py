@@ -14,16 +14,10 @@ ROOT = Path(__file__).resolve().parent.parent
 SPEC = json.loads((ROOT / "modules.json").read_text(encoding="utf-8"))
 LIVE, DATA = Path(os.path.expandvars(SPEC["live"])), Path(os.path.expandvars(SPEC["data"]))
 LOCATIONS = DATA / "locations.json"
-CONSOLES = DATA / "consoles.json"      # per module: show its console window (set from the app's System page); default hidden
 
 
 def locations() -> dict:
     try: return json.loads(LOCATIONS.read_text(encoding="utf-8"))
-    except (OSError, ValueError): return {}
-
-
-def consoles() -> dict:
-    try: return json.loads(CONSOLES.read_text(encoding="utf-8"))
     except (OSError, ValueError): return {}
 
 
@@ -38,8 +32,7 @@ def resolve(name: str, location: str | None = None) -> dict:
         data = folder if m.get("runtime_in_code") else DATA / name
         args = [a.replace("{data}", str(data)) for a in m.get("data_args", [])]
     return {"name": name, "title": m["name"], "port": m["port"], "location": loc, "folder": str(folder), "legacy": str(legacy),
-            "data": str(data), "command": m["command"] + args, "env": env, "console": bool(m.get("console")),
-            "show_console": bool(consoles().get(name, False)), "task": m.get("task"),
+            "data": str(data), "command": m["command"] + args, "env": env, "task": m.get("task"),
             "runtime": m.get("runtime", []), "code_runtime": m.get("code_runtime", []), "requires": m.get("requires", []), "venv": m.get("venv"), "precheck": m.get("precheck")}
 
 

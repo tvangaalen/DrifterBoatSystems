@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>Log · Drifter</title>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<script>
+try { const t = localStorage.getItem("drifter-theme"); if (t && t !== "auto") document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<link rel="stylesheet" href="app.css">
+<style>
+  body{margin:0;background:var(--bg);color:var(--fg)}
+  .lhead{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
+  .lhead h1{font-size:18px;margin:0;flex:1;min-width:140px}
+  .lhead .hint{width:100%;margin:0;overflow-wrap:anywhere}
+  pre{margin:0;padding:12px 16px calc(24px + env(safe-area-inset-bottom));font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+  pre .w{color:var(--warn)} pre .b{color:var(--bad)}
+</style>
+</head>
+<body>
+<div class="lhead"><h1 id="t">Log</h1>
+  <label class="hint" style="width:auto;display:flex;align-items:center;gap:6px"><input type="checkbox" id="follow" checked> Follow</label>
+  <select class="field" id="n" aria-label="Lines" style="width:auto"><option>200</option><option selected>500</option><option>2000</option></select>
+  <button class="btn sec sm" type="button" id="r">Refresh</button>
+  <p class="hint" id="s"></p></div>
+<pre id="log">Loading…</pre>
+<script>
+"use strict";
+// One module's log file (<data>\logs\<module>.console.log on the boat PC), read through the gateway. Refreshes every 3 s while
+// "Follow" is on and keeps the newest line in view. Times are as the server wrote them (24-hour).
+(() => {
+  const NAMES = {energy: "Energy (MasterVolt)", anchor: "Anchor watch", guard: "BoatGuard", washer: "Washer", gateway: "Drifter"};
+  const mod = location.hash.slice(1), $ = id => document.getElementById(id), pad = n => String(n).padStart(2, "0");
+  const esc = s => s.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"})[c]);
+  $("t").textContent = `${NAMES[mod] || mod} log`; document.title = `${NAMES[mod] || mod} log · Drifter`;
+  let timer = null;
+  async function load() {
+    clearTimeout(timer);
+    try {
+      const r = await fetch(`api/supervisor/log?module=${encodeURIComponent(mod)}&lines=${$("n").value}`, {cache: "no-store"});
+      const j = await r.json(); if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+      const atEnd = window.innerHeight + window.scrollY >= document.body.scrollHeight - 40, d = new Date();
+      $("log").innerHTML = j.exists ? j.lines.map(l => /\b(ERROR|CRITICAL|Traceback)\b/.test(l) ? `<span class="b">${esc(l)}</span>` : /\bWARNING\b/.test(l) ? `<span class="w">${esc(l)}</span>` : esc(l)).join("\n") || "(empty)"
+        : "No log file yet: the module has not been started by Drifter since logging to a file began.";
+      $("s").textContent = `${j.file || ""} · ${j.exists ? Math.round(j.size / 1024) + " KB" : "missing"} · read ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      if ($("follow").checked && atEnd) window.scrollTo(0, document.body.scrollHeight);
+    } catch (e) { $("s").textContent = `Not available: ${e.message}`; }
+    if ($("follow").checked) timer = setTimeout(load, 3000);
+  }
+  $("r").onclick = load; $("n").onchange = load; $("follow").onchange = load;
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+  load().then(() => requestAnimationFrame(() => window.scrollTo(0, document.body.scrollHeight)));
+})();
+</script>
+</body>
+</html>

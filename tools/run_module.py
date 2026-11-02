@@ -62,8 +62,12 @@ def start_in_job(job, cmd, **kw):
 def main(name):
     m = modules.resolve(name)
     logs = Path(m["data"]) / "logs"; logs.mkdir(parents=True, exist_ok=True)
+    f = logs / f"{m['name']}.console.log"
+    try:                                               # keep it bounded: the previous 5 MB move to .1 at a start
+        if f.stat().st_size > 5_000_000: os.replace(f, f.with_suffix(".log.1"))
+    except OSError: pass
     job = join_kill_on_close_job()
-    with open(logs / f"{m['name']}.console.log", "a", encoding="utf-8") as out:
+    with open(f, "a", encoding="utf-8") as out:
         out.write(f"\n--- {datetime.now():%Y-%m-%d %H:%M:%S} start {m['location']}: {' '.join(m['command'])} in {m['folder']}"
                   f"{'' if job else ' (no job object: the server may outlive this runner)'}\n"); out.flush()
         cmd = m["command"][:]; exe = Path(m["folder"]) / cmd[0]

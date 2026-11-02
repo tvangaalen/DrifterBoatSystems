@@ -11,13 +11,15 @@ Rules (see CLAUDE.md):
 - `<data>\\hold\\<module>` (set by switch_module.ps1 while a module is being moved) means: leave it alone.
 - `shutdown_all()` ("Switch all systems off" in the app) is the other stop the user asks for: after the same pre-checks
   for every module it stops the loop (nothing is started again), stops every module server, then lets the gateway end.
-- Console windows (MasterVolt, anchor watch) are shown or hidden as the user chose in the app (`<data>\\consoles.json`,
-  default hidden); start_all.ps1 starts them that way and the loop puts a window back when it differs.
+- Every module runs without a window (also in session 0, when nobody is logged on); its output goes to
+  `<data>\\logs\\<module>.console.log` (tools/run_module.py), which the app shows through `log_tail()`.
+- A module that is down when the supervisor starts is started at once (the desktop icon leaves that to the supervisor);
+  one that stops later is started after GRACE_S.
 Stdlib only.
 """
 from __future__ import annotations
 
-import ctypes, json, logging, os, subprocess, sys, threading, time
+import logging, subprocess, sys, threading, time
 from collections import deque
 from pathlib import Path
 
@@ -31,7 +33,7 @@ BACKOFF = [60, 120, 300, 600, 900]          # s between failed start attempts
 SUPERVISED = ("energy", "anchor", "guard", "washer")   # the gateway cannot supervise itself (its task restarts it)
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 SHUTDOWN_ORDER = ("washer", "guard", "anchor", "energy")
-SW_HIDE, SW_SHOWNOACTIVATE = 0, 4
+LOG_NAMES = (*SUPERVISED, "gateway")
 
 
 def listening_ports() -> set[int]:
@@ -61,71 +63,18 @@ def stop_module(name: str) -> None:
     if r.returncode: raise RuntimeError((r.stdout or r.stderr).strip()[-300:] or f"stop_module exit {r.returncode}")
 
 
-def listener_pid(port: int) -> int | None:
-    out = subprocess.run(["netstat", "-ano", "-p", "TCP"], capture_output=True, text=True, timeout=20, creationflags=NO_WINDOW).stdout
-    for line in out.splitlines():
-        p = line.split()
-        if len(p) >= 5 and p[0] == "TCP" and p[3] == "LISTENING" and p[1].rsplit(":", 1)[-1] == str(port): return int(p[4])
-    return None
-
-
-class _PE(ctypes.Structure):
-    _fields_ = [("dwSize", ctypes.c_uint32), ("cntUsage", ctypes.c_uint32), ("th32ProcessID", ctypes.c_uint32), ("th32DefaultHeapID", ctypes.c_size_t),
-                ("th32ModuleID", ctypes.c_uint32), ("cntThreads", ctypes.c_uint32), ("th32ParentProcessID", ctypes.c_uint32),
-                ("pcPriClassBase", ctypes.c_long), ("dwFlags", ctypes.c_uint32), ("szExeFile", ctypes.c_wchar * 260)]
-
-
-def parents() -> dict[int, int]:
-    """pid -> parent pid of every process (Toolhelp snapshot)."""
-    k = ctypes.windll.kernel32; k.CreateToolhelp32Snapshot.restype = ctypes.c_void_p
-    snap = k.CreateToolhelp32Snapshot(2, 0); e = _PE(); e.dwSize = ctypes.sizeof(_PE); out = {}
-    try:
-        ok = k.Process32FirstW(ctypes.c_void_p(snap), ctypes.byref(e))
-        while ok: out[e.th32ProcessID] = e.th32ParentProcessID; ok = k.Process32NextW(ctypes.c_void_p(snap), ctypes.byref(e))
-    finally: k.CloseHandle(ctypes.c_void_p(snap))
-    return out
-
-
-def find_console(port: int):
-    """The console window of the server listening on `port`: the ConsoleWindowClass window owned by that process or one
-    of its launchers (cmd of the start script). Not by title: a stale window of an earlier start may have the same title."""
-    if os.name != "nt": return None
-    pid = listener_pid(port)
-    if not pid: return None
-    par, chain = parents(), set()
-    while pid and pid not in chain and len(chain) < 12: chain.add(pid); pid = par.get(pid)
-    u = ctypes.windll.user32; found = []
-    proto = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
-    def cb(h, _):
-        owner = ctypes.c_uint32(); u.GetWindowThreadProcessId(ctypes.c_void_p(h), ctypes.byref(owner))
-        if owner.value in chain:
-            cls = ctypes.create_unicode_buffer(64); u.GetClassNameW(ctypes.c_void_p(h), cls, 64)
-            if cls.value == "ConsoleWindowClass": found.append(h); return False
-        return True
-    u.EnumWindows(proto(cb), None)
-    return found[0] if found else None
-
-
-def window_alive(h) -> bool: return bool(ctypes.windll.user32.IsWindow(ctypes.c_void_p(h)))
-def window_visible(h) -> bool: return bool(ctypes.windll.user32.IsWindowVisible(ctypes.c_void_p(h)))
-def show_window(h, show: bool) -> None: ctypes.windll.user32.ShowWindow(ctypes.c_void_p(h), SW_SHOWNOACTIVATE if show else SW_HIDE)
-
-
 class Supervisor:
     def __init__(self, names=SUPERVISED, ports=None, data=None, listening=listening_ports, start=start_module, stop=stop_module,
-                 precheck=None, clock=time.time, consoles=None, find=find_console, alive=window_alive, visible=window_visible, show=show_window):
+                 precheck=None, clock=time.time, logs=None):
         self.names = list(names)
         self.ports = ports or {n: M.resolve(n)["port"] for n in self.names}
         self.data = Path(data or M.DATA)
         self.listening, self.start_fn, self.stop_fn, self.precheck, self.clock = listening, start, stop, precheck, clock
-        # Modules with a console window. Default: from modules.json, but only for the real supervisor (no `ports` given),
-        # so a test never touches a real window.
-        self.consoles = set(consoles) if consoles is not None else set() if ports else {n for n in self.names if M.resolve(n)["console"]}
-        self.find_fn, self.alive_fn, self.visible_fn, self.show_fn = find, alive, visible, show
-        self.hwnd: dict = {}
+        # Log file per module (and the gateway): <data>\\logs\\<module>.console.log, written by tools/run_module.py
+        self.logs = logs or {n: Path(M.resolve(n)["data"]) / "logs" / f"{n}.console.log" for n in LOG_NAMES}
         self.lock = threading.Lock(); self.events = deque(maxlen=200); self._stop = threading.Event()
         self.mods = {n: {"state": "unknown", "since": None, "down_since": None, "last_start": None, "attempts": 0, "next_try": 0.0,
-                         "starts": 0, "busy": None, "last_event": None, "console": None} for n in self.names}
+                         "starts": 0, "busy": None, "last_event": None} for n in self.names}
         self.shutdown: dict | None = None
 
     # ---- events and state
@@ -156,7 +105,6 @@ class Supervisor:
             s = self.mods[n]
             if s["busy"]: continue                     # a restart is running: it sets the state itself
             if self.ports[n] in up:
-                self._console(n)
                 if s["state"] != "running":
                     self.event(n, "running" + (f" ({now - s['last_start']:.0f} s after start)" if s["state"] == "starting" else
                                                " (adopted)" if s["state"] == "unknown" else ""))
@@ -172,7 +120,7 @@ class Supervisor:
                 s.update(state="failed", next_try=now + wait)
                 self.event(n, f"did not start within {START_WAIT_S} s; next try in {wait // 60} min", "warn"); continue
             if s["down_since"] is None:
-                s["down_since"] = now
+                s["down_since"] = now - (GRACE_S if s["state"] == "unknown" else 0)   # down at the supervisor's start: at once
                 if s["state"] != "failed": s["state"] = "down"; self.event(n, "not running", "warn")
             if now >= max(s["down_since"] + GRACE_S, s["next_try"]): self._start(n, now)
 
@@ -187,29 +135,18 @@ class Supervisor:
         while not self._stop.is_set():
             self.tick(); self._stop.wait(TICK_S)
 
-    # ---- console windows, shown or hidden as the user chose (default hidden)
-    def console_prefs(self) -> dict:
-        try: return json.loads((self.data / "consoles.json").read_text(encoding="utf-8"))
-        except (OSError, ValueError): return {}
-
-    def _console(self, n):
-        """Puts module n's console window in the chosen state; records whether there is one. Never raises."""
-        if n not in self.consoles: return
-        want = bool(self.console_prefs().get(n, False))
+    # ---- log files for the app
+    def log_tail(self, name: str, lines: int = 400) -> dict:
+        """The last `lines` lines of a module's log file (newest last); reads at most the last 512 KB."""
+        if name not in self.logs: raise ValueError(f"unknown log {name}")
+        f = Path(self.logs[name]); lines = max(1, min(int(lines), 5000))
         try:
-            h = self.hwnd.get(n)
-            if not (h and self.alive_fn(h)): h = self.hwnd[n] = self.find_fn(self.ports[n])   # found once per server start
-            if h and self.visible_fn(h) != want: self.show_fn(h, want)
-            self.mods[n]["console"] = {"show": want, "window": bool(h)}
-        except Exception as e:
-            log.warning("supervisor: %s console window: %s", n, e); self.mods[n]["console"] = {"show": want, "window": None}
-
-    def set_console(self, name: str, show: bool) -> None:
-        if name not in self.consoles: raise ValueError(f"{name} has no console window")
-        prefs = self.console_prefs(); prefs[name] = bool(show)
-        self.data.mkdir(parents=True, exist_ok=True); f = self.data / "consoles.json"; tmp = f.with_suffix(".tmp")
-        tmp.write_text(json.dumps(prefs, indent=2), encoding="utf-8"); os.replace(tmp, f)
-        self._console(name); self.event(name, f"console window {'shown' if show else 'hidden'}")
+            with open(f, "rb") as fh:
+                size = fh.seek(0, 2); fh.seek(max(0, size - 512 * 1024)); data = fh.read()
+        except FileNotFoundError: return {"module": name, "file": str(f), "exists": False, "lines": [], "size": 0}
+        text = data.decode("utf-8", errors="replace").splitlines()
+        if size > len(data): text = text[1:]                     # the first line is cut off
+        return {"module": name, "file": str(f), "exists": True, "size": size, "lines": text[-lines:]}
 
     # ---- switch everything off on the user's request
     def shutdown_all(self, on_done=None) -> None:
@@ -219,7 +156,7 @@ class Supervisor:
         busy = [n for n in self.names if self.mods[n]["busy"]]
         if busy: raise ValueError(f"{', '.join(busy)}: a restart is running; try again in a minute")
         if self.precheck:
-            for n in self.names: self.precheck(n)    # raises ValueError with the reason
+            for n in self.names: self.precheck(n, "shutdown")    # raises ValueError with the reason
         self.stop_loop()                               # from now on nothing is started again
         for n in self.names: self.mods[n]["busy"] = "shutdown"
         self.shutdown = {"state": "running", "started": self.clock(), "total": len(self.names), "stopped": [], "failed": {}}

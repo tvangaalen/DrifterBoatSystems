@@ -24,7 +24,7 @@ from common import logs
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "0.12.0"
+VERSION = "0.13.0"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
@@ -140,17 +140,19 @@ class Upstreams:
 
 def make_precheck(up: Upstreams):
     """Before a restart from the app: refuse while MasterVolt runs a BMS control or Float is latched, or while the anchor
-    watch has an alarm. A server that does not answer at all is stuck or gone, so restarting it is allowed."""
+    watch has an alarm. Before "switch all systems off" (why="shutdown") a latched Float does not count: the user may
+    simply switch everything off. A server that does not answer at all is stuck or gone, so stopping it is allowed."""
     def get(module, path):
         code, _, _, data, _ = up.request(module, "GET", path, "", None, None)
         if code != 200: raise OSError(f"{path}: HTTP {code}")
         return json.loads(data)
 
-    def check(name):
+    def check(name, why="restart"):
         try:
             if name == "energy":
                 if (get("power", "/api/bms").get("control_status") or {}).get("busy"): raise ValueError("a BMS control is running: try again later")
-                if (get("power", "/api/energy").get("high_soc_float_policy") or {}).get("float_latched"): raise ValueError("Float is latched: do not restart now")
+                if why != "shutdown" and (get("power", "/api/energy").get("high_soc_float_policy") or {}).get("float_latched"):
+                    raise ValueError("Float is latched: do not restart now")
             elif name == "anchor":
                 alarms = get("anchor", "/api/state").get("alarms") or []
                 if alarms: raise ValueError("anchor alarm active (" + ", ".join(a.get("text", "?") for a in alarms) + "): do not restart now")
@@ -190,6 +192,11 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, end_gateway=None):
             path, _, query = self.path.partition("?")
             if path.startswith("/api/") and path.count("/") >= 2 and path.split("/")[2] in up.mods:
                 return self._proxy("GET", path, query)
+            if path == "/api/supervisor/log":                   # the module's log file, for the app's log window
+                if not sup: return self._json({"error": "the supervisor is off"}, 409)
+                q = dict(p.split("=", 1) for p in query.split("&") if "=" in p)
+                try: return self._json(sup.log_tail(q.get("module", ""), int(q.get("lines", 400))))
+                except ValueError as e: return self._json({"error": str(e)}, 404)
             if path == "/api/systems":
                 with up.lock: st = {m: dict(v) for m, v in up.status.items()}
                 return self._json({"version": VERSION, "systems": systems, "upstream": st,
@@ -218,7 +225,6 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, end_gateway=None):
             if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json": return self._json({"error": "json only"}, 415)
             if path == "/api/supervisor/restart": return self._restart()
             if path == "/api/supervisor/shutdown": return self._shutdown()
-            if path == "/api/supervisor/console": return self._console()
             if not (path.startswith("/api/") and path.count("/") >= 2 and path.split("/")[2] in up.mods): return self._json({"error": "not found"}, 404)
             self._proxy("POST", path, query)
 
@@ -237,14 +243,6 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, end_gateway=None):
             except ValueError as e: return self._json({"error": str(e)}, 409)
             log.warning("switch all systems off requested from the app"); return self._json({"ok": True}, 202)
 
-        def _console(self):
-            if not sup: return self._json({"error": "the supervisor is off"}, 409)
-            try: b = json.loads(self._body or b"{}"); name, show = str(b.get("module")), b.get("show")
-            except (ValueError, AttributeError): return self._json({"error": "invalid JSON"}, 400)
-            if not isinstance(show, bool): return self._json({"error": "show must be true or false"}, 400)
-            try: sup.set_console(name, show)
-            except ValueError as e: return self._json({"error": str(e)}, 409)
-            return self._json({"ok": True, "module": name, "show": show})
 
         def _proxy(self, method: str, path: str, query: str):
             module = path.split("/")[2]; sub = path[len(f"/api/{module}"):] or "/"

@@ -1,6 +1,6 @@
 # Mastervolt Energy - Manual
 
-**Version 2.1.2** - the complete guide to using, operating and maintaining the application. It explains what every screen
+**Version 2.1.3** - the complete guide to using, operating and maintaining the application. It explains what every screen
 shows, how every number is obtained, what the application does on its own (Float protection, Bluetooth recovery, history),
 which files it keeps, what to do when something goes wrong, and how the code is organised for whoever changes it next.
 

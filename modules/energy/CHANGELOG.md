@@ -12,6 +12,9 @@ Unless an entry says otherwise, every release also bumps the application version
 
 ## 2.1 — Shore power history
 
+### 2.1.3
+- The BMS card's "updated" time is always shown on the 24-hour clock (it followed the device's locale, which can show AM/PM).
+
 ### 2.1.2
 - The autostart installer is started with `powershell -NoProfile -ExecutionPolicy Bypass -File ...`: Windows refuses to run the unsigned script directly ("not digitally signed"). The system execution policy is not changed.
 

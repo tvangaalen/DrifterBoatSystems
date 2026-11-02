@@ -191,7 +191,8 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .tile .chev{color:var(--faint)}
 .minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
 .minis.m4{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.minis.m4 .mini{padding:8px}
+.minis.m4 .mini{padding:8px;display:flex;flex-direction:column;justify-content:space-between;gap:2px}
+.minis.m4 .mini .l{white-space:normal;line-height:1.2}
 .mini{background:var(--card2);border-radius:10px;padding:8px 10px;min-width:0}
 .mini .l{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini .n{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

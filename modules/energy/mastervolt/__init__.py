@@ -10,4 +10,4 @@ Package layout (see docs/MANUAL.md, chapter "Architecture"):
 * `soc`        - House SOC and cell-voltage helpers that feed Float protection
 """
 
-__version__ = "2.1.2"
+__version__ = "2.1.3"

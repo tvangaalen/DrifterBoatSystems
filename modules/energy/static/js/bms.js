@@ -34,7 +34,7 @@ function bmsCard(item) {
       .map((mv, i) => `<div class="bms-cell">Cell ${i + 1}<strong>${(Number(mv) / 1000).toFixed(3)} V</strong></div>`)
       .join('') || '<div class="bms-cell">Cells<strong>—</strong></div>';
   const balancing = (item.balancing_cells || []).length ? `Cells ${(item.balancing_cells || []).join(', ')}` : 'Inactive';
-  const updated = item.captured_at ? new Date(item.captured_at).toLocaleString() : 'Never';
+  const updated = item.captured_at ? new Date(item.captured_at).toLocaleString('en-GB', { hourCycle: 'h23' }) : 'Never';
   const current = item.current_a == null ? '—' : (Number(item.current_a) >= 0 ? '+' : '') + Number(item.current_a).toFixed(1) + ' A';
   const mos = value => (value == null ? '—' : value ? 'On' : 'Off');
   const cellRows =

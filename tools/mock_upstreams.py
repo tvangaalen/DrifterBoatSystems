@@ -173,7 +173,7 @@ class Anchor:
         if not self.track or now - self.track[-1][0] > 5: self.track.append([round(now, 1), p["lat"], p["lon"]])
         out = {"time": now, "core": {"connected": True, "last_error": None, "last_message_age": 0.4},
                "ais_stream": {"connected": True, "last_error": None, "last_message_age": 3.0},
-               "boat": {"pos": {**p, "sats": 11, "hdop": 0.8}, "heading": (now * 2) % 360, "depth": 6.4, "tws": 12.3, "twd": 230, "sog": 0.3, "depth_offset": 0.4, "depth_offset_src": "sounder"},
+               "boat": {"pos": {**p, "sats": 11, "hdop": 0.8, "hold": int(now // 120) % 2 == 1}, "heading": (now * 2) % 360, "depth": 6.4, "tws": 12.3, "twd": 230, "sog": 0.3, "depth_offset": 0.4, "depth_offset_src": "sounder"},
                "gps_rows": [r for r in [{"source": "254", "name": "Orca Core", "status": "in_use", "sats": 11, "hdop": 0.8, "last_seen": None, "listed": True},
                             {"source": "2", "name": "B&G ZG100", "status": "active", "sats": 9, "hdop": 1.1, "last_seen": None, "listed": False},
                             {"source": "net-192.0.2.30", "name": "Network GPS (mock phone)", "status": "inactive", "sats": None, "hdop": None, "last_seen": 3600, "listed": False}]
@@ -346,18 +346,19 @@ if __name__ == "__main__":
     if "--gateway" in sys.argv:          # also run the Drifter gateway against these mocks (config.mock.json, port 8101)
         import logging; sys.path.insert(0, str(ROOT)); import drifter
         logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S")
-        # A supervisor that only watches the mock ports and only pretends to stop/start or show/hide console windows: it can
-        # never touch a real server or window. "Switch all systems off" runs through, but the mock gateway stays up.
+        # A supervisor that only watches the mock ports and only pretends to stop/start: it can never touch a real server.
+        # "Switch all systems off" runs through, but the mock gateway stays up. Logs are made-up files in a temp folder.
         import supervisor, tempfile
-        windows = {18000: False, 18766: False}          # pretend console windows: port -> visible
+        tmp = Path(tempfile.mkdtemp()); logs = {}
+        for n in supervisor.LOG_NAMES:
+            logs[n] = tmp / "logs" / f"{n}.console.log"; logs[n].parent.mkdir(exist_ok=True)
+            logs[n].write_text("".join(f"2026-11-02 09:{i // 60:02d}:{i % 60:02d} INFO mock {n}: line {i}\n" for i in range(300)), encoding="utf-8")
 
         class MockSupervisor(supervisor.Supervisor):
             def shutdown_all(self, on_done=None): super().shutdown_all(None)
-        fake = MockSupervisor(ports={"energy": 18000, "anchor": 18766, "guard": 18095, "washer": 18080}, data=tempfile.mkdtemp(),
+        fake = MockSupervisor(ports={"energy": 18000, "anchor": 18766, "guard": 18095, "washer": 18080}, data=tmp, logs=logs,
                               start=lambda n: logging.info("mock supervisor: would start %s", n),
-                              stop=lambda n: (logging.info("mock supervisor: would stop %s", n), time.sleep(1)),
-                              consoles={"energy", "anchor"}, find=lambda port: port if port in windows else None, alive=lambda h: True,
-                              visible=lambda h: windows[h], show=lambda h, on: (windows.__setitem__(h, on), logging.info("mock console %s %s", h, on)))
+                              stop=lambda n: (logging.info("mock supervisor: would stop %s", n), time.sleep(1)))
         fake.start_thread()
         drifter.serve(drifter.load_config(Path(__file__).resolve().parent / "config.mock.json"), supervisor=fake).serve_forever()
     threading.Event().wait()

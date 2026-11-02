@@ -3,9 +3,12 @@
 # A server that is already running is never restarted (a restart pauses Float protection and the anchor watch).
 # Processes are created through Win32_Process Create: they run in the user's session, outside the process tree of
 # whoever ran this script (servers started inside a tool session's tree disappeared when that session ended).
-# MasterVolt and the anchor watch get their usual console window, hidden unless it was switched on in the app (System
-# page, <data>\consoles.json); the rest runs without a window.
-# -Only <module>: start just that one (used by tools\switch_module.ps1); -NoWait: no waiting, status or browser.
+# Every module runs without a window through tools\run_module.py (output in <data>\logs\<module>.console.log; the app
+# shows it), so it keeps running when nobody is logged on.
+# With "supervise" on in the gateway's config.json (the live setting) the desktop icon starts only the scheduled tasks
+# (Drifter, BoatGuard: they run in session 0, whether anybody is logged on or not) and leaves the other modules to the
+# supervisor, which starts them in its own session; a module started from here would end when the user logs off.
+# -Only <module>: start just that one (used by the supervisor and tools\switch_module.ps1); -NoWait: no waiting, status or browser.
 param([string]$Only, [switch]$NoWait)
 $ErrorActionPreference = 'Continue'
 if (-not $NoWait) { $Host.UI.RawUI.WindowTitle = 'Drifter Boat Systems' }
@@ -22,11 +25,6 @@ function Launch($line, $dir, $show) {
 }
 function Start-Module($m) {
     if ($m.task) { Start-ScheduledTask -TaskName $m.task; return }
-    if ($m.console) {
-        $cmd = ($m.command | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '
-        if ($m.env.DRIFTER_DATA) { $cmd = "cmd.exe /c `"set `"DRIFTER_DATA=$($m.env.DRIFTER_DATA)`" && $($cmd -replace '^cmd /c ', '')`"" }
-        Launch $cmd $m.folder $(if ($m.show_console) { 4 } else { 0 }); return   # 4 = shown, not activated; 0 = hidden
-    }
     Launch "`"$pyw`" `"$runner`" $($m.name)" $m.folder 0             # 0 = hidden; output in <data>\logs\<module>.console.log
 }
 
@@ -36,9 +34,13 @@ if (-not $NoWait) { Write-Host "`n  Drifter Boat Systems`n" -ForegroundColor Cya
 # would fight over the USB link and the Bluetooth radio. A hold file (set while a module is being moved) blocks the
 # full start-all; -Only (switch_module, supervisor) has checked it already.
 $marks = Join-Path $plan.data 'starting'; New-Item -ItemType Directory -Force $marks | Out-Null
+$gwPlan = (& py (Join-Path $PSScriptRoot 'tools\modules.py') plan | Out-String | ConvertFrom-Json).modules | Where-Object name -eq 'gateway'
+$gwCfg = Join-Path $gwPlan.data 'config.json'
+$supervised = (Test-Path $gwCfg) -and [bool]((Get-Content $gwCfg -Raw | ConvertFrom-Json).supervise)
 foreach ($m in $plan.modules) {
     $where = if ($m.location -eq 'drifter') { 'Drifter' } else { 'old folder' }
     if (Listening $m.port) { Write-Host ("  {0,-26} already running" -f $m.title) -ForegroundColor DarkGray; continue }
+    if (-not $Only -and $supervised -and -not $m.task) { Write-Host ("  {0,-26} left to the supervisor" -f $m.title) -ForegroundColor DarkGray; continue }
     if (-not $Only -and (Test-Path (Join-Path $plan.data "hold\$($m.name)"))) { Write-Host ("  {0,-26} on hold (being moved), not started" -f $m.title) -ForegroundColor Yellow; continue }
     $mark = Join-Path $marks $m.name
     if ((Test-Path $mark) -and ((Get-Date) - (Get-Item $mark).LastWriteTime).TotalSeconds -lt 120) { Write-Host ("  {0,-26} already starting" -f $m.title) -ForegroundColor DarkGray; continue }
@@ -48,8 +50,8 @@ foreach ($m in $plan.modules) {
 }
 
 if ($NoWait) { return }
-# MasterVolt opens the USB link and Bluetooth first and can take a minute; wait up to 90 s for every port.
-$deadline = (Get-Date).AddSeconds(90)
+# MasterVolt opens the USB link and Bluetooth first and can take a minute, after the supervisor started it; wait up to 3 min.
+$deadline = (Get-Date).AddSeconds(180)
 while ((Get-Date) -lt $deadline -and ($plan.modules | Where-Object { -not $_.Failed -and -not (Listening $_.port) })) { Start-Sleep -Seconds 2 }
 
 Write-Host ''

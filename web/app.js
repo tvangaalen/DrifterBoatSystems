@@ -249,8 +249,11 @@ const Drifter = (() => {
         <button class="btn danger" type="button" id="sysOff">${icon("off")} Switch all systems off</button></div></div>
       <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="hint" style="margin:0">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's local certificate (the same one used for Energy, Anchor watch and BoatGuard).</p></div>
       <p class="hint" style="text-align:center;margin:18px 0" id="sysVer"></p>`;
-    el.onclick = e => { const b = e.target.closest("[data-restart]"); if (b) restartModule(b.dataset.restart, b); if (e.target.closest("#sysOff")) switchAllOff(e.target.closest("#sysOff")); };
-    el.onchange = e => { const c = e.target.closest("[data-console]"); if (c) setConsole(c.dataset.console, c.checked, c); };
+    el.onclick = e => {
+      const b = e.target.closest("[data-restart]"); if (b) restartModule(b.dataset.restart, b);
+      const l = e.target.closest("[data-log]"); if (l) window.open(`log.html#${l.dataset.log}`, `drifter-log-${l.dataset.log}`);   // its own window or tab
+      if (e.target.closest("#sysOff")) switchAllOff(e.target.closest("#sysOff"));
+    };
     await refreshSystem();
     clearInterval(sysTimer); sysTimer = setInterval(() => { if (current === "system" && !document.hidden) refreshSystem(); else if (current !== "system") clearInterval(sysTimer); }, 5000);
   }
@@ -268,10 +271,10 @@ const Drifter = (() => {
           <div class="k"><b>${esc(m.title)}</b>${c ? `<a href="${esc(c)}" target="_blank" rel="noopener" class="hint">Open classic page ↗</a>` : ""}</div><div class="v">${st}</div></div>
         ${s ? `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">${supState(s)}
           <span class="hint" style="flex:1;min-width:120px">${s.last_event ? `${esc(dayTime(s.last_event.t))} ${esc(s.last_event.text)}` : ""}</span>
-          <button class="btn sec sm" type="button" data-restart="${name}" ${s.busy || s.held || s.state === "starting" ? "disabled" : ""}>${icon("refresh")} Restart</button></div>` : ""}
-        ${s && s.console ? `<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span class="hint">Console window on the boat PC${s.console.window === false && s.state === "running" ? " (no window found)" : ""}</span>
-          ${sw(`con-${name}`, s.console.show, `data-console="${name}" aria-label="${esc(m.title)} console window"`)}</div>` : ""}</div>`;
-    }).join("") + (sup ? "" : `<div class="row"><span class="hint">The supervisor is off: servers are not restarted automatically.</span></div>`);
+          <span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="${name}">Show log</button>
+          <button class="btn sec sm" type="button" data-restart="${name}" ${s.busy || s.held || s.state === "starting" ? "disabled" : ""}>${icon("refresh")} Restart</button></span></div>` : ""}</div>`;
+    }).join("") + (sup ? `<div class="row"><div class="k"><b>Drifter</b><span class="hint">this app's server on the boat PC</span></div><button class="btn sec sm" type="button" data-log="gateway">Show log</button></div>`
+      : `<div class="row"><span class="hint">The supervisor is off: servers are not restarted automatically.</span></div>`);
     $("sysEvWrap").hidden = !sup || !sup.events.length;
     $("sysOffWrap").hidden = !sup; $("sysOff").disabled = !!(sup && sup.shutdown && sup.shutdown.state === "running");
     if (sup) $("sysEvents").innerHTML = sup.events.slice().reverse().slice(0, 30).map(e => `<div class="${e.kind === "bad" ? "bad" : e.kind === "warn" ? "warn" : ""}"><time>${esc(dayTime(e.t))}</time><span class="msg"><b>${esc(e.module)}</b> ${esc(e.text)}</span></div>`).join("");
@@ -286,16 +289,11 @@ const Drifter = (() => {
     refreshSystem();
   }
 
-  async function setConsole(name, show, el) {
-    try { await run(null, el, () => sysPost("api/supervisor/console", {module: name, show}), show ? "Console window shown on the boat PC" : "Console window hidden"); }
-    catch (e) { el.checked = !show; }
-    refreshSystem();
-  }
   const sysPost = (url, body) => fetch(url, {method: "POST", headers: {"Content-Type": "application/json", "X-Drifter-Request": "1"}, body: JSON.stringify(body)})
     .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`); return j; });
 
   // Switch all systems off: what stops is listed in the confirmation, whose default is "Leave on". The server refuses
-  // (with the reason) while a BMS control runs, Float is latched or the anchor watch has an alarm. Then every module
+  // (with the reason) while a BMS control runs or the anchor watch has an alarm (a latched Float is no reason). Then every module
   // server stops and the gateway ends itself; the page stops polling and offers to close.
   async function switchAllOff(btn) {
     const a = byId.anchor && byId.anchor.state.data, g = byId.guard && byId.guard.state.data, w = byId.washer && byId.washer.state.data;
@@ -307,7 +305,7 @@ const Drifter = (() => {
       sched ? "Washer: the scheduled start will not happen while the controller is off." : "Washer: the controller stops; a running program carries on in the washer.",
       "This app's server on the boat PC stops too.",
     ];
-    if (!(await confirm({title: "Switch all systems off?", items, note: "Start everything again with the Drifter Boat Systems icon on the boat PC. Refused while a BMS control runs, Float is latched or the anchor watch has an alarm.",
+    if (!(await confirm({title: "Switch all systems off?", items, note: "Start everything again with the Drifter Boat Systems icon on the boat PC. Refused while a BMS control runs or the anchor watch has an alarm.",
       ok: "Switch off", cancel: "Leave on", danger: true}))) return;
     try { await run(null, btn, () => sysPost("api/supervisor/shutdown", {})); } catch (e) { return; }
     switchedOff = true; clearInterval(sysTimer); mods.forEach(m => { clearTimeout(m.timer); m.timer = null; });

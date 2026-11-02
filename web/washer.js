@@ -79,7 +79,7 @@
             <div class="row"><span class="hint" id="wSetMsg"></span><button class="btn" id="wSet" type="button">Set</button></div></div></div>
           <div class="card"><div class="hd"><h3>Schedule</h3></div><div class="rows">
             <div id="wSchedEdit"><div class="row"><select class="field" id="wSchedMode" aria-label="Schedule type"><option value="finish">Finish at</option><option value="start">Start at</option></select>
-              <input class="field" type="time" id="wSchedTime" step="300" aria-label="Time" style="width:120px"></div>
+              <span style="display:flex;align-items:center;gap:4px"><select class="field" id="wSchedH" aria-label="Hour">${Array.from({length: 24}, (_, i) => `<option>${D.pad(i)}</option>`).join("")}</select>:<select class="field" id="wSchedM" aria-label="Minutes">${Array.from({length: 12}, (_, i) => `<option>${D.pad(i * 5)}</option>`).join("")}</select></span></div>
               <div class="row"><span class="hint">Uses the program set on the washer now. The washer must be on and idle.</span><button class="btn" id="wSched" type="button">Schedule</button></div></div>
             <div class="row" id="wSchedSum" hidden><span class="k" id="wSchedText"></span><button class="btn sec sm" id="wSchedCancel" type="button">Cancel</button></div></div></div>
         </div>
@@ -87,7 +87,7 @@
       <h2 class="sec">Events</h2>
       <div class="card"><div class="log" id="wLog"></div></div>`;
       const now = new Date(Date.now() + 10 * 60000); now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5);
-      $("wSchedTime").value = `${D.pad(now.getHours())}:${D.pad(now.getMinutes())}`;
+      $("wSchedH").value = D.pad(now.getHours()); $("wSchedM").value = D.pad(now.getMinutes());   // own 24-hour fields: <input type=time> follows the device (AM/PM)
       $("wProg").addEventListener("change", () => { editing = true; const c = CAP[+$("wProg").value]; fillCaps(+$("wProg").value, c.temperatures[0], c.rinses[0]); });
       $("wTemp").addEventListener("change", () => editing = true);
       $("wRinse").addEventListener("change", () => editing = true);
@@ -221,7 +221,7 @@
     finally { pending = false; $("wSet").textContent = "Set"; D.poll(m, true); }
   }
   async function schedule(e) {
-    const v = $("wSchedTime").value;
+    const v = `${$("wSchedH").value}:${$("wSchedM").value}`;
     if (!/^\d\d:\d\d$/.test(v)) { msg("Choose a time", true); return; }
     const mode = $("wSchedMode").value;
     if (pending) return; pending = true;

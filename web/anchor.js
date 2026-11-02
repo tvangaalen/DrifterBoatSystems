@@ -26,7 +26,7 @@
     ["nfl_on_anchor", "Track to noforeignland.com when the anchor drops", "", , , , , "Other"],
     ["nmea_port", "NMEA port (phone GPS)", "Network GPS, e.g. GPS2IP, over UDP and TCP", 1024, 65535, 1, "", "GPS"],
   ];
-  const GPS_ST = {in_use: ["ok", "Active, in use"], active: ["ok", "Active, standby"], hold: ["warn", "Active, on hold (within 10 m)"], raw: ["warn", "Active, own GNSS fix"],
+  const GPS_ST = {in_use: ["ok", "Active, in use"], in_use_hold: ["warn", "Active, in use, on hold (within 10 m)"], active: ["ok", "Active, standby"], hold: ["warn", "Active, on hold (within 10 m)"], raw: ["warn", "Active, own GNSS fix"],
     frozen: ["bad", "Frozen, skipped"], away: ["bad", "Far from the other GPS, skipped (off the boat?)"], inactive: ["", "Not active"], never: ["", "Never seen"]};
   const card = d => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(d / 45) % 8];
   const f0 = v => v == null ? "–" : String(Math.round(v)), f1 = v => v == null ? "–" : (+v).toFixed(1), f2 = v => v == null ? "–" : (+v).toFixed(2);
@@ -406,13 +406,14 @@
 
   // ---------------------------------------------------------------- GPS & links view
   function renderGps(s) {
-    const rows = s.gps_rows || [], use = rows.find(r => r.status === "in_use");
+    const rows = s.gps_rows || [], use = rows.find(r => r.status === "in_use"), pos = (s.boat || {}).pos;
+    const held = r => r.status === "in_use" && pos && pos.hold && String(pos.source) === String(r.source);   // in use outranks hold in the server's row status
     const status = (on, ok, bad, note) => !on ? `<span class="warnc">Not set up</span><small>${note}</small>` : bad ? `<span class="badc">Problem</span><small>${esc(bad)}</small>` : `<span class="good">OK</span><small>${ok}</small>`;
     const ps = s.push || {}, al = s.alive || {}, na = s.net_ais || {}, nf = s.nfl || {}, nm = s.nmea || {}, mins = +s.settings.alive_minutes;
     $("aGps").innerHTML = `<div class="grid g2"><div class="stack">
       <div class="card"><div class="hd">${icon("anchor")}<h3>GPS sources</h3><button class="btn ghost sm" type="button" id="aGpsDefault">Default order</button></div>
-        <div class="rows"><div class="row"><span class="hint">${use ? `In use: <b>${esc(use.name)}</b>${use.sats ? " · " + use.sats + " sats" : ""}${use.hdop != null ? " · HDOP " + use.hdop : ""}` : '<span class="badc">No usable GPS</span>'} · tried from top to bottom; changes are saved at once</span></div>
-        ${rows.map((r, i) => { const [cls, txt] = GPS_ST[r.status] || GPS_ST.inactive, act = !["inactive", "never"].includes(r.status);
+        <div class="rows"><div class="row"><span class="hint">${use ? `In use: <b>${esc(use.name)}</b>${held(use) ? ' <span class="badge warn">hold</span>' : ""}${use.sats ? " · " + use.sats + " sats" : ""}${use.hdop != null ? " · HDOP " + use.hdop : ""}` : '<span class="badc">No usable GPS</span>'} · tried from top to bottom; changes are saved at once</span></div>
+        ${rows.map((r, i) => { const [cls, txt] = GPS_ST[held(r) ? "in_use_hold" : r.status] || GPS_ST.inactive, act = !["inactive", "never"].includes(r.status);
           const det = act ? [r.sats ? r.sats + " sats" : "", r.hdop != null ? "HDOP " + r.hdop : ""].filter(Boolean).join(" · ") : r.last_seen != null ? "last seen " + ago(r.last_seen) + " ago" : "";
           return `<div class="row gpsrow"><span class="gnum">${i + 1}</span><div class="k" style="flex:1"><b>${esc(r.name)}</b><small>source ${esc(r.source)} · <span class="${cls ? cls === "ok" ? "good" : cls === "warn" ? "warnc" : "badc" : ""}">${txt}</span>${det ? " · " + esc(det) : ""}</small></div>
             <div class="btns" style="flex-wrap:nowrap">${act ? "" : `<button class="btn sec sm" type="button" data-forget="${esc(r.source)}" aria-label="Remove ${esc(r.name)}">✕</button>`}
