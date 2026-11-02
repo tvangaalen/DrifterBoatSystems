@@ -1,0 +1,66 @@
+<h1 id="title">Energy<span class="sub" id="subtitle"></span></h1>
+<div id="sideNav"><a href="#overview" data-page="overview"><svg class="i"><use href="#i-home"></use></svg><span>Overview</span><i class="dotbadge" data-badge="overview"></i></a><a href="#power" data-page="power" aria-current="page"><svg class="i"><use href="#i-power"></use></svg><span>Energy</span><i class="dotbadge" data-badge="power"></i></a><a href="#anchor" data-page="anchor"><svg class="i"><use href="#i-anchor"></use></svg><span>Anchor watch</span><i class="dotbadge" data-badge="anchor"></i></a><a href="#guard" data-page="guard"><svg class="i"><use href="#i-guard"></use></svg><span>BoatGuard</span><i class="dotbadge" data-badge="guard"></i></a><a href="#washer" data-page="washer"><svg class="i"><use href="#i-washer"></use></svg><span>Washer</span><i class="dotbadge" data-badge="washer"></i></a></div>
+<nav class="tabbar" id="tabbar" aria-label="Systems"><a href="#overview" data-page="overview"><svg class="i"><use href="#i-home"></use></svg><span>Overview</span><i class="dotbadge" data-badge="overview"></i></a><a href="#power" data-page="power" aria-current="page"><svg class="i"><use href="#i-power"></use></svg><span>Energy</span><i class="dotbadge" data-badge="power"></i></a><a href="#anchor" data-page="anchor"><svg class="i"><use href="#i-anchor"></use></svg><span>Anchor</span><i class="dotbadge" data-badge="anchor"></i></a><a href="#guard" data-page="guard"><svg class="i"><use href="#i-guard"></use></svg><span>Guard</span><i class="dotbadge" data-badge="guard"></i></a><a href="#washer" data-page="washer"><svg class="i"><use href="#i-washer"></use></svg><span>Washer</span><i class="dotbadge" data-badge="washer"></i></a></nav>
+<div class="alarmbar" id="alarmbar" role="alert">
+<svg class="i"><use href="#i-alert"></use></svg>
+<div class="grow"><b id="alarmTitle"></b><span id="alarmSub"></span></div>
+<button class="btn sm" id="alarmSilence" type="button">Silence</button>
+<button class="btn sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device">Sound off</button>
+</div>
+<section data-page="power"><div id="eDown"></div>
+<div class="seg" role="tablist" style="margin:4px 0 14px;max-width:460px" id="eViews">
+<button type="button" data-view="now" aria-pressed="true">Now</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
+<div id="eNow">
+<div class="card pad" style="margin-bottom:12px"><div class="btns eq"><button class="btn sec" type="button" data-mode="motor" aria-pressed="false">Motor</button><button class="btn sec" type="button" data-mode="anchor" aria-pressed="false">Anchor</button><button class="btn sec" type="button" data-mode="marina" aria-pressed="false">Marina</button><button class="btn sec" type="button" data-mode="sail" aria-pressed="false">Sail</button></div>
+<p class="hint" style="margin:8px 2px 0">Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
+<div class="grid g2l">
+<div class="stack">
+<div class="card pad" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+<div class="gauge" style="--p:72.5;--c:var(--batt)"><b>73<small>%</small></b></div>
+<div style="flex:1;min-width:180px"><div class="muted" style="font-weight:600;font-size:13px">House battery · MLI · 960 Ah</div>
+<div style="font-size:30px;font-weight:750;letter-spacing:-.02em" class="num">+145 W</div>
+<div class="muted">13.17 V · 11.0 A · charging · 21.5 °C</div>
+<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge wrap ok">Bulk allowed · Float when a cell reaches 3550 mV (now 3341 mV)</span></div>
+<div class="hint" style="margin-top:6px">Highest cell 3341 mV (BATTERY 1) · spread 18 mV · DALY 12 s old</div></div>
+</div>
+<div class="stats s4">
+<div class="stat"><div class="l"><svg class="i"><use href="#i-sun"></use></svg> Solar</div><div class="n">261 W</div><div class="s">Bulk</div></div>
+<div class="stat"><div class="l"><svg class="i"><use href="#i-plug"></use></svg> Shore</div><div class="n">–</div><div class="s">not connected</div></div>
+<div class="stat"><div class="l">DC in</div><div class="n">261 W</div><div class="s">charging sources</div></div>
+<div class="stat"><div class="l">DC load</div><div class="n">116 W</div><div class="s">AC 92 W</div></div>
+</div>
+<div class="card"><div class="hd"><svg class="i"><use href="#i-sun"></use></svg><h3>Sources</h3></div><div class="rows">
+<div class="flow"><span class="ic shore "><svg class="i"><use href="#i-plug"></use></svg></span><div class="nm"><b>Shore Power</b><small>Not connected</small></div>
+<div class="w">0 W<small>0.0 V · 0.0 A</small></div></div><div class="flow"><span class="ic shore "><svg class="i"><use href="#i-plug"></use></svg></span><div class="nm"><b>Charger House</b><small>Off</small></div>
+<div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic alt "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>Stop Charge</small></div>
+<div class="w">0 W<small>13.9 V · 0.0 A</small></div></div><div class="flow"><span class="ic solar on"><svg class="i"><use href="#i-sun"></use></svg></span><div class="nm"><b>Solar</b><small>Bulk · panel 38.4 V</small></div>
+<div class="w">261 W<small>13.2 V · 19.8 A</small></div></div></div></div>
+<div class="card"><div class="hd"><svg class="i"><use href="#i-load"></use></svg><h3>Consumers</h3><span class="muted num">116 W</span></div><div class="rows">
+<div class="flow"><span class="ic load on"><svg class="i"><use href="#i-load"></use></svg></span><div class="nm"><b>AC Loads</b><small>AC</small></div>
+<div class="w">92 W<small>230.0 V · 0.4 A</small></div></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-power"></use></svg></span><div class="nm"><b>Inverter</b><small>DC</small></div>
+<div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Charger Start</b><small>Float</small></div>
+<div class="w">6 W<small>13.2 V · 0.5 A</small></div></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Charger Bow</b><small>Off</small></div>
+<div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Engine ECU power</b><small>DC</small></div>
+<div class="w">4 W<small>13.2 V · 0.3 A</small></div></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>DC</small></div>
+<div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-load"></use></svg></span><div class="nm"><b>Other DC Loads</b><small>DC</small></div>
+<div class="w">106 W<small>13.2 V · 8.0 A</small></div></div></div></div>
+<div class="card"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Other batteries</h3></div><div class="rows">
+<div class="flow"><span class="ic batt on"><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Start Battery</b><small>AGM · 110 Ah</small></div><div class="w">13.40 V<small>0.4 A</small></div></div><div class="flow"><span class="ic batt "><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Bow Battery</b><small>AGM · 70 Ah</small></div><div class="w">12.90 V<small>0.0 A</small></div></div></div></div>
+</div>
+<div class="stack">
+<div class="card"><div class="hd"><svg class="i"><use href="#i-power"></use></svg><h3>CombiMaster</h3></div><div class="rows">
+<div class="row"><div class="k"><b>Inverter</b><small>Not inverting</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-inverter"><i></i></label></div>
+<div class="row"><div class="k"><b>Charger House</b><small>Off</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger" checked=""><i></i></label></div>
+<div class="row"><div class="k"><b>AC IN support</b><small>Inverter helps when shore power is limited</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-support"><i></i></label></div>
+<div class="row"><div class="k"><b>AC input limit</b><small>Now 10 A · 3–15 A</small></div>
+<div style="display:flex;gap:6px;align-items:center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">10 A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
+<button class="btn sm" type="button" id="ec-limit" disabled="">Set</button></div></div>
+</div></div>
+<div class="card"><div class="hd"><svg class="i"><use href="#i-engine"></use></svg><h3>Charging &amp; engine</h3></div><div class="rows">
+<div class="row"><div class="k"><b>Alternator</b><small>Stop Charge</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-alternator"><i></i></label></div>
+<div class="row"><div class="k"><b>Solar</b><small>SCM solar charger</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-solar" checked=""><i></i></label></div><div class="row"><div class="k"><b>Charger Start</b><small>Mass charger to start battery</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_start" checked=""><i></i></label></div><div class="row"><div class="k"><b>Charger Bowthruster</b><small>Mass charger to bow battery</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_bow"><i></i></label></div>
+<div class="row"><div class="k"><b>Engine ECU</b><small>Switching off stops a running engine</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-engine_ecu" checked=""><i></i></label></div>
+</div></div>
+<p class="hint" style="margin:0 4px">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
+</div>
+</div></div><div id="eBatt" hidden=""></div><div id="eHist" hidden=""></div><div id="eSet" hidden=""></div></section>

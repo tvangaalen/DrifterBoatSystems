@@ -1,0 +1,37 @@
+<h1 id="title">System<span class="sub" id="subtitle"></span></h1>
+<div id="sideNav"><a href="#overview" data-page="overview"><svg class="i"><use href="#i-home"></use></svg><span>Overview</span><i class="dotbadge" data-badge="overview"></i></a><a href="#power" data-page="power"><svg class="i"><use href="#i-power"></use></svg><span>Energy</span><i class="dotbadge" data-badge="power"></i></a><a href="#anchor" data-page="anchor"><svg class="i"><use href="#i-anchor"></use></svg><span>Anchor watch</span><i class="dotbadge" data-badge="anchor"></i></a><a href="#guard" data-page="guard"><svg class="i"><use href="#i-guard"></use></svg><span>BoatGuard</span><i class="dotbadge" data-badge="guard"></i></a><a href="#washer" data-page="washer"><svg class="i"><use href="#i-washer"></use></svg><span>Washer</span><i class="dotbadge" data-badge="washer"></i></a></div>
+<nav class="tabbar" id="tabbar" aria-label="Systems"><a href="#overview" data-page="overview"><svg class="i"><use href="#i-home"></use></svg><span>Overview</span><i class="dotbadge" data-badge="overview"></i></a><a href="#power" data-page="power"><svg class="i"><use href="#i-power"></use></svg><span>Energy</span><i class="dotbadge" data-badge="power"></i></a><a href="#anchor" data-page="anchor"><svg class="i"><use href="#i-anchor"></use></svg><span>Anchor</span><i class="dotbadge" data-badge="anchor"></i></a><a href="#guard" data-page="guard"><svg class="i"><use href="#i-guard"></use></svg><span>Guard</span><i class="dotbadge" data-badge="guard"></i></a><a href="#washer" data-page="washer"><svg class="i"><use href="#i-washer"></use></svg><span>Washer</span><i class="dotbadge" data-badge="washer"></i></a></nav>
+<div class="alarmbar" id="alarmbar" role="alert">
+<svg class="i"><use href="#i-alert"></use></svg>
+<div class="grow"><b id="alarmTitle"></b><span id="alarmSub"></span></div>
+<button class="btn sm" id="alarmSilence" type="button">Silence</button>
+<button class="btn sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device">Sound off</button>
+</div>
+<section data-page="system"><h2 class="sec">Display</h2><div class="card pad"><div class="seg" role="group" aria-label="Theme"><button type="button" data-theme-btn="auto" aria-pressed="false">Auto</button><button type="button" data-theme-btn="light" aria-pressed="true">Light</button><button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button><button type="button" data-theme-btn="night" aria-pressed="false">Night</button></div><p class="hint" style="margin:10px 2px 0">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p></div>
+<h2 class="sec">Systems</h2><div class="card"><div class="rows" id="sysRows"><div class="row col"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+<div class="k"><b>Energy</b></div><div class="v">–</div></div>
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge ok">running · 2 s</span>
+<span class="hint" style="flex:1;min-width:120px">16:28 running (adopted)</span>
+<span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="energy">Show log</button>
+<button class="btn sec sm" type="button" data-restart="energy"><svg class="i"><use href="#i-refresh"></use></svg> Restart</button></span></div></div><div class="row col"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+<div class="k"><b>Anchor watch</b></div><div class="v">–</div></div>
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge ok">running · 2 s</span>
+<span class="hint" style="flex:1;min-width:120px">16:28 running (adopted)</span>
+<span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="anchor">Show log</button>
+<button class="btn sec sm" type="button" data-restart="anchor"><svg class="i"><use href="#i-refresh"></use></svg> Restart</button></span></div></div><div class="row col"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+<div class="k"><b>BoatGuard</b></div><div class="v">–</div></div>
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge ok">running · 2 s</span>
+<span class="hint" style="flex:1;min-width:120px">16:28 running (adopted)</span>
+<span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="guard">Show log</button>
+<button class="btn sec sm" type="button" data-restart="guard"><svg class="i"><use href="#i-refresh"></use></svg> Restart</button></span></div></div><div class="row col"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+<div class="k"><b>Washer</b></div><div class="v">–</div></div>
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge ok">running · 2 s</span>
+<span class="hint" style="flex:1;min-width:120px">16:28 running (adopted)</span>
+<span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="washer">Show log</button>
+<button class="btn sec sm" type="button" data-restart="washer"><svg class="i"><use href="#i-refresh"></use></svg> Restart</button></span></div></div><div class="row"><div class="k"><b>Drifter</b><span class="hint">this app's server on the boat PC</span></div>
+<span style="display:flex;gap:8px"><button class="btn sec sm" type="button" data-log="gateway">Show log</button></span></div></div></div>
+<div id="sysEvWrap"><h2 class="sec">Supervisor events</h2><div class="card"><div class="log" id="sysEvents"><div class=""><time>16:28</time><span class="msg"><b>washer</b> running (adopted)</span></div><div class=""><time>16:28</time><span class="msg"><b>guard</b> running (adopted)</span></div><div class=""><time>16:28</time><span class="msg"><b>anchor</b> running (adopted)</span></div><div class=""><time>16:28</time><span class="msg"><b>energy</b> running (adopted)</span></div></div></div></div>
+<div id="sysOffWrap"><h2 class="sec">Switch off</h2><div class="card pad"><p class="hint" style="margin:0 0 12px">Stops every system's server and this app's server on the boat PC. Switches, chargers and the camera stay as they are. Start everything again with the <b>Drifter Boat Systems</b> icon on the boat PC's desktop.</p>
+<button class="btn danger" type="button" id="sysOff"><svg class="i"><use href="#i-off"></use></svg> Switch all systems off</button></div></div>
+<h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="hint" style="margin:0">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's local certificate (the same one used for Energy, Anchor watch and BoatGuard).</p></div>
+<p class="hint" style="text-align:center;margin:18px 0" id="sysVer">Drifter Boat Systems v0.19.0</p></section>

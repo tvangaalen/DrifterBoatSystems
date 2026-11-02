@@ -1,0 +1,13 @@
+{
+  "name": "drifter-boat-systems-dev",
+  "private": true,
+  "description": "Development tools only (type check and browser tests). The app itself has no build step: the browser loads web/ as it is.",
+  "scripts": {
+    "typecheck": "tsc -p web",
+    "test:ui": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "typescript": "7.0.2"
+  }
+}

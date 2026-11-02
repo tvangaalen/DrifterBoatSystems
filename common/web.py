@@ -1,4 +1,4 @@
-"""HTTPS and the threading server shared by the stdlib servers (gateway, anchor watch, BoatGuard)."""
+"""HTTPS and the threading server shared by the stdlib servers (the gateway and drifterd's control API)."""
 from __future__ import annotations
 
 import ssl, sys
@@ -7,6 +7,9 @@ from http.server import ThreadingHTTPServer
 
 class QuietServer(ThreadingHTTPServer):
     daemon_threads = True
+    # The listen backlog (socketserver's default 5): a page load asks for the shell, its scripts and the first API reads at
+    # once, and an iPhone and an iPad opening the app together got connections refused on Windows.
+    request_queue_size = 64
 
     def handle_error(self, request, client_address):
         # Phones dropping connections and clients that do not trust the certificate are normal, not crashes.

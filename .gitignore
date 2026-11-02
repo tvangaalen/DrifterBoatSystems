@@ -8,3 +8,9 @@ logs/
 .venv*/
 __pycache__/
 *.pyc
+
+# Node development tools (package.json): never commit their output
+node_modules/
+test-results/
+playwright-report/
+tests/ui/screens/

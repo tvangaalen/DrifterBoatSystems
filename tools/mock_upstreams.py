@@ -3,6 +3,7 @@
 Never point this at, or run it instead of, the real servers: it only simulates. Commands change the fake state so
 the page's controls can be tried. Positions are a made-up spot, not an anchorage of this boat.
 Usage: py tools/mock_upstreams.py  (ports 18000 power, 18766 anchor, 18095 guard, 18080 washer, localhost only)
+       --offset N moves every port up by N (the browser tests use 1000, so they never meet a mock someone left running)
 """
 from __future__ import annotations
 
@@ -341,7 +342,9 @@ def make(name, obj):
 
 
 if __name__ == "__main__":
+    OFF = int(sys.argv[sys.argv.index("--offset") + 1]) if "--offset" in sys.argv else 0
     for name, port, obj in (("power", 18000, Power()), ("anchor", 18766, Anchor()), ("guard", 18095, Guard()), ("washer", 18080, Washer())):
+        port += OFF
         s = ThreadingHTTPServer(("127.0.0.1", port), make(name, obj)); s.daemon_threads = True
         threading.Thread(target=s.serve_forever, daemon=True).start(); print(f"mock {name} on http://127.0.0.1:{port}")
     os.environ.setdefault("DRIFTER_TOKEN", "mock-token")        # as drifterd gives it: the mock modules check it
@@ -358,9 +361,13 @@ if __name__ == "__main__":
 
         class MockSupervisor(supervisor.Supervisor):
             def shutdown_all(self, on_done=None): super().shutdown_all(None)
-        fake = MockSupervisor(ports={"energy": 18000, "anchor": 18766, "guard": 18095, "washer": 18080}, data=tmp, logs=logs,
+        fake = MockSupervisor(ports={"energy": 18000 + OFF, "anchor": 18766 + OFF, "guard": 18095 + OFF, "washer": 18080 + OFF}, data=tmp, logs=logs,
                               start=lambda n: logging.info("mock supervisor: would start %s", n),
                               stop=lambda n: (logging.info("mock supervisor: would stop %s", n), time.sleep(1)))
         fake.start_thread()
-        drifter.serve(drifter.load_config(Path(__file__).resolve().parent / "config.mock.json"), supervisor=fake).serve_forever()
+        cfg = drifter.load_config(Path(__file__).resolve().parent / "config.mock.json")
+        if OFF:
+            cfg["port"] = int(cfg["port"]) + OFF
+            for mod in cfg["modules"].values(): host, port = mod["url"].rsplit(":", 1); mod["url"] = f"{host}:{int(port) + OFF}"
+        drifter.serve(cfg, supervisor=fake).serve_forever()
     threading.Event().wait()

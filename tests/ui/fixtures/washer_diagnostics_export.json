@@ -1,0 +1,1 @@
+{"note": "privacy: ok - made-up data from tools/mock_upstreams.py", "status": 200, "type": "application/json", "body": "{\"recent_events\": [{\"time\": \"16:28:18\", \"event\": \"MOCK\", \"detail\": \"started\"}]}"}

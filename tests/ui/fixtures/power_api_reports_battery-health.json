@@ -1,0 +1,1 @@
+{"note": "privacy: ok - made-up data from tools/mock_upstreams.py", "status": 200, "type": "application/json", "body": "{\"state\": \"idle\", \"days\": null, \"started_at\": null, \"finished_at\": null, \"duration_seconds\": null, \"markdown\": null, \"error\": null}"}
