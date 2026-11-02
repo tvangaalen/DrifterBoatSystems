@@ -7,7 +7,7 @@ A module missing from locations.json runs from Drifter: the old folders were arc
 """
 from __future__ import annotations
 
-import json, os, sys
+import json, os, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -21,6 +21,10 @@ def locations() -> dict:
     except (OSError, ValueError): return {}
 
 
+def task_exists(name: str) -> bool:
+    return subprocess.run(["schtasks", "/Query", "/TN", name], capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).returncode == 0
+
+
 def resolve(name: str, location: str | None = None) -> dict:
     m = SPEC["modules"][name]; loc = location or locations().get(name, "drifter")
     if loc not in ("legacy", "drifter"): raise ValueError(f"{name}: unknown location {loc!r}")
@@ -32,7 +36,7 @@ def resolve(name: str, location: str | None = None) -> dict:
         data = folder if m.get("runtime_in_code") else DATA / name
         args = [a.replace("{data}", str(data)) for a in m.get("data_args", [])]
     return {"name": name, "title": m["name"], "port": m["port"], "location": loc, "folder": str(folder), "legacy": str(legacy),
-            "data": str(data), "command": m["command"] + args, "env": env, "task": m.get("task"),
+            "data": str(data), "command": m["command"] + args, "env": env, "task": m.get("task") or (m["old_task"] if m.get("old_task") and task_exists(m["old_task"]) else None),
             "runtime": m.get("runtime", []), "code_runtime": m.get("code_runtime", []), "requires": m.get("requires", []), "venv": m.get("venv"), "precheck": m.get("precheck")}
 
 

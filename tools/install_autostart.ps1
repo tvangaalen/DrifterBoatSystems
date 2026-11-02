@@ -13,14 +13,16 @@
   2. Runs tools\session0_check.py once in that session (a temporary task): can it see the MasterBus USB Link and
      Bluetooth, and start a process the way the supervisor does? Read-only: it opens no device. If something fails,
      nothing is changed.
-  3. Changes the scheduled task DrifterBoatSystems: at startup (after 2 min), whether anybody is logged on or not,
-     restarted within a minute if it stops. The gateway's supervisor then starts MasterVolt, the anchor watch and the
-     washer controller in that same session; BoatGuard has its own boot task already.
-  Nothing is restarted now: the running servers carry on, and the new way applies from the next boot (or -Now).
+  3. Makes DrifterBoatSystems the one scheduled task: at startup (after 2 min), whether anybody is logged on or not,
+     restarted within a minute if it stops, running the gateway on its own Python environment. The gateway's
+     supervisor starts all four modules in that session. The old BoatGuard task is stopped and removed: the supervisor
+     starts BoatGuard from then on (within a few seconds).
+  4. Restarts the gateway in that session (the module servers keep running and are adopted; Float and the anchor
+     watch are not paused). BoatGuard is off for a few seconds in between.
   In that session there is no desktop: no console windows (the System page shows each module's log) and no sound on
   the PC (the anchor watch's PC beep stays silent; the alarm on the iPhone/iPad and the push alerts are unchanged).
 #>
-param([switch]$Status, [switch]$Remove, [switch]$Now, [switch]$Force)
+param([switch]$Status, [switch]$Remove, [switch]$Force)
 $ErrorActionPreference = 'Stop'
 $Task = 'DrifterBoatSystems'
 $Root = Split-Path -Parent $PSScriptRoot
@@ -33,7 +35,7 @@ $User = "$env:USERDOMAIN\$env:USERNAME"
 function Show-Status {
     foreach ($n in $Task, 'BoatGuard') {
         $t = Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue
-        if (-not $t) { "{0,-20} not installed" -f $n; continue }
+        if (-not $t) { "{0,-20} {1}" -f $n, $(if ($n -eq 'BoatGuard') { 'no own task (started by Drifter)' } else { 'not installed' }); continue }
         $trig = ($t.Triggers | ForEach-Object { $_.CimClass.CimClassName -replace 'MSFT_Task|Trigger', '' }) -join ','
         "{0,-20} {1,-8} trigger {2,-8} logon {3,-11} runs as {4}" -f $n, $t.State, $trig, $t.Principal.LogonType, $t.Principal.UserId
     }
@@ -54,7 +56,7 @@ $action = New-ScheduledTaskAction -Execute $Pyw -Argument "`"$Root\tools\run_mod
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -MultipleInstances IgnoreNew `
     -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
 
-if ($Remove) {   # back to the old way: start at log-on, in the user's session
+if ($Remove) {   # back to the old way: start at log-on, in the user's session (BoatGuard then also runs only after log-on)
     $p = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive -RunLevel Limited
     Register-ScheduledTask -TaskName $Task -Action $action -Trigger (New-ScheduledTaskTrigger -AtLogOn -User $User) -Principal $p -Settings $settings -Force | Out-Null
     "$Task starts at log-on again (from the next log-on). Running servers are not touched."; return
@@ -90,14 +92,15 @@ $trigger = New-ScheduledTaskTrigger -AtStartup; $trigger.Delay = 'PT2M'
 Register-ScheduledTask -TaskName $Task -Action $action -Trigger $trigger -Settings $settings -RunLevel Limited `
     -User $User -Password $cred.GetNetworkCredential().Password -Force | Out-Null
 "`n$Task now starts at boot, whether anybody is logged on or not."
-# BoatGuard's own boot task: the same runner and Python (it used the py launcher); 1 min after boot, as before
-$guardAction = New-ScheduledTaskAction -Execute $Pyw -Argument "`"$Root\tools\run_module.py`" guard" -WorkingDirectory $Root
-$guardTrigger = New-ScheduledTaskTrigger -AtStartup; $guardTrigger.Delay = 'PT1M'
-Register-ScheduledTask -TaskName 'BoatGuard' -Action $guardAction -Trigger $guardTrigger -Settings $settings -RunLevel Limited `
-    -User $User -Password $cred.GetNetworkCredential().Password -Force | Out-Null
-"BoatGuard: same runner and Python (applies from its next start)."
-if ($Now) {
-    Write-Host 'Restarting the Drifter gateway in that session now (the module servers keep running until their next restart)...'
-    Stop-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue; Start-Sleep 3; Start-ScheduledTask -TaskName $Task; Start-Sleep 15
-} else { 'It applies from the next boot; the servers running now are not touched (-Now restarts the gateway in that session at once).' }
+# 4. one task: BoatGuard no longer has its own (tools/modules.py treats it as a task module only while that task exists,
+# so the supervisor never starts a second copy next to it)
+if (Get-ScheduledTask -TaskName 'BoatGuard' -ErrorAction SilentlyContinue) {
+    Stop-ScheduledTask -TaskName 'BoatGuard' -ErrorAction SilentlyContinue
+    Unregister-ScheduledTask -TaskName 'BoatGuard' -Confirm:$false
+    "The BoatGuard task is removed; Drifter's supervisor starts BoatGuard."
+}
+Write-Host 'Restarting the Drifter gateway in that session (the module servers keep running; BoatGuard comes back within a minute)...'
+Stop-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue; Start-Sleep 3; Start-ScheduledTask -TaskName $Task
+$deadline = (Get-Date).AddSeconds(120)
+while ((Get-Date) -lt $deadline -and -not (Get-NetTCPConnection -State Listen -LocalPort 8095 -ErrorAction SilentlyContinue)) { Start-Sleep 3 }
 Show-Status

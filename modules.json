@@ -1,5 +1,5 @@
 {
-  "_comment": "How each module is started, old (legacy) and new (Drifter) location, and its runtime files. Which location is active per module is kept in <data>\\locations.json (not in git); missing = drifter. The old folders were moved to C:\\DrifterArchive\\legacy-2026-11-02 on 2026-11-02 (legacy points there; -Back is best effort). Paths may use %ENV% variables. In the Drifter location {data} is <data>\\<module>. Every module runs without a window through tools\\run_module.py (output in <data>\\logs\\<module>.console.log), also when nobody is logged on; runtime = copied from the old folder to <data>\\<module> at switch-over; code_runtime = copied into the new code folder (certificates incl. the Mastervolt Local CA, gateway config); requires = must exist in the new code folder before the first start.",
+  "_comment": "How each module is started, old (legacy) and new (Drifter) location, and its runtime files. Which location is active per module is kept in <data>\\locations.json (not in git); missing = drifter. The old folders were moved to C:\\DrifterArchive\\legacy-2026-11-02 on 2026-11-02 (legacy points there; -Back is best effort). Paths may use %ENV% variables. In the Drifter location {data} is <data>\\<module>. old_task = a scheduled task that started the module before (BoatGuard): used while it still exists, so the supervisor never starts a second copy; tools\\install_autostart.ps1 removes it. Every module runs without a window through tools\\run_module.py (output in <data>\\logs\\<module>.console.log), also when nobody is logged on; runtime = copied from the old folder to <data>\\<module> at switch-over; code_runtime = copied into the new code folder (certificates incl. the Mastervolt Local CA, gateway config); requires = must exist in the new code folder before the first start.",
   "live": "C:\\Drifter",
   "data": "C:\\DrifterData",
   "modules": {
@@ -24,7 +24,7 @@
       "venv": "requirements.txt"
     },
     "guard": {
-      "name": "BoatGuard", "port": 8095, "task": "BoatGuard",
+      "name": "BoatGuard", "port": 8095, "old_task": "BoatGuard",
       "legacy": "C:\\DrifterArchive\\legacy-2026-11-02\\BoatGuard", "dir": "modules\\guard",
       "command": [".venv\\Scripts\\pythonw.exe", "boatguard.py", "run"],
       "runtime": ["config.json", "state.json", "ezviz_token.json", "pushover.json", "logs"],
