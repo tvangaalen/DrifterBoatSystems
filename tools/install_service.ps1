@@ -44,6 +44,15 @@ $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 if (-not $admin) { throw 'Run this from an elevated PowerShell (right-click PowerShell, Run as administrator).' }
 foreach ($p in (Join-Path $Root 'drifterd.py'), $VenvPy, $EnergyPy) { if (-not (Test-Path $p)) { throw "$p missing (pull the latest code and run py -3.12 tools\sync_envs.py first)." } }
 $BasePy = (& $VenvPy -c "import sys; print(sys._base_executable)").Trim()    # drifterd is stdlib only: the plain python.org Python
+$BasePyw = Join-Path (Split-Path $BasePy) 'pythonw.exe'
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12   # Windows PowerShell 5.1 does not offer TLS 1.2 by itself
+function Remove-DrifterService {   # also one that hangs (Start Pending): end its process first, or it stays "marked for deletion"
+    $c = Get-CimInstance Win32_Service -Filter "Name='$Service'" -ErrorAction SilentlyContinue
+    if (-not $c) { return }
+    if ($c.ProcessId) { Stop-Process -Id $c.ProcessId -Force -ErrorAction SilentlyContinue }
+    Stop-Service $Service -Force -ErrorAction SilentlyContinue; sc.exe delete $Service | Out-Null
+    $deadline = (Get-Date).AddSeconds(20); while ((Get-Date) -lt $deadline -and (Get-Service $Service -ErrorAction SilentlyContinue)) { Start-Sleep 1 }
+}
 
 $cred = Get-Credential -UserName $User -Message "Windows password of $User (the Drifter service runs as this account)"
 if (-not $cred) { throw 'Cancelled.' }
@@ -52,10 +61,11 @@ Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 if (-not (New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Machine')).ValidateCredentials($env:USERNAME, $pw)) {
     throw "Windows did not accept that password for $User. Nothing was changed."
 }
-$taskAction = New-ScheduledTaskAction -Execute $VenvPyw -Argument "`"$Root\tools\run_module.py`" gateway" -WorkingDirectory $Root
+# the way back: drifterd itself from a boot task (the same daemon, without the service manager)
+$taskAction = New-ScheduledTaskAction -Execute $BasePyw -Argument "`"$Root\drifterd.py`" run" -WorkingDirectory $Root
 $taskSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -MultipleInstances IgnoreNew `
     -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
-function Restore-Task {   # the way before the service: the gateway by a boot task, its supervisor starting the modules
+function Restore-Task {   # drifterd from a boot task instead of the service
     $trigger = New-ScheduledTaskTrigger -AtStartup; $trigger.Delay = 'PT2M'
     Register-ScheduledTask -TaskName $Task -Action $taskAction -Trigger $trigger -Settings $taskSettings -RunLevel Limited -User $User -Password $pw -Force | Out-Null
 }
@@ -76,9 +86,9 @@ function Stop-Servers {   # every server, whoever started it (an administrator m
 }
 
 if ($Remove) {
-    if (Get-Service $Service -ErrorAction SilentlyContinue) { Stop-Service $Service -Force -ErrorAction SilentlyContinue; sc.exe delete $Service | Out-Null }
+    Remove-DrifterService; Stop-Servers
     Restore-Task; Start-ScheduledTask -TaskName $Task
-    "The service is removed; the scheduled task $Task starts the gateway again (now and at boot)."; Show-Status; return
+    "The service is removed; the scheduled task $Task runs drifterd instead (now and at boot)."; Show-Status; return
 }
 
 # 2. the read-only check in a session without desktop
@@ -108,7 +118,10 @@ try {
     if ($energy.high_soc_float_policy.float_latched) { $why += 'Float is latched' }
     if (@($anchor.alarms).Count) { $why += 'the anchor watch has an alarm' }
     if ($why -and -not $Force) { throw "Not now: $($why -join ', '). Nothing was changed; try again later." }
-} catch [System.Net.WebException] { Write-Warning "Drifter does not answer ($($_.Exception.Message)); going on (nothing to pause)." }
+} catch [System.Net.WebException] {
+    if ($Ports.Values | Where-Object { Listening $_ }) { if (-not $Force) { throw "Drifter does not answer ($($_.Exception.Message)), so the pre-checks cannot be asked. Nothing was changed. (-Force goes on anyway.)" } }
+    else { Write-Warning 'Nothing is running: nothing to pause.' }
+}
 finally { [Net.ServicePointManager]::ServerCertificateValidationCallback = $prev }
 
 # 4. the service
@@ -135,7 +148,7 @@ public static class DrifterLsa {
 "@
 $e = [DrifterLsa]::Grant($User, 'SeServiceLogonRight'); if ($e) { throw "Could not give $User the right to log on as a service (error $e). Nothing else was changed." }
 "$User may log on as a service."
-if (Get-Service $Service -ErrorAction SilentlyContinue) { Stop-Service $Service -Force -ErrorAction SilentlyContinue; sc.exe delete $Service | Out-Null; Start-Sleep 2 }
+Remove-DrifterService
 New-Service -Name $Service -DisplayName 'Drifter Boat Systems' -Description 'Runs the Drifter app and the boat systems (energy, anchor watch, BoatGuard, washer); C:\Drifter\drifterd.py' `
     -BinaryPathName "`"$BasePy`" `"$Root\drifterd.py`" service" -StartupType Automatic -Credential $cred | Out-Null
 sc.exe config $Service start= delayed-auto | Out-Null                                                        # after the boot settles (USB, Bluetooth)
@@ -150,10 +163,11 @@ if ($sd -notmatch [regex]::Escape($sid)) { sc.exe sdset $Service ($sd -replace '
 Write-Host 'Switching over: stopping the old task and the servers, starting the service...'
 Stop-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue
 Stop-Servers
-Start-Service $Service
+sc.exe start $Service | Out-Null                     # not Start-Service: that waits without end when a service hangs
 $deadline = (Get-Date).AddMinutes(3); while ((Get-Date) -lt $deadline -and -not (Listening 8100)) { Start-Sleep 3 }
 if (-not (Listening 8100)) {
     Write-Warning 'The app did not come up under the service within 3 minutes: going back to the scheduled task. See C:\DrifterData\logs\drifterd.log.'
+    $c = Get-CimInstance Win32_Service -Filter "Name='$Service'"; if ($c.ProcessId) { Stop-Process -Id $c.ProcessId -Force -ErrorAction SilentlyContinue }
     Stop-Service $Service -Force -ErrorAction SilentlyContinue; Set-Service $Service -StartupType Disabled
     Stop-Servers; Restore-Task; Start-ScheduledTask -TaskName $Task; Show-Status; throw 'Service not working; the scheduled task runs Drifter again.'
 }

@@ -29,7 +29,7 @@ from common.web import QuietServer  # noqa: E402
 import modules as M  # noqa: E402
 import supervisor as S  # noqa: E402
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 CONTROL = ("127.0.0.1", 8099)
 SERVICE_NAME = "Drifter"
 log = logging.getLogger("drifter")
@@ -266,13 +266,18 @@ class _ENTRY(ctypes.Structure):
 
 
 def service() -> None:
-    adv = ctypes.WinDLL("advapi32", use_last_error=True); adv.RegisterServiceCtrlHandlerExW.restype = wintypes.HANDLE
+    adv = ctypes.WinDLL("advapi32", use_last_error=True)
+    # full signatures: without them ctypes passes the 64-bit status handle as a 32-bit int and the call fails silently
+    # (2026-11-02: the service never reported "running" and hung in Start Pending)
+    adv.RegisterServiceCtrlHandlerExW.argtypes = [wintypes.LPCWSTR, _HANDLER, wintypes.LPVOID]; adv.RegisterServiceCtrlHandlerExW.restype = wintypes.HANDLE
+    adv.SetServiceStatus.argtypes = [wintypes.HANDLE, ctypes.POINTER(_SS)]; adv.SetServiceStatus.restype = wintypes.BOOL
+    adv.StartServiceCtrlDispatcherW.argtypes = [ctypes.POINTER(_ENTRY)]; adv.StartServiceCtrlDispatcherW.restype = wintypes.BOOL
     keep = {}                                            # references the callbacks so they are not collected
 
     def set_state(state, exit_code=0, wait_ms=0):
         s = _SS(SERVICE_WIN32_OWN_PROCESS, state, 0 if state == SERVICE_START_PENDING else SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN,
                 1066 if exit_code else 0, exit_code, 0, wait_ms)
-        adv.SetServiceStatus(keep["h"], ctypes.byref(s))
+        if not adv.SetServiceStatus(keep["h"], ctypes.byref(s)): log.error("drifterd: SetServiceStatus(%d) failed (%d)", state, ctypes.get_last_error())
 
     def handler(control, event, data, ctx):
         if control in (SERVICE_CONTROL_STOP, SERVICE_CONTROL_SHUTDOWN) and "d" in keep:
@@ -280,14 +285,16 @@ def service() -> None:
         return 0
 
     def main(argc, argv):
-        keep["handler"] = _HANDLER(handler)
-        keep["h"] = adv.RegisterServiceCtrlHandlerExW(SERVICE_NAME, keep["handler"], None)
-        set_state(SERVICE_START_PENDING, wait_ms=30000); code = 0
-        try:
+        code = 0
+        try:                                         # an exception in a ctypes callback is lost: log everything
             logs.setup(file=M.DATA / "logs" / "drifterd.log")
-            keep["d"] = Daemon(); set_state(SERVICE_RUNNING); keep["d"].run()
-        except Exception: log.exception("drifterd failed"); code = 1     # a non-zero exit: Windows restarts the service
-        set_state(SERVICE_STOPPED, exit_code=code)
+            keep["handler"] = _HANDLER(handler)
+            keep["h"] = adv.RegisterServiceCtrlHandlerExW(SERVICE_NAME, keep["handler"], None)
+            if not keep["h"]: raise OSError(f"RegisterServiceCtrlHandlerExW failed ({ctypes.get_last_error()})")
+            set_state(SERVICE_START_PENDING, wait_ms=30000)
+            keep["d"] = Daemon(); set_state(SERVICE_RUNNING); log.info("drifterd: reported running to Windows"); keep["d"].run()
+        except BaseException: log.exception("drifterd failed"); code = 1     # a non-zero exit: Windows restarts the service
+        if keep.get("h"): set_state(SERVICE_STOPPED, exit_code=code)
 
     keep["main"] = _MAIN(main)
     table = (_ENTRY * 2)(_ENTRY(SERVICE_NAME, keep["main"]), _ENTRY(None, ctypes.cast(None, _MAIN)))

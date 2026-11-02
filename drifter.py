@@ -25,7 +25,7 @@ from common import logs
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "0.15.0"
+VERSION = "0.15.1"
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
