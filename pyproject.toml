@@ -4,7 +4,7 @@
 # Win32_Process Create): the gateway in .venv, each module in modules/<name>/.venv.
 [project]
 name = "drifter-boat-systems"
-version = "0.14.1"
+version = "0"                # the app version is VERSION in drifter.py; a fixed one here keeps uv.lock stable
 description = "One web app for the boat's systems: gateway, supervisor and shared code (stdlib only)"
 requires-python = ">=3.12,<3.13"
 dependencies = []

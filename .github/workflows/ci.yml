@@ -29,6 +29,8 @@ jobs:
           python tools/privacy_scan.py --range "$base..HEAD"
       - name: Tools
         run: python -m pip install --disable-pip-version-check "uv==0.9.30"
+      - name: uv.lock matches pyproject.toml
+        run: python -m uv lock --check
       - name: Environments from uv.lock
         run: python tools/sync_envs.py
       - name: Lint (ruff; MasterVolt's files with its own configuration)
