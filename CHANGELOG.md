@@ -2,37 +2,24 @@
 
 ## Unreleased
 
-- tools/ship.py: a change live in about a minute; the app's cache name follows its files
-- Overview: the Energy meter sits right after its text, the pill on the dial's bottom; the small values sit at the
-  bottom of every tile
-- Overview: the Energy meter's needle is only its tip, clear of the percentage pill
-- Overview: the anchor tile shows a swing radar (limit circle, max swing, track, boat) in green, orange or red; grey and
-  dashed when no anchor is set
-- Overview: the anchor tile's text at the top like the Energy tile's, the radar right after it
-- Overview: the Energy meter and the anchor radar sit at the right of their tiles again
-- CLAUDE.md: finished changes go live without asking (the user's choice)
-- BoatGuard tile: no alarm badge for an armed camera, "monitoring active", a security camera on the right
-- BoatGuard tile: a ceiling dome camera instead of the line icon (colours as theme tokens, red in Night); Armed red
-  again
-- Overview: radar as wide as the Energy meter; BoatGuard tile green while monitoring, red while arming, Phone away and
-  Armed red, the camera square red only while armed
-- BoatGuard: the title stays "Monitoring active" while the camera is armed (the Camera box says Armed)
-- BoatGuard tile: an outlined wall camera with a blue sunshield instead of the dome (colours as theme tokens, red in
-  Night)
-- Washer page: a Power switch at the right of the status instead of the Power on / Power off buttons
-- Washer page: an ON/OFF power switch (green ON, red OFF) at the right of the status, without the Power label
-- Washer page: Select program first, then Active program, Schedule, Start now/Pause, Diagnostics at the bottom; power
-  changes no longer reported in the Start card
-- Washer page: one Current program card with Start now/Pause and the schedule below them; the separate Schedule and
-  Start cards are gone
-- Washer page: Start now and Schedule greyed out from Set program until the washer confirms; Schedule in its own card
-  again; Set program; Diagnostics folded to one status line
-- Washer page: Set program and Schedule buttons on the left; schedule messages ("Schedule cleared", errors) in the
-  Schedule card
-- Washer page: Events folded to one line (count and last time, orange when one failed) like Diagnostics
-- Overview: the Washer tile shows a graphite washing machine on the right (its display shows the time left), like
-  BoatGuard's camera
-- BoatGuard page: the Monitoring switch in the ON/OFF style of the washer's power switch (Drifter.sw takes a style)
+- **Overview, Energy**: the meter's needle is only its tip, clear of the percentage pill; the meter sits at the right of
+  the tile. The small values sit at the bottom of every tile, level across a row.
+- **Overview, Anchor watch**: a swing radar on the right (limit circle, max swing, track and boat, north up), as wide as
+  the Energy meter: green while holding, orange close to the limit, red with a pulsing ring in an alarm; grey and dashed
+  when no anchor is set. The app also fetches the track for it while an anchor is set.
+- **Overview, BoatGuard**: an outlined wall camera on the right, its square red while the camera is armed. The title is
+  *Monitoring off* or *Monitoring active* (green; red *Arming at …*); Phone *Away* and Camera *Armed* in red. An armed
+  camera is no longer an alarm: no red badge or navigation dot.
+- **Overview, Washer**: a graphite washing machine on the right whose display shows the time left.
+- **Washer page**: an ON/OFF power switch in the status header (not during a wash; with a schedule set, switching off
+  asks first). The cards: *Select program* (*Set program*; *Start now* and *Schedule* stay greyed out until the washer
+  confirms), *Current program* with *Start now* and *Pause*, *Schedule* with its own messages; *Diagnostics* and
+  *Events* fold to one status line.
+- **BoatGuard page**: the Monitoring switch in the same ON/OFF style (switching off still asks first).
+- **Releasing**: `tools/ship.py` runs only the tests for what changed, commits, pushes, deploys (restarting only what
+  needs it) and verifies, in about a minute; small changes collect here until a release. The gateway puts a fingerprint
+  of `web/` into the service worker's cache name, so a web-only deploy reaches the home-screen apps without a version
+  bump or a restart. CI was red on a lint error from 0.22.0 until 2026-11-03 (fixed).
 
 ## 1.1
 
