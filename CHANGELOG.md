@@ -25,6 +25,8 @@
   changes no longer reported in the Start card
 - Washer page: one Current program card with Start now/Pause and the schedule below them; the separate Schedule and
   Start cards are gone
+- Washer page: Start now and Schedule greyed out from Set program until the washer confirms; Schedule in its own card
+  again; Set program; Diagnostics folded to one status line
 
 ## 1.1
 
