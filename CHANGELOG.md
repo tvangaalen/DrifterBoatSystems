@@ -18,6 +18,7 @@
 - Batteries tab: Bluetooth status and Bluetooth events fold to one line with a summary
 - Batteries tab: flow in watts on the start/bow batteries and the House bank; Pack details folds, with an alarm row and
   the SOC on the charging/discharging curve (GET /api/bms adds it per battery, display only)
+- Batteries tab: Balancers section removed (each pack tile shows its balancer)
 
 ## 1.2
 
