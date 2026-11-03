@@ -23,6 +23,8 @@
 - Washer page: an ON/OFF power switch (green ON, red OFF) at the right of the status, without the Power label
 - Washer page: Select program first, then Active program, Schedule, Start now/Pause, Diagnostics at the bottom; power
   changes no longer reported in the Start card
+- Washer page: one Current program card with Start now/Pause and the schedule below them; the separate Schedule and
+  Start cards are gone
 
 ## 1.1
 

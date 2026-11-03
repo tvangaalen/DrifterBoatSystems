@@ -107,10 +107,9 @@ From top to bottom:
   wash; with a schedule set, switching off asks first).
 - **Select program:** program, temperature, spin and rinses; *Set* applies them, and the app says *applied* only after
   the washer has confirmed them.
-- **Active program:** what the washer is set to now: program, temperature, time left and spin.
-- **Schedule:** start at a time, or finish at a time; the controller on the boat PC starts it, also when the app is
-  closed. A scheduled start can be cancelled.
-- **Start now**, **Pause** and resume.
+- **Current program:** what the washer is set to now (program, temperature, time left, spin), with **Start now**,
+  **Pause** and resume, and below them **Schedule**: start at a time, or finish at a time; the controller on the boat PC
+  starts it, also when the app is closed. A scheduled start can be cancelled.
 - **Diagnostics:** the start-up checks, the controller's version, the washer's address, model and firmware; *Recheck*
   and an export. Below it the **Events**.
 
