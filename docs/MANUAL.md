@@ -112,7 +112,8 @@ From top to bottom:
 - **Schedule:** start at a time, or finish at a time; the controller on the boat PC starts it, also when the app is
   closed. A scheduled start can be cancelled.
 - **Diagnostics:** one line with the state (green *Ready* when all is well); tap it to unfold the start-up checks, the
-  controller's version, the washer's address, model and firmware, *Read now*, *Recheck* and an export. Below it the **Events**.
+  controller's version, the washer's address, model and firmware, *Read now*, *Recheck* and an export.
+- **Events:** one line with how many there are and the last one's time (orange when one failed); tap it for the list.
 
 ## 8. System
 

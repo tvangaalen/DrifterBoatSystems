@@ -29,6 +29,7 @@
   again; Set program; Diagnostics folded to one status line
 - Washer page: Set program and Schedule buttons on the left; schedule messages ("Schedule cleared", errors) in the
   Schedule card
+- Washer page: Events folded to one line (count and last time, orange when one failed) like Diagnostics
 
 ## 1.1
 
