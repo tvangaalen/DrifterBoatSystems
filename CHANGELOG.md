@@ -14,6 +14,8 @@
 - BoatGuard tile: no alarm badge for an armed camera, "monitoring active", a security camera on the right
 - BoatGuard tile: a ceiling dome camera instead of the line icon (colours as theme tokens, red in Night); Armed red
   again
+- Overview: radar as wide as the Energy meter; BoatGuard tile green while monitoring, red while arming, Phone away and
+  Armed red, the camera square red only while armed
 
 ## 1.1
 
