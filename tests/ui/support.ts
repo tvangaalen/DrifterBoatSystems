@@ -34,7 +34,8 @@ export async function setUp(page: Page, opts: { theme?: string; posts?: Posted[]
   page.on("pageerror", e => errors.push(String(e)));
   // a failed request is reported by the response handler below (with its URL); the console line says only "404"
   page.on("console", m => { if (m.type() === "error" && !m.text().startsWith("Failed to load resource")) errors.push(m.text()); });
-  page.on("requestfailed", r => errors.push(`request failed: ${new URL(r.url()).pathname} (${r.failure()?.errorText})`));
+  // map tiles: Leaflet aborts the ones it no longer needs once the map has fitted the boat, and the mock has none anyway
+  page.on("requestfailed", r => { if (!/\/api\/anchor\/tiles\//.test(r.url())) errors.push(`request failed: ${new URL(r.url()).pathname} (${r.failure()?.errorText})`); });
   page.on("response", r => { if (r.status() >= 400 && !/\/api\/anchor\/tiles\//.test(r.url())) errors.push(`HTTP ${r.status()} ${new URL(r.url()).pathname}`); });
   await page.clock.setFixedTime(recordedNow());
   if (opts.theme) await page.addInitScript(t => { try { localStorage.setItem("drifter-theme", t); } catch (e) {} }, opts.theme);

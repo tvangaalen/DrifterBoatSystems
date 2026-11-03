@@ -18,5 +18,5 @@ test("Anchor watch map: resized while hidden, the boat is still in the middle", 
     if (!map || !boat) return Infinity;
     return Math.max(Math.abs(boat.x + boat.width / 2 - (map.x + map.width / 2)) / map.width, Math.abs(boat.y + boat.height / 2 - (map.y + map.height / 2)) / map.height);
   }, { timeout: 5_000 }).toBeLessThan(0.25);
-  expect(errors.filter(e => !/\/api\/anchor\/tiles\//.test(e))).toEqual([]);   // tiles Leaflet no longer needs after refitting are aborted
+  expect(errors).toEqual([]);
 });
