@@ -7,6 +7,8 @@
 - Energy Control: providers/consumers with totals, Other batteries with meters under House bank
 - Energy Control: switches on their provider/consumer line, consumers with a minus sign, small meters' needles clear of
   the pill
+- Controls stand out in dark (own --ctl tokens for secondary buttons, segments, steppers); Other batteries moved to the
+  Batteries tab
 
 ## 1.2
 

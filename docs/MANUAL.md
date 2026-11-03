@@ -48,8 +48,7 @@ and the boat PC.
 Four views at the top of the page. The full description of every value and of how it is measured is in the energy
 manual: History → *Open the manual*.
 
-- **Control:** the house bank (charge on a meter, power, voltage, current, temperature, Float/Bulk state), the start and bow batteries (each with
-  a smaller meter), the energy providers (shore, charger, alternator, solar; total DC in at the top) and the energy consumers
+- **Control:** the house bank (charge on a meter, power, voltage, current, temperature, Float/Bulk state), the energy providers (shore, charger, alternator, solar; total DC in at the top) and the energy consumers
   (with a minus sign, as they take power; total DC out at the top).
   - **Modes** switch several devices at once: *Motor*, *Anchor*, *Marina*, *Sail*; the active mode is marked until a
     single control changes. A mode never switches the Engine ECU off.
@@ -59,7 +58,8 @@ manual: History → *Open the manual*.
     has read the new state back.
   - **Engine ECU off** always asks first, with *Keep ECU ON* as the default: switching it off stops a running engine.
     *Alternator off* asks too (*Keep Alternator ON*).
-- **Batteries:** per battery the cells, temperatures, MOSFETs (charge and discharge) and SOC calibration; the balancers;
+- **Batteries:** per battery the cells, temperatures, MOSFETs (charge and discharge) and SOC calibration; the start and
+  bow batteries, each with a small meter; the balancers;
   Bluetooth diagnostics and recent Bluetooth events. Every action that could cut power asks first, the safe choice being
   the default.
 - **History:** charts of the state of charge, sources, DC consumers, battery current and cell spread for 6 hours up to 31
