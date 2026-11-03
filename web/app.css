@@ -113,6 +113,8 @@ h2.sec .r{text-transform:none;letter-spacing:0;font-weight:500}
 .rows{padding:0 16px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);min-height:48px}
 .rows>.row:first-child{border-top:0}
+.row.lead{justify-content:flex-start}          /* button first, its note beside it */
+.card-msg{margin:0 16px 14px}.card-msg:empty{display:none}
 .row .k{color:var(--muted);min-width:0}
 .row .k b{color:var(--fg);font-weight:600;display:block}
 .row .k small,.hint{display:block;color:var(--muted);font-size:12.5px;line-height:1.35}

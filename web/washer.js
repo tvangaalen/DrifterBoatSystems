@@ -64,7 +64,7 @@ const m = {
           <div class="row"><span class="k">Temperature</span><select class="field" id="wTemp"></select></div>
           <div class="row"><span class="k">Rinses</span><select class="field" id="wRinse"></select></div>
           <div class="row"><span class="k">Spin <small>set by the program</small></span><span class="v" id="wSpin">–</span></div>
-          <div class="row"><span class="hint" id="wSetMsg"></span><button class="btn" id="wSet" type="button">Set program</button></div></div></div>
+          <div class="row lead"><button class="btn" id="wSet" type="button">Set program</button><span class="hint" id="wSetMsg"></span></div></div></div>
       </div>
       <div class="stack">
         <div class="card"><div class="hd"><h3>Current program</h3></div><div class="stats" id="wStats"></div>
@@ -74,8 +74,9 @@ const m = {
         <div class="card"><div class="hd"><h3>Schedule</h3></div><div class="rows">
           <div id="wSchedEdit"><div class="row"><select class="field" id="wSchedMode" aria-label="Schedule type"><option value="finish">Finish at</option><option value="start">Start at</option></select>
             <span class="u-d-flex u-ai-center u-gap-4"><select class="field" id="wSchedH" aria-label="Hour">${Array.from({length: 24}, (_, i) => `<option>${D.pad(i)}</option>`).join("")}</select>:<select class="field" id="wSchedM" aria-label="Minutes">${Array.from({length: 12}, (_, i) => `<option>${D.pad(i * 5)}</option>`).join("")}</select></span></div>
-            <div class="row"><span class="hint">Uses the program set on the washer now. The washer must be on and idle.</span><button class="btn" id="wSched" type="button">Schedule</button></div></div>
-          <div class="row" id="wSchedSum" hidden><span class="k" id="wSchedText"></span><button class="btn sec sm" id="wSchedCancel" type="button">Cancel</button></div></div></div>
+            <div class="row lead"><button class="btn" id="wSched" type="button">Schedule</button><span class="hint">Uses the program set on the washer now. The washer must be on and idle.</span></div></div>
+          <div class="row" id="wSchedSum" hidden><span class="k" id="wSchedText"></span><button class="btn sec sm" id="wSchedCancel" type="button">Cancel</button></div></div>
+          <p class="card-msg hint" id="wSchedMsg"></p></div>
       </div>
     </div>
     <div class="u-h-12"></div>
@@ -97,14 +98,14 @@ const m = {
     $("wPause").addEventListener("click", e => cmd(e.target, "/api/pause", "Paused"));
     $("wPower").addEventListener("change", async e => {
       const el = /** @type {HTMLInputElement} */ (e.target), want = el.checked;
-      if (want) return cmd(el, "/api/power/on", "Power on", {}, false);
+      if (want) return cmd(el, "/api/power/on", "Power on", {}, null);
       const d = m.state.data, sc = d && d.schedule;
       if (sc && ["pending", "starting", "started", "running"].includes(sc.status) &&
         !(await D.confirm({title: "Power off the washer?", text: "This also cancels or interrupts the schedule.", ok: "Power off", cancel: "Keep on"}))) { el.checked = true; return; }
-      cmd(el, "/api/power/off", "Power off", {}, false);
+      cmd(el, "/api/power/off", "Power off", {}, null);
     });
     $("wSched").addEventListener("click", schedule);
-    $("wSchedCancel").addEventListener("click", e => cmd(e.target, "/api/schedule/cancel", "Schedule cleared", {}));
+    $("wSchedCancel").addEventListener("click", e => cmd(e.target, "/api/schedule/cancel", "Schedule cleared", {}, schedMsg));
     // Recheck re-reads the controller's config and re-creates the device connection (as the old diagnostics page did).
     $("wDiag").addEventListener("click", async e => {
       try { diag = await D.run(null, e.currentTarget, () => D.api("washer", "/api/diagnostics?recheck=1", undefined, {timeout: 45000}), r => r.summary); evT = 0; } catch (x) {}
@@ -186,10 +187,11 @@ function renderEvents() {
     <span class="msg"><b>${esc(e.event)}</b>${e.detail ? " · " + esc(e.detail) : ""}${e.duration_ms != null ? ` <span class="faint">${e.duration_ms} ms</span>` : ""}</span></div>`).join("")
     : `<div class="empty">No events yet</div>`;
 }
-function msg(t, bad) { $("wMsg").textContent = t; $("wMsg").className = "hint" + (bad ? " badc" : ""); }
-async function cmd(el, path, ok, body = {}, say = true) {   // say: report in the Start/Pause card (not for power: the header shows it)
-  if (pending) return; pending = true; if (say) msg("Sending command…");
-  try { await D.run(null, el, () => D.api("washer", path, body), ok); if (say) msg(ok + "."); } catch (e) { if (say) msg("Error: " + e.message, true); }
+const say = id => (t, bad) => { $(id).textContent = t; $(id).className = (id === "wMsg" ? "" : "card-msg ") + "hint" + (bad ? " badc" : ""); };
+const msg = say("wMsg"), schedMsg = say("wSchedMsg");   // Start/Pause card, Schedule card
+async function cmd(el, path, ok, body = {}, out = msg) {   // out: where to report (null for power: the header shows it)
+  if (pending) return; pending = true; if (out) out("Sending command…");
+  try { await D.run(null, el, () => D.api("washer", path, body), ok); if (out) out(ok + "."); } catch (e) { if (out) out("Error: " + e.message, true); }
   finally { setTimeout(async () => { pending = false; await D.poll(m, true); }, 700); }
 }
 async function start(e) {
@@ -225,12 +227,12 @@ async function applySettings() {
 }
 async function schedule(e) {
   const v = `${$("wSchedH").value}:${$("wSchedM").value}`;
-  if (!/^\d\d:\d\d$/.test(v)) { msg("Choose a time", true); return; }
+  if (!/^\d\d:\d\d$/.test(v)) { schedMsg("Choose a time", true); return; }
   const mode = $("wSchedMode").value;
   if (pending) return; pending = true;
   try { const r = await D.run(null, e.target, () => D.api("washer", "/api/schedule", {mode, time: v}));
-    D.toast(`Scheduled: starts ${hm(r.schedule.start_at)}, finishes ~${hm(r.schedule.finish_at)}`); }
-  catch (x) { msg("Schedule failed: " + x.message, true); }
+    D.toast(`Scheduled: starts ${hm(r.schedule.start_at)}, finishes ~${hm(r.schedule.finish_at)}`); schedMsg(""); }
+  catch (x) { schedMsg("Schedule failed: " + x.message, true); }
   finally { pending = false; D.poll(m, true); }
 }
 D.register(m);
