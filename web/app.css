@@ -210,7 +210,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .gauge.sm{width:64px;height:64px}.gauge.sm b{font-size:16px}
 
 /* Swing radar (Overview anchor tile, anchor.js radar()): limit circle, max swing, track and boat around the anchor */
-.radar-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.radar-row{display:flex;align-items:flex-start;gap:20px}   /* text at the top, as in the Energy tile */
 .radar-row>div:first-child{min-width:0}.radar-row .big+.big{margin-top:6px}
 .radar{--rc:var(--ok);width:110px;height:110px;flex:none;overflow:visible}
 .radar.warn{--rc:var(--warn)}.radar.bad{--rc:var(--bad)}.radar.off{--rc:var(--faint)}
