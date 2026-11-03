@@ -209,6 +209,22 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .gauge b small{font-size:13px;color:var(--muted)}
 .gauge.sm{width:64px;height:64px}.gauge.sm b{font-size:16px}
 
+/* Swing radar (Overview anchor tile, anchor.js radar()): limit circle, max swing, track and boat around the anchor */
+.radar-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.radar-row>div:first-child{min-width:0}.radar-row .big+.big{margin-top:6px}
+.radar{--rc:var(--ok);width:110px;height:110px;flex:none;overflow:visible}
+.radar.warn{--rc:var(--warn)}.radar.bad{--rc:var(--bad)}.radar.off{--rc:var(--faint)}
+.radar .lim{fill:color-mix(in srgb,var(--rc) 12%,transparent);stroke:var(--rc);stroke-width:2.5}
+.radar.off .lim{fill:none;stroke-width:2;stroke-dasharray:4 5}
+.radar .max{fill:none;stroke:var(--rc);stroke-opacity:.45;stroke-dasharray:3 3}
+.radar .trk{fill:none;stroke:var(--rc);stroke-opacity:.5;stroke-width:1.5;stroke-linejoin:round}
+.radar .anc{color:var(--muted);fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.radar .rode{stroke:var(--rc);stroke-width:1.5;stroke-dasharray:2 2}
+.radar .boat{fill:var(--rc);stroke:var(--card);stroke-width:2}
+.radar .ping{fill:var(--rc);transform-box:fill-box;transform-origin:center;animation:radar-ping 1.2s infinite}
+@keyframes radar-ping{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.8);opacity:0}}
+@media (prefers-reduced-motion:reduce){.radar .ping{animation:none;opacity:.35}}
+
 /* SOC meter (Overview tile): half arc red → orange → green with a needle; the SVG comes from energy.js meter() */
 .meter-row{display:flex;align-items:center;gap:20px}
 .meter-row>div:first-child{min-width:0}.meter-row .big+.big{margin-top:6px}

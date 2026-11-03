@@ -69,7 +69,7 @@ const m = {
     try { m.state.data = await D.api("anchor", "/api/state"); lastOk = Date.now(); }
     finally { alarmTick(); }
     const s = m.state.data;
-    if (D.visibleIs("anchor") && map) {
+    if ((D.visibleIs("anchor") && map) || s.anchor) {             // the map, and the Overview tile's swing radar
       if (s.track_gen !== trackGen || Date.now() - (m._tt || 0) > 8000) {
         m._tt = Date.now();
         const since = s.track_gen === trackGen && track.length ? track[track.length - 1][0] : 0;
@@ -87,8 +87,9 @@ const m = {
   tile() {
     const s = m.state.data; if (!s) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const a = s.anchor, b = s.boat || {}, h = hero(s);
-    return `<div class="u-fs-22 big ${h.cls === "bad" ? "badc" : ""}">${a && s.distance != null && h.cls !== "bad" ? `${f0(s.distance)} <small>/ ${f0(a.radius)} m</small>` : esc(h.title)}</div>
-      <div class="line">${esc(a ? h.title + " · max " + f0(s.max_dist) + " m" : h.sub)}</div>
+    return `<div class="radar-row"><div>${a ? `<div class="u-fs-22 big ${h.cls === "warn" ? "warnc" : h.cls === "bad" ? "badc" : "good"}">${esc(h.title)}</div>
+      ${s.distance != null ? `<div class="big ${h.cls === "bad" ? "badc" : ""}">${f0(s.distance)} <small>/ ${f0(a.radius)} m</small></div>` : ""}<div class="line">max ${f0(s.max_dist)} m</div>`
+      : `<div class="u-fs-22 big ${h.cls === "bad" ? "badc" : ""}">${esc(h.title)}</div><div class="line">${esc(h.sub)}</div>`}</div>${radar(s, h)}</div>
       <div class="minis"><div class="mini"><div class="l">Depth</div><div class="n">${b.depth != null ? f1(b.depth) + " m" : "–"}</div></div>
       <div class="mini"><div class="l">Wind</div><div class="n">${b.tws != null ? f0(b.tws) + " kn" : "–"}</div></div>
       <div class="mini"><div class="l">GPS</div><div class="n ${s.gps_age == null || s.gps_age > 10 ? "warnc" : ""}">${s.gps_age == null ? "none" : s.gps_age < 5 ? "live" : ago(s.gps_age)}</div></div></div>`;
@@ -143,6 +144,23 @@ const m = {
     if (view === "watch") renderWatch(s); else if (view === "gps") renderGps(s); else renderSettings(s);
   },
 };
+
+/** The tile's swing radar: the limit circle, the max swing (dashed), the track and the boat, around the anchor; north up.
+ * Grey and dashed without an anchor. The colour follows hero(): holding, close to the limit or outside, alarm. */
+function radar(s, h) {
+  const a = s.anchor, S = 110, c = S / 2, R = c - 8;
+  if (!a) return `<svg class="radar off" viewBox="0 0 ${S} ${S}" aria-hidden="true"><circle class="lim" cx="${c}" cy="${c}" r="${R}"/>
+    <use href="#i-anchor" class="anc" x="${c - 11}" y="${c - 11}" width="22" height="22"/></svg>`;
+  const k = Math.cos(a.lat * Math.PI / 180) * 111320, sc = R / a.radius, far = R * 1.3;
+  const xy = (lat, lon) => { let x = (lon - a.lon) * k * sc, y = (a.lat - lat) * 111320 * sc; const d = Math.hypot(x, y);
+    if (d > far) { x *= far / d; y *= far / d; } return [c + x, c + y]; };
+  const step = Math.max(1, Math.ceil(track.length / 160)), pts = track.filter((_, i) => i % step === 0 || i === track.length - 1);
+  const line = s.track_gen === trackGen && pts.length > 1 ? `<polyline class="trk" points="${pts.map(t => xy(t[1], t[2]).map(v => v.toFixed(1)).join(",")).join(" ")}"/>` : "";
+  const p = (s.boat || {}).pos, [bx, by] = p ? xy(p.lat, p.lon) : [c, c], f = v => v.toFixed(1);
+  return `<svg class="radar ${h.cls || "ok"}" viewBox="0 0 ${S} ${S}" role="img" aria-label="${esc(h.title)}"><circle class="lim" cx="${c}" cy="${c}" r="${R}"/>
+    <circle class="max" cx="${c}" cy="${c}" r="${f(Math.min(s.max_dist * sc, far))}"/>${line}<use href="#i-anchor" class="anc" x="${c - 7}" y="${c - 7}" width="14" height="14"/>
+    ${p ? `<line class="rode" x1="${c}" y1="${c}" x2="${f(bx)}" y2="${f(by)}"/>${h.cls === "bad" ? `<circle class="ping" cx="${f(bx)}" cy="${f(by)}" r="7"/>` : ""}<circle class="boat" cx="${f(bx)}" cy="${f(by)}" r="5.5"/>` : ""}</svg>`;
+}
 
 // ---------------------------------------------------------------- status line (same wording as the classic page)
 function hero(s) {
