@@ -61,9 +61,9 @@ const m = {
   tile() {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const h = d.storage.house, s = d.sources, t = d.totals;
-    return `<div class="u-d-flex u-ai-center u-gap-16"><div class="gauge sm" style="--p:${h.soc ?? 0}"><b>${num(h.soc)}<small>%</small></b></div>
-      <div><div class="big">${W(h.power)}</div><div class="line">House ${num(h.voltage, 2)} V · ${num(h.current, 1)} A ${h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : ""}</div></div></div>
-      <div class="minis m4"><div class="mini"><div class="l">Charger house</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
+    return `<div class="meter-row"><div><div class="u-fs-22 big">House battery</div><div class="big">${W(h.power)}</div>
+      <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A ${h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : ""}</div></div>${meter(h.soc)}</div>
+      <div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
       <div class="mini"><div class="l">Alternator</div><div class="n">${W((s.alternator || {}).power)}</div></div>
       <div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
       <div class="mini"><div class="l">DC load</div><div class="n">${outW(t.consumer_power)}</div></div></div>`;
@@ -84,6 +84,26 @@ const m = {
     if (view === "now") renderNow(); else if (view === "batt") renderBatt(); else if (view === "history") renderHistory(); else renderSettings();
   },
 };
+
+/** House SOC as a half arc, red (empty) → orange → green (full), with a needle; no needle without a SOC.
+ * @param {number | null | undefined} soc */
+function meter(soc) {
+  const s = soc == null || !isFinite(+soc) ? null : Math.min(100, Math.max(0, +soc)), cx = 62, cy = 64, r = 48, f = v => v.toFixed(1);
+  const arc = rr => `M ${cx - rr} ${cy} A ${rr} ${rr} 0 0 1 ${cx + rr} ${cy}`;
+  let needle = "";
+  if (s != null) {
+    const a = Math.PI * (1 - s / 100), ux = Math.cos(a), uy = -Math.sin(a), vx = -uy, vy = ux;
+    const P = (d, w) => `${f(cx + ux * d + vx * w)},${f(cy + uy * d + vy * w)}`;
+    needle = `<g class="needle"><polygon points="${P(4, 7)} ${P(r + 10, 1.2)} ${P(r + 10, -1.2)} ${P(4, -7)} ${P(-12, -3)} ${P(-12, 3)}"/>
+      <circle class="knob" cx="${cx}" cy="${cy}" r="7"/><circle class="pin" cx="${cx}" cy="${cy}" r="2.5"/></g>`;
+  }
+  return `<div class="meter" role="img" aria-label="House battery ${s == null ? "unknown" : num(s) + " %"}"><svg viewBox="0 0 124 76" aria-hidden="true">
+    <defs><linearGradient id="eMeterBand" x1="0" x2="1"><stop offset="0" class="s0"/><stop offset=".5" class="s1"/><stop offset="1" class="s2"/></linearGradient>
+      <linearGradient id="eMeterSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset=".55" class="g1"/></linearGradient></defs>
+    <path class="track" d="${arc(r)}"/><path class="band glow" d="${arc(r)}" stroke="url(#eMeterBand)"/><path class="band" d="${arc(r)}" stroke="url(#eMeterBand)"/>
+    <path class="sheen" d="${arc(r - 4)}" stroke="url(#eMeterSheen)"/><path class="rim" d="${arc(r + 11)}"/>${needle}</svg>
+    <span class="pill">${num(s)}<small>%</small></span></div>`;
+}
 
 // ------------------------------------------------------------------ Now
 function flowRow(x, ic, kind, sub, live) {

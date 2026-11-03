@@ -8,9 +8,15 @@
 <button class="btn sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device">Sound off</button>
 </div>
 <section data-page="overview" data-built="1"><div class="grid g2" id="ovTiles"><a class="card tile" href="#power"><div class="th"><span class="ic"><svg class="i"><use href="#i-power"></use></svg></span><h3>Energy</h3>
-<svg class="i chev"><use href="#i-chev"></use></svg></div><div class="u-d-flex u-ai-center u-gap-16"><div class="gauge sm" style="--p:72.5"><b>73<small>%</small></b></div>
-<div><div class="big">145 W</div><div class="line">House 13.17 V · 11.0 A charging</div></div></div>
-<div class="minis m4"><div class="mini"><div class="l">Charger house</div><div class="n">0 W</div></div>
+<svg class="i chev"><use href="#i-chev"></use></svg></div><div class="meter-row"><div><div class="u-fs-22 big">House battery</div><div class="big">145 W</div>
+<div class="line">13.17 V · 11.0 A charging</div></div><div class="meter" role="img" aria-label="House battery 73 %"><svg viewBox="0 0 124 76" aria-hidden="true">
+<defs><linearGradient id="eMeterBand" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
+<linearGradient id="eMeterSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
+<path class="track" d="M 14 64 A 48 48 0 0 1 110 64"></path><path class="band glow" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eMeterBand)"></path><path class="band" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eMeterBand)"></path>
+<path class="sheen" d="M 18 64 A 44 44 0 0 1 106 64" stroke="url(#eMeterSheen)"></path><path class="rim" d="M 3 64 A 59 59 0 0 1 121 64"></path><g class="needle"><polygon points="69.9,65.5 100.6,20.7 98.8,19.1 59.3,56.4 51.9,71.2 56.5,75.1"></polygon>
+<circle class="knob" cx="62" cy="64" r="7"></circle><circle class="pin" cx="62" cy="64" r="2.5"></circle></g></svg>
+<span class="pill">73<small>%</small></span></div></div>
+<div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">0 W</div></div>
 <div class="mini"><div class="l">Alternator</div><div class="n">0 W</div></div>
 <div class="mini"><div class="l">Solar</div><div class="n">261 W</div></div>
 <div class="mini"><div class="l">DC load</div><div class="n">−116 W</div></div></div></a><a class="card tile" href="#anchor"><div class="th"><span class="ic"><svg class="i"><use href="#i-anchor"></use></svg></span><h3>Anchor watch</h3>
