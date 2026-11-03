@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from ..bluetooth.daly_protocol import BATTERY_NAMES
+from ..bluetooth.daly_protocol import BATTERY_NAMES, SOC_CHARGING_POINTS, SOC_DISCHARGING_POINTS, soc_from_average_mv
 from ..runtime import Services
 from .deps import blocking, services
 
@@ -34,9 +34,26 @@ async def _control(fn, *args):
     return await blocking(fn, *args, value_error=400, error=503, message=_error_text)
 
 
+def with_curve_soc(snapshot: dict) -> dict:
+    """Adds, per battery with cell voltages, the SOC its average cell voltage means on the charging and the discharging
+    curve: the same values "Set SOC - charge/discharge" would write. Only for display; nothing is stored or written."""
+    batteries = {}
+    for name, battery in (snapshot.get("batteries") or {}).items():
+        cells = battery.get("cells_mv") or []
+        if cells:
+            average = sum(cells) / len(cells)
+            battery = {
+                **battery,
+                "soc_charge_curve_percent": round(soc_from_average_mv(average, SOC_CHARGING_POINTS), 1),
+                "soc_discharge_curve_percent": round(soc_from_average_mv(average, SOC_DISCHARGING_POINTS), 1),
+            }
+        batteries[name] = battery
+    return {**snapshot, "batteries": batteries}
+
+
 @router.get("")
 def bms_status(svc: Services = Depends(services)):
-    return svc.bms.snapshot()
+    return with_curve_soc(svc.bms.snapshot())
 
 
 @router.post("/refresh")

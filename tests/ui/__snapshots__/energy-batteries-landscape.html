@@ -60,14 +60,14 @@
 <path class="track" d="M 14 64 A 48 48 0 0 1 110 64"></path><path class="band glow" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBstartBand)"></path><path class="band" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBstartBand)"></path>
 <path class="sheen" d="M 18 64 A 44 44 0 0 1 106 64" stroke="url(#eBstartSheen)"></path><path class="rim" d="M 3 64 A 59 59 0 0 1 121 64"></path></svg>
 <span class="pill">–<small>%</small></span></div><div class="k"><b>Start Battery</b><small>AGM · 110 Ah</small></div>
-<div class="v"><b>13.40 V</b><small>0.4 A</small></div></div><div class="card other"><div class="meter sm" role="img" aria-label="Bow Battery unknown"><svg viewBox="0 0 124 76" aria-hidden="true">
+<div class="v"><b>+5 W</b><small>13.40 V · 0.4 A</small></div></div><div class="card other"><div class="meter sm" role="img" aria-label="Bow Battery unknown"><svg viewBox="0 0 124 76" aria-hidden="true">
 <defs><linearGradient id="eBbowBand" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
 <linearGradient id="eBbowSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
 <path class="track" d="M 14 64 A 48 48 0 0 1 110 64"></path><path class="band glow" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBbowBand)"></path><path class="band" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBbowBand)"></path>
 <path class="sheen" d="M 18 64 A 44 44 0 0 1 106 64" stroke="url(#eBbowSheen)"></path><path class="rim" d="M 3 64 A 59 59 0 0 1 121 64"></path></svg>
 <span class="pill">–<small>%</small></span></div><div class="k"><b>Bow Battery</b><small>AGM · 70 Ah</small></div>
-<div class="v"><b>12.90 V</b><small>0.0 A</small></div></div></div>
-<div class="card bankbox"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>House bank</h3><span class="muted num">MLI · 960 Ah</span></div>
+<div class="v"><b>0 W</b><small>12.90 V · 0.0 A</small></div></div></div>
+<div class="card bankbox"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>House bank</h3><span class="muted num">MLI · 960 Ah</span><b class="num">+145 W</b></div>
 <div class="packs"><div class="card pack"><b>Battery 1</b><div class="meter sm" role="img" aria-label="BATTERY 1 74 %"><svg viewBox="0 0 124 76" aria-hidden="true">
 <defs><linearGradient id="eK1Band" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
 <linearGradient id="eK1Sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
@@ -105,7 +105,8 @@
 <button class="btn sec sm" type="button" data-all="discharge-on">All discharge ON</button><button class="btn sec sm" type="button" data-all="discharge-off">All discharge OFF</button>
 <button class="btn sec sm" type="button" data-soc="all">Set all SOC</button></div>
 <span class="u-mt-8 hint">3 connected · read every 30 s</span></div>
-<div class="card ptab-card"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Pack details</h3></div><div class="ptab-wrap"><table class="ptab">
+<details class="card fold ptab-card" id="ePackFold"><summary class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Pack details</h3>
+<span class="muted num">Max diff 16 mV · no alarms</span><svg class="i chev"><use href="#i-chev"></use></svg></summary><div class="ptab-wrap"><table class="ptab">
 <thead><tr><th></th><th><span class="nm"><span class="wide">Battery </span>1</span><button class="iconbtn" type="button" data-bms-refresh="1" aria-label="Read BATTERY 1 now"><svg class="i"><use href="#i-refresh"></use></svg></button></th><th><span class="nm"><span class="wide">Battery </span>2</span><button class="iconbtn" type="button" data-bms-refresh="2" aria-label="Read BATTERY 2 now"><svg class="i"><use href="#i-refresh"></use></svg></button></th><th><span class="nm"><span class="wide">Battery </span>3</span><button class="iconbtn" type="button" data-bms-refresh="3" aria-label="Read BATTERY 3 now"><svg class="i"><use href="#i-refresh"></use></svg></button></th><th class="hb">House</th></tr></thead>
 <tbody><tr><th>Read</th><td><span class="">0 s ago</span></td><td><span class="">0 s ago</span></td><td><span class="">0 s ago</span></td><td class="hb">–</td></tr>
 <tr><th>SOC</th><td>73.6 %</td><td>74.6 %</td><td>75.6 %</td><td class="hb">72.5 %</td></tr>
@@ -117,7 +118,11 @@
 <tr><th>Cell 1</th><td class="lo">3.331</td><td class="">3.329</td><td class="">3.330</td><td class="hb">–</td></tr><tr><th>Cell 2</th><td class="">3.333</td><td class="lo">3.326</td><td class="hi">3.331</td><td class="hb">–</td></tr><tr><th>Cell 3</th><td class="hi bal">3.340</td><td class="">3.329</td><td class="">3.330</td><td class="hb">–</td></tr><tr><th>Cell 4</th><td class="">3.335</td><td class="hi">3.336</td><td class="lo">3.324</td><td class="hb">–</td></tr>
 <tr class="strong"><th>Avg cell</th><td>3.335 V</td><td>3.330 V</td><td>3.329 V</td><td class="hb">3.331 V</td></tr>
 <tr class="strong"><th>Max diff</th><td><span class="">9 mV</span></td><td><span class="">10 mV</span></td><td><span class="">7 mV</span></td><td class="hb"><span class="">16 mV</span></td></tr>
-</tbody></table></div><p class="hint ptab-note">Cells: highest orange, lowest blue, a dot when it balances. House: the house SOC and voltage, the sum of Ah left and current, the hottest pack, average and difference over all cells.</p></div>
+<tr class="wrap"><th>Alarms</th><td><span class="good">none</span></td><td><span class="good">none</span></td><td><span class="good">none</span></td><td class="hb">–</td></tr>
+<tr class="two"><th>SOC curve<small>charging</small></th><td>57.0 %</td><td>56.0 %</td><td>55.8 %</td><td class="hb">–</td></tr>
+<tr class="two"><th>SOC curve<small>discharging</small></th><td>84.9 %</td><td>83.3 %</td><td>82.9 %</td><td class="hb">–</td></tr>
+</tbody></table></div><p class="hint ptab-note">Cells: highest orange, lowest blue, a dot when it balances. House: the house SOC and voltage, the sum of Ah left and current, the hottest pack, average and difference over all cells.
+ SOC curve: what the average cell voltage means on the LiFePO4 charging and discharging curve (the values <i>Set SOC</i> offers).</p></details>
 <details class="secfold" id="eBalFold"><summary><h2 class="sec">Balancers<span class="r">1 balancing <svg class="i chev"><use href="#i-chev"></use></svg></span></h2></summary>
 <div class="grid g3"><div class="card"><div class="hd"><svg class="i"><use href="#i-refresh"></use></svg><h3>DL-BAL1</h3><span class="badge ok">21 s ago</span>
 <button class="iconbtn" type="button" data-bal-refresh="1" aria-label="Read DL-BAL1 now"><svg class="i"><use href="#i-refresh"></use></svg></button></div>

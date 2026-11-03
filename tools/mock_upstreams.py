@@ -69,7 +69,8 @@ class Power:
                                     "pack_voltage_v": sum(cells) / 1000, "current_a": wobble(-4, 8) / 3, "state_of_charge_percent": wobble(70, 75, 300) + n,
                                     "remaining_capacity_ah": 210.0 + n, "temperatures_c": [20 + n], "cells_mv": cells, "cell_spread_mv": max(cells) - min(cells),
                                     "charge_mosfet_on": self.mos[n]["c"], "discharge_mosfet_on": self.mos[n]["d"], "balancing_cells": [3] if n == 1 else [],
-                                    "alarms": [], "cycles": 40 + n, "error": None}
+                                    "alarms": [], "cycles": 40 + n, "error": None,
+                                    "soc_charge_curve_percent": 55.0 + n, "soc_discharge_curve_percent": 75.0 + n}   # made up; the server works these out
         return {"busy": False, "control_status": {"busy": False, "phase": "idle", "message": ""}, "batteries": bats, "connected_count": 3,
                 "refresh_interval_seconds": self.settings["bms_refresh_interval"]}
 

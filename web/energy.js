@@ -28,6 +28,7 @@ const SETTINGS = [   // [key, label, hint, min, max, step, unit] — the server'
 let view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
 const busy = new Set();
 const on = v => v != null && +v >= .5;
+const flowW = v => v == null || !isFinite(+v) ? "–" : Math.round(+v) > 0 ? "+" + W(+v) : outW(-v);   // into a battery +, out of it −
 const outW = v => v == null || !isFinite(+v) ? "–" : Math.round(Math.abs(+v)) ? "−" + W(Math.abs(+v)) : W(0);   // power going out, shown negative
 
 const m = {
@@ -186,8 +187,11 @@ function renderBatt() {
     const read = b => { const age = b.captured_at ? (Date.now() - Date.parse(b.captured_at)) / 1000 : null, live = b.state === "connected" || b.state === "reading";
       return !live ? `<span class="${b.error ? "badc" : "warnc"}">${esc(b.state.replace(/_/g, " "))}</span>` : `<span class="${age != null && age > 120 ? "warnc" : ""}">${age != null ? D.dur(age) + " ago" : "–"}</span>`; };
     const spread = c => c.length ? Math.max(...c) - Math.min(...c) : null, warn = v => v != null && v > 50 ? "warnc" : "";
-    const errs = P.some(b => b.error || (b.alarms || []).length);
-    return `<div class="card ptab-card"><div class="hd">${icon("batt")}<h3>Pack details</h3></div><div class="ptab-wrap"><table class="ptab">
+    const alarms = b => [b.error, ...(b.alarms || [])].filter(Boolean), nAlarm = P.filter(b => alarms(b).length).length;
+    const curve = k => P.map(b => b[k] != null ? num(b[k], 1) + " %" : "–");
+    // folds to one line (the open state survives the re-render on every poll)
+    return `<details class="card fold ptab-card" id="ePackFold" ${($("ePackFold") || {}).open ? "open" : ""}><summary class="hd">${icon("batt")}<h3>Pack details</h3>
+      <span class="muted num">Max diff ${num(spread(all))} mV · ${nAlarm ? `<span class="badc">${nAlarm} with alarms</span>` : "no alarms"}</span>${icon("chev", "i chev")}</summary><div class="ptab-wrap"><table class="ptab">
       <thead><tr><th></th>${names.map(name => { const n = name.replace(/\D/g, "");
         return `<th><span class="nm"><span class="wide">Battery </span>${n}</span><button class="iconbtn" type="button" data-bms-refresh="${n}" aria-label="Read ${esc(name)} now">${icon("refresh")}</button></th>`; }).join("")}<th class="hb">House</th></tr></thead>
       <tbody>${row("Read", P.map(read))}
@@ -200,8 +204,11 @@ function renderBatt() {
       ${cellRows}
       ${row("Avg cell", P.map(b => avg(b.cells_mv || [])), avg(all), "strong")}
       ${row("Max diff", P.map(b => `<span class="${warn(b.cell_spread_mv)}">${num(b.cell_spread_mv)} mV</span>`), `<span class="${warn(spread(all))}">${num(spread(all))} mV</span>`, "strong")}
-      ${errs ? row("Alarms", P.map(b => [b.error, ...(b.alarms || [])].filter(Boolean).map(x => `<span class="badc">${esc(x)}</span>`).join("<br>") || "–")) : ""}
-      </tbody></table></div><p class="hint ptab-note">Cells: highest orange, lowest blue, a dot when it balances. House: the house SOC and voltage, the sum of Ah left and current, the hottest pack, average and difference over all cells.</p></div>`;
+      ${row("Alarms", P.map(b => alarms(b).length ? alarms(b).map(x => `<span class="badc">${esc(x)}</span>`).join("<br>") : `<span class="good">none</span>`), "–", "wrap")}
+      ${row("SOC curve<small>charging</small>", curve("soc_charge_curve_percent"), "–", "two")}
+      ${row("SOC curve<small>discharging</small>", curve("soc_discharge_curve_percent"), "–", "two")}
+      </tbody></table></div><p class="hint ptab-note">Cells: highest orange, lowest blue, a dot when it balances. House: the house SOC and voltage, the sum of Ah left and current, the hottest pack, average and difference over all cells.
+        SOC curve: what the average cell voltage means on the LiFePO4 charging and discharging curve (the values <i>Set SOC</i> offers).</p></details>`;
   };
   const devs = (bal && bal.devices) || {};
   const balcard = ([name, dv]) => {
@@ -238,12 +245,12 @@ function renderBatt() {
   };
   const d = m.state.data, other = d ? ["start", "bow"].map(k => { const b = d.storage[k];
     return `<div class="card other">${meter(b.soc, "eB" + k, b.label, "sm")}<div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small></div>
-      <div class="v"><b>${num(b.voltage, 2)} V</b><small>${num(b.current, 1)} A</small></div></div>`; }).join("") : "";
+      <div class="v"><b>${flowW(b.power)}</b><small>${num(b.voltage, 2)} V · ${num(b.current, 1)} A</small></div></div>`; }).join("") : "";
   const hb = d && d.storage.house;
   const balOpen = !!($("eBalFold") || {}).open, balAct = Object.values(devs).filter(dv => (dv.status || {}).balance_active).length;
   box.innerHTML = `
     <div class="others">${other}</div>
-    <div class="card bankbox"><div class="hd">${icon("batt")}<h3>House bank</h3>${hb ? `<span class="muted num">${esc(hb.battery_type || hb.chemistry || "LiFePO4")}${hb.capacity ? ` · ${num(hb.capacity)} ${esc(hb.capacity_unit || "Ah")}` : ""}</span>` : ""}</div>
+    <div class="card bankbox"><div class="hd">${icon("batt")}<h3>House bank</h3>${hb ? `<span class="muted num">${esc(hb.battery_type || hb.chemistry || "LiFePO4")}${hb.capacity ? ` · ${num(hb.capacity)} ${esc(hb.capacity_unit || "Ah")}` : ""}</span><b class="num">${flowW(hb.power)}</b>` : ""}</div>
       <div class="packs">${names.map(pack).join("")}</div></div>
     <div class="u-mb-12 card pad"><div class="allbtns">
       <button class="btn sec sm" type="button" id="bms-all-refresh">${icon("refresh")} Read all</button>
