@@ -102,14 +102,17 @@ BoatGuard arms the EZVIZ camera when your iPhone leaves the boat's Wi-Fi, and di
 
 ## 7. Washer
 
-- **Status** with the time left and when it will be ready; **Start**, **Pause** and resume; the **ON/OFF**
-  power switch at the right of the status (not during a wash; with a schedule set, switching off asks first).
-- **Program:** program, temperature, spin and rinses; *Set* applies them, and the app says *applied* only after the
-  washer has confirmed them.
+From top to bottom:
+- **Status** with the time left and when it will be ready, and the **ON/OFF** power switch at its right (not during a
+  wash; with a schedule set, switching off asks first).
+- **Select program:** program, temperature, spin and rinses; *Set* applies them, and the app says *applied* only after
+  the washer has confirmed them.
+- **Active program:** what the washer is set to now: program, temperature, time left and spin.
 - **Schedule:** start at a time, or finish at a time; the controller on the boat PC starts it, also when the app is
   closed. A scheduled start can be cancelled.
-- **Events** and **Diagnostics:** the start-up checks, the controller's version, the washer's address, model and firmware;
-  *Recheck* and an export.
+- **Start now**, **Pause** and resume.
+- **Diagnostics:** the start-up checks, the controller's version, the washer's address, model and firmware; *Recheck*
+  and an export. Below it the **Events**.
 
 ## 8. System
 

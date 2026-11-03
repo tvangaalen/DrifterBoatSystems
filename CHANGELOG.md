@@ -21,6 +21,8 @@
   Night)
 - Washer page: a Power switch at the right of the status instead of the Power on / Power off buttons
 - Washer page: an ON/OFF power switch (green ON, red OFF) at the right of the status, without the Power label
+- Washer page: Select program first, then Active program, Schedule, Start now/Pause, Diagnostics at the bottom; power
+  changes no longer reported in the Start card
 
 ## 1.1
 
