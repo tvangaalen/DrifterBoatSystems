@@ -225,6 +225,14 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 @keyframes radar-ping{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.8);opacity:0}}
 @media (prefers-reduced-motion:reduce){.radar .ping{animation:none;opacity:.35}}
 
+/* BoatGuard tile: a security camera on the right; green while monitoring, accent while armed, grey when off */
+.guard-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.guard-row>div:first-child{min-width:0}
+.guard-cam{--gc:var(--ok);width:64px;height:64px;border-radius:18px;flex:none;display:grid;place-items:center;color:var(--gc);
+  background:color-mix(in srgb,var(--gc) 14%,transparent)}
+.guard-cam svg.i{width:40px;height:40px;stroke-width:1.6}
+.guard-cam.armed{--gc:var(--accent)}.guard-cam.warn{--gc:var(--warn)}.guard-cam.off{--gc:var(--faint)}
+
 /* SOC meter (Overview tile): half arc red → orange → green with a needle; the SVG comes from energy.js meter() */
 .meter-row{display:flex;align-items:center;justify-content:space-between;gap:20px}
 .meter-row>div:first-child{min-width:0}.meter-row .big+.big{margin-top:6px}

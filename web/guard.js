@@ -18,7 +18,6 @@ const m = {
   },
   badge() {
     const s = m.state.data; if (!s) return null;
-    if (s.armed_by_us) return "bad";
     if (s.enabled && (s.router_ok === false || s.arm_at)) return "warn";
     if ((s.camera || {}).error) return "warn";
     return null;
@@ -28,9 +27,9 @@ const m = {
     if (!s.enabled) return {cls: "", title: "Monitoring off", sub: "BoatGuard will not arm the camera"};
     let r;
     if (s.test_running) r = {cls: "warn", title: "Camera test running…", sub: ""};
-    else if (s.armed_by_us) r = {cls: "bad", title: "Camera armed", sub: `Phone away since ${hms(s.last_seen)}`};
+    else if (s.armed_by_us) r = {cls: "ok", title: "Camera armed", sub: `Phone away since ${hms(s.last_seen)}`};
     else if (s.arm_at) r = {cls: "warn", title: `Arming at ${hms(s.arm_at)}`, sub: `in ${dur(s.arm_at - now)} · phone away since ${hms(s.last_seen)}`};
-    else if (s.present) r = {cls: "ok", title: "On board, monitoring ready", sub: "The camera is armed once the phone leaves the boat"};
+    else if (s.present) r = {cls: "ok", title: "On board, monitoring active", sub: "The camera is armed once the phone leaves the boat"};
     else r = {cls: "warn", title: "Waiting for the first check…", sub: ""};
     if (s.router_ok === false) r = {cls: "warn", title: r.title, sub: `${s.router_error || "Router not readable"}: nothing will be changed`};
     return r;
@@ -38,9 +37,11 @@ const m = {
   tile() {
     const s = m.state.data; if (!s) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const h = m.hero(s), cam = s.camera || {};
-    return `<div class="u-fs-22 big">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div>
+    const camCls = !s.enabled ? "off" : s.armed_by_us || cam.armed ? "armed" : h.cls === "warn" ? "warn" : "";
+    return `<div class="guard-row"><div><div class="u-fs-22 big">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div></div>
+      <span class="guard-cam ${camCls}" title="${cam.armed ? "Camera armed" : "Camera disarmed"}">${icon("cctv")}</span></div>
       <div class="minis"><div class="mini"><div class="l">Phone</div><div class="n ${s.present ? "good" : "warnc"}">${s.present == null ? "–" : s.present ? "On board" : "Away"}</div></div>
-      <div class="mini"><div class="l">Camera</div><div class="n ${cam.armed ? "badc" : ""}">${cam.armed == null ? "–" : cam.armed ? "Armed" : "Disarmed"}</div></div>
+      <div class="mini"><div class="l">Camera</div><div class="n">${cam.armed == null ? "–" : cam.armed ? "Armed" : "Disarmed"}</div></div>
       <div class="mini"><div class="l">Battery</div><div class="n">${cam.battery == null ? "–" : cam.battery + "%"}</div></div></div>`;
   },
   mount(el) {
