@@ -58,7 +58,7 @@ const m = {
     <div class="grid g2">
       <div class="stack">
         <div class="hero" id="wHero"><div class="lamp"></div><div class="grow"><b id="wHeroT">Loading…</b><span id="wHeroS"></span></div>
-          <span class="hero-sw">Power ${D.sw("wPower", false, 'aria-label="Washer power"')}</span></div>
+          <label class="switch onoff"><input type="checkbox" role="switch" id="wPower" aria-label="Washer power"><i></i></label></div>
         <div class="stats" id="wStats"></div>
         <div class="card pad"><div class="btns eq">
           <button class="btn" id="wStart" type="button">Start</button><button class="btn sec" id="wPause" type="button">Pause</button></div>
