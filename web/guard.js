@@ -64,7 +64,7 @@ const m = {
     <div class="grid g2l">
       <div class="stack">
         <div class="hero" id="gHero"><div class="lamp"></div><div class="grow"><b id="gHeroT">Loading…</b><span id="gHeroS"></span></div></div>
-        <div class="card"><div class="rows"><div class="row"><div class="k"><b>Monitoring</b><small id="gEnSub"></small></div>${D.sw("gEnabled", false, 'aria-label="Monitoring on/off"')}</div></div></div>
+        <div class="card"><div class="rows"><div class="row"><div class="k"><b>Monitoring</b><small id="gEnSub"></small></div>${D.sw("gEnabled", false, 'aria-label="Monitoring on/off"', "onoff")}</div></div></div>
         <div class="card"><div class="rows">
           <div class="row"><span class="k">${icon("phone")} Phone</span><span class="v" id="gPhone">–</span></div>
           <div class="row"><span class="k">${icon("cam")} Camera</span><span class="v" id="gCam">–</span></div>

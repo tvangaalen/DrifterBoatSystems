@@ -71,7 +71,7 @@ const m = {
     <div class="grid g2">
       <div class="stack">
         <div class="hero" id="wHero"><div class="lamp"></div><div class="grow"><b id="wHeroT">Loading…</b><span id="wHeroS"></span></div>
-          <label class="switch onoff"><input type="checkbox" role="switch" id="wPower" aria-label="Washer power"><i></i></label></div>
+          ${D.sw("wPower", false, 'aria-label="Washer power"', "onoff")}</div>
         <div class="card"><div class="hd"><h3>Select program</h3></div><div class="rows">
           <div class="row"><span class="k">Program</span><select class="u-maxw-62pc field" id="wProg">${PROGRAMS.map(([v, n]) => `<option value="${v}">${esc(n)}</option>`).join("")}</select></div>
           <div class="row"><span class="k">Temperature</span><select class="field" id="wTemp"></select></div>
