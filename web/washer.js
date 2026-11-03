@@ -59,31 +59,32 @@ const m = {
       <div class="stack">
         <div class="hero" id="wHero"><div class="lamp"></div><div class="grow"><b id="wHeroT">Loading…</b><span id="wHeroS"></span></div>
           <label class="switch onoff"><input type="checkbox" role="switch" id="wPower" aria-label="Washer power"><i></i></label></div>
-        <div class="stats" id="wStats"></div>
-        <div class="card pad"><div class="btns eq">
-          <button class="btn" id="wStart" type="button">Start</button><button class="btn sec" id="wPause" type="button">Pause</button></div>
-          <p class="u-m-10-2-0 hint" id="wMsg"></p></div>
-        <div class="card"><div class="hd"><h3>Diagnostics</h3><span id="wDiagSum"></span>
-          <button class="iconbtn" type="button" id="wRefresh" aria-label="Read the washer now">${icon("refresh")}</button></div>
-          <div class="rows" id="wChecks"><div class="empty">Loading…</div></div>
-          <div class="u-m-4-16-12 stats" id="wInfo"></div>
-          <div class="u-p-0-16-14 btns"><button class="btn sec sm" id="wDiag" type="button">${icon("refresh")} Recheck</button>
-            <a class="btn sec sm" href="api/washer/diagnostics/export" download="viomi_diagnostics.json">Export</a></div></div>
-      </div>
-      <div class="stack">
-        <div class="card"><div class="hd"><h3>Program</h3></div><div class="rows">
+        <div class="card"><div class="hd"><h3>Select program</h3></div><div class="rows">
           <div class="row"><span class="k">Program</span><select class="u-maxw-62pc field" id="wProg">${PROGRAMS.map(([v, n]) => `<option value="${v}">${esc(n)}</option>`).join("")}</select></div>
           <div class="row"><span class="k">Temperature</span><select class="field" id="wTemp"></select></div>
           <div class="row"><span class="k">Rinses</span><select class="field" id="wRinse"></select></div>
           <div class="row"><span class="k">Spin <small>set by the program</small></span><span class="v" id="wSpin">–</span></div>
           <div class="row"><span class="hint" id="wSetMsg"></span><button class="btn" id="wSet" type="button">Set</button></div></div></div>
+        <div class="card"><div class="hd"><h3>Active program</h3></div><div class="stats" id="wStats"></div></div>
+      </div>
+      <div class="stack">
         <div class="card"><div class="hd"><h3>Schedule</h3></div><div class="rows">
           <div id="wSchedEdit"><div class="row"><select class="field" id="wSchedMode" aria-label="Schedule type"><option value="finish">Finish at</option><option value="start">Start at</option></select>
             <span class="u-d-flex u-ai-center u-gap-4"><select class="field" id="wSchedH" aria-label="Hour">${Array.from({length: 24}, (_, i) => `<option>${D.pad(i)}</option>`).join("")}</select>:<select class="field" id="wSchedM" aria-label="Minutes">${Array.from({length: 12}, (_, i) => `<option>${D.pad(i * 5)}</option>`).join("")}</select></span></div>
             <div class="row"><span class="hint">Uses the program set on the washer now. The washer must be on and idle.</span><button class="btn" id="wSched" type="button">Schedule</button></div></div>
           <div class="row" id="wSchedSum" hidden><span class="k" id="wSchedText"></span><button class="btn sec sm" id="wSchedCancel" type="button">Cancel</button></div></div></div>
+        <div class="card pad"><div class="btns eq">
+          <button class="btn" id="wStart" type="button">Start now</button><button class="btn sec" id="wPause" type="button">Pause</button></div>
+          <p class="u-m-10-2-0 hint" id="wMsg"></p></div>
       </div>
     </div>
+    <div class="u-h-12"></div>
+    <div class="card"><div class="hd"><h3>Diagnostics</h3><span id="wDiagSum"></span>
+          <button class="iconbtn" type="button" id="wRefresh" aria-label="Read the washer now">${icon("refresh")}</button></div>
+          <div class="rows" id="wChecks"><div class="empty">Loading…</div></div>
+          <div class="u-m-4-16-12 stats" id="wInfo"></div>
+          <div class="u-p-0-16-14 btns"><button class="btn sec sm" id="wDiag" type="button">${icon("refresh")} Recheck</button>
+            <a class="btn sec sm" href="api/washer/diagnostics/export" download="viomi_diagnostics.json">Export</a></div></div>
     <h2 class="sec">Events</h2>
     <div class="card"><div class="log" id="wLog"></div></div>`;
     const now = new Date(Date.now() + 10 * 60000); now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5);
@@ -96,11 +97,11 @@ const m = {
     $("wPause").addEventListener("click", e => cmd(e.target, "/api/pause", "Paused"));
     $("wPower").addEventListener("change", async e => {
       const el = /** @type {HTMLInputElement} */ (e.target), want = el.checked;
-      if (want) return cmd(el, "/api/power/on", "Power on");
+      if (want) return cmd(el, "/api/power/on", "Power on", {}, false);
       const d = m.state.data, sc = d && d.schedule;
       if (sc && ["pending", "starting", "started", "running"].includes(sc.status) &&
         !(await D.confirm({title: "Power off the washer?", text: "This also cancels or interrupts the schedule.", ok: "Power off", cancel: "Keep on"}))) { el.checked = true; return; }
-      cmd(el, "/api/power/off", "Power off");
+      cmd(el, "/api/power/off", "Power off", {}, false);
     });
     $("wSched").addEventListener("click", schedule);
     $("wSchedCancel").addEventListener("click", e => cmd(e.target, "/api/schedule/cancel", "Schedule cleared", {}));
@@ -146,7 +147,7 @@ function actions(d) {
   const st = Number(d.status), power = d.power === true, active = ACTIVE.includes(st), paused = st === 26, door = Number(d.fault) === 3;
   const faulted = (st === 27 || Number(d.fault) !== 0) && !door, conf = power && !door && IDLE.includes(st);
   const startOk = power && (door || IDLE.includes(st)), sc = d.schedule, hasSched = sc && ["pending", "starting", "started", "running"].includes(sc.status);
-  $("wStart").textContent = paused ? "Resume" : "Start";
+  $("wStart").textContent = paused ? "Resume" : "Start now";
   $("wSet").disabled = pending || !conf || active || faulted;
   $("wStart").disabled = pending || !startOk || active || faulted;
   $("wPause").disabled = pending || !active;
@@ -187,9 +188,9 @@ function renderEvents() {
     : `<div class="empty">No events yet</div>`;
 }
 function msg(t, bad) { $("wMsg").textContent = t; $("wMsg").className = "hint" + (bad ? " badc" : ""); }
-async function cmd(el, path, ok, body = {}) {
-  if (pending) return; pending = true; msg("Sending command…");
-  try { await D.run(null, el, () => D.api("washer", path, body), ok); msg(ok + "."); } catch (e) { msg("Error: " + e.message, true); }
+async function cmd(el, path, ok, body = {}, say = true) {   // say: report in the Start/Pause card (not for power: the header shows it)
+  if (pending) return; pending = true; if (say) msg("Sending command…");
+  try { await D.run(null, el, () => D.api("washer", path, body), ok); if (say) msg(ok + "."); } catch (e) { if (say) msg("Error: " + e.message, true); }
   finally { setTimeout(async () => { pending = false; await D.poll(m, true); }, 700); }
 }
 async function start(e) {
@@ -197,7 +198,7 @@ async function start(e) {
   try {
     await D.api("washer", "/api/start", {});
     try { const sd = await D.api("washer", "/api/start-check"); m.state.data = lastGood = sd;
-      msg(Number(sd.fault) === 3 ? "Close the door, then press Start." : "Started."); } catch (x) { msg("Start sent."); }
+      msg(Number(sd.fault) === 3 ? "Close the door, then press Start now." : "Started."); } catch (x) { msg("Start sent."); }
   } catch (x) { msg("Error: " + x.message, true); D.toast(x.message, true); }
   finally { pending = false; D.poll(m, true); }
 }

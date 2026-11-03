@@ -356,6 +356,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .trackbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 4px}
 .tiles{margin-top:12px;display:flex;flex-direction:column;gap:12px}
 .stats.tilegrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card>.stats{margin:2px 16px 16px}   /* a stats grid inside a titled card */
 @media (min-width:640px){.stats.tilegrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .stat.wide{grid-column:span 2}
 .stat .n.pos{font-size:17px;line-height:1.35;white-space:normal}
