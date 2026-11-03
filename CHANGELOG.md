@@ -5,6 +5,7 @@
 - tools/ship.py: a change live in about a minute; the app's cache name follows its files
 - Overview: the Energy meter sits right after its text, the pill on the dial's bottom; the small values sit at the
   bottom of every tile
+- Overview: the Energy meter's needle is only its tip, clear of the percentage pill
 
 ## 1.1
 
