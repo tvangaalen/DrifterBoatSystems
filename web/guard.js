@@ -7,6 +7,17 @@ const PRIO_HINT = {"-2": "No alert: only listed in the Pushover app", "-1": "No 
 const label = s => s === "" ? "App default" : s === "none" ? "Silent" : s === "vibrate" ? "Vibrate only" : s[0].toUpperCase() + s.slice(1);
 let dirty = false, built = false, logLines = [], logT = 0, tickT = null;
 
+/** The tile's ceiling dome camera: ceiling plate, smoked glass dome and lens; colours from the --cam-* tokens (red in Night). */
+const domeCam = () => `<svg class="dome" viewBox="14 1 92 92" aria-hidden="true"><defs>
+  <linearGradient id="gCamS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="c1"/><stop offset="1" class="c2"/></linearGradient>
+  <linearGradient id="gCamT" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="c0"/><stop offset="1" class="c1"/></linearGradient>
+  <radialGradient id="gCamG" cx=".4" cy=".3" r=".8"><stop offset="0" class="g0"/><stop offset="1" class="g1"/></radialGradient>
+  <radialGradient id="gCamL" cx=".4" cy=".35" r=".7"><stop offset="0" class="l0"/><stop offset=".35" class="l1"/><stop offset=".75" class="l2"/><stop offset="1" class="l3"/></radialGradient></defs>
+  <ellipse class="edge" cx="60" cy="28" rx="44" ry="10" fill="url(#gCamT)"/><path d="M16 28v8a44 10 0 0 0 88 0v-8" fill="url(#gCamS)"/>
+  <ellipse class="edge" cx="60" cy="36" rx="44" ry="10" fill="none" stroke-width=".8"/><path d="M26 40a34 34 0 0 0 68 0z" fill="url(#gCamG)"/>
+  <circle class="dark" cx="60" cy="58" r="11.5"/><circle cx="60" cy="58" r="9" fill="url(#gCamL)"/><circle class="dark" cx="60" cy="58" r="3.4"/>
+  <ellipse class="shine" cx="56.8" cy="54.4" rx="2.5" ry="1.6" opacity=".85"/><path class="gloss" d="M34 46a28 28 0 0 0 12 22"/></svg>`;
+
 const m = {
   id: "guard", title: "BoatGuard", short: "Guard", icon: "guard", every: 4000, background: 8000,
   async load() {
@@ -39,9 +50,9 @@ const m = {
     const h = m.hero(s), cam = s.camera || {};
     const camCls = !s.enabled ? "off" : s.armed_by_us || cam.armed ? "armed" : h.cls === "warn" ? "warn" : "";
     return `<div class="guard-row"><div><div class="u-fs-22 big">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div></div>
-      <span class="guard-cam ${camCls}" title="${cam.armed ? "Camera armed" : "Camera disarmed"}">${icon("cctv")}</span></div>
+      <span class="guard-cam ${camCls}" title="${cam.armed ? "Camera armed" : "Camera disarmed"}">${domeCam()}</span></div>
       <div class="minis"><div class="mini"><div class="l">Phone</div><div class="n ${s.present ? "good" : "warnc"}">${s.present == null ? "–" : s.present ? "On board" : "Away"}</div></div>
-      <div class="mini"><div class="l">Camera</div><div class="n">${cam.armed == null ? "–" : cam.armed ? "Armed" : "Disarmed"}</div></div>
+      <div class="mini"><div class="l">Camera</div><div class="n ${cam.armed ? "badc" : ""}">${cam.armed == null ? "–" : cam.armed ? "Armed" : "Disarmed"}</div></div>
       <div class="mini"><div class="l">Battery</div><div class="n">${cam.battery == null ? "–" : cam.battery + "%"}</div></div></div>`;
   },
   mount(el) {
