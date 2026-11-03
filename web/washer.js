@@ -65,17 +65,17 @@ const m = {
           <div class="row"><span class="k">Rinses</span><select class="field" id="wRinse"></select></div>
           <div class="row"><span class="k">Spin <small>set by the program</small></span><span class="v" id="wSpin">–</span></div>
           <div class="row"><span class="hint" id="wSetMsg"></span><button class="btn" id="wSet" type="button">Set</button></div></div></div>
-        <div class="card"><div class="hd"><h3>Active program</h3></div><div class="stats" id="wStats"></div></div>
       </div>
       <div class="stack">
-        <div class="card"><div class="hd"><h3>Schedule</h3></div><div class="rows">
+        <div class="card"><div class="hd"><h3>Current program</h3></div><div class="stats" id="wStats"></div>
+          <div class="card-pad-x"><div class="btns eq">
+          <button class="btn" id="wStart" type="button">Start now</button><button class="btn sec" id="wPause" type="button">Pause</button></div>
+          <p class="u-m-10-2-0 hint" id="wMsg"></p></div>
+          <div class="hd sub"><h3>Schedule</h3></div><div class="rows">
           <div id="wSchedEdit"><div class="row"><select class="field" id="wSchedMode" aria-label="Schedule type"><option value="finish">Finish at</option><option value="start">Start at</option></select>
             <span class="u-d-flex u-ai-center u-gap-4"><select class="field" id="wSchedH" aria-label="Hour">${Array.from({length: 24}, (_, i) => `<option>${D.pad(i)}</option>`).join("")}</select>:<select class="field" id="wSchedM" aria-label="Minutes">${Array.from({length: 12}, (_, i) => `<option>${D.pad(i * 5)}</option>`).join("")}</select></span></div>
             <div class="row"><span class="hint">Uses the program set on the washer now. The washer must be on and idle.</span><button class="btn" id="wSched" type="button">Schedule</button></div></div>
           <div class="row" id="wSchedSum" hidden><span class="k" id="wSchedText"></span><button class="btn sec sm" id="wSchedCancel" type="button">Cancel</button></div></div></div>
-        <div class="card pad"><div class="btns eq">
-          <button class="btn" id="wStart" type="button">Start now</button><button class="btn sec" id="wPause" type="button">Pause</button></div>
-          <p class="u-m-10-2-0 hint" id="wMsg"></p></div>
       </div>
     </div>
     <div class="u-h-12"></div>
