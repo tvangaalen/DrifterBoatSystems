@@ -3,6 +3,8 @@
 ## Unreleased
 
 - tools/ship.py: a change live in about a minute; the app's cache name follows its files
+- Overview: the Energy meter sits right after its text, the pill on the dial's bottom; the small values sit at the
+  bottom of every tile
 
 ## 1.1
 
