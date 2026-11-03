@@ -20,6 +20,7 @@
 - BoatGuard tile: an outlined wall camera with a blue sunshield instead of the dome (colours as theme tokens, red in
   Night)
 - Washer page: a Power switch at the right of the status instead of the Power on / Power off buttons
+- Washer page: an ON/OFF power switch (green ON, red OFF) at the right of the status, without the Power label
 
 ## 1.1
 
