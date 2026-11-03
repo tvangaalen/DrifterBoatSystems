@@ -127,6 +127,14 @@ class GatewayTest(unittest.TestCase):
         for p in ("/../drifter.py", "/%2e%2e/drifter.py", "/static/../drifter.py", "/config.json"):
             code, _ = self.req("GET", p); self.assertEqual(code, 404, p)
 
+    def test_sw_cache_name_follows_the_files(self):
+        import tempfile
+        code, data = self.req("GET", "/sw.js"); self.assertEqual(code, 200)
+        self.assertNotIn(b"__BUILD__", data); self.assertIn(f'"drifter-v{drifter.VERSION}-{drifter.web_build()}-shell"'.encode(), data)
+        d = drifter.Path(tempfile.mkdtemp()); (d / "a.js").write_text("1"); before = drifter.web_build(d)
+        self.assertEqual(drifter.web_build(d), before)
+        (d / "a.js").write_text("22"); self.assertNotEqual(drifter.web_build(d), before)        # a deploy changes it
+
     def test_check_bind(self):
         for ok in ("127.0.0.1", "192.168.1.166", "10.0.0.2"): drifter.check_bind(ok)
         for bad in ("0.0.0.0", "8.8.8.8", "169.254.1.1"):

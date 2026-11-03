@@ -16,7 +16,7 @@ Stdlib only.
 """
 from __future__ import annotations
 
-import argparse, http.client, json, logging, os, re, ssl, sys, threading, time, urllib.error, urllib.request
+import argparse, hashlib, http.client, json, logging, os, re, ssl, sys, threading, time, urllib.error, urllib.request
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -279,6 +279,15 @@ class DrifterdClient:
         return j
 
 
+def web_build(root: Path = STATIC) -> str:
+    """A fingerprint of the app's files (path, size, time). sw.js gets it in its cache name, so a web-only deploy (a pull,
+    no restart, no version bump) still makes the home-screen apps load the new files."""
+    h = hashlib.sha1()
+    for f in sorted(root.rglob("*")):
+        if f.is_file(): st = f.stat(); h.update(f"{f.relative_to(root).as_posix()}:{st.st_size}:{st.st_mtime_ns}\n".encode())
+    return h.hexdigest()[:10]
+
+
 def backup_info() -> dict | None:
     """Where "Backup keys and tokens" copies to and when it last did (tools/backup.py), for the System page."""
     try:
@@ -326,15 +335,17 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
                 except ValueError as e: return self._json({"error": str(e)}, 404)
             if path == "/api/systems":
                 with up.lock: st = {m: dict(v) for m, v in up.status.items()}
-                return self._json({"version": VERSION, "systems": systems, "upstream": st,
+                return self._json({"version": VERSION, "build": web_build(), "systems": systems, "upstream": st,
                                    "supervisor": sup.snapshot() if sup else {"enabled": False}, "backup": backup_info(),
                                    "alerts": dog.status() if dog else None})
             if path == "/": path = "/index.html"
             f = (STATIC / path.lstrip("/")).resolve()
             if STATIC.resolve() in f.parents and f.is_file() and f.suffix in STATIC_TYPES:
                 cache = "no-cache" if f.suffix in (".html", ".js", ".css", ".webmanifest") else "max-age=86400"
-                extra = {"Service-Worker-Allowed": "/"} if f.name == "sw.js" else None
-                return self._send(200, f.read_bytes(), STATIC_TYPES[f.suffix], cache, extra)
+                body, extra = f.read_bytes(), None
+                if f == (STATIC / "sw.js").resolve():           # its cache name follows the files: see web_build()
+                    body, extra = body.replace(b"__BUILD__", f"v{VERSION}-{web_build()}".encode()), {"Service-Worker-Allowed": "/"}
+                return self._send(200, body, STATIC_TYPES[f.suffix], cache, extra)
             self._send(404, b"not found", "text/plain")
 
         def do_POST(self):

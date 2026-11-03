@@ -1,6 +1,7 @@
 """Every hardware-free test of Drifter Boat Systems: the gateway and each module's own suite, each in its own folder.
 
-Usage: py tests/run_all.py [quick]   (quick = MasterVolt without its slow simulations)
+Usage: py tests/run_all.py [quick] [suite ...]   (quick = MasterVolt without its slow simulations; suites: the names below,
+default all; tools/ship.py picks them from what changed)
 Exit code = number of failed suites. No test touches the boat: fake MasterBus/Bluetooth, simulated Core data, no network.
 """
 import subprocess, sys, time
@@ -8,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 QUICK = "quick" in sys.argv[1:]
+ONLY = [a for a in sys.argv[1:] if a != "quick"]
 
 
 def python(module: str) -> str:
@@ -27,12 +29,17 @@ SUITES = [  # (name, folder, command)
     ("watchdog", ROOT, [sys.executable, "tests/test_watchdog.py"]),
     ("backup", ROOT, [sys.executable, "tests/test_backup.py"]),
     ("manual", ROOT, [sys.executable, "tests/test_manual.py"]),
+    ("ship", ROOT, [sys.executable, "tests/test_ship.py"]),
     ("energy", ROOT / "modules/energy", [python("energy"), "-m", "tests.run_all"] + (["quick"] if QUICK else [])),
     ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch", "test_anchor"]),
     ("guard", ROOT / "modules/guard", [python("guard"), "test_core.py"]),
     ("guard-api", ROOT / "modules/guard", [python("guard"), "-m", "unittest", "test_guard"]),
     ("washer", ROOT / "modules/washer", [python("washer"), "-m", "unittest", "test_washer"]),
 ]
+
+unknown = set(ONLY) - {n for n, _, _ in SUITES}
+if unknown: sys.exit(f"unknown suite(s): {', '.join(sorted(unknown))}")
+if ONLY: SUITES = [s for s in SUITES if s[0] in ONLY]
 
 failed = []
 for name, cwd, cmd in SUITES:
