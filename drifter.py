@@ -26,7 +26,7 @@ from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (ch
 from common.pushover import KEY_RE
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 HERE = Path(__file__).resolve().parent
 sys.path.append(str(HERE / "tools"))              # tools/backup.py for "Backup keys and tokens"
 STATIC = HERE / "web"

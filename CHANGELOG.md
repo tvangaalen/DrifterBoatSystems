@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.2
+
+### 1.2.0 — 2026-11-03
 
 - **Overview, Energy**: the meter's needle is only its tip, clear of the percentage pill; the meter sits at the right of
   the tile. The small values sit at the bottom of every tile, level across a row.
