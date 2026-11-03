@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Energy page: the Now tab is Control; the House bank card with the meter, power and Voltage/Current/Temperature boxes;
+  House battery is House bank on the Overview too
+
 ## 1.2
 
 ### 1.2.0 — 2026-11-03

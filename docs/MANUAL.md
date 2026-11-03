@@ -26,7 +26,7 @@ All times are on the 24-hour clock.
 One tile per system with its key values. Tap a tile to open its page. A badge in the tile and a dot in the navigation
 show what needs attention: *alarm* (red) or *check* (orange).
 
-- **Energy:** the house battery charge on a meter (red empty, green full), the battery power, its voltage and current, and
+- **Energy:** the house bank's charge on a meter (red empty, green full), the battery power, its voltage and current, and
   the four flows: Charger, Alternator, Solar and the
   DC load (shown with a minus sign: it is taken from the battery).
 - **Anchor watch:** whether the anchor is set and, if so, the distance to it; depth, wind and the GPS state.
@@ -48,7 +48,7 @@ and the boat PC.
 Four views at the top of the page. The full description of every value and of how it is measured is in the energy
 manual: History → *Open the manual*.
 
-- **Now:** the house battery (charge, voltage, current, power, Float/Bulk state), the sources (shore, charger, alternator,
+- **Control:** the house bank (charge on a meter, power, voltage, current, temperature, Float/Bulk state), the sources (shore, charger, alternator,
   solar), the consumers, and the start and bow batteries.
   - **Modes** switch several devices at once: *Motor*, *Anchor*, *Marina*, *Sail*; the active mode is marked until a
     single control changes. A mode never switches the Engine ECU off.
