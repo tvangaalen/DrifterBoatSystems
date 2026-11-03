@@ -9,6 +9,7 @@
 - Overview: the anchor tile shows a swing radar (limit circle, max swing, track, boat) in green, orange or red; grey and
   dashed when no anchor is set
 - Overview: the anchor tile's text at the top like the Energy tile's, the radar right after it
+- Overview: the Energy meter and the anchor radar sit at the right of their tiles again
 
 ## 1.1
 
