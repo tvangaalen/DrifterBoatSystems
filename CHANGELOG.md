@@ -10,6 +10,7 @@
   dashed when no anchor is set
 - Overview: the anchor tile's text at the top like the Energy tile's, the radar right after it
 - Overview: the Energy meter and the anchor radar sit at the right of their tiles again
+- CLAUDE.md: finished changes go live without asking (the user's choice)
 
 ## 1.1
 
