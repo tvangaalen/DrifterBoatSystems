@@ -16,6 +16,8 @@
 - Batteries tab: Pack details as one compact table with a House column (voltage, average cell voltage, maximum
   difference)
 - Batteries tab: Bluetooth status and Bluetooth events fold to one line with a summary
+- Batteries tab: flow in watts on the start/bow batteries and the House bank; Pack details folds, with an alarm row and
+  the SOC on the charging/discharging curve (GET /api/bms adds it per battery, display only)
 
 ## 1.2
 

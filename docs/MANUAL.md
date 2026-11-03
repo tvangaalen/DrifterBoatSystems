@@ -58,12 +58,14 @@ manual: History → *Open the manual*.
     has read the new state back.
   - **Engine ECU off** always asks first, with *Keep ECU ON* as the default: switching it off stops a running engine.
     *Alternator off* asks too (*Keep Alternator ON*).
-- **Batteries:** at the top an overview that fits one iPhone screen: the start and bow batteries with their meters,
-  then the *House bank* frame with a tile per pack: its meter, voltage, current, temperature, cells (highest orange,
+- **Batteries:** at the top an overview that fits one iPhone screen: the start and bow batteries with their meters and
+  their flow in watts (+ charging, − in use),
+  then the *House bank* frame (its total flow in watts at the top) with a tile per pack: its meter, voltage, current, temperature, cells (highest orange,
   lowest blue), the average cell voltage, the spread, when it was last read, its balancer, the ON/OFF switches for the
-  charge (C) and discharge (D) MOSFETs and *Set SOC*. Below: the buttons for all packs; *Pack details*, one table with a
-  column per pack (read time, SOC, Ah left, voltage, current, temperature, cycles, each cell, the average cell voltage and the
-  maximum cell difference) and a *House* column (house SOC and voltage, the sums, the hottest pack, average and difference
+  charge (C) and discharge (D) MOSFETs and *Set SOC*. Below: the buttons for all packs; *Pack details* (folded: tap to open), one
+  table with a column per pack (read time, SOC, Ah left, voltage, current, temperature, cycles, each cell, the average cell
+  voltage, the maximum cell difference, the alarms and the SOC the average cell voltage means on the charging and the
+  discharging curve) and a *House* column (house SOC and voltage, the sums, the hottest pack, average and difference
   over all cells); the balancers, *Bluetooth status* (the radio, the BMS links and per device its
   timings) and *Bluetooth events*, all three folded to one line with a summary (tap to open). Every action that could cut power asks first, the safe choice being
   the default.
