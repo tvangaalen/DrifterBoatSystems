@@ -44,33 +44,26 @@
 <span class="pill">–<small>%</small></span></div></div></div></div>
 <div class="card"><div class="hd"><svg class="i"><use href="#i-sun"></use></svg><h3>Energy providers</h3><span class="muted num">Total DC in 261 W</span></div><div class="rows">
 <div class="flow"><span class="ic shore "><svg class="i"><use href="#i-plug"></use></svg></span><div class="nm"><b>Shore Power</b><small>Not connected</small></div>
-<div class="w">0 W<small>0.0 V · 0.0 A</small></div></div><div class="flow"><span class="ic shore "><svg class="i"><use href="#i-plug"></use></svg></span><div class="nm"><b>Charger House</b><small>Off</small></div>
-<div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic alt "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>Stop Charge</small></div>
-<div class="w">0 W<small>13.9 V · 0.0 A</small></div></div><div class="flow"><span class="ic solar on"><svg class="i"><use href="#i-sun"></use></svg></span><div class="nm"><b>Solar</b><small>Bulk · panel 38.4 V</small></div>
-<div class="w">261 W<small>13.2 V · 19.8 A</small></div></div></div></div>
-<div class="card"><div class="hd"><svg class="i"><use href="#i-load"></use></svg><h3>Energy consumers</h3><span class="muted num">Total DC out 116 W</span></div><div class="rows">
+<div class="w">0 W<small>0.0 V · 0.0 A</small></div><span class="sw-gap"></span></div><div class="flow"><span class="ic shore "><svg class="i"><use href="#i-plug"></use></svg></span><div class="nm"><b>Charger House</b><small>Off</small></div>
+<div class="w">0 W<small>13.2 V · 0.0 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger" checked="" aria-label="Charger House"><i></i></label></div><div class="flow"><span class="ic alt "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>Stop Charge</small></div>
+<div class="w">0 W<small>13.9 V · 0.0 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-alternator" aria-label="Alternator"><i></i></label></div><div class="flow"><span class="ic solar on"><svg class="i"><use href="#i-sun"></use></svg></span><div class="nm"><b>Solar</b><small>Bulk · panel 38.4 V</small></div>
+<div class="w">261 W<small>13.2 V · 19.8 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-solar" checked="" aria-label="Solar"><i></i></label></div></div></div>
+<div class="card"><div class="hd"><svg class="i"><use href="#i-load"></use></svg><h3>Energy consumers</h3><span class="muted num">Total DC out −116 W</span></div><div class="rows">
 <div class="flow"><span class="ic load on"><svg class="i"><use href="#i-load"></use></svg></span><div class="nm"><b>AC Loads</b><small>AC</small></div>
-<div class="w">92 W<small>230.0 V · 0.4 A</small></div></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-power"></use></svg></span><div class="nm"><b>Inverter</b><small>DC</small></div>
-<div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Charger Start</b><small>Float</small></div>
-<div class="w">6 W<small>13.2 V · 0.5 A</small></div></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Charger Bow</b><small>Off</small></div>
-<div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Engine ECU power</b><small>DC</small></div>
-<div class="w">4 W<small>13.2 V · 0.3 A</small></div></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>DC</small></div>
-<div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-load"></use></svg></span><div class="nm"><b>Other DC Loads</b><small>DC</small></div>
-<div class="w">106 W<small>13.2 V · 8.0 A</small></div></div></div></div>
+<div class="w">−92 W<small>230.0 V · 0.4 A</small></div><span class="sw-gap"></span></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-power"></use></svg></span><div class="nm"><b>Inverter</b><small>Not inverting</small></div>
+<div class="w">0 W<small>13.2 V · 0.0 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-inverter" aria-label="Inverter"><i></i></label></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Charger Start</b><small>Float</small></div>
+<div class="w">−6 W<small>13.2 V · 0.5 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_start" checked="" aria-label="Charger Start"><i></i></label></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Charger Bow</b><small>Off</small></div>
+<div class="w">0 W<small>13.2 V · 0.0 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_bow" aria-label="Charger Bowthruster"><i></i></label></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Engine ECU power</b><small>DC</small></div>
+<div class="w">−4 W<small>13.2 V · 0.3 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-engine_ecu" checked="" aria-label="Engine ECU"><i></i></label></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>DC</small></div>
+<div class="w">0 W<small>13.2 V · 0.0 A</small></div><span class="sw-gap"></span></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-load"></use></svg></span><div class="nm"><b>Other DC Loads</b><small>DC</small></div>
+<div class="w">−106 W<small>13.2 V · 8.0 A</small></div><span class="sw-gap"></span></div></div></div>
 </div>
 <div class="stack">
 <div class="card"><div class="hd"><svg class="i"><use href="#i-power"></use></svg><h3>CombiMaster</h3></div><div class="rows">
-<div class="row"><div class="k"><b>Inverter</b><small>Not inverting</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-inverter"><i></i></label></div>
-<div class="row"><div class="k"><b>Charger House</b><small>Off</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger" checked=""><i></i></label></div>
 <div class="row"><div class="k"><b>AC IN support</b><small>Inverter helps when shore power is limited</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-support"><i></i></label></div>
 <div class="row"><div class="k"><b>AC input limit</b><small>Now 10 A · 3–15 A</small></div>
 <div class="u-d-flex u-gap-6 u-ai-center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">10 A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
 <button class="btn sm" type="button" id="ec-limit" disabled="">Set</button></div></div>
-</div></div>
-<div class="card"><div class="hd"><svg class="i"><use href="#i-engine"></use></svg><h3>Charging &amp; engine</h3></div><div class="rows">
-<div class="row"><div class="k"><b>Alternator</b><small>Stop Charge</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-alternator"><i></i></label></div>
-<div class="row"><div class="k"><b>Solar</b><small>SCM solar charger</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-solar" checked=""><i></i></label></div><div class="row"><div class="k"><b>Charger Start</b><small>Mass charger to start battery</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_start" checked=""><i></i></label></div><div class="row"><div class="k"><b>Charger Bowthruster</b><small>Mass charger to bow battery</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_bow"><i></i></label></div>
-<div class="row"><div class="k"><b>Engine ECU</b><small>Switching off stops a running engine</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-engine_ecu" checked=""><i></i></label></div>
 </div></div>
 <p class="u-m-0-4 hint">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
 </div>

@@ -95,7 +95,8 @@ function meter(soc, id, label = "House bank", cls = "") {
   if (s != null) {
     const a = Math.PI * (1 - s / 100), ux = Math.cos(a), uy = -Math.sin(a), vx = -uy, vy = ux;
     const P = (d, w) => `${f(cx + ux * d + vx * w)},${f(cy + uy * d + vy * w)}`;
-    needle = `<g class="needle"><polygon points="${P(28, 4.5)} ${P(r + 10, 1.2)} ${P(r + 10, -1.2)} ${P(28, -4.5)}"/></g>`;   // only the tip: clear of the pill
+    const i = cls === "sm" ? 39 : 28;   // the small one's pill is relatively larger: its needle starts further out
+    needle = `<g class="needle"><polygon points="${P(i, 4.5)} ${P(r + 10, 1.2)} ${P(r + 10, -1.2)} ${P(i, -4.5)}"/></g>`;   // only the tip: clear of the pill
   }
   return `<div class="meter${cls ? " " + cls : ""}" role="img" aria-label="${esc(label)} ${s == null ? "unknown" : num(s) + " %"}"><svg viewBox="0 0 124 76" aria-hidden="true">
     <defs><linearGradient id="${id}Band" x1="0" x2="1"><stop offset="0" class="s0"/><stop offset=".5" class="s1"/><stop offset="1" class="s2"/></linearGradient>
@@ -106,11 +107,14 @@ function meter(soc, id, label = "House bank", cls = "") {
 }
 
 // ------------------------------------------------------------------ Now
-function flowRow(x, ic, kind, sub, live) {
+/** One provider or consumer: icon, name, power (`out`: a consumer, shown with a minus sign) and its switch, if it has one. */
+function flowRow(x, ic, kind, sub, live, ctl = undefined, out = false) {
   const w = x.power, act = live ?? (w != null && w > 2);
   return `<div class="flow"><span class="ic ${kind} ${act ? "on" : ""}">${icon(ic)}</span><div class="nm"><b>${esc(x.label)}</b><small>${sub}</small></div>
-    <div class="w">${W(w)}<small>${num(x.voltage, 1)} V · ${num(x.current, 1)} A</small></div></div>`;
+    <div class="w">${out ? minus(w) : ""}${W(w)}<small>${num(x.voltage, 1)} V · ${num(x.current, 1)} A</small></div>${ctl ?? ""}</div>`;
 }
+const NOSW = `<span class="sw-gap"></span>`;   // in place of a switch: keeps the values in line
+const minus = w => w != null && w >= 0.5 ? "−" : "";
 function floatText(f) {
   if (!f) return ["", "–"];
   if (!f.enabled) return ["", "Float protection off"];
@@ -125,8 +129,15 @@ function renderNow() {
   const srcSub = {shore: s.shore.connected ? `${num(s.shore.input_frequency, 1)} Hz` : "Not connected", charger_house: s.charger_house.charge_state || "–",
     alternator: `${s.alternator.state || "–"}${s.alternator.estimated ? " · estimated" : ""}`, solar: `${s.solar.state || "–"} · panel ${num(s.solar.panel_voltage, 1)} V`};
   const sw = (id, val, extra = "") => D.sw(id, val, (busy.has(id) ? "disabled " : "") + extra);
-  const dev = (name, label, hint) => { const cfg = ctl[name];
-    return `<div class="row"><div class="k"><b>${label}</b><small>${cfg && cfg.verified ? hint : "Not mapped/verified yet"}</small></div>${sw("ec-" + name, cfg && cfg.current, cfg && cfg.verified ? "" : "disabled")}</div>`; };
+  const dev = (name, label) => { const cfg = ctl[name], ok = cfg && cfg.verified;
+    return sw("ec-" + name, cfg && cfg.current, `aria-label="${label}"` + (ok ? "" : ' disabled title="Not mapped/verified yet"')); };
+  const srcCtl = {charger_house: sw("ec-charger", on(cm.charger_enabled), 'aria-label="Charger House"'),
+    alternator: sw("ec-alternator", !!s.alternator.control_on, 'aria-label="Alternator"'), solar: dev("solar", "Solar")};
+  const loadCtl = {inverter: sw("ec-inverter", on(cm.inverter_enabled), 'aria-label="Inverter"'), charger_start: dev("charger_start", "Charger Start"),
+    charger_bow: dev("charger_bow", "Charger Bowthruster"), engine_ecu: dev("engine_ecu", "Engine ECU")};
+  srcSub.alternator += s.alternator.shaft_running ? " · shaft turning" : "";
+  const loadSub = (k, x) => k === "inverter" ? (on(cm.inverting) ? "Inverting" : on(cm.supporting) ? "Supporting" : "Not inverting")
+    : x.charge_state || (x.estimated ? "estimated" : x.kind || "");
   const lim = limitDraft ?? (cm.ac_input_limit != null ? Math.round(cm.ac_input_limit) : null);
   box.innerHTML = `
     <div class="u-mb-12 card pad"><div class="btns eq">${Object.keys(MODES).map(k => `<button class="btn sec" type="button" data-mode="${k}" aria-pressed="${d.active_mode === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div>
@@ -145,23 +156,16 @@ function renderNow() {
           ${["start", "bow"].map(k => { const b = d.storage[k]; return `<div class="row"><div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small>
             <small>${num(b.voltage, 2)} V · ${num(b.current, 1)} A</small></div>${meter(b.soc, "eB" + k, b.label, "sm")}</div>`; }).join("")}</div></div>
         <div class="card"><div class="hd">${icon("sun")}<h3>Energy providers</h3><span class="muted num">Total DC in ${W(t.dc_input_power)}</span></div><div class="rows">
-          ${Object.entries(s).map(([k, x]) => flowRow(x, SRC_IC[k][0], SRC_IC[k][1], esc(srcSub[k]), k === "shore" ? x.connected : k === "alternator" ? x.running : undefined)).join("")}</div></div>
-        <div class="card"><div class="hd">${icon("load")}<h3>Energy consumers</h3><span class="muted num">Total DC out ${W(t.consumer_power)}</span></div><div class="rows">
-          ${Object.entries(c).map(([k, x]) => flowRow(x, LOAD_IC[k] || "load", "load", esc(x.charge_state || (x.estimated ? "estimated" : x.kind || "")))).join("")}</div></div>
+          ${Object.entries(s).map(([k, x]) => flowRow(x, SRC_IC[k][0], SRC_IC[k][1], esc(srcSub[k]), k === "shore" ? x.connected : k === "alternator" ? x.running : undefined, srcCtl[k] ?? NOSW)).join("")}</div></div>
+        <div class="card"><div class="hd">${icon("load")}<h3>Energy consumers</h3><span class="muted num">Total DC out ${minus(t.consumer_power)}${W(t.consumer_power)}</span></div><div class="rows">
+          ${Object.entries(c).map(([k, x]) => flowRow(x, LOAD_IC[k] || "load", "load", esc(loadSub(k, x)), undefined, loadCtl[k] ?? NOSW, true)).join("")}</div></div>
       </div>
       <div class="stack">
         <div class="card"><div class="hd">${icon("power")}<h3>CombiMaster</h3>${on(cm.alarms) ? '<span class="badge bad">alarm</span>' : ""}</div><div class="rows">
-          <div class="row"><div class="k"><b>Inverter</b><small>${on(cm.inverting) ? "Inverting" : on(cm.supporting) ? "Supporting" : "Not inverting"}</small></div>${sw("ec-inverter", on(cm.inverter_enabled))}</div>
-          <div class="row"><div class="k"><b>Charger House</b><small>${esc(s.charger_house.charge_state || "–")}</small></div>${sw("ec-charger", on(cm.charger_enabled))}</div>
           <div class="row"><div class="k"><b>AC IN support</b><small>Inverter helps when shore power is limited</small></div>${sw("ec-support", on(cm.ac_support_enabled))}</div>
           <div class="row"><div class="k"><b>AC input limit</b><small>Now ${cm.ac_input_limit != null ? num(cm.ac_input_limit) + " A" : "–"} · 3–15 A</small></div>
             <div class="u-d-flex u-gap-6 u-ai-center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">${lim ?? "–"} A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
             <button class="btn sm" type="button" id="ec-limit" ${limitDraft == null || limitDraft === Math.round(cm.ac_input_limit) || busy.has("ec-limit") ? "disabled" : ""}>Set</button></div></div>
-        </div></div>
-        <div class="card"><div class="hd">${icon("engine")}<h3>Charging &amp; engine</h3></div><div class="rows">
-          <div class="row"><div class="k"><b>Alternator</b><small>${esc(s.alternator.state || "–")}${s.alternator.shaft_running ? " · shaft turning" : ""}</small></div>${sw("ec-alternator", !!s.alternator.control_on)}</div>
-          ${dev("solar", "Solar", "SCM solar charger")}${dev("charger_start", "Charger Start", "Mass charger to start battery")}${dev("charger_bow", "Charger Bowthruster", "Mass charger to bow battery")}
-          ${dev("engine_ecu", "Engine ECU", "Switching off stops a running engine")}
         </div></div>
         <p class="u-m-0-4 hint">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
       </div>
