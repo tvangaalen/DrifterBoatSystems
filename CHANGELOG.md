@@ -11,6 +11,7 @@
 - Overview: the anchor tile's text at the top like the Energy tile's, the radar right after it
 - Overview: the Energy meter and the anchor radar sit at the right of their tiles again
 - CLAUDE.md: finished changes go live without asking (the user's choice)
+- BoatGuard tile: no alarm badge for an armed camera, "monitoring active", a security camera on the right
 
 ## 1.1
 
