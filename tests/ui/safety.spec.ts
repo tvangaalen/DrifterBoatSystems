@@ -65,3 +65,17 @@ test("Alerts: Send test sends one request", async ({ page }) => {
   await expect(page.locator("#toast")).toContainText("Test alert sent");
   expect(posts.map(p => p.url)).toEqual(["/api/alerts/test"]);
 });
+
+test("Washer: Set program greys out Start now and Schedule until the washer confirms", async ({ page }) => {
+  const posts: Posted[] = [];
+  await setUp(page, { posts });
+  await page.route(/\/api\/washer\/api\/status/, async r => { await new Promise(res => setTimeout(res, 1500)); await r.fallback(); });   // a slow washer
+  await open(page, "#washer", null);
+  await expect(page.locator("#wStart")).toBeEnabled();
+  await page.locator("#wSet").click();
+  await expect(page.locator("#wStart")).toBeDisabled();
+  await expect(page.locator("#wSched")).toBeDisabled();
+  await expect(page.locator("#wSetMsg")).toContainText("applied", { timeout: 15_000 });
+  await expect(page.locator("#wStart")).toBeEnabled();
+  expect(posts.map(p => p.url)[0]).toMatch(/^\/api\/washer\/api\/program\//);
+});

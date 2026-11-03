@@ -17,14 +17,14 @@
 <div class="row"><span class="k">Temperature</span><select class="field" id="wTemp" disabled=""><option value="0">Cold</option><option value="30">30 °C</option><option value="40">40 °C</option><option value="60">60 °C</option></select></div>
 <div class="row"><span class="k">Rinses</span><select class="field" id="wRinse" disabled=""><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
 <div class="row"><span class="k">Spin <small>set by the program</small></span><span class="v" id="wSpin">700 rpm</span></div>
-<div class="row"><span class="hint" id="wSetMsg"></span><button class="btn" id="wSet" type="button">Set</button></div></div></div>
+<div class="row"><span class="hint" id="wSetMsg"></span><button class="btn" id="wSet" type="button">Set program</button></div></div></div>
 </div>
 <div class="stack">
 <div class="card"><div class="hd"><h3>Current program</h3></div><div class="stats" id="wStats"><div class="stat"><div class="l">Program</div><div class="n">Underwear</div></div><div class="stat"><div class="l">Temperature</div><div class="n">40<small>°C</small></div></div><div class="stat"><div class="l">Time left</div><div class="n">58<small>min</small></div></div><div class="stat"><div class="l">Spin</div><div class="n">700<small>rpm</small></div></div></div>
 <div class="card-pad-x"><div class="btns eq">
 <button class="btn" id="wStart" type="button">Start now</button><button class="btn sec" id="wPause" type="button" disabled="">Pause</button></div>
-<p class="u-m-10-2-0 hint" id="wMsg"></p></div>
-<div class="hd sub"><h3>Schedule</h3></div><div class="rows">
+<p class="u-m-10-2-0 hint" id="wMsg"></p></div></div>
+<div class="card"><div class="hd"><h3>Schedule</h3></div><div class="rows">
 <div id="wSchedEdit"><div class="row"><select class="field" id="wSchedMode" aria-label="Schedule type"><option value="finish">Finish at</option><option value="start">Start at</option></select>
 <span class="u-d-flex u-ai-center u-gap-4"><select class="field" id="wSchedH" aria-label="Hour"><option>00</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option></select>:<select class="field" id="wSchedM" aria-label="Minutes"><option>00</option><option>05</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option></select></span></div>
 <div class="row"><span class="hint">Uses the program set on the washer now. The washer must be on and idle.</span><button class="btn" id="wSched" type="button">Schedule</button></div></div>
@@ -32,10 +32,9 @@
 </div>
 </div>
 <div class="u-h-12"></div>
-<div class="card"><div class="hd"><h3>Diagnostics</h3><span id="wDiagSum"><span class="badge warn">Ready with 1 warning(s)</span></span>
-<button class="iconbtn" type="button" id="wRefresh" aria-label="Read the washer now"><svg class="i"><use href="#i-refresh"></use></svg></button></div>
+<details class="card fold" id="wDiagBox"><summary class="hd"><h3>Diagnostics</h3><span id="wDiagSum"><span class="badge warn">Ready with 1 warning(s)</span></span><svg class="i chev"><use href="#i-chev"></use></svg></summary>
 <div class="rows" id="wChecks"><div class="row"><div class="k"><b><span class="warnc">!</span> MIoT communication</b>
-<small>mock warning: slow reply (2100 ms)</small></div></div><details class="row col"><summary class="u-cur-pointer u-minh-28 k"><span class="good">✓</span> 8 checks OK</summary><div class="row"><div class="k"><b><span class="good">✓</span> Python runtime</b>
+<small>mock warning: slow reply (2100 ms)</small></div></div><div class="row"><div class="k"><b><span class="good">✓</span> Python runtime</b>
 <small>3.12 (mock)</small></div></div><div class="row"><div class="k"><b><span class="good">✓</span> python-miio</b>
 <small>0.5.12</small></div></div><div class="row"><div class="k"><b><span class="good">✓</span> Configuration file</b>
 <small>viomi_config.json</small></div></div><div class="row"><div class="k"><b><span class="good">✓</span> Washer IP</b>
@@ -43,10 +42,11 @@
 <small>32 hex characters</small></div></div><div class="row"><div class="k"><b><span class="good">✓</span> Windows PC network</b>
 <small>192.0.2.20</small></div></div><div class="row"><div class="k"><b><span class="good">✓</span> UDP handshake</b>
 <small>192.0.2.10 · 31 ms</small></div></div><div class="row"><div class="k"><b><span class="good">✓</span> Washer identity</b>
-<small>viomi.washer.w1 · firmware 1.0.0 · 140 ms</small></div></div></details></div>
+<small>viomi.washer.w1 · firmware 1.0.0 · 140 ms</small></div></div></div>
 <div class="u-m-4-16-12 stats" id="wInfo"><div class="stat"><div class="l">Controller</div><div class="u-c-fg u-fwt-600 u-fs-14 s">3.8-v59 (mock)</div></div><div class="stat"><div class="l">Uptime</div><div class="u-c-fg u-fwt-600 u-fs-14 s">2 h 14 min</div></div><div class="stat"><div class="l">Washer</div><div class="u-c-fg u-fwt-600 u-fs-14 s">192.0.2.10</div></div><div class="stat"><div class="l">PC</div><div class="u-c-fg u-fwt-600 u-fs-14 s">192.0.2.20</div></div><div class="stat"><div class="l">Model</div><div class="u-c-fg u-fwt-600 u-fs-14 s">viomi.washer.w1</div></div><div class="stat"><div class="l">Firmware</div><div class="u-c-fg u-fwt-600 u-fs-14 s">1.0.0</div></div></div>
-<div class="u-p-0-16-14 btns"><button class="btn sec sm" id="wDiag" type="button"><svg class="i"><use href="#i-refresh"></use></svg> Recheck</button>
-<a class="btn sec sm" href="api/washer/diagnostics/export" download="viomi_diagnostics.json">Export</a></div></div>
+<div class="u-p-0-16-14 btns"><button class="btn sec sm" id="wRefresh" type="button" aria-label="Read the washer now"><svg class="i"><use href="#i-refresh"></use></svg> Read now</button>
+<button class="btn sec sm" id="wDiag" type="button"><svg class="i"><use href="#i-refresh"></use></svg> Recheck</button>
+<a class="btn sec sm" href="api/washer/diagnostics/export" download="viomi_diagnostics.json">Export</a></div></details>
 <h2 class="sec">Events</h2>
 <div class="card"><div class="log" id="wLog"><div class=""><time>16:28:18</time>
 <span class="msg"><b>MOCK</b> · started</span></div></div></div></section>

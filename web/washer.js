@@ -64,14 +64,14 @@ const m = {
           <div class="row"><span class="k">Temperature</span><select class="field" id="wTemp"></select></div>
           <div class="row"><span class="k">Rinses</span><select class="field" id="wRinse"></select></div>
           <div class="row"><span class="k">Spin <small>set by the program</small></span><span class="v" id="wSpin">–</span></div>
-          <div class="row"><span class="hint" id="wSetMsg"></span><button class="btn" id="wSet" type="button">Set</button></div></div></div>
+          <div class="row"><span class="hint" id="wSetMsg"></span><button class="btn" id="wSet" type="button">Set program</button></div></div></div>
       </div>
       <div class="stack">
         <div class="card"><div class="hd"><h3>Current program</h3></div><div class="stats" id="wStats"></div>
           <div class="card-pad-x"><div class="btns eq">
           <button class="btn" id="wStart" type="button">Start now</button><button class="btn sec" id="wPause" type="button">Pause</button></div>
-          <p class="u-m-10-2-0 hint" id="wMsg"></p></div>
-          <div class="hd sub"><h3>Schedule</h3></div><div class="rows">
+          <p class="u-m-10-2-0 hint" id="wMsg"></p></div></div>
+        <div class="card"><div class="hd"><h3>Schedule</h3></div><div class="rows">
           <div id="wSchedEdit"><div class="row"><select class="field" id="wSchedMode" aria-label="Schedule type"><option value="finish">Finish at</option><option value="start">Start at</option></select>
             <span class="u-d-flex u-ai-center u-gap-4"><select class="field" id="wSchedH" aria-label="Hour">${Array.from({length: 24}, (_, i) => `<option>${D.pad(i)}</option>`).join("")}</select>:<select class="field" id="wSchedM" aria-label="Minutes">${Array.from({length: 12}, (_, i) => `<option>${D.pad(i * 5)}</option>`).join("")}</select></span></div>
             <div class="row"><span class="hint">Uses the program set on the washer now. The washer must be on and idle.</span><button class="btn" id="wSched" type="button">Schedule</button></div></div>
@@ -79,12 +79,12 @@ const m = {
       </div>
     </div>
     <div class="u-h-12"></div>
-    <div class="card"><div class="hd"><h3>Diagnostics</h3><span id="wDiagSum"></span>
-          <button class="iconbtn" type="button" id="wRefresh" aria-label="Read the washer now">${icon("refresh")}</button></div>
+    <details class="card fold" id="wDiagBox"><summary class="hd"><h3>Diagnostics</h3><span id="wDiagSum"></span>${icon("chev", "i chev")}</summary>
           <div class="rows" id="wChecks"><div class="empty">Loading…</div></div>
           <div class="u-m-4-16-12 stats" id="wInfo"></div>
-          <div class="u-p-0-16-14 btns"><button class="btn sec sm" id="wDiag" type="button">${icon("refresh")} Recheck</button>
-            <a class="btn sec sm" href="api/washer/diagnostics/export" download="viomi_diagnostics.json">Export</a></div></div>
+          <div class="u-p-0-16-14 btns"><button class="btn sec sm" id="wRefresh" type="button" aria-label="Read the washer now">${icon("refresh")} Read now</button>
+            <button class="btn sec sm" id="wDiag" type="button">${icon("refresh")} Recheck</button>
+            <a class="btn sec sm" href="api/washer/diagnostics/export" download="viomi_diagnostics.json">Export</a></div></details>
     <h2 class="sec">Events</h2>
     <div class="card"><div class="log" id="wLog"></div></div>`;
     const now = new Date(Date.now() + 10 * 60000); now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5);
@@ -176,9 +176,8 @@ function renderDiag() {
   $("wDiagSum").innerHTML = `<span class="badge ${diag.summary_class === "ok" ? "ok" : diag.summary_class === "warn" ? "warn" : "bad"}">${esc(diag.summary)}</span>`;
   const row = c => `<div class="row"><div class="k"><b>${c.ok ? '<span class="good">✓</span>' : c.severity === "warning" ? '<span class="warnc">!</span>' : '<span class="badc">×</span>'} ${esc(c.name)}</b>
     <small>${esc(c.detail)}</small></div></div>`;
-  const checks = diag.checks || [], ok = checks.filter(c => c.ok), open = $("wChecks").querySelector("details[open]") != null;
-  $("wChecks").innerHTML = checks.filter(c => !c.ok).map(row).join("") +   // problems first and always visible; passed checks folded
-    (ok.length ? `<details class="row col" ${open ? "open" : ""}><summary class="u-cur-pointer u-minh-28 k"><span class="good">✓</span> ${ok.length} checks OK</summary>${ok.map(row).join("")}</details>` : "");
+  const checks = diag.checks || [];
+  $("wChecks").innerHTML = [...checks.filter(c => !c.ok), ...checks.filter(c => c.ok)].map(row).join("");   // problems first; the whole card folds
   $("wInfo").innerHTML = [["Controller", diag.controller_version], ["Uptime", diag.uptime], ["Washer", diag.washer_ip], ["PC", diag.pc_ip], ["Model", diag.model || "unknown"], ["Firmware", diag.firmware || "unknown"]]
     .map(([l, v]) => `<div class="stat"><div class="l">${l}</div><div class="u-c-fg u-fwt-600 u-fs-14 s">${esc(v ?? "–")}</div></div>`).join("");
 }
@@ -205,7 +204,8 @@ async function start(e) {
 async function applySettings() {
   const program = +$("wProg").value, temperature = +$("wTemp").value, rinses = +$("wRinse").value, c = CAP[program];
   if (!c || !c.temperatures.includes(temperature) || !c.rinses.includes(rinses)) { $("wSetMsg").textContent = "Invalid settings for this program."; return; }
-  pending = true; editing = false; $("wSet").disabled = true; $("wSet").textContent = "…"; $("wSetMsg").textContent = "Applying settings…";
+  pending = true; editing = false; $("wSet").disabled = true; $("wSet").textContent = "…";
+  for (const id of ["wStart", "wSched"]) $(id).disabled = true;   // until the washer shows the new program (actions() keeps them off while pending) $("wSetMsg").textContent = "Applying settings…";
   try {
     await D.api("washer", `/api/program/${program}`, {});            // program first: it reloads the washer's default profile
     await new Promise(r => setTimeout(r, 800));
@@ -221,7 +221,7 @@ async function applySettings() {
     if (!ok) throw new Error("Washer did not confirm the requested settings");
     m.state.data = lastGood = last; $("wSetMsg").textContent = "Settings applied."; D.toast("Settings applied");
   } catch (e) { $("wSetMsg").textContent = "Update failed: " + e.message; D.toast(e.message, true); }
-  finally { pending = false; $("wSet").textContent = "Set"; D.poll(m, true); }
+  finally { pending = false; $("wSet").textContent = "Set program"; D.poll(m, true); }
 }
 async function schedule(e) {
   const v = `${$("wSchedH").value}:${$("wSchedM").value}`;
