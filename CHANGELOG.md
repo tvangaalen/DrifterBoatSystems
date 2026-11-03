@@ -17,6 +17,8 @@
 - Overview: radar as wide as the Energy meter; BoatGuard tile green while monitoring, red while arming, Phone away and
   Armed red, the camera square red only while armed
 - BoatGuard: the title stays "Monitoring active" while the camera is armed (the Camera box says Armed)
+- BoatGuard tile: an outlined wall camera with a blue sunshield instead of the dome (colours as theme tokens, red in
+  Night)
 
 ## 1.1
 
