@@ -94,8 +94,7 @@ function meter(soc) {
   if (s != null) {
     const a = Math.PI * (1 - s / 100), ux = Math.cos(a), uy = -Math.sin(a), vx = -uy, vy = ux;
     const P = (d, w) => `${f(cx + ux * d + vx * w)},${f(cy + uy * d + vy * w)}`;
-    needle = `<g class="needle"><polygon points="${P(4, 7)} ${P(r + 10, 1.2)} ${P(r + 10, -1.2)} ${P(4, -7)} ${P(-12, -3)} ${P(-12, 3)}"/>
-      <circle class="knob" cx="${cx}" cy="${cy}" r="7"/><circle class="pin" cx="${cx}" cy="${cy}" r="2.5"/></g>`;
+    needle = `<g class="needle"><polygon points="${P(4, 7)} ${P(r + 10, 1.2)} ${P(r + 10, -1.2)} ${P(4, -7)}"/></g>`;   // its foot hides under the pill
   }
   return `<div class="meter" role="img" aria-label="House battery ${s == null ? "unknown" : num(s) + " %"}"><svg viewBox="0 0 124 76" aria-hidden="true">
     <defs><linearGradient id="eMeterBand" x1="0" x2="1"><stop offset="0" class="s0"/><stop offset=".5" class="s1"/><stop offset="1" class="s2"/></linearGradient>

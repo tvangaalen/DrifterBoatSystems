@@ -184,7 +184,8 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .stepper output{min-width:56px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
 
 /* ---------- overview tiles ---------- */
-.tile{display:block;color:inherit;text-decoration:none;padding:14px 16px 16px;position:relative}
+.tile{display:flex;flex-direction:column;color:inherit;text-decoration:none;padding:14px 16px 16px;position:relative}
+.tile>.minis{margin-top:auto;padding-top:12px}   /* the small values sit at the bottom, level across a row of tiles */
 .tile .th{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .tile .th .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--accentbg);color:var(--accent)}
 :root[data-theme="night"] .tile .th .ic{color:var(--fg)}
@@ -209,7 +210,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .gauge.sm{width:64px;height:64px}.gauge.sm b{font-size:16px}
 
 /* SOC meter (Overview tile): half arc red → orange → green with a needle; the SVG comes from energy.js meter() */
-.meter-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.meter-row{display:flex;align-items:center;gap:20px}
 .meter-row>div:first-child{min-width:0}.meter-row .big+.big{margin-top:6px}
 .meter{position:relative;width:124px;flex:none}
 .meter svg{display:block;width:124px;height:76px;overflow:visible}
@@ -221,9 +222,9 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .meter .s0{stop-color:var(--bad)}.meter .s1{stop-color:var(--warn)}.meter .s2{stop-color:var(--ok)}
 .meter .g0{stop-color:var(--meter-sheen)}.meter .g1{stop-color:transparent}
 .meter .needle{filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
-.meter .needle polygon,.meter .needle .knob{fill:var(--fg);stroke:var(--card);stroke-width:1.5;stroke-linejoin:round}
-.meter .needle .pin{fill:var(--card)}
-.meter .pill{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);background:var(--fg);color:var(--card);border-radius:999px;
+.meter .needle polygon{fill:var(--fg);stroke:var(--card);stroke-width:1.5;stroke-linejoin:round}
+.meter .pill{position:absolute;left:50%;bottom:4px;   /* its bottom on the coloured band's (y 72 of 76) */
+  transform:translateX(-50%);background:var(--fg);color:var(--card);border-radius:999px;
   padding:2px 10px;font-weight:750;font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .meter .pill small{font-size:11px;font-weight:650;margin-left:1px}
 
