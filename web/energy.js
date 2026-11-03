@@ -208,26 +208,44 @@ function renderBatt() {
         ${(v.alarms || []).length ? `<div class="row"><span class="k badc">Alarms</span><span class="v badc">${v.alarms.map(esc).join("<br>")}</span></div>` : ""}</div>
       ${cells.length ? `<div class="cells">${cells.map((x, i) => `<div class="cell ${x === hi && hi !== lo ? "hi" : x === lo && hi !== lo ? "lo" : ""}"><div class="cn">${i + 1}</div><div class="cv">${(x / 1000).toFixed(3)}</div></div>`).join("")}</div>` : ""}</div>`;
   };
+  const balOf = n => Object.entries(devs).find(([k]) => k.replace(/\D/g, "") === n)?.[1];
+  // the overview (one iPhone screen): a tile per pack with its balancer and MOSFETs, then the start and bow batteries
+  const pack = name => {
+    const b = bms.batteries[name], n = name.replace(/\D/g, ""), cells = b.cells_mv || [], dv = balOf(n), v = (dv && dv.status) || {};
+    const age = b.captured_at ? (Date.now() - Date.parse(b.captured_at)) / 1000 : null;
+    const st = b.state !== "connected" ? [b.error ? "bad" : "warn", b.state.replace(/_/g, " ")] : age != null && age > 120 ? ["warn", `stale · ${D.dur(age)}`] : null;
+    const bl = !dv ? ["", "no balancer"] : dv.stale ? ["warn", "bal stale"] : dv.error ? ["bad", "bal error"] : v.balance_active ? ["warn", `balancing${v.balance_position != null ? " " + v.balance_position : ""}`] : ["", "bal idle"];
+    const fet = (on, l) => `<span class="badge fet ${on == null ? "" : on ? "ok" : "bad"}">${l} ${on == null ? "–" : on ? "on" : "off"}</span>`;
+    const t = (b.temperatures_c || []).length ? Math.max(...b.temperatures_c) : null;
+    return `<div class="card pack"><b>${esc(name[0] + name.slice(1).toLowerCase())}</b>${meter(b.state_of_charge_percent, "eK" + n, name, "sm")}
+      <b class="num">${num(b.pack_voltage_v, 2)} V</b><small>${num(b.current_a, 1)} A${t != null ? ` · ${num(t, 0)} °C` : ""}</small>
+      ${cellBars(cells)}<small class="${b.cell_spread_mv > 50 ? "warnc" : ""}">Δ ${num(b.cell_spread_mv)} mV</small>
+      ${st ? `<span class="badge ${st[0]}">${esc(st[1])}</span>` : ""}<span class="badge ${bl[0]}">${esc(bl[1])}</span>
+      <div class="fets">${fet(b.charge_mosfet_on, "C")}${fet(b.discharge_mosfet_on, "D")}</div></div>`;
+  };
+  const d = m.state.data, other = d ? ["start", "bow"].map(k => { const b = d.storage[k];
+    return `<div class="card other">${meter(b.soc, "eB" + k, b.label, "sm")}<div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small></div>
+      <div class="v"><b>${num(b.voltage, 2)} V</b><small>${num(b.current, 1)} A</small></div></div>`; }).join("") : "";
+  const balOpen = !!($("eBalFold") || {}).open, balAct = Object.values(devs).filter(dv => (dv.status || {}).balance_active).length;
   box.innerHTML = `
-    <div class="u-mb-12 u-d-flex u-gap-8 u-fw-wrap u-ai-center card pad">
+    <div class="packs">${names.map(pack).join("")}</div><div class="others">${other}</div>
+    <div class="u-mb-12 u-mt-12 u-d-flex u-gap-8 u-fw-wrap u-ai-center card pad">
       <button class="btn sec sm" type="button" id="bms-all-refresh">${icon("refresh")} Read all</button>
       <button class="btn sec sm" type="button" data-all="charge-on">All charge ON</button><button class="btn sec sm" type="button" data-all="charge-off">All charge OFF</button>
       <button class="btn sec sm" type="button" data-all="discharge-on">All discharge ON</button><button class="btn sec sm" type="button" data-all="discharge-off">All discharge OFF</button>
       <button class="btn sec sm" type="button" data-soc="all" ${cs.busy ? "disabled" : ""}>Set all SOC</button>
       <span class="u-flex-1 u-minw-160 hint">${cs.busy ? `<span class="warnc">${esc(cs.message || cs.phase || "Bluetooth busy…")}</span>` : `${bms.connected_count ?? "–"} connected · read every ${bms.refresh_interval_seconds ?? "–"} s`}</span></div>
-    <div class="grid g3">${names.map(bcard).join("")}</div>
-    ${otherBatt()}
-    <h2 class="sec">Balancers</h2><div class="grid g3">${Object.entries(devs).map(balcard).join("") || `<div class="empty">No balancer data</div>`}</div>
+    <h2 class="sec">Pack details</h2><div class="grid g3">${names.map(bcard).join("")}</div>
+    <details class="secfold" id="eBalFold" ${balOpen ? "open" : ""}><summary><h2 class="sec">Balancers<span class="r">${Object.keys(devs).length ? balAct ? `${balAct} balancing` : "all idle" : "no data"} ${icon("chev", "i chev")}</span></h2></summary>
+      <div class="grid g3">${Object.entries(devs).map(balcard).join("") || `<div class="empty">No balancer data</div>`}</div></details>
     ${bleCard()}`;
 }
 
-/** The start and bow batteries (their MasterShunts, from the energy state), each with a small meter. */
-function otherBatt() {
-  const d = m.state.data; if (!d) return "";
-  return `<h2 class="sec">Other batteries</h2><div class="grid g3">
-        <div class="card"><div class="rows">
-          ${["start", "bow"].map(k => { const b = d.storage[k]; return `<div class="row"><div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small>
-            <small>${num(b.voltage, 2)} V · ${num(b.current, 1)} A</small></div>${meter(b.soc, "eB" + k, b.label, "sm")}</div>`; }).join("")}</div></div></div>`;
+/** A pack's cells as small bars: the highest one warn, the lowest one accent; a 40 mV window above the lowest cell. */
+function cellBars(cells) {
+  if (!cells.length) return "";
+  const hi = Math.max(...cells), lo = Math.min(...cells);
+  return `<div class="cellbars" aria-hidden="true">${cells.map(c => `<i class="${c === hi && hi !== lo ? "hi" : c === lo && hi !== lo ? "lo" : ""}" style="height:${Math.round(6 + Math.min(1, (c - lo) / 40) * 16)}px"></i>`).join("")}</div>`;
 }
 
 // Bluetooth diagnostics: the coordinator (who has the radio, who waits) and per device the counters and timings.
