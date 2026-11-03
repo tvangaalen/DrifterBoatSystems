@@ -276,12 +276,18 @@ function bleCard() {
       · reads ${ev.read_ok || 0}${x.signal && x.signal.rssi != null ? ` · ${x.signal.rssi} dBm` : ""}${x.last_error ? `<br><span class="badc">${esc(x.last_error)}</span>` : ""}</small></div>
       <span class="v">${t.count ? `${num(t.avg_ok_seconds, 1)} s` : "–"}<small>connect avg · radio wait p95 ${rw.count ? num(rw.p95_ok_seconds, 1) + " s" : "–"}</small></span></div>`;
   };
-  return `<h2 class="sec">Bluetooth</h2><div class="grid g2"><div class="card"><div class="rows">
+  // both fold to one line (open state survives the re-render on every poll)
+  const open = id => ($(id) || {}).open ? "open" : "", chev = icon("chev", "i chev");
+  const failing = Object.entries(counters).filter(([n, x]) => n !== "balancers" && x && x.consecutive_failures).length;
+  const evs = ((bleEv && bleEv.events) || []).slice().reverse().slice(0, 40), evFail = evs.filter(e => /fail|error|timeout/i.test(e.kind)).length;
+  return `<details class="secfold" id="eBleFold" ${open("eBleFold")}><summary><h2 class="sec">Bluetooth status<span class="r">${c.degraded ? '<span class="warnc">degraded</span>' : c.active ? "busy" : "idle"} · ${c.connected_bms ?? "–"} BMS${failing ? ` · <span class="warnc">${failing} failing</span>` : ""} ${chev}</span></h2></summary>
+    <div class="card"><div class="rows">
       <div class="row"><span class="k">Radio</span><span class="v">${c.degraded ? '<span class="warnc">degraded</span>' : c.active ? esc(String(c.active)) : "idle"}<small>${c.active_for_seconds != null ? `for ${num(c.active_for_seconds, 1)} s · ` : ""}${esc(waiting)}</small></span></div>
       <div class="row"><span class="k">BMS</span><span class="v">${c.connected_bms ?? "–"} connected · ${c.refreshed_bms ?? "–"} read<small>${c.bms_stable_seconds != null ? "stable for " + D.dur(c.bms_stable_seconds) : ""}${c.forced_releases ? ` · ${c.forced_releases} forced releases` : ""}</small></span></div>
       <div class="row"><span class="k">Balancers</span><span class="v">${c.balancers_allowed ? "allowed" : '<span class="warnc">paused for the BMS</span>'}</span></div>
-      ${Object.entries(counters).filter(([n]) => n !== "balancers").map(dev).join("")}</div></div>
-    <div class="card"><div class="hd"><h3>Recent Bluetooth events</h3></div><div class="log">${((bleEv && bleEv.events) || []).slice().reverse().slice(0, 40).map(e => `<div class="${/fail|error|timeout/i.test(e.kind) ? "warn" : ""}"><time>${esc(D.dayTime(Date.parse(e.time)))}</time><span class="msg"><b>${esc(e.device)}</b> ${esc(e.kind.replace(/_/g, " "))}${e.detail ? " · " + esc(e.detail) : ""}</span></div>`).join("") || `<div class="empty">No events</div>`}</div></div></div>`;
+      ${Object.entries(counters).filter(([n]) => n !== "balancers").map(dev).join("")}</div></div></details>
+    <details class="secfold" id="eBleEvFold" ${open("eBleEvFold")}><summary><h2 class="sec">Bluetooth events<span class="r">${evs.length ? `last ${esc(D.hm(Date.parse(evs[0].time)))}` : "none"}${evFail ? ` · <span class="warnc">${evFail} failed</span>` : ""} ${chev}</span></h2></summary>
+    <div class="card"><div class="log">${evs.map(e => `<div class="${/fail|error|timeout/i.test(e.kind) ? "warn" : ""}"><time>${esc(D.dayTime(Date.parse(e.time)))}</time><span class="msg"><b>${esc(e.device)}</b> ${esc(e.kind.replace(/_/g, " "))}${e.detail ? " · " + esc(e.detail) : ""}</span></div>`).join("") || `<div class="empty">No events</div>`}</div></div></details>`;
 }
 
 // ------------------------------------------------------------------ History (reports, manual, database; charts follow)

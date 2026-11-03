@@ -394,7 +394,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 @media (min-width:480px){.allbtns{grid-template-columns:repeat(3,minmax(0,1fr))}}@media (min-width:1000px){.allbtns{grid-template-columns:repeat(6,minmax(0,1fr))}}@media (min-width:700px){.others{grid-template-columns:1fr 1fr}}
 .card.other{display:flex;align-items:center;gap:14px;padding:10px 16px}.card.other .k{flex:1;min-width:0}
 .card.other .k b,.card.other .v b{display:block;font-weight:650}.card.other small{color:var(--muted);font-size:12.5px}.card.other .v{text-align:right;font-variant-numeric:tabular-nums}
-details.secfold>summary{list-style:none;cursor:pointer}details.secfold>summary::-webkit-details-marker{display:none}
+details.secfold>summary{list-style:none;cursor:pointer}details.secfold h2.sec{white-space:nowrap}details.secfold h2.sec .r{min-width:0;overflow:hidden;text-overflow:ellipsis}details.secfold>summary::-webkit-details-marker{display:none}
 details.secfold .chev{color:var(--faint);vertical-align:-3px;transition:transform .2s}details.secfold[open] .chev{transform:rotate(90deg)}
 details.card.fold>summary{list-style:none;cursor:pointer;padding-bottom:14px}   /* a card that folds open from its header */
 details.card.fold>summary::-webkit-details-marker{display:none}
