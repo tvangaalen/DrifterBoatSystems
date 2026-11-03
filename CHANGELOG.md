@@ -4,6 +4,7 @@
 
 - Energy page: the Now tab is Control; the House bank card with the meter, power and Voltage/Current/Temperature boxes;
   House battery is House bank on the Overview too
+- Energy Control: providers/consumers with totals, Other batteries with meters under House bank
 
 ## 1.2
 

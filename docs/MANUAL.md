@@ -48,8 +48,9 @@ and the boat PC.
 Four views at the top of the page. The full description of every value and of how it is measured is in the energy
 manual: History → *Open the manual*.
 
-- **Control:** the house bank (charge on a meter, power, voltage, current, temperature, Float/Bulk state), the sources (shore, charger, alternator,
-  solar), the consumers, and the start and bow batteries.
+- **Control:** the house bank (charge on a meter, power, voltage, current, temperature, Float/Bulk state), the start and bow batteries (each with
+  a smaller meter), the energy providers (shore, charger, alternator, solar; total DC in at the top) and the energy consumers
+  (total DC out at the top).
   - **Modes** switch several devices at once: *Motor*, *Anchor*, *Marina*, *Sail*; the active mode is marked until a
     single control changes. A mode never switches the Engine ECU off.
   - **Controls:** inverter, charger, AC support, the AC input limit, alternator, solar, the start and bow chargers and the
