@@ -6,6 +6,8 @@
 - Overview: the Energy meter sits right after its text, the pill on the dial's bottom; the small values sit at the
   bottom of every tile
 - Overview: the Energy meter's needle is only its tip, clear of the percentage pill
+- Overview: the anchor tile shows a swing radar (limit circle, max swing, track, boat) in green, orange or red; grey and
+  dashed when no anchor is set
 
 ## 1.1
 
