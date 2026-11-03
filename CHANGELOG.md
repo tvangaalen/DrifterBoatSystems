@@ -19,6 +19,8 @@
 - Batteries tab: flow in watts on the start/bow batteries and the House bank; Pack details folds, with an alarm row and
   the SOC on the charging/discharging curve (GET /api/bms adds it per battery, display only)
 - Batteries tab: Balancers section removed (each pack tile shows its balancer)
+- Anchor watch map measures its box again when it is shown or resized (a window resized on another page left it drawing
+  one tile in the corner)
 
 ## 1.2
 
