@@ -8,6 +8,7 @@
 - Overview: the Energy meter's needle is only its tip, clear of the percentage pill
 - Overview: the anchor tile shows a swing radar (limit circle, max swing, track, boat) in green, orange or red; grey and
   dashed when no anchor is set
+- Overview: the anchor tile's text at the top like the Energy tile's, the radar right after it
 
 ## 1.1
 
