@@ -57,11 +57,11 @@ const m = {
     el.innerHTML = `<div id="wDown"></div>
     <div class="grid g2">
       <div class="stack">
-        <div class="hero" id="wHero"><div class="lamp"></div><div class="grow"><b id="wHeroT">Loading…</b><span id="wHeroS"></span></div></div>
+        <div class="hero" id="wHero"><div class="lamp"></div><div class="grow"><b id="wHeroT">Loading…</b><span id="wHeroS"></span></div>
+          <span class="hero-sw">Power ${D.sw("wPower", false, 'aria-label="Washer power"')}</span></div>
         <div class="stats" id="wStats"></div>
         <div class="card pad"><div class="btns eq">
           <button class="btn" id="wStart" type="button">Start</button><button class="btn sec" id="wPause" type="button">Pause</button></div>
-          <div class="u-mt-8 btns eq"><button class="btn sec" id="wOn" type="button">Power on</button><button class="btn sec" id="wOff" type="button">Power off</button></div>
           <p class="u-m-10-2-0 hint" id="wMsg"></p></div>
         <div class="card"><div class="hd"><h3>Diagnostics</h3><span id="wDiagSum"></span>
           <button class="iconbtn" type="button" id="wRefresh" aria-label="Read the washer now">${icon("refresh")}</button></div>
@@ -94,12 +94,13 @@ const m = {
     $("wSet").addEventListener("click", applySettings);
     $("wStart").addEventListener("click", start);
     $("wPause").addEventListener("click", e => cmd(e.target, "/api/pause", "Paused"));
-    $("wOn").addEventListener("click", e => cmd(e.target, "/api/power/on", "Power on"));
-    $("wOff").addEventListener("click", async e => {
+    $("wPower").addEventListener("change", async e => {
+      const el = /** @type {HTMLInputElement} */ (e.target), want = el.checked;
+      if (want) return cmd(el, "/api/power/on", "Power on");
       const d = m.state.data, sc = d && d.schedule;
       if (sc && ["pending", "starting", "started", "running"].includes(sc.status) &&
-        !(await D.confirm({title: "Power off the washer?", text: "This also cancels or interrupts the schedule.", ok: "Power off", cancel: "Keep on"}))) return;
-      cmd(e.target, "/api/power/off", "Power off");
+        !(await D.confirm({title: "Power off the washer?", text: "This also cancels or interrupts the schedule.", ok: "Power off", cancel: "Keep on"}))) { el.checked = true; return; }
+      cmd(el, "/api/power/off", "Power off");
     });
     $("wSched").addEventListener("click", schedule);
     $("wSchedCancel").addEventListener("click", e => cmd(e.target, "/api/schedule/cancel", "Schedule cleared", {}));
@@ -117,7 +118,7 @@ const m = {
     if (offline() || !d) {
       $("wHero").className = "hero warn"; $("wHeroT").textContent = offline() ? "Washer offline" : "Not connected";
       $("wHeroS").textContent = offline() ? `${m.state.err.message}${lastSeen ? ` · last seen ${hm(lastSeen)}` : ""}` : "";
-      for (const id of ["wStart", "wPause", "wOn", "wOff", "wSet", "wSched", "wProg", "wTemp", "wRinse"]) $(id).disabled = true;
+      for (const id of ["wStart", "wPause", "wPower", "wSet", "wSched", "wProg", "wTemp", "wRinse"]) $(id).disabled = true;
       renderEvents(); renderDiag(); if (!d) { $("wStats").innerHTML = ""; return; }
     } else {
       const s = display(d), st = Number(d.status);
@@ -149,8 +150,9 @@ function actions(d) {
   $("wSet").disabled = pending || !conf || active || faulted;
   $("wStart").disabled = pending || !startOk || active || faulted;
   $("wPause").disabled = pending || !active;
-  $("wOn").disabled = pending || power;
-  $("wOff").disabled = pending || !power || (active && !door);
+  const pw = /** @type {HTMLInputElement} */ ($("wPower"));
+  if (!pending) pw.checked = power;
+  pw.disabled = pending || (power && active && !door);       // no power off in the middle of a wash (as the old Power off button)
   $("wSched").disabled = pending || !conf || active || faulted || hasSched;
   $("wProg").disabled = !conf;
   const c = CAP[+$("wProg").value] || {temperatures: [], rinses: []};

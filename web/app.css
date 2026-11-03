@@ -132,6 +132,7 @@ h2.sec .r{text-transform:none;letter-spacing:0;font-weight:500}
 .hero.warn{background:var(--warnbg);border-color:transparent}.hero.warn .lamp{background:var(--warn)}
 .hero.bad{background:var(--badbg);border-color:transparent}.hero.bad .lamp{background:var(--bad);animation:pulse 1.2s infinite}
 .hero .grow{flex:1;min-width:0}
+.hero-sw{display:flex;align-items:center;gap:10px;flex:none;font-size:14px;font-weight:600;color:var(--muted);}   /* a switch at the right of a hero */
 @keyframes pulse{50%{opacity:.35}}
 
 /* badges */
