@@ -50,11 +50,13 @@ manual: History → *Open the manual*.
 
 - **Control:** the house bank (charge on a meter, power, voltage, current, temperature, Float/Bulk state), the start and bow batteries (each with
   a smaller meter), the energy providers (shore, charger, alternator, solar; total DC in at the top) and the energy consumers
-  (total DC out at the top).
+  (with a minus sign, as they take power; total DC out at the top).
   - **Modes** switch several devices at once: *Motor*, *Anchor*, *Marina*, *Sail*; the active mode is marked until a
     single control changes. A mode never switches the Engine ECU off.
-  - **Controls:** inverter, charger, AC support, the AC input limit, alternator, solar, the start and bow chargers and the
-    Engine ECU. A switch keeps showing the real state until the system has read the new state back.
+  - **Switches** sit on their own line: the charger, alternator and solar under the providers; the inverter, the start
+    and bow chargers and the Engine ECU under the consumers (a greyed-out switch is not verified on the boat yet). AC
+    support and the AC input limit are in the CombiMaster card. A switch keeps showing the real state until the system
+    has read the new state back.
   - **Engine ECU off** always asks first, with *Keep ECU ON* as the default: switching it off stops a running engine.
     *Alternator off* asks too (*Keep Alternator ON*).
 - **Batteries:** per battery the cells, temperatures, MOSFETs (charge and discharge) and SOC calibration; the balancers;
