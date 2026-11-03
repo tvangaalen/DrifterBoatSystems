@@ -86,8 +86,9 @@ const m = {
           <div class="u-p-0-16-14 btns"><button class="btn sec sm" id="wRefresh" type="button" aria-label="Read the washer now">${icon("refresh")} Read now</button>
             <button class="btn sec sm" id="wDiag" type="button">${icon("refresh")} Recheck</button>
             <a class="btn sec sm" href="api/washer/diagnostics/export" download="viomi_diagnostics.json">Export</a></div></details>
-    <h2 class="sec">Events</h2>
-    <div class="card"><div class="log" id="wLog"></div></div>`;
+    <div class="u-h-12"></div>
+    <details class="card fold" id="wEvBox"><summary class="hd"><h3>Events</h3><span id="wEvSum"></span>${icon("chev", "i chev")}</summary>
+      <div class="log" id="wLog"></div></details>`;
     const now = new Date(Date.now() + 10 * 60000); now.setMinutes(Math.ceil(now.getMinutes() / 5) * 5);
     $("wSchedH").value = D.pad(now.getHours()); $("wSchedM").value = D.pad(now.getMinutes());   // own 24-hour fields: <input type=time> follows the device (AM/PM)
     $("wProg").addEventListener("change", () => { editing = true; const c = CAP[+$("wProg").value]; fillCaps(+$("wProg").value, c.temperatures[0], c.rinses[0]); });
@@ -183,6 +184,9 @@ function renderDiag() {
     .map(([l, v]) => `<div class="stat"><div class="l">${l}</div><div class="u-c-fg u-fwt-600 u-fs-14 s">${esc(v ?? "–")}</div></div>`).join("");
 }
 function renderEvents() {
+  const bad = events.filter(e => /FAIL|BLOCKED|OFFLINE/.test(e.event + e.detail)).length;   // the folded card's one line
+  $("wEvSum").innerHTML = !events.length ? "" : bad ? `<span class="badge warn">${bad} failed</span>`
+    : `<span class="badge plain">${events.length} · last ${esc(String(events[0].time || "").slice(-8, -3))}</span>`;
   $("wLog").innerHTML = events.length ? events.map(e => `<div class="${/FAIL|BLOCKED|OFFLINE/.test(e.event + e.detail) ? "bad" : ""}"><time>${esc(e.time)}</time>
     <span class="msg"><b>${esc(e.event)}</b>${e.detail ? " · " + esc(e.detail) : ""}${e.duration_ms != null ? ` <span class="faint">${e.duration_ms} ms</span>` : ""}</span></div>`).join("")
     : `<div class="empty">No events yet</div>`;
