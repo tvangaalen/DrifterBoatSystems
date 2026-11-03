@@ -38,7 +38,7 @@ const m = {
     if (!s.enabled) return {cls: "", title: "Monitoring off", sub: "BoatGuard will not arm the camera"};
     let r;
     if (s.test_running) r = {cls: "warn", title: "Camera test running…", sub: ""};
-    else if (s.armed_by_us) r = {cls: "ok", title: "Camera armed", sub: `Phone away since ${hms(s.last_seen)}`};
+    else if (s.armed_by_us) r = {cls: "ok", title: "Monitoring active", sub: `Phone away since ${hms(s.last_seen)}`};
     else if (s.arm_at) r = {cls: "warn", title: `Arming at ${hms(s.arm_at)}`, sub: `in ${dur(s.arm_at - now)} · phone away since ${hms(s.last_seen)}`};
     else if (s.present) r = {cls: "ok", title: "Monitoring active", sub: "The camera is armed once the phone leaves the boat"};
     else r = {cls: "warn", title: "Waiting for the first check…", sub: ""};
