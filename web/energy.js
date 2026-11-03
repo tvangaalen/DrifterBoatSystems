@@ -111,10 +111,9 @@ function meter(soc, id, label = "House bank", cls = "") {
 function flowRow(x, ic, kind, sub, live, ctl = undefined, out = false) {
   const w = x.power, act = live ?? (w != null && w > 2);
   return `<div class="flow"><span class="ic ${kind} ${act ? "on" : ""}">${icon(ic)}</span><div class="nm"><b>${esc(x.label)}</b><small>${sub}</small></div>
-    <div class="w">${out ? minus(w) : ""}${W(w)}<small>${num(x.voltage, 1)} V · ${num(x.current, 1)} A</small></div>${ctl ?? ""}</div>`;
+    <div class="w">${out ? outW(w) : W(w)}<small>${num(x.voltage, 1)} V · ${num(x.current, 1)} A</small></div>${ctl ?? ""}</div>`;
 }
 const NOSW = `<span class="sw-gap"></span>`;   // in place of a switch: keeps the values in line
-const minus = w => w != null && w >= 0.5 ? "−" : "";
 function floatText(f) {
   if (!f) return ["", "–"];
   if (!f.enabled) return ["", "Float protection off"];
@@ -152,12 +151,9 @@ function renderNow() {
             <div class="mini"><div class="l">Temperature</div><div class="n">${h.temperature != null ? num(h.temperature, 1) + " °C" : "–"}</div></div></div>
           <div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ${fc}">${esc(ft)}</span>${h.soc == null ? `<span class="badge warn">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span>` : ""}</div>
         </div>
-        <div class="card"><div class="hd">${icon("batt")}<h3>Other batteries</h3></div><div class="rows">
-          ${["start", "bow"].map(k => { const b = d.storage[k]; return `<div class="row"><div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small>
-            <small>${num(b.voltage, 2)} V · ${num(b.current, 1)} A</small></div>${meter(b.soc, "eB" + k, b.label, "sm")}</div>`; }).join("")}</div></div>
         <div class="card"><div class="hd">${icon("sun")}<h3>Energy providers</h3><span class="muted num">Total DC in ${W(t.dc_input_power)}</span></div><div class="rows">
           ${Object.entries(s).map(([k, x]) => flowRow(x, SRC_IC[k][0], SRC_IC[k][1], esc(srcSub[k]), k === "shore" ? x.connected : k === "alternator" ? x.running : undefined, srcCtl[k] ?? NOSW)).join("")}</div></div>
-        <div class="card"><div class="hd">${icon("load")}<h3>Energy consumers</h3><span class="muted num">Total DC out ${minus(t.consumer_power)}${W(t.consumer_power)}</span></div><div class="rows">
+        <div class="card"><div class="hd">${icon("load")}<h3>Energy consumers</h3><span class="muted num">Total DC out ${outW(t.consumer_power)}</span></div><div class="rows">
           ${Object.entries(c).map(([k, x]) => flowRow(x, LOAD_IC[k] || "load", "load", esc(loadSub(k, x)), undefined, loadCtl[k] ?? NOSW, true)).join("")}</div></div>
       </div>
       <div class="stack">
@@ -220,8 +216,18 @@ function renderBatt() {
       <button class="btn sec sm" type="button" data-soc="all" ${cs.busy ? "disabled" : ""}>Set all SOC</button>
       <span class="u-flex-1 u-minw-160 hint">${cs.busy ? `<span class="warnc">${esc(cs.message || cs.phase || "Bluetooth busy…")}</span>` : `${bms.connected_count ?? "–"} connected · read every ${bms.refresh_interval_seconds ?? "–"} s`}</span></div>
     <div class="grid g3">${names.map(bcard).join("")}</div>
+    ${otherBatt()}
     <h2 class="sec">Balancers</h2><div class="grid g3">${Object.entries(devs).map(balcard).join("") || `<div class="empty">No balancer data</div>`}</div>
     ${bleCard()}`;
+}
+
+/** The start and bow batteries (their MasterShunts, from the energy state), each with a small meter. */
+function otherBatt() {
+  const d = m.state.data; if (!d) return "";
+  return `<h2 class="sec">Other batteries</h2><div class="grid g3">
+        <div class="card"><div class="rows">
+          ${["start", "bow"].map(k => { const b = d.storage[k]; return `<div class="row"><div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small>
+            <small>${num(b.voltage, 2)} V · ${num(b.current, 1)} A</small></div>${meter(b.soc, "eB" + k, b.label, "sm")}</div>`; }).join("")}</div></div></div>`;
 }
 
 // Bluetooth diagnostics: the coordinator (who has the radio, who waits) and per device the counters and timings.
