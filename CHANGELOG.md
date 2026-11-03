@@ -32,6 +32,7 @@
 - Washer page: Events folded to one line (count and last time, orange when one failed) like Diagnostics
 - Overview: the Washer tile shows a graphite washing machine on the right (its display shows the time left), like
   BoatGuard's camera
+- BoatGuard page: the Monitoring switch in the ON/OFF style of the washer's power switch (Drifter.sw takes a style)
 
 ## 1.1
 
