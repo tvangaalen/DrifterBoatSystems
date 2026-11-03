@@ -216,7 +216,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 /* Swing radar (Overview anchor tile, anchor.js radar()): limit circle, max swing, track and boat around the anchor */
 .radar-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}   /* text at the top, as in the Energy tile */
 .radar-row>div:first-child{min-width:0}.radar-row .big+.big{margin-top:6px}
-.radar{--rc:var(--ok);width:110px;height:110px;flex:none;overflow:visible}
+.radar{--rc:var(--ok);width:124px;height:124px;flex:none;overflow:visible}
 .radar.warn{--rc:var(--warn)}.radar.bad{--rc:var(--bad)}.radar.off{--rc:var(--faint)}
 .radar .lim{fill:color-mix(in srgb,var(--rc) 12%,transparent);stroke:var(--rc);stroke-width:2.5}
 .radar.off .lim{fill:none;stroke-width:2;stroke-dasharray:4 5}
@@ -229,18 +229,16 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 @keyframes radar-ping{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.8);opacity:0}}
 @media (prefers-reduced-motion:reduce){.radar .ping{animation:none;opacity:.35}}
 
-/* BoatGuard tile: a ceiling dome camera (guard.js domeCam, colours --cam-*) on a square tinted green while monitoring,
-   accent while armed, grey when off */
+/* BoatGuard tile: a ceiling dome camera (guard.js domeCam, colours --cam-*) on a plain square, red while the camera is armed */
 .guard-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
 .guard-row>div:first-child{min-width:0}
-.guard-cam{--gc:var(--ok);width:64px;height:64px;border-radius:18px;flex:none;display:grid;place-items:center;color:var(--gc);
-  background:color-mix(in srgb,var(--gc) 14%,transparent)}
+.guard-cam{width:64px;height:64px;border-radius:18px;flex:none;display:grid;place-items:center;background:var(--card2)}
 .guard-cam svg{width:52px;height:52px}
 .dome .c0{stop-color:var(--cam-0)}.dome .c1{stop-color:var(--cam-1)}.dome .c2{stop-color:var(--cam-2)}
 .dome .g0{stop-color:var(--cam-glass-0)}.dome .g1{stop-color:var(--cam-glass-1)}
 .dome .l0{stop-color:var(--cam-lens-0)}.dome .l1{stop-color:var(--cam-lens-1)}.dome .l2{stop-color:var(--cam-lens-2)}.dome .l3{stop-color:var(--cam-lens-3)}
 .dome .edge{stroke:var(--cam-2)}.dome .dark{fill:var(--cam-dark)}.dome .shine{fill:var(--cam-shine)}.dome .gloss{fill:none;stroke:var(--cam-shine);stroke-opacity:.55;stroke-width:3;stroke-linecap:round}
-.guard-cam.armed{--gc:var(--accent)}.guard-cam.warn{--gc:var(--warn)}.guard-cam.off{--gc:var(--faint)}
+.guard-cam.armed{background:color-mix(in srgb,var(--bad) 20%,transparent)}
 
 /* SOC meter (Overview tile): half arc red → orange → green with a needle; the SVG comes from energy.js meter() */
 .meter-row{display:flex;align-items:center;justify-content:space-between;gap:20px}
