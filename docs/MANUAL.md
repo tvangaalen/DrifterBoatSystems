@@ -61,8 +61,10 @@ manual: History → *Open the manual*.
 - **Batteries:** at the top an overview that fits one iPhone screen: the start and bow batteries with their meters,
   then the *House bank* frame with a tile per pack: its meter, voltage, current, temperature, cells (highest orange,
   lowest blue), the average cell voltage, the spread, when it was last read, its balancer, the ON/OFF switches for the
-  charge (C) and discharge (D) MOSFETs and *Set SOC*. Below: the buttons for all packs, *Pack details* per battery, the
-  balancers (folded: tap to open);
+  charge (C) and discharge (D) MOSFETs and *Set SOC*. Below: the buttons for all packs; *Pack details*, one table with a
+  column per pack (read time, SOC, Ah left, voltage, current, temperature, cycles, each cell, the average cell voltage and the
+  maximum cell difference) and a *House* column (house SOC and voltage, the sums, the hottest pack, average and difference
+  over all cells); the balancers (folded: tap to open);
   Bluetooth diagnostics and recent Bluetooth events. Every action that could cut power asks first, the safe choice being
   the default.
 - **History:** charts of the state of charge, sources, DC consumers, battery current and cell spread for 6 hours up to 31

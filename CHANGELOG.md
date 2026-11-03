@@ -13,6 +13,8 @@
   balancers folded
 - Batteries tab: start and bow on top, House bank frame, per pack ON/OFF MOSFET switches, Set SOC, average cell voltage
   and a steady Read line; equal buttons
+- Batteries tab: Pack details as one compact table with a House column (voltage, average cell voltage, maximum
+  difference)
 
 ## 1.2
 
