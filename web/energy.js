@@ -211,19 +211,6 @@ function renderBatt() {
         SOC curve: what the average cell voltage means on the LiFePO4 charging and discharging curve (the values <i>Set SOC</i> offers).</p></details>`;
   };
   const devs = (bal && bal.devices) || {};
-  const balcard = ([name, dv]) => {
-    const v = dv.status || {}, cells = v.cells_mv || [], hi = cells.length ? Math.max(...cells) : null, lo = cells.length ? Math.min(...cells) : null;
-    const n = name.replace(/\D/g, "");
-    const st = dv.stale ? ["warn", "stale"] : dv.error ? ["bad", "error"] : dv.state === "connected" || cells.length ? ["ok", dv.last_success_age_seconds != null ? `${D.dur(dv.last_success_age_seconds)} ago` : "ok"] : ["", dv.state || "–"];
-    return `<div class="card"><div class="hd">${icon("refresh")}<h3>${esc(name)}</h3><span class="badge ${st[0]}">${esc(st[1])}</span>
-        <button class="iconbtn" type="button" data-bal-refresh="${n}" aria-label="Read ${esc(name)} now">${icon("refresh")}</button></div>
-      ${dv.error ? `<div class="u-p-0-16-8 err">${esc(dv.error)}</div>` : ""}
-      <div class="rows"><div class="row"><span class="k">Balancing</span><span class="v">${v.balance_active ? `<span class="warnc">active</span>${v.balance_position != null ? `<small>position ${esc(v.balance_position)}</small>` : ""}` : v.valid_frame_count ? "idle" : "–"}</span></div>
-        <div class="row"><span class="k">Pack</span><span class="v">${num(v.pack_voltage_v, 2)} V${v.reported_current_a != null ? ` · ${num(v.reported_current_a, 2)} A` : ""}<small>${(v.temperatures_c || []).map(x => num(x, 0) + " °C").join(" · ")}</small></span></div>
-        <div class="row"><span class="k">Cell delta</span><span class="v ${v.cell_delta_mv > 50 ? "warnc" : ""}">${num(v.cell_delta_mv ?? (hi != null ? hi - lo : null))} mV<small>${v.average_cell_mv != null ? `average ${num(v.average_cell_mv)} mV` : ""}</small></span></div>
-        ${(v.alarms || []).length ? `<div class="row"><span class="k badc">Alarms</span><span class="v badc">${v.alarms.map(esc).join("<br>")}</span></div>` : ""}</div>
-      ${cells.length ? `<div class="cells">${cells.map((x, i) => `<div class="cell ${x === hi && hi !== lo ? "hi" : x === lo && hi !== lo ? "lo" : ""}"><div class="cn">${i + 1}</div><div class="cv">${(x / 1000).toFixed(3)}</div></div>`).join("")}</div>` : ""}</div>`;
-  };
   const balOf = n => Object.entries(devs).find(([k]) => k.replace(/\D/g, "") === n)?.[1];
   // the overview (one iPhone screen): the start and bow batteries, then the house bank with a tile per pack (its balancer,
   // MOSFET switches and Set SOC). Every line is always there, so a read in progress never changes a tile's height.
@@ -247,7 +234,6 @@ function renderBatt() {
     return `<div class="card other">${meter(b.soc, "eB" + k, b.label, "sm")}<div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small></div>
       <div class="v"><b>${flowW(b.power)}</b><small>${num(b.voltage, 2)} V · ${num(b.current, 1)} A</small></div></div>`; }).join("") : "";
   const hb = d && d.storage.house;
-  const balOpen = !!($("eBalFold") || {}).open, balAct = Object.values(devs).filter(dv => (dv.status || {}).balance_active).length;
   box.innerHTML = `
     <div class="others">${other}</div>
     <div class="card bankbox"><div class="hd">${icon("batt")}<h3>House bank</h3>${hb ? `<span class="muted num">${esc(hb.battery_type || hb.chemistry || "LiFePO4")}${hb.capacity ? ` · ${num(hb.capacity)} ${esc(hb.capacity_unit || "Ah")}` : ""}</span><b class="num">${flowW(hb.power)}</b>` : ""}</div>
@@ -259,8 +245,6 @@ function renderBatt() {
       <button class="btn sec sm" type="button" data-soc="all" ${cs.busy ? "disabled" : ""}>Set all SOC</button></div>
       <span class="u-mt-8 hint">${cs.busy ? `<span class="warnc">${esc(cs.message || cs.phase || "Bluetooth busy…")}</span>` : `${bms.connected_count ?? "–"} connected · read every ${bms.refresh_interval_seconds ?? "–"} s`}</span></div>
     ${details()}
-    <details class="secfold" id="eBalFold" ${balOpen ? "open" : ""}><summary><h2 class="sec">Balancers<span class="r">${Object.keys(devs).length ? balAct ? `${balAct} balancing` : "all idle" : "no data"} ${icon("chev", "i chev")}</span></h2></summary>
-      <div class="grid g3">${Object.entries(devs).map(balcard).join("") || `<div class="empty">No balancer data</div>`}</div></details>
     ${bleCard()}`;
 }
 
@@ -562,7 +546,6 @@ async function onClick(e) {
     return D.run(m, b, () => D.api("power", "/api/reports/battery-health", {days}), "Report started").catch(() => {});
   }
   if (b.dataset.bmsRefresh) return D.run(null, b, () => D.api("power", `/api/bms/${b.dataset.bmsRefresh}/refresh`, {}), "Reading battery…").then(() => setTimeout(() => D.poll(m, true), 2500)).catch(() => {});
-  if (b.dataset.balRefresh) return D.run(null, b, () => D.api("power", `/api/balancers/${b.dataset.balRefresh}/refresh`, {}), "Reading balancer…").then(() => D.poll(m, true)).catch(() => {});
   if (b.id === "bms-all-refresh") return D.run(null, b, () => Promise.all([D.api("power", "/api/bms/refresh", {}), D.api("power", "/api/balancers/refresh", {})]), "Reading all…").then(() => setTimeout(() => D.poll(m, true), 3000)).catch(() => {});
   if (b.dataset.all) {
     const a = b.dataset.all, off = a.endsWith("off"), what = a.split("-")[0];
