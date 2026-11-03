@@ -127,9 +127,8 @@ def run(client) -> dict:
 
 def old_client(tree):
     sys.path.insert(0, tree)
-    from fastapi.testclient import TestClient
-
     import app as old_app
+    from fastapi.testclient import TestClient
 
     return TestClient(old_app.app)
 

@@ -147,7 +147,7 @@ def check(files: list[str], dry: bool) -> None:
     print(f"tests for {len(files)} changed file(s): suites {', '.join(p['suites']) or '-'}; browser {p['ui'] or '-'}"
           f"; type check {'yes' if p['typecheck'] else 'no'}; ruff {', '.join(p['ruff']) or '-'}")
     if dry: return
-    for d in p["ruff"]: step(f"ruff {d}", ["py", "-3.12", "-m", "ruff", "check", d])
+    for d in p["ruff"]: step(f"ruff {d}", ["py", "-3.12", "-m", "ruff", "check", "--no-cache", d])   # the cache once hid an error CI found
     if p["typecheck"]: step("type check", [shutil.which("npm") or "npm", "run", "typecheck"])
     if p["suites"]: step("python tests", [py(), "tests/run_all.py", "quick", *p["suites"]])
     if p["ui"]:
