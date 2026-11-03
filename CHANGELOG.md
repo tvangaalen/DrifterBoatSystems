@@ -9,6 +9,8 @@
   the pill
 - Controls stand out in dark (own --ctl tokens for secondary buttons, segments, steppers); Other batteries moved to the
   Batteries tab
+- Batteries tab: one-screen overview with a meter, cells, balancer and MOSFET state per pack, start and bow batteries;
+  balancers folded
 
 ## 1.2
 
