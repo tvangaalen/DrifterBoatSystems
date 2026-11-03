@@ -87,8 +87,8 @@ const m = {
 
 /** House SOC as a half arc, red (empty) → orange → green (full), with a needle; no needle without a SOC. `id` keeps the
  * gradients apart: the Overview tile and the Control view are both in the page, and a hidden copy would blank the other.
- * @param {number | null | undefined} soc @param {string} id */
-function meter(soc, id) {
+ * @param {number | null | undefined} soc @param {string} id @param {string} [label] @param {string} [cls] "sm" for the smaller one */
+function meter(soc, id, label = "House bank", cls = "") {
   const s = soc == null || !isFinite(+soc) ? null : Math.min(100, Math.max(0, +soc)), cx = 62, cy = 64, r = 48, f = v => v.toFixed(1);
   const arc = rr => `M ${cx - rr} ${cy} A ${rr} ${rr} 0 0 1 ${cx + rr} ${cy}`;
   let needle = "";
@@ -97,7 +97,7 @@ function meter(soc, id) {
     const P = (d, w) => `${f(cx + ux * d + vx * w)},${f(cy + uy * d + vy * w)}`;
     needle = `<g class="needle"><polygon points="${P(28, 4.5)} ${P(r + 10, 1.2)} ${P(r + 10, -1.2)} ${P(28, -4.5)}"/></g>`;   // only the tip: clear of the pill
   }
-  return `<div class="meter" role="img" aria-label="House bank ${s == null ? "unknown" : num(s) + " %"}"><svg viewBox="0 0 124 76" aria-hidden="true">
+  return `<div class="meter${cls ? " " + cls : ""}" role="img" aria-label="${esc(label)} ${s == null ? "unknown" : num(s) + " %"}"><svg viewBox="0 0 124 76" aria-hidden="true">
     <defs><linearGradient id="${id}Band" x1="0" x2="1"><stop offset="0" class="s0"/><stop offset=".5" class="s1"/><stop offset="1" class="s2"/></linearGradient>
       <linearGradient id="${id}Sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset=".55" class="g1"/></linearGradient></defs>
     <path class="track" d="${arc(r)}"/><path class="band glow" d="${arc(r)}" stroke="url(#${id}Band)"/><path class="band" d="${arc(r)}" stroke="url(#${id}Band)"/>
@@ -141,18 +141,13 @@ function renderNow() {
             <div class="mini"><div class="l">Temperature</div><div class="n">${h.temperature != null ? num(h.temperature, 1) + " °C" : "–"}</div></div></div>
           <div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ${fc}">${esc(ft)}</span>${h.soc == null ? `<span class="badge warn">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span>` : ""}</div>
         </div>
-        <div class="stats s4">
-          <div class="stat"><div class="l">${icon("sun")} Solar</div><div class="n">${W(s.solar.power)}</div><div class="s">${esc(s.solar.state || "–")}</div></div>
-          <div class="stat"><div class="l">${icon("plug")} Shore</div><div class="n">${s.shore.connected ? W(s.shore.power) : "–"}</div><div class="s">${s.shore.connected ? num(s.shore.voltage) + " V" : "not connected"}</div></div>
-          <div class="stat"><div class="l">DC in</div><div class="n">${W(t.dc_input_power)}</div><div class="s">charging sources</div></div>
-          <div class="stat"><div class="l">DC load</div><div class="n">${W(t.consumer_power)}</div><div class="s">AC ${W(t.ac_consumer_power)}</div></div>
-        </div>
-        <div class="card"><div class="hd">${icon("sun")}<h3>Sources</h3></div><div class="rows">
-          ${Object.entries(s).map(([k, x]) => flowRow(x, SRC_IC[k][0], SRC_IC[k][1], esc(srcSub[k]), k === "shore" ? x.connected : k === "alternator" ? x.running : undefined)).join("")}</div></div>
-        <div class="card"><div class="hd">${icon("load")}<h3>Consumers</h3><span class="muted num">${W(t.consumer_power)}</span></div><div class="rows">
-          ${Object.entries(c).map(([k, x]) => flowRow(x, LOAD_IC[k] || "load", "load", esc(x.charge_state || (x.estimated ? "estimated" : x.kind || "")))).join("")}</div></div>
         <div class="card"><div class="hd">${icon("batt")}<h3>Other batteries</h3></div><div class="rows">
-          ${["start", "bow"].map(k => { const b = d.storage[k]; return `<div class="flow"><span class="ic batt ${b.current > 0.2 ? "on" : ""}">${icon("batt")}</span><div class="nm"><b>${esc(b.label)}</b><small>${b.soc != null ? num(b.soc) + "% · " : ""}${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small></div><div class="w">${num(b.voltage, 2)} V<small>${num(b.current, 1)} A</small></div></div>`; }).join("")}</div></div>
+          ${["start", "bow"].map(k => { const b = d.storage[k]; return `<div class="row"><div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small>
+            <small>${num(b.voltage, 2)} V · ${num(b.current, 1)} A</small></div>${meter(b.soc, "eB" + k, b.label, "sm")}</div>`; }).join("")}</div></div>
+        <div class="card"><div class="hd">${icon("sun")}<h3>Energy providers</h3><span class="muted num">Total DC in ${W(t.dc_input_power)}</span></div><div class="rows">
+          ${Object.entries(s).map(([k, x]) => flowRow(x, SRC_IC[k][0], SRC_IC[k][1], esc(srcSub[k]), k === "shore" ? x.connected : k === "alternator" ? x.running : undefined)).join("")}</div></div>
+        <div class="card"><div class="hd">${icon("load")}<h3>Energy consumers</h3><span class="muted num">Total DC out ${W(t.consumer_power)}</span></div><div class="rows">
+          ${Object.entries(c).map(([k, x]) => flowRow(x, LOAD_IC[k] || "load", "load", esc(x.charge_state || (x.estimated ? "estimated" : x.kind || "")))).join("")}</div></div>
       </div>
       <div class="stack">
         <div class="card"><div class="hd">${icon("power")}<h3>CombiMaster</h3>${on(cm.alarms) ? '<span class="badge bad">alarm</span>' : ""}</div><div class="rows">

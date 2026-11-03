@@ -28,19 +28,27 @@
 <div class="mini"><div class="l">Temperature</div><div class="n">21.5 °C</div></div></div>
 <div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ok">Bulk allowed · Float when a cell reaches 3550 mV (now 3341 mV)</span></div>
 </div>
-<div class="stats s4">
-<div class="stat"><div class="l"><svg class="i"><use href="#i-sun"></use></svg> Solar</div><div class="n">261 W</div><div class="s">Bulk</div></div>
-<div class="stat"><div class="l"><svg class="i"><use href="#i-plug"></use></svg> Shore</div><div class="n">–</div><div class="s">not connected</div></div>
-<div class="stat"><div class="l">DC in</div><div class="n">261 W</div><div class="s">charging sources</div></div>
-<div class="stat"><div class="l">DC load</div><div class="n">116 W</div><div class="s">AC 92 W</div></div>
-</div>
-<div class="card"><div class="hd"><svg class="i"><use href="#i-sun"></use></svg><h3>Sources</h3></div><div class="rows">
+<div class="card"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Other batteries</h3></div><div class="rows">
+<div class="row"><div class="k"><b>Start Battery</b><small>AGM · 110 Ah</small>
+<small>13.40 V · 0.4 A</small></div><div class="meter sm" role="img" aria-label="Start Battery unknown"><svg viewBox="0 0 124 76" aria-hidden="true">
+<defs><linearGradient id="eBstartBand" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
+<linearGradient id="eBstartSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
+<path class="track" d="M 14 64 A 48 48 0 0 1 110 64"></path><path class="band glow" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBstartBand)"></path><path class="band" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBstartBand)"></path>
+<path class="sheen" d="M 18 64 A 44 44 0 0 1 106 64" stroke="url(#eBstartSheen)"></path><path class="rim" d="M 3 64 A 59 59 0 0 1 121 64"></path></svg>
+<span class="pill">–<small>%</small></span></div></div><div class="row"><div class="k"><b>Bow Battery</b><small>AGM · 70 Ah</small>
+<small>12.90 V · 0.0 A</small></div><div class="meter sm" role="img" aria-label="Bow Battery unknown"><svg viewBox="0 0 124 76" aria-hidden="true">
+<defs><linearGradient id="eBbowBand" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
+<linearGradient id="eBbowSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
+<path class="track" d="M 14 64 A 48 48 0 0 1 110 64"></path><path class="band glow" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBbowBand)"></path><path class="band" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBbowBand)"></path>
+<path class="sheen" d="M 18 64 A 44 44 0 0 1 106 64" stroke="url(#eBbowSheen)"></path><path class="rim" d="M 3 64 A 59 59 0 0 1 121 64"></path></svg>
+<span class="pill">–<small>%</small></span></div></div></div></div>
+<div class="card"><div class="hd"><svg class="i"><use href="#i-sun"></use></svg><h3>Energy providers</h3><span class="muted num">Total DC in 261 W</span></div><div class="rows">
 <div class="flow"><span class="ic shore "><svg class="i"><use href="#i-plug"></use></svg></span><div class="nm"><b>Shore Power</b><small>Not connected</small></div>
 <div class="w">0 W<small>0.0 V · 0.0 A</small></div></div><div class="flow"><span class="ic shore "><svg class="i"><use href="#i-plug"></use></svg></span><div class="nm"><b>Charger House</b><small>Off</small></div>
 <div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic alt "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>Stop Charge</small></div>
 <div class="w">0 W<small>13.9 V · 0.0 A</small></div></div><div class="flow"><span class="ic solar on"><svg class="i"><use href="#i-sun"></use></svg></span><div class="nm"><b>Solar</b><small>Bulk · panel 38.4 V</small></div>
 <div class="w">261 W<small>13.2 V · 19.8 A</small></div></div></div></div>
-<div class="card"><div class="hd"><svg class="i"><use href="#i-load"></use></svg><h3>Consumers</h3><span class="muted num">116 W</span></div><div class="rows">
+<div class="card"><div class="hd"><svg class="i"><use href="#i-load"></use></svg><h3>Energy consumers</h3><span class="muted num">Total DC out 116 W</span></div><div class="rows">
 <div class="flow"><span class="ic load on"><svg class="i"><use href="#i-load"></use></svg></span><div class="nm"><b>AC Loads</b><small>AC</small></div>
 <div class="w">92 W<small>230.0 V · 0.4 A</small></div></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-power"></use></svg></span><div class="nm"><b>Inverter</b><small>DC</small></div>
 <div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Charger Start</b><small>Float</small></div>
@@ -49,8 +57,6 @@
 <div class="w">4 W<small>13.2 V · 0.3 A</small></div></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>DC</small></div>
 <div class="w">0 W<small>13.2 V · 0.0 A</small></div></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-load"></use></svg></span><div class="nm"><b>Other DC Loads</b><small>DC</small></div>
 <div class="w">106 W<small>13.2 V · 8.0 A</small></div></div></div></div>
-<div class="card"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Other batteries</h3></div><div class="rows">
-<div class="flow"><span class="ic batt on"><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Start Battery</b><small>AGM · 110 Ah</small></div><div class="w">13.40 V<small>0.4 A</small></div></div><div class="flow"><span class="ic batt "><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Bow Battery</b><small>AGM · 70 Ah</small></div><div class="w">12.90 V<small>0.0 A</small></div></div></div></div>
 </div>
 <div class="stack">
 <div class="card"><div class="hd"><svg class="i"><use href="#i-power"></use></svg><h3>CombiMaster</h3></div><div class="rows">
