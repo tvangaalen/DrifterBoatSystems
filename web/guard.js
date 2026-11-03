@@ -53,8 +53,8 @@ const m = {
     const s = m.state.data; if (!s) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const h = m.hero(s), cam = s.camera || {};
     const tone = !s.enabled ? "" : s.arm_at && !s.armed_by_us ? "badc" : "good";   // off: plain; on: green; arming: red
-    return `<div class="guard-row"><div><div class="u-fs-22 big ${tone}">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div></div>
-      <span class="guard-cam ${cam.armed ? "armed" : ""}" title="${cam.armed ? "Camera armed" : "Camera disarmed"}">${wallCam()}</span></div>
+    return `<div class="tile-row"><div><div class="u-fs-22 big ${tone}">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div></div>
+      <span class="tile-pic ${cam.armed ? "armed" : ""}" title="${cam.armed ? "Camera armed" : "Camera disarmed"}">${wallCam()}</span></div>
       <div class="minis"><div class="mini"><div class="l">Phone</div><div class="n ${s.present == null ? "" : s.present ? "good" : "badc"}">${s.present == null ? "–" : s.present ? "On board" : "Away"}</div></div>
       <div class="mini"><div class="l">Camera</div><div class="n ${cam.armed ? "badc" : ""}">${cam.armed == null ? "–" : cam.armed ? "Armed" : "Disarmed"}</div></div>
       <div class="mini"><div class="l">Battery</div><div class="n">${cam.battery == null ? "–" : cam.battery + "%"}</div></div></div>`;

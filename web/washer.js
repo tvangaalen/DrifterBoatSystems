@@ -27,6 +27,17 @@ function display(d) {
 }
 const offline = () => m.state.err && !m.state.err.down && m.state.err.status === 503;   // controller up, washer not answering
 
+/** The Overview tile's washing machine (graphite, glass door, a display with the time left); colours from --wm-* and --cam-line. */
+const washerPic = (/** @type {string} */ lcd) => `<svg class="washpic" viewBox="6 6 108 108" aria-hidden="true"><defs>
+  <linearGradient id="gWmB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="w0"/><stop offset=".7" class="w1"/><stop offset="1" class="w2"/></linearGradient>
+  <radialGradient id="gWmG" cx=".38" cy=".35" r=".75"><stop offset="0" class="q0"/><stop offset=".55" class="q1"/><stop offset="1" class="q2"/></radialGradient></defs>
+  <rect class="foot" x="28" y="106" width="10" height="6" rx="2"/><rect class="foot" x="82" y="106" width="10" height="6" rx="2"/>
+  <rect class="ol" x="22" y="10" width="76" height="98" rx="9" fill="url(#gWmB)"/><path class="ol" d="M22 34h76"/>
+  <rect class="lcd" x="34" y="17" width="28" height="11" rx="2.5"/><text class="digits" x="48" y="26" text-anchor="middle">${esc(lcd)}</text>
+  <circle class="ol knob" cx="80" cy="22" r="6"/><circle class="led" cx="68" cy="22" r="2.5"/>
+  <circle class="ol ring" cx="60" cy="70" r="26"/><circle cx="60" cy="70" r="19" fill="url(#gWmG)" stroke-width="2.5" class="ol"/>
+  <ellipse class="spot" cx="53" cy="62" rx="5" ry="3" transform="rotate(-30 53 62)"/></svg>`;
+
 const m = {
   id: "washer", title: "Washer", short: "Washer", icon: "washer", every: 5000, background: 10000,
   async load() {
@@ -48,8 +59,10 @@ const m = {
     const d = m.state.data;
     if (offline() || !d) return `<div class="u-fs-22 big">Offline</div><div class="line">${lastSeen ? `Last seen ${hm(lastSeen)}` : esc(m.state.err ? m.state.err.message : "")}</div>`;
     const s = display(d), act = ACTIVE.includes(Number(d.status)) || Number(d.status) === 26, sc = d.schedule;
-    return `<div class="u-fs-22 big">${esc(s.text)}${act && d.left_time != null ? ` <small>· ${d.left_time} min left</small>` : ""}</div>
-      <div class="line">${esc(d.mode_text || "")}${sc && sc.status === "pending" ? ` · starts ${hm(sc.start_at)}` : ""}</div>
+    const lcd = act && d.left_time != null ? `${Math.floor(d.left_time / 60)}:${D.pad(d.left_time % 60)}` : "--:--";
+    return `<div class="tile-row"><div><div class="u-fs-22 big">${esc(s.text)}${act && d.left_time != null ? ` <small>· ${d.left_time} min left</small>` : ""}</div>
+      <div class="line">${esc(d.mode_text || "")}${sc && sc.status === "pending" ? ` · starts ${hm(sc.start_at)}` : ""}</div></div>
+      <span class="tile-pic">${washerPic(lcd)}</span></div>
       <div class="minis"><div class="mini"><div class="l">Temperature</div><div class="n">${d.temperature == null ? "–" : d.temperature === 0 ? "Cold" : d.temperature + " °C"}</div></div>
       <div class="mini"><div class="l">Spin</div><div class="n">${d.spin ?? "–"}</div></div><div class="mini"><div class="l">Ready at</div><div class="n">${act && d.left_time != null ? hm(Date.now() + d.left_time * 60000) : "–"}</div></div></div>`;
   },
