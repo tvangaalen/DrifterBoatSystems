@@ -68,8 +68,9 @@ protection is paused until then. The anchor watch is back within about 30 s.
 
 ## 5. Updating (deploy)
 
-Changes are made and tested in the development checkout, committed and pushed to GitHub (CI runs there). Then on the
-boat PC:
+Changes are made and tested in the development checkout, committed and pushed to GitHub (CI runs there). `tools\ship.py`
+does all of it in one go (`change "Summary"`, or `deploy` for what is already pushed): the steps below, restarting only what
+needs it, and it prints the service restart or environment rebuild it never does itself. By hand, on the boat PC:
 
 1. `cd C:\Drifter; git pull --ff-only`. If git refuses because of a local change, look at it first (`git diff`); a file
    that only differs in line endings can be restored with `git checkout -- <file>`.

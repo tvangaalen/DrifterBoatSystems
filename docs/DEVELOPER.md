@@ -88,7 +88,8 @@ environment by hand. Node (`package.json`: Playwright, TypeScript) is a developm
   commands go through `Drifter.api(module, path, body)` and `Drifter.run(...)`, confirmations through `Drifter.confirm(...)`.
 - All colours are tokens in `app.css` per theme (light, dark, night, auto). Times are always 24-hour. No fixed inline styles:
   components, or the `u-*` utility classes at the end of `app.css` (only computed values stay inline).
-- `sw.js` caches only the shell; `api/` is never cached. Bump `CACHE` with every release.
+- `sw.js` caches only the shell; `api/` is never cached. Its `CACHE` name is filled in by the gateway (version + a fingerprint
+  of `web/`), so every deploy of `web/` reaches the home-screen apps without a version bump.
 - `npm run typecheck` (`tsc --checkJs`, JSDoc types, `web/types.d.ts` for browser facts) must stay at 0 errors.
 - The user manual is `docs/MANUAL.md`; `py -3.12 tools\build_manual.py` turns it into `web/manual.html` (System → *Manual*,
   the app's theme, a "‹ Drifter" button back). `tests/test_manual.py` fails until the page is rebuilt. Change the manual with
@@ -129,6 +130,7 @@ module's runtime files.
 
 - GitHub Actions (`.github/workflows/ci.yml`, Windows) on every push: privacy scan, `uv lock --check`, environments, ruff,
   JavaScript syntax, type check, browser tests, `run_all.py quick`. A failure arrives by e-mail.
-- The app/gateway: bump `VERSION` in `drifter.py`, `CACHE` in `web/sw.js`, the version line of `README.md`, add a
-  `CHANGELOG.md` entry; tag `vX.Y.Z`. A module: its own version places and CHANGELOG; tag `<module>/vX.Y.Z`.
+- `tools/ship.py`: `check` runs only the tests for what changed; `change "Summary"` also commits (code and docs apart),
+  adds the line under `## Unreleased` in `CHANGELOG.md`, pushes and deploys (pull, restart only what needs it, verify);
+  `release X.Y.Z` turns Unreleased into a version (`VERSION` in `drifter.py`, `README.md`), tags `vX.Y.Z` and deploys. A module: its own version places and CHANGELOG; tag `<module>/vX.Y.Z`.
 - Deploying to the boat PC: [RUNBOOK.md](RUNBOOK.md) section 5.

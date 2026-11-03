@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- tools/ship.py: a change live in about a minute; the app's cache name follows its files
+
 ## 1.1
 
 ### 1.1.0 — 2026-11-03
