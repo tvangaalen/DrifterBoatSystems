@@ -19,6 +19,7 @@
 - BoatGuard: the title stays "Monitoring active" while the camera is armed (the Camera box says Armed)
 - BoatGuard tile: an outlined wall camera with a blue sunshield instead of the dome (colours as theme tokens, red in
   Night)
+- Washer page: a Power switch at the right of the status instead of the Power on / Power off buttons
 
 ## 1.1
 
