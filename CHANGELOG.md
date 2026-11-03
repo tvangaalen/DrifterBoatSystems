@@ -12,6 +12,8 @@
 - Overview: the Energy meter and the anchor radar sit at the right of their tiles again
 - CLAUDE.md: finished changes go live without asking (the user's choice)
 - BoatGuard tile: no alarm badge for an armed camera, "monitoring active", a security camera on the right
+- BoatGuard tile: a ceiling dome camera instead of the line icon (colours as theme tokens, red in Night); Armed red
+  again
 
 ## 1.1
 
