@@ -173,23 +173,35 @@ function renderBatt() {
   const box = $("eBatt");
   if (!bms) { box.innerHTML = `<div class="empty">Loading batteries…</div>`; return; }
   const cs = bms.control_status || {}, names = Object.keys(bms.batteries || {}).sort();
-  const bcard = name => {
-    const b = bms.batteries[name], n = name.replace(/\D/g, ""), cells = b.cells_mv || [];
-    const hi = cells.length ? Math.max(...cells) : null, lo = cells.length ? Math.min(...cells) : null, bal_ = new Set(b.balancing_cells || []);
-    const age = b.captured_at ? (Date.now() - Date.parse(b.captured_at)) / 1000 : null;
-    const st = b.state === "connected" ? (age != null && age > 120 ? ["warn", `stale · ${D.dur(age)}`] : ["ok", age != null ? `${D.dur(age)} ago` : "connected"]) : [b.error ? "bad" : "", b.state.replace(/_/g, " ")];
-    return `<div class="card"><div class="hd">${icon("batt")}<h3>${esc(name[0] + name.slice(1).toLowerCase())}</h3><span class="badge ${st[0]}">${esc(st[1])}</span>
-        <button class="iconbtn" type="button" data-bms-refresh="${n}" aria-label="Read ${esc(name)} now">${icon("refresh")}</button></div>
-      ${b.error ? `<div class="u-p-0-16-8 err">${esc(b.error)}</div>` : ""}
-      <div class="rows">
-        <div class="row"><span class="k">State of charge</span><span class="v">${num(b.state_of_charge_percent, 1)}%<small>${num(b.remaining_capacity_ah, 1)} Ah left</small></span></div>
-        <div class="row"><span class="k">Pack</span><span class="v">${num(b.pack_voltage_v, 2)} V · ${num(b.current_a, 1)} A<small>${b.cycles != null ? b.cycles + " cycles" : ""}</small></span></div>
-        <div class="row"><span class="k">Temperature</span><span class="v">${(b.temperatures_c || []).map(x => num(x, 0) + " °C").join(" · ") || "–"}</span></div>
-        <div class="row"><span class="k">Cell spread</span><span class="v ${b.cell_spread_mv > 50 ? "warnc" : ""}">${num(b.cell_spread_mv)} mV<small>${bal_.size ? `balancing ${[...bal_].join(", ")}` : ""}</small></span></div>
-        ${(b.alarms || []).length ? `<div class="row"><span class="k badc">Alarms</span><span class="v badc">${b.alarms.map(esc).join("<br>")}</span></div>` : ""}
-      </div>
-      ${cells.length ? `<div class="cells">${cells.map((v, i) => `<div class="cell ${v === hi && hi !== lo ? "hi" : v === lo && hi !== lo ? "lo" : ""} ${bal_.has(i + 1) ? "bal" : ""}"><div class="cn">${i + 1}</div><div class="cv">${(v / 1000).toFixed(3)}</div></div>`).join("")}</div>` : ""}
-    </div>`;
+  // Pack details: one table, a column per pack plus the house bank (sums, averages, the extremes over all cells)
+  const details = () => {
+    const P = names.map(name => bms.batteries[name]), all = P.flatMap(b => b.cells_mv || []), h = m.state.data && m.state.data.storage.house;
+    const avg = c => c.length ? (c.reduce((x, y) => x + y, 0) / c.length / 1000).toFixed(3) + " V" : "–";
+    const sum = k => P.some(b => b[k] != null) ? P.reduce((x, b) => x + (+b[k] || 0), 0) : null;
+    const temps = b => (b.temperatures_c || []).length ? Math.max(...b.temperatures_c) : null, tAll = P.map(temps).filter(t => t != null);
+    const row = (label, cells, house = "–", cls = "") => `<tr${cls ? ` class="${cls}"` : ""}><th>${label}</th>${cells.map(c => `<td>${c}</td>`).join("")}<td class="hb">${house}</td></tr>`;
+    const nCells = Math.max(0, ...P.map(b => (b.cells_mv || []).length));
+    const cellRows = Array.from({length: nCells}, (_, i) => `<tr><th>Cell ${i + 1}</th>${P.map(b => { const c = b.cells_mv || [], v = c[i], hi = Math.max(...c), lo = Math.min(...c), bl = new Set(b.balancing_cells || []);
+      return `<td class="${v === hi && hi !== lo ? "hi" : v === lo && hi !== lo ? "lo" : ""}${bl.has(i + 1) ? " bal" : ""}">${v != null ? (v / 1000).toFixed(3) : "–"}</td>`; }).join("")}<td class="hb">–</td></tr>`).join("");
+    const read = b => { const age = b.captured_at ? (Date.now() - Date.parse(b.captured_at)) / 1000 : null, live = b.state === "connected" || b.state === "reading";
+      return !live ? `<span class="${b.error ? "badc" : "warnc"}">${esc(b.state.replace(/_/g, " "))}</span>` : `<span class="${age != null && age > 120 ? "warnc" : ""}">${age != null ? D.dur(age) + " ago" : "–"}</span>`; };
+    const spread = c => c.length ? Math.max(...c) - Math.min(...c) : null, warn = v => v != null && v > 50 ? "warnc" : "";
+    const errs = P.some(b => b.error || (b.alarms || []).length);
+    return `<div class="card ptab-card"><div class="hd">${icon("batt")}<h3>Pack details</h3></div><div class="ptab-wrap"><table class="ptab">
+      <thead><tr><th></th>${names.map(name => { const n = name.replace(/\D/g, "");
+        return `<th><span class="nm"><span class="wide">Battery </span>${n}</span><button class="iconbtn" type="button" data-bms-refresh="${n}" aria-label="Read ${esc(name)} now">${icon("refresh")}</button></th>`; }).join("")}<th class="hb">House</th></tr></thead>
+      <tbody>${row("Read", P.map(read))}
+      ${row("SOC", P.map(b => num(b.state_of_charge_percent, 1) + " %"), h && h.soc != null ? num(h.soc, 1) + " %" : "–")}
+      ${row("Left", P.map(b => num(b.remaining_capacity_ah, 1) + " Ah"), sum("remaining_capacity_ah") != null ? num(sum("remaining_capacity_ah"), 1) + " Ah" : "–")}
+      ${row("Voltage", P.map(b => num(b.pack_voltage_v, 2) + " V"), h && h.voltage != null ? num(h.voltage, 2) + " V" : "–", "strong")}
+      ${row("Current", P.map(b => num(b.current_a, 1) + " A"), sum("current_a") != null ? num(sum("current_a"), 1) + " A" : "–")}
+      ${row("Temp", P.map(b => temps(b) != null ? num(temps(b), 0) + " °C" : "–"), tAll.length ? num(Math.max(...tAll), 0) + " °C" : "–")}
+      ${row("Cycles", P.map(b => b.cycles ?? "–"))}
+      ${cellRows}
+      ${row("Avg cell", P.map(b => avg(b.cells_mv || [])), avg(all), "strong")}
+      ${row("Max diff", P.map(b => `<span class="${warn(b.cell_spread_mv)}">${num(b.cell_spread_mv)} mV</span>`), `<span class="${warn(spread(all))}">${num(spread(all))} mV</span>`, "strong")}
+      ${errs ? row("Alarms", P.map(b => [b.error, ...(b.alarms || [])].filter(Boolean).map(x => `<span class="badc">${esc(x)}</span>`).join("<br>") || "–")) : ""}
+      </tbody></table></div><p class="hint ptab-note">Cells: highest orange, lowest blue, a dot when it balances. House: the house SOC and voltage, the sum of Ah left and current, the hottest pack, average and difference over all cells.</p></div>`;
   };
   const devs = (bal && bal.devices) || {};
   const balcard = ([name, dv]) => {
@@ -239,7 +251,7 @@ function renderBatt() {
       <button class="btn sec sm" type="button" data-all="discharge-on">All discharge ON</button><button class="btn sec sm" type="button" data-all="discharge-off">All discharge OFF</button>
       <button class="btn sec sm" type="button" data-soc="all" ${cs.busy ? "disabled" : ""}>Set all SOC</button></div>
       <span class="u-mt-8 hint">${cs.busy ? `<span class="warnc">${esc(cs.message || cs.phase || "Bluetooth busy…")}</span>` : `${bms.connected_count ?? "–"} connected · read every ${bms.refresh_interval_seconds ?? "–"} s`}</span></div>
-    <h2 class="sec">Pack details</h2><div class="grid g3">${names.map(bcard).join("")}</div>
+    ${details()}
     <details class="secfold" id="eBalFold" ${balOpen ? "open" : ""}><summary><h2 class="sec">Balancers<span class="r">${Object.keys(devs).length ? balAct ? `${balAct} balancing` : "all idle" : "no data"} ${icon("chev", "i chev")}</span></h2></summary>
       <div class="grid g3">${Object.entries(devs).map(balcard).join("") || `<div class="empty">No balancer data</div>`}</div></details>
     ${bleCard()}`;

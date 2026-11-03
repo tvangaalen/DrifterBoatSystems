@@ -105,34 +105,19 @@
 <button class="btn sec sm" type="button" data-all="discharge-on">All discharge ON</button><button class="btn sec sm" type="button" data-all="discharge-off">All discharge OFF</button>
 <button class="btn sec sm" type="button" data-soc="all">Set all SOC</button></div>
 <span class="u-mt-8 hint">3 connected · read every 30 s</span></div>
-<h2 class="sec">Pack details</h2><div class="grid g3"><div class="card"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Battery 1</h3><span class="badge ok">0 s ago</span>
-<button class="iconbtn" type="button" data-bms-refresh="1" aria-label="Read BATTERY 1 now"><svg class="i"><use href="#i-refresh"></use></svg></button></div>
-<div class="rows">
-<div class="row"><span class="k">State of charge</span><span class="v">73.6%<small>211.0 Ah left</small></span></div>
-<div class="row"><span class="k">Pack</span><span class="v">13.34 V · 1.1 A<small>41 cycles</small></span></div>
-<div class="row"><span class="k">Temperature</span><span class="v">21 °C</span></div>
-<div class="row"><span class="k">Cell spread</span><span class="v ">9 mV<small>balancing 3</small></span></div>
-</div>
-<div class="cells"><div class="cell lo "><div class="cn">1</div><div class="cv">3.331</div></div><div class="cell "><div class="cn">2</div><div class="cv">3.333</div></div><div class="cell hi bal"><div class="cn">3</div><div class="cv">3.340</div></div><div class="cell "><div class="cn">4</div><div class="cv">3.335</div></div></div>
-</div><div class="card"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Battery 2</h3><span class="badge ok">0 s ago</span>
-<button class="iconbtn" type="button" data-bms-refresh="2" aria-label="Read BATTERY 2 now"><svg class="i"><use href="#i-refresh"></use></svg></button></div>
-<div class="rows">
-<div class="row"><span class="k">State of charge</span><span class="v">74.6%<small>212.0 Ah left</small></span></div>
-<div class="row"><span class="k">Pack</span><span class="v">13.32 V · 1.1 A<small>42 cycles</small></span></div>
-<div class="row"><span class="k">Temperature</span><span class="v">22 °C</span></div>
-<div class="row"><span class="k">Cell spread</span><span class="v ">10 mV<small></small></span></div>
-</div>
-<div class="cells"><div class="cell "><div class="cn">1</div><div class="cv">3.329</div></div><div class="cell lo "><div class="cn">2</div><div class="cv">3.326</div></div><div class="cell "><div class="cn">3</div><div class="cv">3.329</div></div><div class="cell hi "><div class="cn">4</div><div class="cv">3.336</div></div></div>
-</div><div class="card"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Battery 3</h3><span class="badge ok">0 s ago</span>
-<button class="iconbtn" type="button" data-bms-refresh="3" aria-label="Read BATTERY 3 now"><svg class="i"><use href="#i-refresh"></use></svg></button></div>
-<div class="rows">
-<div class="row"><span class="k">State of charge</span><span class="v">75.6%<small>213.0 Ah left</small></span></div>
-<div class="row"><span class="k">Pack</span><span class="v">13.31 V · 1.1 A<small>43 cycles</small></span></div>
-<div class="row"><span class="k">Temperature</span><span class="v">23 °C</span></div>
-<div class="row"><span class="k">Cell spread</span><span class="v ">7 mV<small></small></span></div>
-</div>
-<div class="cells"><div class="cell "><div class="cn">1</div><div class="cv">3.330</div></div><div class="cell hi "><div class="cn">2</div><div class="cv">3.331</div></div><div class="cell "><div class="cn">3</div><div class="cv">3.330</div></div><div class="cell lo "><div class="cn">4</div><div class="cv">3.324</div></div></div>
-</div></div>
+<div class="card ptab-card"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>Pack details</h3></div><div class="ptab-wrap"><table class="ptab">
+<thead><tr><th></th><th><span class="nm"><span class="wide">Battery </span>1</span><button class="iconbtn" type="button" data-bms-refresh="1" aria-label="Read BATTERY 1 now"><svg class="i"><use href="#i-refresh"></use></svg></button></th><th><span class="nm"><span class="wide">Battery </span>2</span><button class="iconbtn" type="button" data-bms-refresh="2" aria-label="Read BATTERY 2 now"><svg class="i"><use href="#i-refresh"></use></svg></button></th><th><span class="nm"><span class="wide">Battery </span>3</span><button class="iconbtn" type="button" data-bms-refresh="3" aria-label="Read BATTERY 3 now"><svg class="i"><use href="#i-refresh"></use></svg></button></th><th class="hb">House</th></tr></thead>
+<tbody><tr><th>Read</th><td><span class="">0 s ago</span></td><td><span class="">0 s ago</span></td><td><span class="">0 s ago</span></td><td class="hb">–</td></tr>
+<tr><th>SOC</th><td>73.6 %</td><td>74.6 %</td><td>75.6 %</td><td class="hb">72.5 %</td></tr>
+<tr><th>Left</th><td>211.0 Ah</td><td>212.0 Ah</td><td>213.0 Ah</td><td class="hb">636.0 Ah</td></tr>
+<tr class="strong"><th>Voltage</th><td>13.34 V</td><td>13.32 V</td><td>13.31 V</td><td class="hb">13.17 V</td></tr>
+<tr><th>Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td><td class="hb">3.2 A</td></tr>
+<tr><th>Temp</th><td>21 °C</td><td>22 °C</td><td>23 °C</td><td class="hb">23 °C</td></tr>
+<tr><th>Cycles</th><td>41</td><td>42</td><td>43</td><td class="hb">–</td></tr>
+<tr><th>Cell 1</th><td class="lo">3.331</td><td class="">3.329</td><td class="">3.330</td><td class="hb">–</td></tr><tr><th>Cell 2</th><td class="">3.333</td><td class="lo">3.326</td><td class="hi">3.331</td><td class="hb">–</td></tr><tr><th>Cell 3</th><td class="hi bal">3.340</td><td class="">3.329</td><td class="">3.330</td><td class="hb">–</td></tr><tr><th>Cell 4</th><td class="">3.335</td><td class="hi">3.336</td><td class="lo">3.324</td><td class="hb">–</td></tr>
+<tr class="strong"><th>Avg cell</th><td>3.335 V</td><td>3.330 V</td><td>3.329 V</td><td class="hb">3.331 V</td></tr>
+<tr class="strong"><th>Max diff</th><td><span class="">9 mV</span></td><td><span class="">10 mV</span></td><td><span class="">7 mV</span></td><td class="hb"><span class="">16 mV</span></td></tr>
+</tbody></table></div><p class="hint ptab-note">Cells: highest orange, lowest blue, a dot when it balances. House: the house SOC and voltage, the sum of Ah left and current, the hottest pack, average and difference over all cells.</p></div>
 <details class="secfold" id="eBalFold"><summary><h2 class="sec">Balancers<span class="r">1 balancing <svg class="i chev"><use href="#i-chev"></use></svg></span></h2></summary>
 <div class="grid g3"><div class="card"><div class="hd"><svg class="i"><use href="#i-refresh"></use></svg><h3>DL-BAL1</h3><span class="badge ok">21 s ago</span>
 <button class="iconbtn" type="button" data-bal-refresh="1" aria-label="Read DL-BAL1 now"><svg class="i"><use href="#i-refresh"></use></svg></button></div>
