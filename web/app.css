@@ -9,7 +9,7 @@
   --knob:#fff;--field:#f3f6f9;--shadow:0 1px 2px rgba(16,24,32,.06),0 4px 16px rgba(16,24,32,.05);
   --scrim:rgba(10,16,24,.45);--map-filter:none;
   --meter-glow:.35;--meter-sheen:rgba(255,255,255,.55);
-  --cam-0:#f4f6f8;--cam-1:#dfe3e7;--cam-2:#a7aeb6;--cam-glass-0:rgba(93,106,120,.55);--cam-glass-1:rgba(16,22,29,.92);--cam-lens-0:#9fd0ff;--cam-lens-1:#2f7fd0;--cam-lens-2:#173a6b;--cam-lens-3:#0b1626;--cam-dark:#0e141b;--cam-shine:#fff;
+  --cam-0:#f4f6f8;--cam-1:#dfe3e7;--cam-2:#a7aeb6;--cam-lens-0:#9fd0ff;--cam-lens-1:#2f7fd0;--cam-lens-2:#173a6b;--cam-lens-3:#0b1626;--cam-dark:#0e141b;--cam-shine:#fff;--cam-visor-0:#8fb3e0;--cam-visor-1:#4a6fa3;--cam-line:#141a22;--cam-ring:#3a4656;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme]){
@@ -19,7 +19,7 @@
   --solar:#f2c14e;--shore:#4f9cf0;--batt:#47c07a;--load:#a685ea;--alt:#f08a5d;
   --knob:#fff;--field:#0f1418;--shadow:none;--scrim:rgba(0,0,0,.6);--map-filter:brightness(.72) contrast(1.05);
   --meter-glow:.6;--meter-sheen:rgba(255,255,255,.35);
-  --cam-0:#d7dce1;--cam-1:#b9c0c7;--cam-2:#7d858e;--cam-glass-0:rgba(93,106,120,.55);--cam-glass-1:rgba(8,11,15,.92);--cam-lens-0:#8cc4f5;--cam-lens-1:#2a72bb;--cam-lens-2:#14335e;--cam-lens-3:#0a1320;--cam-dark:#0b1016;--cam-shine:#e7ecf0;
+  --cam-0:#d7dce1;--cam-1:#b9c0c7;--cam-2:#7d858e;--cam-lens-0:#8cc4f5;--cam-lens-1:#2a72bb;--cam-lens-2:#14335e;--cam-lens-3:#0a1320;--cam-dark:#0b1016;--cam-shine:#e7ecf0;--cam-visor-0:#7ea3d3;--cam-visor-1:#41638f;--cam-line:#05080b;--cam-ring:#323d4b;
   color-scheme:dark;
 }}
 :root[data-theme="dark"]{
@@ -29,7 +29,7 @@
   --solar:#f2c14e;--shore:#4f9cf0;--batt:#47c07a;--load:#a685ea;--alt:#f08a5d;
   --knob:#fff;--field:#0f1418;--shadow:none;--scrim:rgba(0,0,0,.6);--map-filter:brightness(.72) contrast(1.05);
   --meter-glow:.6;--meter-sheen:rgba(255,255,255,.35);
-  --cam-0:#d7dce1;--cam-1:#b9c0c7;--cam-2:#7d858e;--cam-glass-0:rgba(93,106,120,.55);--cam-glass-1:rgba(8,11,15,.92);--cam-lens-0:#8cc4f5;--cam-lens-1:#2a72bb;--cam-lens-2:#14335e;--cam-lens-3:#0a1320;--cam-dark:#0b1016;--cam-shine:#e7ecf0;
+  --cam-0:#d7dce1;--cam-1:#b9c0c7;--cam-2:#7d858e;--cam-lens-0:#8cc4f5;--cam-lens-1:#2a72bb;--cam-lens-2:#14335e;--cam-lens-3:#0a1320;--cam-dark:#0b1016;--cam-shine:#e7ecf0;--cam-visor-0:#7ea3d3;--cam-visor-1:#41638f;--cam-line:#05080b;--cam-ring:#323d4b;
   color-scheme:dark;
 }
 /* Night: red on black only, dim. States differ by brightness and weight, not hue. */
@@ -41,7 +41,7 @@
   --knob:#c22a1f;--field:#000;--shadow:none;--scrim:rgba(0,0,0,.75);
   --map-filter:grayscale(1) invert(1) brightness(.35) sepia(1) hue-rotate(-50deg) saturate(5);
   --meter-glow:.35;--meter-sheen:transparent;
-  --cam-0:#3a0c08;--cam-1:#240704;--cam-2:#120100;--cam-glass-0:rgba(120,20,12,.4);--cam-glass-1:rgba(10,0,0,.92);--cam-lens-0:#c22a1f;--cam-lens-1:#7a1d15;--cam-lens-2:#3a0c08;--cam-lens-3:#120100;--cam-dark:#050000;--cam-shine:#7a1d15;
+  --cam-0:#3a0c08;--cam-1:#240704;--cam-2:#120100;--cam-lens-0:#c22a1f;--cam-lens-1:#7a1d15;--cam-lens-2:#3a0c08;--cam-lens-3:#120100;--cam-dark:#050000;--cam-shine:#7a1d15;--cam-visor-0:#5a120c;--cam-visor-1:#3a0c08;--cam-line:#050000;--cam-ring:#240704;
   color-scheme:dark;
 }
 
@@ -229,15 +229,15 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 @keyframes radar-ping{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.8);opacity:0}}
 @media (prefers-reduced-motion:reduce){.radar .ping{animation:none;opacity:.35}}
 
-/* BoatGuard tile: a ceiling dome camera (guard.js domeCam, colours --cam-*) on a plain square, red while the camera is armed */
+/* BoatGuard tile: a wall camera (guard.js wallCam, colours --cam-*) on a plain square, red while the camera is armed */
 .guard-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
 .guard-row>div:first-child{min-width:0}
 .guard-cam{width:64px;height:64px;border-radius:18px;flex:none;display:grid;place-items:center;background:var(--card2)}
 .guard-cam svg{width:52px;height:52px}
-.dome .c0{stop-color:var(--cam-0)}.dome .c1{stop-color:var(--cam-1)}.dome .c2{stop-color:var(--cam-2)}
-.dome .g0{stop-color:var(--cam-glass-0)}.dome .g1{stop-color:var(--cam-glass-1)}
-.dome .l0{stop-color:var(--cam-lens-0)}.dome .l1{stop-color:var(--cam-lens-1)}.dome .l2{stop-color:var(--cam-lens-2)}.dome .l3{stop-color:var(--cam-lens-3)}
-.dome .edge{stroke:var(--cam-2)}.dome .dark{fill:var(--cam-dark)}.dome .shine{fill:var(--cam-shine)}.dome .gloss{fill:none;stroke:var(--cam-shine);stroke-opacity:.55;stroke-width:3;stroke-linecap:round}
+.wallcam .c0{stop-color:var(--cam-0)}.wallcam .c2{stop-color:var(--cam-2)}.wallcam .v0{stop-color:var(--cam-visor-0)}.wallcam .v1{stop-color:var(--cam-visor-1)}
+.wallcam .l0{stop-color:var(--cam-lens-0)}.wallcam .l1{stop-color:var(--cam-lens-1)}.wallcam .l2{stop-color:var(--cam-lens-2)}.wallcam .l3{stop-color:var(--cam-lens-3)}
+.wallcam .ol{stroke:var(--cam-line);stroke-width:3.5;stroke-linejoin:round}.wallcam .ring{fill:var(--cam-ring)}.wallcam .dark{fill:var(--cam-dark)}
+.wallcam .shine{fill:none;stroke:var(--cam-shine);stroke-opacity:.6;stroke-width:3;stroke-linecap:round}.wallcam .spot{fill:var(--cam-shine);opacity:.85}
 .guard-cam.armed{background:color-mix(in srgb,var(--bad) 20%,transparent)}
 
 /* SOC meter (Overview tile): half arc red → orange → green with a needle; the SVG comes from energy.js meter() */
