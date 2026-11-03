@@ -15,6 +15,7 @@
   and a steady Read line; equal buttons
 - Batteries tab: Pack details as one compact table with a House column (voltage, average cell voltage, maximum
   difference)
+- Batteries tab: Bluetooth status and Bluetooth events fold to one line with a summary
 
 ## 1.2
 

@@ -64,8 +64,8 @@ manual: History → *Open the manual*.
   charge (C) and discharge (D) MOSFETs and *Set SOC*. Below: the buttons for all packs; *Pack details*, one table with a
   column per pack (read time, SOC, Ah left, voltage, current, temperature, cycles, each cell, the average cell voltage and the
   maximum cell difference) and a *House* column (house SOC and voltage, the sums, the hottest pack, average and difference
-  over all cells); the balancers (folded: tap to open);
-  Bluetooth diagnostics and recent Bluetooth events. Every action that could cut power asks first, the safe choice being
+  over all cells); the balancers, *Bluetooth status* (the radio, the BMS links and per device its
+  timings) and *Bluetooth events*, all three folded to one line with a summary (tap to open). Every action that could cut power asks first, the safe choice being
   the default.
 - **History:** charts of the state of charge, sources, DC consumers, battery current and cell spread for 6 hours up to 31
   days (touch a chart for the values at that moment), and the energy per period. Also the battery health report, the
