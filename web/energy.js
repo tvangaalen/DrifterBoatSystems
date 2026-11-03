@@ -182,13 +182,10 @@ function renderBatt() {
         <button class="iconbtn" type="button" data-bms-refresh="${n}" aria-label="Read ${esc(name)} now">${icon("refresh")}</button></div>
       ${b.error ? `<div class="u-p-0-16-8 err">${esc(b.error)}</div>` : ""}
       <div class="rows">
-        <div class="row"><span class="k">State of charge</span><span class="v">${num(b.state_of_charge_percent, 1)}%<small>${num(b.remaining_capacity_ah, 1)} Ah left</small></span>
-          <button class="btn sec sm" type="button" data-soc="${n}" ${cs.busy || b.state !== "connected" ? "disabled" : ""}>Set SOC</button></div>
+        <div class="row"><span class="k">State of charge</span><span class="v">${num(b.state_of_charge_percent, 1)}%<small>${num(b.remaining_capacity_ah, 1)} Ah left</small></span></div>
         <div class="row"><span class="k">Pack</span><span class="v">${num(b.pack_voltage_v, 2)} V · ${num(b.current_a, 1)} A<small>${b.cycles != null ? b.cycles + " cycles" : ""}</small></span></div>
         <div class="row"><span class="k">Temperature</span><span class="v">${(b.temperatures_c || []).map(x => num(x, 0) + " °C").join(" · ") || "–"}</span></div>
         <div class="row"><span class="k">Cell spread</span><span class="v ${b.cell_spread_mv > 50 ? "warnc" : ""}">${num(b.cell_spread_mv)} mV<small>${bal_.size ? `balancing ${[...bal_].join(", ")}` : ""}</small></span></div>
-        <div class="row"><div class="k"><b>Charge MOSFET</b></div>${D.sw(`bms-c-${n}`, b.charge_mosfet_on, busy.has(`bms-c-${n}`) || cs.busy || b.charge_mosfet_on == null ? "disabled" : "")}</div>
-        <div class="row"><div class="k"><b>Discharge MOSFET</b><small>Off cuts the house loads on this battery</small></div>${D.sw(`bms-d-${n}`, b.discharge_mosfet_on, busy.has(`bms-d-${n}`) || cs.busy || b.discharge_mosfet_on == null ? "disabled" : "")}</div>
         ${(b.alarms || []).length ? `<div class="row"><span class="k badc">Alarms</span><span class="v badc">${b.alarms.map(esc).join("<br>")}</span></div>` : ""}
       </div>
       ${cells.length ? `<div class="cells">${cells.map((v, i) => `<div class="cell ${v === hi && hi !== lo ? "hi" : v === lo && hi !== lo ? "lo" : ""} ${bal_.has(i + 1) ? "bal" : ""}"><div class="cn">${i + 1}</div><div class="cv">${(v / 1000).toFixed(3)}</div></div>`).join("")}</div>` : ""}
@@ -209,32 +206,39 @@ function renderBatt() {
       ${cells.length ? `<div class="cells">${cells.map((x, i) => `<div class="cell ${x === hi && hi !== lo ? "hi" : x === lo && hi !== lo ? "lo" : ""}"><div class="cn">${i + 1}</div><div class="cv">${(x / 1000).toFixed(3)}</div></div>`).join("")}</div>` : ""}</div>`;
   };
   const balOf = n => Object.entries(devs).find(([k]) => k.replace(/\D/g, "") === n)?.[1];
-  // the overview (one iPhone screen): a tile per pack with its balancer and MOSFETs, then the start and bow batteries
+  // the overview (one iPhone screen): the start and bow batteries, then the house bank with a tile per pack (its balancer,
+  // MOSFET switches and Set SOC). Every line is always there, so a read in progress never changes a tile's height.
   const pack = name => {
     const b = bms.batteries[name], n = name.replace(/\D/g, ""), cells = b.cells_mv || [], dv = balOf(n), v = (dv && dv.status) || {};
     const age = b.captured_at ? (Date.now() - Date.parse(b.captured_at)) / 1000 : null;
-    const st = b.state !== "connected" ? [b.error ? "bad" : "warn", b.state.replace(/_/g, " ")] : age != null && age > 120 ? ["warn", `stale · ${D.dur(age)}`] : null;
+    const live = b.state === "connected" || b.state === "reading";
+    const st = !live ? [b.error ? "badc" : "warnc", b.state.replace(/_/g, " ")] : [age != null && age > 120 ? "warnc" : "", age != null ? `Read ${D.dur(age)} ago` : "Read –"];
     const bl = !dv ? ["", "no balancer"] : dv.stale ? ["warn", "bal stale"] : dv.error ? ["bad", "bal error"] : v.balance_active ? ["warn", `balancing${v.balance_position != null ? " " + v.balance_position : ""}`] : ["", "bal idle"];
-    const fet = (on, l) => `<span class="badge fet ${on == null ? "" : on ? "ok" : "bad"}">${l} ${on == null ? "–" : on ? "on" : "off"}</span>`;
+    const fet = (k, on, l, what) => `<div class="fet"><span>${l}</span>${D.sw(`bms-${k}-${n}`, on, `aria-label="${esc(name)} ${what} MOSFET"` + (busy.has(`bms-${k}-${n}`) || cs.busy || on == null ? " disabled" : ""), "onoff sm")}</div>`;
+    const avg = cells.length ? cells.reduce((x, y) => x + y, 0) / cells.length / 1000 : null;
     const t = (b.temperatures_c || []).length ? Math.max(...b.temperatures_c) : null;
     return `<div class="card pack"><b>${esc(name[0] + name.slice(1).toLowerCase())}</b>${meter(b.state_of_charge_percent, "eK" + n, name, "sm")}
       <b class="num">${num(b.pack_voltage_v, 2)} V</b><small>${num(b.current_a, 1)} A${t != null ? ` · ${num(t, 0)} °C` : ""}</small>
-      ${cellBars(cells)}<small class="${b.cell_spread_mv > 50 ? "warnc" : ""}">Δ ${num(b.cell_spread_mv)} mV</small>
-      ${st ? `<span class="badge ${st[0]}">${esc(st[1])}</span>` : ""}<span class="badge ${bl[0]}">${esc(bl[1])}</span>
-      <div class="fets">${fet(b.charge_mosfet_on, "C")}${fet(b.discharge_mosfet_on, "D")}</div></div>`;
+      ${cellBars(cells)}<small>Avg ${avg != null ? avg.toFixed(3) : "–"} V</small><small class="${b.cell_spread_mv > 50 ? "warnc" : ""}">Δ ${num(b.cell_spread_mv)} mV</small>
+      <small class="${st[0]}">${esc(st[1])}</small><span class="badge ${bl[0]}">${esc(bl[1])}</span>
+      ${fet("c", b.charge_mosfet_on, "C", "charge")}${fet("d", b.discharge_mosfet_on, "D", "discharge")}
+      <button class="btn sec sm" type="button" data-soc="${n}" ${cs.busy || !live ? "disabled" : ""}>Set SOC</button></div>`;
   };
   const d = m.state.data, other = d ? ["start", "bow"].map(k => { const b = d.storage[k];
     return `<div class="card other">${meter(b.soc, "eB" + k, b.label, "sm")}<div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small></div>
       <div class="v"><b>${num(b.voltage, 2)} V</b><small>${num(b.current, 1)} A</small></div></div>`; }).join("") : "";
+  const hb = d && d.storage.house;
   const balOpen = !!($("eBalFold") || {}).open, balAct = Object.values(devs).filter(dv => (dv.status || {}).balance_active).length;
   box.innerHTML = `
-    <div class="packs">${names.map(pack).join("")}</div><div class="others">${other}</div>
-    <div class="u-mb-12 u-mt-12 u-d-flex u-gap-8 u-fw-wrap u-ai-center card pad">
+    <div class="others">${other}</div>
+    <div class="card bankbox"><div class="hd">${icon("batt")}<h3>House bank</h3>${hb ? `<span class="muted num">${esc(hb.battery_type || hb.chemistry || "LiFePO4")}${hb.capacity ? ` · ${num(hb.capacity)} ${esc(hb.capacity_unit || "Ah")}` : ""}</span>` : ""}</div>
+      <div class="packs">${names.map(pack).join("")}</div></div>
+    <div class="u-mb-12 card pad"><div class="allbtns">
       <button class="btn sec sm" type="button" id="bms-all-refresh">${icon("refresh")} Read all</button>
       <button class="btn sec sm" type="button" data-all="charge-on">All charge ON</button><button class="btn sec sm" type="button" data-all="charge-off">All charge OFF</button>
       <button class="btn sec sm" type="button" data-all="discharge-on">All discharge ON</button><button class="btn sec sm" type="button" data-all="discharge-off">All discharge OFF</button>
-      <button class="btn sec sm" type="button" data-soc="all" ${cs.busy ? "disabled" : ""}>Set all SOC</button>
-      <span class="u-flex-1 u-minw-160 hint">${cs.busy ? `<span class="warnc">${esc(cs.message || cs.phase || "Bluetooth busy…")}</span>` : `${bms.connected_count ?? "–"} connected · read every ${bms.refresh_interval_seconds ?? "–"} s`}</span></div>
+      <button class="btn sec sm" type="button" data-soc="all" ${cs.busy ? "disabled" : ""}>Set all SOC</button></div>
+      <span class="u-mt-8 hint">${cs.busy ? `<span class="warnc">${esc(cs.message || cs.phase || "Bluetooth busy…")}</span>` : `${bms.connected_count ?? "–"} connected · read every ${bms.refresh_interval_seconds ?? "–"} s`}</span></div>
     <h2 class="sec">Pack details</h2><div class="grid g3">${names.map(bcard).join("")}</div>
     <details class="secfold" id="eBalFold" ${balOpen ? "open" : ""}><summary><h2 class="sec">Balancers<span class="r">${Object.keys(devs).length ? balAct ? `${balAct} balancing` : "all idle" : "no data"} ${icon("chev", "i chev")}</span></h2></summary>
       <div class="grid g3">${Object.entries(devs).map(balcard).join("") || `<div class="empty">No balancer data</div>`}</div></details>

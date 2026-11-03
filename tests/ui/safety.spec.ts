@@ -25,6 +25,24 @@ test("Engine ECU off: default is Keep ECU ON, and declining sends nothing @iphon
   expect(posts).toEqual([]);
 });
 
+test("Battery discharge MOSFET off: default is Keep ON, and declining sends nothing", async ({ page }) => {
+  const posts: Posted[] = [];
+  await setUp(page, { posts });
+  await open(page, "#power", "#eViews [data-view=batt]");
+  const fet = page.locator("#bms-d-1");
+  await expect(fet).toBeChecked();
+  for (const decline of ["button", "Escape"]) {
+    await fet.click({ force: true });
+    await expect(dialog(page)).toContainText("Switch off discharge on Battery 1?");
+    await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Keep ON");
+    if (decline === "button") await page.locator("#dlgSheet [data-default]").click();
+    else await page.keyboard.press("Escape");
+    await expect(page.locator("#dialog")).not.toHaveClass(/open/);
+    await expect(fet).toBeChecked();
+  }
+  expect(posts).toEqual([]);
+});
+
 test("Switch all systems off: default is Leave on, and declining sends nothing", async ({ page }) => {
   const posts: Posted[] = [];
   await setUp(page, { posts });

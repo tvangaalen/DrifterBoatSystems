@@ -188,6 +188,8 @@ h2.sec .r{text-transform:none;letter-spacing:0;font-weight:500}
 .switch.onoff i:after{width:30px;height:30px;left:2px;top:2px;box-shadow:0 2px 4px rgba(0,0,0,.35),inset 0 -2px 3px rgba(0,0,0,.12)}
 .switch.onoff input:checked+i{background:var(--ok)}.switch.onoff input:checked+i:before{content:"ON";right:auto;left:12px}
 .switch.onoff input:checked+i:after{left:54px}
+.switch.onoff.sm{width:64px;height:30px}.switch.onoff.sm i{border-width:2px}.switch.onoff.sm i:before{font-size:11px;right:7px}.switch.onoff.sm i:after{width:22px;height:22px;left:2px;top:2px}
+.switch.onoff.sm input:checked+i:before{left:8px}.switch.onoff.sm input:checked+i:after{left:36px}
 :root[data-theme="night"] .switch.onoff input:not(:checked)+i{background:var(--badbg)}:root[data-theme="night"] .switch.onoff input:not(:checked)+i:before{color:var(--bad)}
 .field{min-height:44px;font-size:16px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--fg);min-width:0}
 .field:focus{outline:2px solid var(--accent);outline-offset:-1px}
@@ -372,12 +374,15 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .stats.tilegrid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .card>.stats{margin:2px 16px 16px}   /* a stats grid inside a titled card */
 .card-pad-x{padding:0 16px}                 /* buttons inside a card with rows */
-.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px}   /* Batteries tab: the overview */
+.packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:0 8px 8px}   /* Batteries tab: the overview */
+.bankbox{margin:8px 0 12px}.bankbox .pack{background:var(--card2);border-color:transparent}
 .pack{padding:10px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;min-width:0}
-.pack>b{align-self:stretch;font-size:14px}.pack .fets{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.pack .badge.fet{padding:2px 6px}.pack .badge.fet:before{display:none}.pack small{color:var(--muted);font-size:12px}.pack .badge{font-size:11px;padding:2px 7px}
+.pack>b{align-self:stretch;font-size:14px}.pack .fet{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--muted)}.pack .btn{margin-top:4px}.pack small{color:var(--muted);font-size:12px}.pack .badge{font-size:11px;padding:2px 7px}
 .cellbars{display:flex;gap:3px;align-items:flex-end;height:22px;margin-top:2px}.cellbars i{width:7px;border-radius:2px;background:var(--off)}
 .cellbars i.hi{background:var(--warn)}.cellbars i.lo{background:var(--accent)}
-.others{display:grid;gap:8px}@media (min-width:700px){.others{grid-template-columns:1fr 1fr}}
+.others{display:grid;gap:8px}
+.allbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.allbtns .btn{padding:0 8px}   /* equal buttons */
+@media (min-width:480px){.allbtns{grid-template-columns:repeat(3,minmax(0,1fr))}}@media (min-width:1000px){.allbtns{grid-template-columns:repeat(6,minmax(0,1fr))}}@media (min-width:700px){.others{grid-template-columns:1fr 1fr}}
 .card.other{display:flex;align-items:center;gap:14px;padding:10px 16px}.card.other .k{flex:1;min-width:0}
 .card.other .k b,.card.other .v b{display:block;font-weight:650}.card.other small{color:var(--muted);font-size:12.5px}.card.other .v{text-align:right;font-variant-numeric:tabular-nums}
 details.secfold>summary{list-style:none;cursor:pointer}details.secfold>summary::-webkit-details-marker{display:none}
