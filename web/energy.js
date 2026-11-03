@@ -61,8 +61,8 @@ const m = {
   tile() {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const h = d.storage.house, s = d.sources, t = d.totals;
-    return `<div class="meter-row"><div><div class="u-fs-22 big">House battery</div><div class="big">${W(h.power)}</div>
-      <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A ${h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : ""}</div></div>${meter(h.soc)}</div>
+    return `<div class="meter-row"><div><div class="u-fs-22 big">House bank</div><div class="big">${W(h.power)}</div>
+      <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A ${h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : ""}</div></div>${meter(h.soc, "eT")}</div>
       <div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
       <div class="mini"><div class="l">Alternator</div><div class="n">${W((s.alternator || {}).power)}</div></div>
       <div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
@@ -71,7 +71,7 @@ const m = {
   mount(el) {
     el.innerHTML = `<div id="eDown"></div>
       <div class="u-m-4-0-14 u-maxw-460 seg" role="tablist" id="eViews">
-        <button type="button" data-view="now" aria-pressed="true">Now</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
+        <button type="button" data-view="now" aria-pressed="true">Control</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
       <div id="eNow"></div><div id="eBatt" hidden></div><div id="eHist" hidden></div><div id="eSet" hidden></div>`;
     el.addEventListener("click", onClick); el.addEventListener("change", onChange);
     el.addEventListener("input", e => { if (e.target.closest("#eSetForm")) { setDirty = true; validateSettings(); } });
@@ -85,9 +85,10 @@ const m = {
   },
 };
 
-/** House SOC as a half arc, red (empty) → orange → green (full), with a needle; no needle without a SOC.
- * @param {number | null | undefined} soc */
-function meter(soc) {
+/** House SOC as a half arc, red (empty) → orange → green (full), with a needle; no needle without a SOC. `id` keeps the
+ * gradients apart: the Overview tile and the Control view are both in the page, and a hidden copy would blank the other.
+ * @param {number | null | undefined} soc @param {string} id */
+function meter(soc, id) {
   const s = soc == null || !isFinite(+soc) ? null : Math.min(100, Math.max(0, +soc)), cx = 62, cy = 64, r = 48, f = v => v.toFixed(1);
   const arc = rr => `M ${cx - rr} ${cy} A ${rr} ${rr} 0 0 1 ${cx + rr} ${cy}`;
   let needle = "";
@@ -96,11 +97,11 @@ function meter(soc) {
     const P = (d, w) => `${f(cx + ux * d + vx * w)},${f(cy + uy * d + vy * w)}`;
     needle = `<g class="needle"><polygon points="${P(28, 4.5)} ${P(r + 10, 1.2)} ${P(r + 10, -1.2)} ${P(28, -4.5)}"/></g>`;   // only the tip: clear of the pill
   }
-  return `<div class="meter" role="img" aria-label="House battery ${s == null ? "unknown" : num(s) + " %"}"><svg viewBox="0 0 124 76" aria-hidden="true">
-    <defs><linearGradient id="eMeterBand" x1="0" x2="1"><stop offset="0" class="s0"/><stop offset=".5" class="s1"/><stop offset="1" class="s2"/></linearGradient>
-      <linearGradient id="eMeterSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset=".55" class="g1"/></linearGradient></defs>
-    <path class="track" d="${arc(r)}"/><path class="band glow" d="${arc(r)}" stroke="url(#eMeterBand)"/><path class="band" d="${arc(r)}" stroke="url(#eMeterBand)"/>
-    <path class="sheen" d="${arc(r - 4)}" stroke="url(#eMeterSheen)"/><path class="rim" d="${arc(r + 11)}"/>${needle}</svg>
+  return `<div class="meter" role="img" aria-label="House bank ${s == null ? "unknown" : num(s) + " %"}"><svg viewBox="0 0 124 76" aria-hidden="true">
+    <defs><linearGradient id="${id}Band" x1="0" x2="1"><stop offset="0" class="s0"/><stop offset=".5" class="s1"/><stop offset="1" class="s2"/></linearGradient>
+      <linearGradient id="${id}Sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset=".55" class="g1"/></linearGradient></defs>
+    <path class="track" d="${arc(r)}"/><path class="band glow" d="${arc(r)}" stroke="url(#${id}Band)"/><path class="band" d="${arc(r)}" stroke="url(#${id}Band)"/>
+    <path class="sheen" d="${arc(r - 4)}" stroke="url(#${id}Sheen)"/><path class="rim" d="${arc(r + 11)}"/>${needle}</svg>
     <span class="pill">${num(s)}<small>%</small></span></div>`;
 }
 
@@ -121,7 +122,6 @@ function renderNow() {
   if (!d) { box.innerHTML = m.state.err ? "" : `<div class="empty">Loading…</div>`; return; }
   const h = d.storage.house, s = d.sources, c = d.consumers, t = d.totals, cm = d.combimaster || {}, ctl = d.controls || {}, f = d.high_soc_float_policy;
   const [fc, ft] = floatText(f), charging = h.current != null && h.current > 0.3;
-  const socAge = h.soc_age_seconds != null ? ` · DALY ${Math.round(h.soc_age_seconds)} s old` : "";
   const srcSub = {shore: s.shore.connected ? `${num(s.shore.input_frequency, 1)} Hz` : "Not connected", charger_house: s.charger_house.charge_state || "–",
     alternator: `${s.alternator.state || "–"}${s.alternator.estimated ? " · estimated" : ""}`, solar: `${s.solar.state || "–"} · panel ${num(s.solar.panel_voltage, 1)} V`};
   const sw = (id, val, extra = "") => D.sw(id, val, (busy.has(id) ? "disabled " : "") + extra);
@@ -133,13 +133,13 @@ function renderNow() {
       <p class="u-m-8-2-0 hint">${d.active_mode ? `${esc(d.active_mode[0].toUpperCase() + d.active_mode.slice(1))} mode is active (until a single control changes). ` : ""}Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
     <div class="grid g2l">
       <div class="stack">
-        <div class="u-d-flex u-gap-18 u-ai-center u-fw-wrap card pad">
-          <div class="gauge" style="--p:${h.soc ?? 0};--c:${h.soc != null && h.soc < 20 ? "var(--bad)" : h.soc != null && h.soc < 35 ? "var(--warn)" : "var(--batt)"}"><b>${num(h.soc)}<small>%</small></b></div>
-          <div class="u-flex-1 u-minw-180"><div class="u-fwt-600 u-fs-13 muted">House battery · ${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""}</div>
-            <div class="u-fs-30 u-fwt-750 u-ls-0_02em num">${h.power != null && h.power > 0 ? "+" : ""}${W(h.power)}</div>
-            <div class="muted">${num(h.voltage, 2)} V · ${num(h.current, 1)} A · ${charging ? "charging" : h.current < -0.3 ? "discharging" : "idle"}${h.temperature != null ? ` · ${num(h.temperature, 1)} °C` : ""}</div>
-            <div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ${fc}">${esc(ft)}</span>${h.soc == null ? `<span class="badge warn">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span>` : ""}</div>
-            <div class="u-mt-6 hint">Highest cell ${num(h.max_cell_mv)} mV${h.max_cell_battery ? ` (${esc(h.max_cell_battery)})` : ""} · spread ${num(h.max_spread_mv)} mV${socAge}</div></div>
+        <div class="card tile bank"><div class="meter-row"><div><div class="u-fs-22 big">House bank</div>
+            <div class="line">${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""} · ${charging ? "charging" : h.current < -0.3 ? "discharging" : "idle"}</div>
+            <div class="big">${h.power != null && h.power > 0 ? "+" : ""}${W(h.power)}</div></div>${meter(h.soc, "eP")}</div>
+          <div class="minis"><div class="mini"><div class="l">Voltage</div><div class="n">${num(h.voltage, 2)} V</div></div>
+            <div class="mini"><div class="l">Current</div><div class="n">${num(h.current, 1)} A</div></div>
+            <div class="mini"><div class="l">Temperature</div><div class="n">${h.temperature != null ? num(h.temperature, 1) + " °C" : "–"}</div></div></div>
+          <div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ${fc}">${esc(ft)}</span>${h.soc == null ? `<span class="badge warn">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span>` : ""}</div>
         </div>
         <div class="stats s4">
           <div class="stat"><div class="l">${icon("sun")} Solar</div><div class="n">${W(s.solar.power)}</div><div class="s">${esc(s.solar.state || "–")}</div></div>

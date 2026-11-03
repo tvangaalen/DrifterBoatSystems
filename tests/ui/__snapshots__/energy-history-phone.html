@@ -9,19 +9,24 @@
 </div>
 <section data-page="power"><div id="eDown"></div>
 <div class="u-m-4-0-14 u-maxw-460 seg" role="tablist" id="eViews">
-<button type="button" data-view="now" aria-pressed="false">Now</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="true">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
+<button type="button" data-view="now" aria-pressed="false">Control</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="true">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
 <div id="eNow" hidden="">
 <div class="u-mb-12 card pad"><div class="btns eq"><button class="btn sec" type="button" data-mode="motor" aria-pressed="false">Motor</button><button class="btn sec" type="button" data-mode="anchor" aria-pressed="false">Anchor</button><button class="btn sec" type="button" data-mode="marina" aria-pressed="false">Marina</button><button class="btn sec" type="button" data-mode="sail" aria-pressed="false">Sail</button></div>
 <p class="u-m-8-2-0 hint">Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
 <div class="grid g2l">
 <div class="stack">
-<div class="u-d-flex u-gap-18 u-ai-center u-fw-wrap card pad">
-<div class="gauge" style="--p:72.5;--c:var(--batt)"><b>73<small>%</small></b></div>
-<div class="u-flex-1 u-minw-180"><div class="u-fwt-600 u-fs-13 muted">House battery · MLI · 960 Ah</div>
-<div class="u-fs-30 u-fwt-750 u-ls-0_02em num">+145 W</div>
-<div class="muted">13.17 V · 11.0 A · charging · 21.5 °C</div>
+<div class="card tile bank"><div class="meter-row"><div><div class="u-fs-22 big">House bank</div>
+<div class="line">MLI · 960 Ah · charging</div>
+<div class="big">+145 W</div></div><div class="meter" role="img" aria-label="House bank 73 %"><svg viewBox="0 0 124 76" aria-hidden="true">
+<defs><linearGradient id="ePBand" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
+<linearGradient id="ePSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
+<path class="track" d="M 14 64 A 48 48 0 0 1 110 64"></path><path class="band glow" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#ePBand)"></path><path class="band" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#ePBand)"></path>
+<path class="sheen" d="M 18 64 A 44 44 0 0 1 106 64" stroke="url(#ePSheen)"></path><path class="rim" d="M 3 64 A 59 59 0 0 1 121 64"></path><g class="needle"><polygon points="83.6,45.6 100.6,20.7 98.8,19.1 76.8,39.8"></polygon></g></svg>
+<span class="pill">73<small>%</small></span></div></div>
+<div class="minis"><div class="mini"><div class="l">Voltage</div><div class="n">13.17 V</div></div>
+<div class="mini"><div class="l">Current</div><div class="n">11.0 A</div></div>
+<div class="mini"><div class="l">Temperature</div><div class="n">21.5 °C</div></div></div>
 <div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ok">Bulk allowed · Float when a cell reaches 3550 mV (now 3341 mV)</span></div>
-<div class="u-mt-6 hint">Highest cell 3341 mV (BATTERY 1) · spread 18 mV · DALY 12 s old</div></div>
 </div>
 <div class="stats s4">
 <div class="stat"><div class="l"><svg class="i"><use href="#i-sun"></use></svg> Solar</div><div class="n">261 W</div><div class="s">Bulk</div></div>
