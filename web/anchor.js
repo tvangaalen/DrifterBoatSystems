@@ -208,6 +208,10 @@ function initMap(lib) {
   map.on("dragstart zoomstart", () => { if (!m._fitting) follow = false; });
   map.on("click", e => { if (draft) { draft = {lat: e.latlng.lat, lon: e.latlng.lng}; showDraft(); } });
   L.DomEvent.disableClickPropagation(document.querySelector("#aMap .mapbtns")); L.DomEvent.disableClickPropagation($("aMovebar"));
+  // Leaflet measures its box only on a window resize: hidden (another page or tab) it measures 0 x 0 and then draws from the
+  // top-left corner. Measure again whenever the box itself changes size, which includes being shown again.
+  new ResizeObserver(() => { const c = $("aMap");
+    if (c.clientWidth && c.clientHeight) { map.invalidateSize({pan: false}); if (follow && m.state.data) fit(m.state.data); } }).observe($("aMap"));
   if (m.state.data) drawMap(m.state.data);
   D.poll(m, true);
 }
@@ -509,7 +513,7 @@ async function save() {
 const cmd = (body, ok, el) => D.run(m, el, () => D.api("anchor", "/api/command", body), ok).catch(() => {});
 async function onClick(e) {
   const b = e.target.closest("button"); if (!b) return;
-  if (b.dataset.aview) { view = b.dataset.aview; if (draft) setMove(false); m.render(); if (view === "watch" && map) setTimeout(() => map.invalidateSize(), 50); return; }
+  if (b.dataset.aview) { view = b.dataset.aview; if (draft) setMove(false); m.render(); return; }
   if (b.dataset.base && map) { map.removeLayer(layers[base]); base = b.dataset.base; layers[base].addTo(map); if (layers[base].bringToBack) layers[base].bringToBack();
     document.querySelectorAll("#aBase button").forEach(x => x.setAttribute("aria-pressed", x.dataset.base === base)); return; }
   if (b.id === "aSea" && map) { const on = !map.hasLayer(layers.seamark); on ? layers.seamark.addTo(map) : map.removeLayer(layers.seamark); b.setAttribute("aria-pressed", on);
