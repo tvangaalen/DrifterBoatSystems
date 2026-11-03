@@ -26,7 +26,8 @@ All times are on the 24-hour clock.
 One tile per system with its key values. Tap a tile to open its page. A badge in the tile and a dot in the navigation
 show what needs attention: *alarm* (red) or *check* (orange).
 
-- **Energy:** house battery charge (%), the battery power, and the four flows: Charger house, Alternator, Solar and the
+- **Energy:** the house battery charge on a meter (red empty, green full), the battery power, its voltage and current, and
+  the four flows: Charger, Alternator, Solar and the
   DC load (shown with a minus sign: it is taken from the battery).
 - **Anchor watch:** whether the anchor is set and, if so, the distance to it; depth, wind and the GPS state.
 - **BoatGuard:** whether you are on board and whether monitoring is on; phone, camera and its battery.

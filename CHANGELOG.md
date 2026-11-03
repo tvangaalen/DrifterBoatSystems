@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1
+
+### 1.1.0 — 2026-11-03
+
+- **Overview, Energy tile**: the house battery charge is a half-circle meter (red → orange → green, with a needle and the
+  percentage below it) instead of the small ring, on the right of the tile. On the left *House battery*, the battery power
+  and the voltage and current (without "House"); the first flow is called *Charger*. Colours from the theme tokens (in
+  Night red only, without the sheen); no needle while the charge is unknown.
+
 ## 1.0
 
 ### 1.0.0 — 2026-11-02
