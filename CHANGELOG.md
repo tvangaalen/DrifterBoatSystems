@@ -11,6 +11,8 @@
   Batteries tab
 - Batteries tab: one-screen overview with a meter, cells, balancer and MOSFET state per pack, start and bow batteries;
   balancers folded
+- Batteries tab: start and bow on top, House bank frame, per pack ON/OFF MOSFET switches, Set SOC, average cell voltage
+  and a steady Read line; equal buttons
 
 ## 1.2
 

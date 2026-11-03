@@ -58,10 +58,11 @@ manual: History → *Open the manual*.
     has read the new state back.
   - **Engine ECU off** always asks first, with *Keep ECU ON* as the default: switching it off stops a running engine.
     *Alternator off* asks too (*Keep Alternator ON*).
-- **Batteries:** at the top an overview that fits one iPhone screen: per pack its meter, voltage, current, temperature,
-  cells (highest orange, lowest blue), spread, its balancer and the charge (C) and discharge (D) MOSFETs; then the start
-  and bow batteries with their meters. Below: the buttons for all packs, *Pack details* per battery (the MOSFET switches
-  and SOC calibration), the balancers (folded: tap to open);
+- **Batteries:** at the top an overview that fits one iPhone screen: the start and bow batteries with their meters,
+  then the *House bank* frame with a tile per pack: its meter, voltage, current, temperature, cells (highest orange,
+  lowest blue), the average cell voltage, the spread, when it was last read, its balancer, the ON/OFF switches for the
+  charge (C) and discharge (D) MOSFETs and *Set SOC*. Below: the buttons for all packs, *Pack details* per battery, the
+  balancers (folded: tap to open);
   Bluetooth diagnostics and recent Bluetooth events. Every action that could cut power asks first, the safe choice being
   the default.
 - **History:** charts of the state of charge, sources, DC consumers, battery current and cell spread for 6 hours up to 31
