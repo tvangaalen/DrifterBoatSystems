@@ -27,6 +27,8 @@
   Start cards are gone
 - Washer page: Start now and Schedule greyed out from Set program until the washer confirms; Schedule in its own card
   again; Set program; Diagnostics folded to one status line
+- Washer page: Set program and Schedule buttons on the left; schedule messages ("Schedule cleared", errors) in the
+  Schedule card
 
 ## 1.1
 
