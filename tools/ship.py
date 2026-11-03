@@ -260,6 +260,7 @@ def main(argv=None) -> None:
     for p in (s, r): p.add_argument("--claude", action="store_true", help="add Claude's Co-Authored-By line")
     for p in (s, r, d): p.add_argument("--no-restart", action="store_true")
     a = ap.parse_args(argv); t0 = time.monotonic()
+    sys.stdout.reconfigure(errors="replace")             # test output can hold characters the console cannot show
     if a.command == "check": check(changed(), a.dry_run)
     elif a.command == "change": change(a)
     elif a.command == "release": release(a)
