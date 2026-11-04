@@ -23,6 +23,7 @@
   one tile in the corner)
 - History: state of charge as stacked columns on a fixed 0-100 % scale with a smooth total line; a legend tap shows one
   series in any chart
+- History: state of charge as smooth stacked areas instead of columns
 
 ## 1.2
 
