@@ -27,6 +27,7 @@ const SETTINGS = [   // [key, label, hint, min, max, step, unit] — the server'
 ];
 let view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
 const busy = new Set();
+const solo = {};     // History: per chart the one series a legend tap shows on its own (absent: all of them)
 const on = v => v != null && +v >= .5;
 const flowW = v => v == null || !isFinite(+v) ? "–" : Math.round(+v) > 0 ? "+" + W(+v) : outW(-v);   // into a battery +, out of it −
 const outW = v => v == null || !isFinite(+v) ? "–" : Math.round(Math.abs(+v)) ? "−" + W(Math.abs(+v)) : W(0);   // power going out, shown negative
@@ -300,7 +301,8 @@ function md(text) {     // the battery report is Markdown: headings, lists, tabl
   flush(); return out.join("");
 }
 // ---- history charts. The server sends a sample of the history for drawing only (about 2,500 points); totals always
-// come from /api/history/contributions, which integrates the full-resolution data. Stacked bands are opaque areas.
+// come from /api/history/contributions, which integrates the full-resolution data. Stacked bands are opaque areas; the
+// state of charge is stacked columns (time bins, each battery its share of the bank) under a smooth total line.
 const SRC_META = [["charger_house", "Charger House", "#a78bfa"], ["alternator", "Alternator", "#f4a631"], ["solar", "Solar", "#65d92f"]];
 const LOAD_META = [["inverter", "Inverter", "#a78bfa"], ["charger_start", "Charger Start", "#65d92f"], ["charger_bow", "Charger Bow", "#34d399"],
   ["engine_ecu", "Engine ECU", "#f4a631"], ["alternator_field", "Alt. field", "#fb7185"], ["other_dc", "Other DC", "#60a5fa"]];
@@ -319,7 +321,20 @@ function seriesFrom(c) {
     return {t: p.t, v: n === 3 ? sum / bankAh * 100 : null}; });
   return {dash, byBat, tot, perAh};
 }
-function drawChart(canvas, opt) {      // opt: {t0, t1, stacked, unit, series:[{label, color, pts:[{t, v}]}]}
+/** A smooth line through the points without overshoot (monotone cubic, Fritsch-Carlson). @param {any} g @param {number[][]} P */
+function smoothPath(g, P) {
+  const n = P.length, d = [], m = [];
+  for (let i = 0; i < n - 1; i++) d[i] = (P[i + 1][1] - P[i][1]) / (P[i + 1][0] - P[i][0]);
+  for (let i = 0; i < n; i++) m[i] = i === 0 ? d[0] : i === n - 1 ? d[n - 2] : d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) { if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i], q = a * a + b * b; if (q > 9) { const k = 3 / Math.sqrt(q); m[i] = k * a * d[i]; m[i + 1] = k * b * d[i]; } }
+  g.moveTo(P[0][0], P[0][1]);
+  for (let i = 0; i < n - 1; i++) { const h = (P[i + 1][0] - P[i][0]) / 3;
+    g.bezierCurveTo(P[i][0] + h, P[i][1] + m[i] * h, P[i + 1][0] - h, P[i + 1][1] - m[i + 1] * h, P[i + 1][0], P[i + 1][1]); }
+}
+// opt: {t0, t1, unit, stacked (areas) | columns (binned columns, part = a series' share; line = a smooth line over them),
+//   fixed: [lo, hi], zero, series:[{label, color, pts:[{t, v}], part, line, width}]}
+function drawChart(canvas, opt) {
   const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight;
   if (!W) return;
   canvas.width = W * dpr; canvas.height = H * dpr;
@@ -327,7 +342,19 @@ function drawChart(canvas, opt) {      // opt: {t0, t1, stacked, unit, series:[{
   const css = n => getComputedStyle(document.body).getPropertyValue(n).trim(), muted = css("--muted"), line = css("--line");
   const L = 44, R = W - 8, T = 8, B = H - 22;
   let lo = Infinity, hi = -Infinity;
-  if (opt.stacked) {     // stack on a shared time axis: the first series' timestamps
+  if (opt.columns) {     // average every series per time bin (a column about every 7 px); the line is the columns' total
+    const n = Math.max(24, Math.min(120, Math.floor((R - L) / 7))), dt = (opt.t1 - opt.t0) / n;
+    const bin = pts => { const sum = new Array(n).fill(0), cnt = new Array(n).fill(0);
+      for (const p of pts) { if (p.v == null) continue; const i = Math.floor((p.t - opt.t0) / dt); if (i >= 0 && i < n) { sum[i] += p.v; cnt[i]++; } }
+      return sum.map((v, i) => ({t: opt.t0 + (i + .5) * dt, v: cnt[i] ? v / cnt[i] : null})); };
+    const cols = opt.series.filter(s => !s.line).map(s => ({...s, pts: bin(s.pts)}));
+    const lines = opt.series.filter(s => s.line).map(s => { const own = bin(s.pts);
+      return {...s, pts: own.map((p, i) => cols.length && cols.every(c => c.pts[i].v != null) ? {t: p.t, v: cols.reduce((a, c) => a + c.pts[i].v * (c.part ?? 1), 0)} : p)}; });
+    opt = {...opt, series: opt.series.map(s => (s.line ? lines : cols).find(x => x.label === s.label)), bins: {n, dt}};
+  }
+  if (opt.fixed) [lo, hi] = opt.fixed;
+  else if (opt.columns) { lo = 0; hi = 1; for (const s of opt.series) for (const p of s.pts) if (p.v != null) hi = Math.max(hi, p.v * (s.line ? 1 : s.part ?? 1)); }
+  else if (opt.stacked) {     // stack on a shared time axis: the first series' timestamps
     const base = opt.series[0] ? opt.series[0].pts.map(p => p.t) : [];
     opt.stackTops = base.map((t, i) => opt.series.reduce((acc, s) => acc + Math.max(0, (s.pts[i] || {}).v || 0), 0));
     lo = 0; hi = Math.max(1, ...opt.stackTops);
@@ -335,7 +362,7 @@ function drawChart(canvas, opt) {      // opt: {t0, t1, stacked, unit, series:[{
   if (!isFinite(lo)) { lo = 0; hi = 1; }
   if (opt.zero) lo = Math.min(lo, 0);
   if (hi - lo < 1e-6) { hi += 1; lo -= opt.zero ? 0 : 1; }
-  const pad = (hi - lo) * .06; hi += pad; if (!opt.stacked && lo !== 0) lo -= pad;
+  if (!opt.fixed) { const pad = (hi - lo) * .06; hi += pad; if (!opt.stacked && !opt.columns && lo !== 0) lo -= pad; }
   const X = t => L + (t - opt.t0) / (opt.t1 - opt.t0) * (R - L), Y = v => B - (v - lo) / (hi - lo) * (B - T);
   g.font = "11px -apple-system, Segoe UI, sans-serif"; g.fillStyle = muted; g.strokeStyle = line; g.lineWidth = 1;
   for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, y = Y(v); g.beginPath(); g.moveTo(L, y); g.lineTo(R, y); g.stroke();
@@ -347,7 +374,17 @@ function drawChart(canvas, opt) {      // opt: {t0, t1, stacked, unit, series:[{
     g.beginPath(); g.moveTo(x, B); g.lineTo(x, B + 4); g.stroke(); g.fillText(lab, x, H - 6); }
   if (opt.zero && lo < 0) { g.strokeStyle = muted; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(R, Y(0)); g.stroke(); }
   g.save(); g.beginPath(); g.rect(L, T, R - L, B - T); g.clip();
-  if (opt.stacked) {
+  if (opt.columns) {
+    const {n, dt} = opt.bins, gap = (X(opt.t0 + dt) - X(opt.t0)) > 5 ? 1 : 0;
+    for (let i = 0; i < n; i++) { let acc = 0; const x0 = X(opt.t0 + i * dt) + gap, x1 = X(opt.t0 + (i + 1) * dt) - gap;
+      opt.series.forEach((s, k) => { if (s.line) return; const v = s.pts[i].v; if (v == null) return; const h = v * (s.part ?? 1);
+        g.fillStyle = colorOf(s.color, k); g.fillRect(x0, Y(acc + h), x1 - x0, Y(acc) - Y(acc + h)); acc += h; }); }
+    opt.series.forEach((s, k) => { if (!s.line) return;
+      g.strokeStyle = colorOf(s.color, k); g.lineWidth = s.width || 2.4; g.lineJoin = "round"; g.beginPath();
+      let run = []; const flush = () => { if (run.length > 1) smoothPath(g, run); run = []; };
+      for (const p of s.pts) { if (p.v == null) flush(); else run.push([X(p.t), Y(p.v)]); }
+      flush(); g.stroke(); });
+  } else if (opt.stacked) {
     const base = opt.series[0] ? opt.series[0].pts : [], acc = base.map(() => 0);
     opt.series.forEach((s, k) => {     // opaque bands, drawn once each: no stripes
       g.fillStyle = colorOf(s.color, k); g.beginPath();
@@ -383,8 +420,8 @@ function renderCharts() {
   const S = seriesFrom(chart), t1 = Date.parse(chart.latest), t0 = Date.parse(chart.cutoff);
   /** @type {[string, string, string, any][]} */
   const defs = [
-    ["eChSoc", "State of charge", "%", {series: [{label: "Total", color: BAT_META[0][2], width: 2.4, pts: S.tot},
-      ...BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.rem != null ? p.rem / S.perAh * 100 : null}))}))]}],
+    ["eChSoc", "State of charge", "%", {columns: true, fixed: [0, 100], series: [{label: "Total", color: BAT_META[0][2], width: 2.6, line: true, pts: S.tot},
+      ...BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, part: 1 / 3, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.rem != null ? p.rem / S.perAh * 100 : null}))}))]}],
     ["eChSrc", "Sources", "W", {stacked: true, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
     ["eChLoad", "DC consumers", "W", {stacked: true, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
     ["eChCur", "Battery current", "A", {zero: true, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
@@ -399,8 +436,11 @@ function renderCharts() {
       cv.addEventListener("pointermove", move); cv.addEventListener("pointerdown", move); cv.addEventListener("pointerleave", leave); }
   }
   for (const [id, , unit, o] of defs) {
-    $(id + "Leg").innerHTML = o.series.map((s, k) => `<span><i style="background:${colorOf(s.color, k)}"></i>${esc(s.label)}</span>`).join("");
-    drawChart($(id), {...o, unit, t0, t1});
+    const one = solo[id] && o.series.some(s => s.label === solo[id]) ? solo[id] : null;
+    $(id + "Leg").innerHTML = o.series.map((s, k) => `<button type="button" data-solo="${id}" data-label="${esc(s.label)}" aria-pressed="${s.label === one}" class="${one && s.label !== one ? "off" : ""}"
+      title="${s.label === one ? "Show all" : `Show only ${esc(s.label)}`}"><i style="background:${colorOf(s.color, k)}"></i>${esc(s.label)}</button>`).join("");
+    // one series on its own: a battery's column is then its whole state of charge, not its share of the bank
+    drawChart($(id), {...o, unit, t0, t1, series: one ? o.series.filter(s => s.label === one).map(s => ({...s, part: 1})) : o.series});
   }
   const c = contrib;
   const bars = (items, unitLabel) => { const max = Math.max(1, ...items.map(x => x.wh));
@@ -526,6 +566,7 @@ async function onChange(e) {
 async function onClick(e) {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.view) { view = b.dataset.view; m.render(); D.poll(m, true); return; }
+  if (b.dataset.solo) { const id = b.dataset.solo; solo[id] = solo[id] === b.dataset.label ? null : b.dataset.label; renderCharts(); return; }
   if (b.dataset.mode) {
     const k = b.dataset.mode;
     if (!(await D.confirm({title: `Apply ${k[0].toUpperCase() + k.slice(1)} mode?`, items: MODES[k], ok: "Apply", cancel: "Cancel", safeDefault: false}))) return;
