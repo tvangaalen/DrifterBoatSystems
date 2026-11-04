@@ -21,6 +21,8 @@
 - Batteries tab: Balancers section removed (each pack tile shows its balancer)
 - Anchor watch map measures its box again when it is shown or resized (a window resized on another page left it drawing
   one tile in the corner)
+- History: state of charge as stacked columns on a fixed 0-100 % scale with a smooth total line; a legend tap shows one
+  series in any chart
 
 ## 1.2
 

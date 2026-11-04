@@ -70,7 +70,9 @@ manual: History → *Open the manual*.
   timings) and *Bluetooth events*, both folded to one line with a summary (tap to open). Every action that could cut power asks first, the safe choice being
   the default.
 - **History:** charts of the state of charge, sources, DC consumers, battery current and cell spread for 6 hours up to 31
-  days (touch a chart for the values at that moment), and the energy per period. Also the battery health report, the
+  days (touch a chart for the values at that moment), and the energy per period. The state of charge is stacked columns on
+  a fixed 0–100 % scale: each battery its share of the house bank, with the total as a smooth line on top. Tap a name in a
+  chart's legend to show only that one (a battery's column is then its own state of charge); tap it again for all. Also the battery health report, the
   energy manual and the state of the history database.
 - **Settings:** Float protection thresholds, the default AC limit, refresh intervals and how long history is kept. A
   shorter history asks first: older data is deleted.
