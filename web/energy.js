@@ -302,7 +302,7 @@ function md(text) {     // the battery report is Markdown: headings, lists, tabl
 }
 // ---- history charts. The server sends a sample of the history for drawing only (about 2,500 points); totals always
 // come from /api/history/contributions, which integrates the full-resolution data. Stacked bands are opaque areas; the
-// state of charge is stacked columns (time bins, each battery its share of the bank) under a smooth total line.
+// state of charge is smooth stacked areas (time bins, each battery its share of the bank) under a smooth total line.
 const SRC_META = [["charger_house", "Charger House", "#a78bfa"], ["alternator", "Alternator", "#f4a631"], ["solar", "Solar", "#65d92f"]];
 const LOAD_META = [["inverter", "Inverter", "#a78bfa"], ["charger_start", "Charger Start", "#65d92f"], ["charger_bow", "Charger Bow", "#34d399"],
   ["engine_ecu", "Engine ECU", "#f4a631"], ["alternator_field", "Alt. field", "#fb7185"], ["other_dc", "Other DC", "#60a5fa"]];
@@ -321,18 +321,19 @@ function seriesFrom(c) {
     return {t: p.t, v: n === 3 ? sum / bankAh * 100 : null}; });
   return {dash, byBat, tot, perAh};
 }
-/** A smooth line through the points without overshoot (monotone cubic, Fritsch-Carlson). @param {any} g @param {number[][]} P */
-function smoothPath(g, P) {
+/** A smooth line through the points without overshoot (monotone cubic, Fritsch-Carlson); join: continue the current path.
+ * @param {any} g @param {number[][]} P @param {boolean} [join] */
+function smoothPath(g, P, join) {
   const n = P.length, d = [], m = [];
   for (let i = 0; i < n - 1; i++) d[i] = (P[i + 1][1] - P[i][1]) / (P[i + 1][0] - P[i][0]);
   for (let i = 0; i < n; i++) m[i] = i === 0 ? d[0] : i === n - 1 ? d[n - 2] : d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
   for (let i = 0; i < n - 1; i++) { if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; }
     const a = m[i] / d[i], b = m[i + 1] / d[i], q = a * a + b * b; if (q > 9) { const k = 3 / Math.sqrt(q); m[i] = k * a * d[i]; m[i + 1] = k * b * d[i]; } }
-  g.moveTo(P[0][0], P[0][1]);
+  g[join ? "lineTo" : "moveTo"](P[0][0], P[0][1]);
   for (let i = 0; i < n - 1; i++) { const h = (P[i + 1][0] - P[i][0]) / 3;
     g.bezierCurveTo(P[i][0] + h, P[i][1] + m[i] * h, P[i + 1][0] - h, P[i + 1][1] - m[i + 1] * h, P[i + 1][0], P[i + 1][1]); }
 }
-// opt: {t0, t1, unit, stacked (areas) | columns (binned columns, part = a series' share; line = a smooth line over them),
+// opt: {t0, t1, unit, stacked (areas) | columns (binned smooth stacked areas, part = a series' share; line = a smooth line over them),
 //   fixed: [lo, hi], zero, series:[{label, color, pts:[{t, v}], part, line, width}]}
 function drawChart(canvas, opt) {
   const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight;
@@ -342,7 +343,7 @@ function drawChart(canvas, opt) {
   const css = n => getComputedStyle(document.body).getPropertyValue(n).trim(), muted = css("--muted"), line = css("--line");
   const L = 44, R = W - 8, T = 8, B = H - 22;
   let lo = Infinity, hi = -Infinity;
-  if (opt.columns) {     // average every series per time bin (a column about every 7 px); the line is the columns' total
+  if (opt.columns) {     // average every series per time bin (about every 7 px); the line is the bands' total
     const n = Math.max(24, Math.min(120, Math.floor((R - L) / 7))), dt = (opt.t1 - opt.t0) / n;
     const bin = pts => { const sum = new Array(n).fill(0), cnt = new Array(n).fill(0);
       for (const p of pts) { if (p.v == null) continue; const i = Math.floor((p.t - opt.t0) / dt); if (i >= 0 && i < n) { sum[i] += p.v; cnt[i]++; } }
@@ -375,10 +376,22 @@ function drawChart(canvas, opt) {
   if (opt.zero && lo < 0) { g.strokeStyle = muted; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(R, Y(0)); g.stroke(); }
   g.save(); g.beginPath(); g.rect(L, T, R - L, B - T); g.clip();
   if (opt.columns) {
-    const {n, dt} = opt.bins, gap = (X(opt.t0 + dt) - X(opt.t0)) > 5 ? 1 : 0;
-    for (let i = 0; i < n; i++) { let acc = 0; const x0 = X(opt.t0 + i * dt) + gap, x1 = X(opt.t0 + (i + 1) * dt) - gap;
-      opt.series.forEach((s, k) => { if (s.line) return; const v = s.pts[i].v; if (v == null) return; const h = v * (s.part ?? 1);
-        g.fillStyle = colorOf(s.color, k); g.fillRect(x0, Y(acc + h), x1 - x0, Y(acc) - Y(acc + h)); acc += h; }); }
+    // one continuous band per series, its edges smooth curves through the bin averages; a bin without every value is a gap
+    const {n, dt} = opt.bins, bands = opt.series.map((s, k) => [s, k]).filter(([s]) => !s.line);
+    const ok = i => bands.every(([s]) => s.pts[i].v != null), runs = [];
+    for (let i = 0, a = -1; i <= n; i++) { if (i < n && ok(i)) { if (a < 0) a = i; } else if (a >= 0) { runs.push([a, i - 1]); a = -1; } }
+    for (const [a, z] of runs) {
+      const xs = [X(opt.t0 + a * dt)]; for (let i = a; i <= z; i++) xs.push(X(opt.t0 + (i + .5) * dt)); xs.push(X(opt.t0 + (z + 1) * dt));
+      const idx = [a, ...Array.from({length: z - a + 1}, (_, j) => a + j), z];     // the run's ends reach the bin edges
+      let below = idx.map(() => 0);
+      for (const [s, k] of bands) {
+        const top = idx.map((i, j) => below[j] + s.pts[i].v * (s.part ?? 1));
+        g.fillStyle = colorOf(s.color, k); g.beginPath();
+        smoothPath(g, xs.map((x, j) => [x, Y(top[j])]));
+        smoothPath(g, xs.map((x, j) => [x, Y(below[j])]).reverse(), true);
+        g.closePath(); g.fill(); below = top;
+      }
+    }
     opt.series.forEach((s, k) => { if (!s.line) return;
       g.strokeStyle = colorOf(s.color, k); g.lineWidth = s.width || 2.4; g.lineJoin = "round"; g.beginPath();
       let run = []; const flush = () => { if (run.length > 1) smoothPath(g, run); run = []; };
@@ -439,7 +452,7 @@ function renderCharts() {
     const one = solo[id] && o.series.some(s => s.label === solo[id]) ? solo[id] : null;
     $(id + "Leg").innerHTML = o.series.map((s, k) => `<button type="button" data-solo="${id}" data-label="${esc(s.label)}" aria-pressed="${s.label === one}" class="${one && s.label !== one ? "off" : ""}"
       title="${s.label === one ? "Show all" : `Show only ${esc(s.label)}`}"><i style="background:${colorOf(s.color, k)}"></i>${esc(s.label)}</button>`).join("");
-    // one series on its own: a battery's column is then its whole state of charge, not its share of the bank
+    // one series on its own: a battery's band is then its whole state of charge, not its share of the bank
     drawChart($(id), {...o, unit, t0, t1, series: one ? o.series.filter(s => s.label === one).map(s => ({...s, part: 1})) : o.series});
   }
   const c = contrib;
