@@ -40,6 +40,8 @@
 - Tabs open on their first view; anchor map colours per light/dark and Fit one zoom closer; Float protection Pushover
   notification with a switch; energy Save sends every setting again; all manuals removed (energy technical chapters kept
   as docs/TECHNICAL.md); no pictures in the BoatGuard and Washer tiles
+- History: Alarms chart per battery with alarm types (server: /api/history/alarms); anchor Fit puts the largest circle
+  just inside the map; an open colour picker is no longer rebuilt
 
 ## 1.2
 
