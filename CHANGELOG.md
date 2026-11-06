@@ -28,6 +28,7 @@
   its header
 - Energy: opens on Control; Generator mode; Sources chart smooth on a fixed 0-1800 W scale with amps; History Update
   button
+- History: a two-handled slider zooms all charts into part of the period; tapping the chosen period reloads it
 
 ## 1.2
 

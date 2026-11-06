@@ -74,7 +74,9 @@ manual: History → *Open the manual*.
   days (touch a chart for the values at that moment), and the energy per period. The state of charge is smooth stacked areas on
   a fixed 0–100 % scale: each battery its share of the house bank, with the total as a smooth line on top. Tap a name in a
   chart's legend to show only that one (a battery's band is then its own state of charge); tap it again for all. *Sources* is smooth stacked areas on a fixed 0–1800 W scale, with
-  amps on the right (the watts at the house bank's present voltage). *Update* reads the charts again at once (they
+  amps on the right (the watts at the house bank's present voltage). The slider under the periods zooms all charts into part of the
+  period: drag its two handles (the times at both ends show what is shown); choosing a period shows it whole again.
+  *Update* reads the charts again at once (they
   otherwise refresh once a minute). Also the battery health report, the
   energy manual and the state of the history database.
 - **Settings:** Float protection thresholds, the default AC limit, refresh intervals and how long history is kept. A
