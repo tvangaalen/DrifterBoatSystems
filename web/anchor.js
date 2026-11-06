@@ -138,6 +138,10 @@ const m = {
       if (e.target.matches("#aRode,#aFree")) { try { localStorage.setItem("drifter-" + e.target.id, e.target.value); } catch (x) {} }
     });
     el.addEventListener("submit", e => { if (e.target.id === "aSetForm") { e.preventDefault(); save(); } });
+    // a colour picker is a window of its own: the input may lose focus while it is open, so mark the form until it closes
+    el.addEventListener("pointerdown", e => { const f = e.target.closest(".colpick") && $("aSetForm"); if (f) f.dataset.picking = "1"; });
+    el.addEventListener("change", e => { if (e.target.closest(".colpick")) delete $("aSetForm").dataset.picking; });
+    el.addEventListener("focusout", e => { if (e.target.closest(".colpick")) setTimeout(() => { const f = $("aSetForm"); if (f && !f.contains(document.activeElement)) delete f.dataset.picking; }, 400); });
     loadLeaflet().then(initMap).catch(e => { $("aMap").insertAdjacentHTML("beforeend", `<div class="empty">Map not available: ${esc(e.message)}</div>`); });
     window.addEventListener("drifter-theme", () => { if (map) { trackDrawn = -1; map.invalidateSize(); if (m.state.data) drawMap(m.state.data); } });
     document.addEventListener("keydown", e => {
@@ -202,7 +206,7 @@ function loadLeaflet() {
 function initMap(lib) {
   L = lib;
   // the credits are on the GPS & links view; the map only has an info button that opens them
-  map = L.map("aMap", {zoomControl: true, attributionControl: false, tap: true, maxZoom: 21}).setView([39, 1.5], 9);
+  map = L.map("aMap", {zoomControl: true, attributionControl: false, tap: true, maxZoom: 21, zoomSnap: 0.05}).setView([39, 1.5], 9);
   L.control.scale({imperial: false, position: "bottomleft"}).addTo(map);
   const tl = (l, ext, maxN, attr) => L.tileLayer(`api/anchor/tiles/${l}/{z}/{x}/{y}.${ext}`, {maxZoom: 21, maxNativeZoom: maxN, attribution: attr});
   layers.osm = tl("osm", "png", 19, '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>');
@@ -267,13 +271,12 @@ function drawMap(s) {
 }
 function fit(s) {
   const a = s.anchor, p = (s.boat || {}).pos; if (!a && !p) return;
-  let bb = a ? L.latLng(a.lat, a.lon).toBounds(a.radius * 2.5) : L.latLng(p.lat, p.lon).toBounds(160);
-  if (a && p) bb = bb.extend(L.latLng(p.lat, p.lon).toBounds(30));
-  const near = Math.max(120, a ? 2 * a.radius : 0);   // close neighbours stay in view
-  for (const t of s.ais || []) if (t.dist <= near) bb = bb.extend(L.latLng(t.lat, t.lon).toBounds(30));
-  // one zoom step closer than the bounds that just fit: the circles fill the map (the user's choice of 2026-11-06)
-  const z = Math.min(20, map.getBoundsZoom(bb, false, L.point(32, 32)) + 1), c = a ? L.latLng(a.lat, a.lon) : bb.getCenter();
-  if (Math.abs(z - map.getZoom()) > .3 || map.getCenter().distanceTo(c) > 2) { m._fitting = true; map.setView(c, z, {animate: false}); m._fitting = false; }
+  // the largest circle (alarm radius or max swing) just inside the map, about 10 px to spare (the user's choice of 2026-11-06);
+  // the map zooms in steps of 0.05 for this. A boat outside the circle stays in view.
+  let bb = a ? L.latLng(a.lat, a.lon).toBounds(2 * Math.max(a.radius, s.max_dist || 0)) : L.latLng(p.lat, p.lon).toBounds(160);
+  if (a && p) bb = bb.extend(L.latLng(p.lat, p.lon));
+  const z = Math.min(20, map.getBoundsZoom(bb, false, L.point(16, 16))), c = bb.getCenter();
+  if (Math.abs(z - map.getZoom()) > .04 || map.getCenter().distanceTo(c) > 2) { m._fitting = true; map.setView(c, z, {animate: false}); m._fitting = false; }
 }
 function setMove(on) {
   const s = m.state.data; if (on && !(s && s.anchor)) return;
@@ -489,7 +492,9 @@ function renderSettings(s) {
   if ($("aMmsiSug")) $("aMmsiSug").innerHTML = sug;
   const bs = s.boat || {}, td = bs.depth_offset_src === "sounder" ? `the sounder reports ${(+bs.depth_offset).toFixed(2)} m` : "used when the sounder does not report it";
   if ($("aTdHint")) $("aTdHint").textContent = td;
-  if (setBuilt && setDirty) return; setBuilt = true;
+  // never rebuild under the user's hands: unsaved changes, or a field (an open colour picker) in use
+  const form = $("aSetForm"), busyForm = form && (form.contains(document.activeElement) || form.dataset.picking === "1");
+  if (setBuilt && (setDirty || busyForm)) return; setBuilt = true;
   const field = ([k, l, h, lo, hi, step, u]) => lo === undefined ? `<div class="row"><div class="k"><b>${l}</b>${h ? `<small>${h}</small>` : ""}</div>${D.sw("as-" + k, v[k])}</div>`
     : `<div class="row"><div class="k"><b>${l}</b><small ${k === "transducer_depth" ? 'id="aTdHint"' : ""}>${k === "transducer_depth" ? td : h}</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="as-${k}" min="${lo}" max="${hi}" step="${step}" value="${v[k]}" required><span class="u">${u}</span></label></div>`;
   const group = g => SET.filter(x => x[7] === g).map(field).join("");

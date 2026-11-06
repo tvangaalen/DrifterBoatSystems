@@ -50,3 +50,6 @@ class HistoryService:
 
     def contributions(self, start, end) -> dict:
         return self.totals.contributions(start, end)
+
+    def alarm_episodes(self, start, end) -> dict:
+        return self.totals.alarm_episodes(start, end)

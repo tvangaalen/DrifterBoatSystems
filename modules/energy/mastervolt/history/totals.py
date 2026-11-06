@@ -7,11 +7,13 @@ of a requested period are computed; the index behind it is rebuilt only when the
     sources / consumers : Wh per channel          shore : Wh taken in from shore power (AC)
     batteries : Wh delivered (discharge) and received (charge)
     alarms              : alarm episodes (a run of alarm samples) and alarm samples per battery
+alarm_episodes (the Alarms chart): every alarm episode per battery and alarm type, from the full-resolution BMS cache.
 """
 
 from __future__ import annotations
 
 import math
+import re
 from bisect import bisect_left
 from datetime import UTC, datetime
 
@@ -27,6 +29,14 @@ SHORE_CHANNEL = len(SOURCE_CHANNELS) + len(
 )  # shore power intake (AC): the last channel, kept out of the DC source and consumer lists
 CHANNELS = SHORE_CHANNEL + 1
 FINISHED_HOUR_MARGIN = 600  # seconds: an hour is remembered once it is this long over (late samples)
+MAX_EPISODES = 2000  # the Alarms chart gets at most this many episodes (the newest); the totals are always complete
+LEVEL = re.compile(r"\s*[–-]\s*level\s*(\d+)\s*$", re.I)
+
+
+def alarm_type(label: str) -> tuple[str, int]:
+    """'Cell voltage high – level 2' -> ('Cell voltage high', 2); a label without a level is level 1."""
+    m = LEVEL.search(str(label))
+    return (str(label)[: m.start()].strip(), int(m.group(1))) if m else (str(label).strip(), 1)
 
 
 def parse_utc(value) -> datetime:
@@ -86,7 +96,8 @@ class EnergyTotals:
         }
         for name in BATTERY_NAMES:
             items = sorted(((stamp(point), point) for point in bms if point.get("battery") == name), key=lambda item: item[0])
-            index["battery"][name] = {"t": [t for t, _ in items], "w": [battery_watts(point) for _, point in items]}
+            index["battery"][name] = {"t": [t for t, _ in items], "w": [battery_watts(point) for _, point in items],
+                                      "alarms": [point.get("alarms") or [] for _, point in items]}
             samples, starts, previous = [], [], False
             for t, point in items:
                 active = bool(point.get("alarms"))
@@ -199,4 +210,53 @@ class EnergyTotals:
             "consumers_covered_seconds": covered,
             "batteries": batteries,
             "alarms": alarms,
+        }
+
+    def alarm_episodes(self, start, end) -> dict:
+        """Every alarm episode between start and end: a run of BMS samples with that alarm type active, per battery. An
+        episode ends at the first sample without it (or at its last sample when the next one is further than MAX_GAP_BMS)."""
+        first, last = parse_utc(start), parse_utc(end)
+        if last <= first:
+            raise ValueError("end must be after start")
+        with self.cache.lock:
+            if not self.cache.loaded:
+                self.cache.refresh()
+            index = self._index()
+        a, b = first.timestamp(), last.timestamp()
+        episodes = []
+        for name in BATTERY_NAMES:
+            data = index["battery"][name]
+            times, alarms = data["t"], data["alarms"]
+            low, high = max(0, bisect_left(times, a) - 1), bisect_left(times, b)
+            open_: dict[str, list] = {}  # type -> [start, last active sample, level]
+            for i in range(low, min(high + 1, len(times))):
+                t = times[i]
+                gap = i > low and t - times[i - 1] > MAX_GAP_BMS
+                now = {}
+                for label in alarms[i]:
+                    kind, level = alarm_type(label)
+                    now[kind] = max(level, now.get(kind, 0))
+                for kind in list(open_):
+                    if kind not in now or gap:
+                        s, seen, level = open_.pop(kind)
+                        episodes.append((name, kind, level, s, seen if gap else t))
+                for kind, level in now.items():
+                    if kind in open_:
+                        open_[kind][1] = t
+                        open_[kind][2] = max(open_[kind][2], level)
+                    else:
+                        open_[kind] = [t, t, level]
+            for kind, (s, seen, level) in open_.items():
+                episodes.append((name, kind, level, s, seen))
+        episodes = [e for e in episodes if e[4] >= a and e[3] < b]
+        episodes.sort(key=lambda e: e[3])
+        iso = lambda t: datetime.fromtimestamp(t, UTC).isoformat()  # noqa: E731
+        total = lambda key, value: sum(min(e[4], b) - max(e[3], a) for e in episodes if e[key] == value)  # noqa: E731
+        kinds = sorted({e[1] for e in episodes})
+        return {
+            "start": first.isoformat(),
+            "end": last.isoformat(),
+            "episodes": [{"battery": e[0], "type": e[1], "level": e[2], "start": iso(e[3]), "end": iso(e[4])} for e in episodes[-MAX_EPISODES:]],
+            "batteries": [{"key": n, "episodes": sum(1 for e in episodes if e[0] == n), "seconds": total(0, n)} for n in BATTERY_NAMES],
+            "types": [{"type": k, "episodes": sum(1 for e in episodes if e[1] == k), "seconds": total(1, k)} for k in kinds],
         }

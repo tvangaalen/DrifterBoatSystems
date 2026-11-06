@@ -33,3 +33,14 @@ test("Anchor map: no credits on the map, its info button opens them on GPS & lin
   await expect(page.locator("#aHero")).toBeHidden();
   expect(errors).toEqual([]);
 });
+
+test("Anchor settings: an open colour picker is not rebuilt by the next poll", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#anchor", "#aViews [data-aview=settings]");
+  const pick = page.locator("#as-col_track_dark");
+  await pick.dispatchEvent("pointerdown"); await pick.focus();
+  await pick.evaluate(e => e.setAttribute("data-mark", "1"));
+  await page.waitForTimeout(6000);     // more than one poll
+  await expect(page.locator("#as-col_track_dark[data-mark='1']")).toHaveCount(1);
+  expect(errors).toEqual([]);
+});

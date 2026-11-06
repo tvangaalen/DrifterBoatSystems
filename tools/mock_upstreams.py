@@ -108,6 +108,17 @@ class Power:
                 "consumers": [e(*x) for x in loads], "consumers_covered_seconds": span * 0.97,
                 "batteries": [{"key": f"BATTERY {b}", "charge_wh": 950 * k, "discharge_wh": 578 * k, "covered_seconds": span} for b in (1, 2, 3)]}
 
+    def alarms(self, start, end):
+        a, b = datetime.fromisoformat(start), datetime.fromisoformat(end); span = (b - a).total_seconds()
+        ep = [("BATTERY 1", "Cell voltage high", 1, .10, .17), ("BATTERY 1", "Cell voltage high", 2, .39, .42), ("BATTERY 1", "Cell voltage high", 1, .67, .71),
+              ("BATTERY 2", "Cell voltage high", 1, .40, .42), ("BATTERY 3", "Charge temperature low", 1, .20, .22), ("BATTERY 1", "Cell voltage high", 1, .87, .89)]
+        at = lambda f: (a + timedelta(seconds=span * f)).isoformat()
+        rows = [{"battery": n, "type": k, "level": lv, "start": at(s), "end": at(e)} for n, k, lv, s, e in ep]
+        sec = lambda i, v: sum(span * (e - s) for *x, s, e in ep if x[i] == v)
+        return {"start": start, "end": end, "episodes": rows,
+                "batteries": [{"key": f"BATTERY {n}", "episodes": sum(1 for x in ep if x[0] == f"BATTERY {n}"), "seconds": sec(0, f"BATTERY {n}")} for n in (1, 2, 3)],
+                "types": [{"type": k, "episodes": sum(1 for x in ep if x[1] == k), "seconds": sec(1, k)} for k in sorted({x[1] for x in ep})]}
+
     def coordinator(self):
         return {"active": None, "active_for_seconds": None, "waiting": {"bms_control": 0, "bms_manual_read": 0, "bms": 0, "balancer": 0}, "connected_bms": 3,
                 "refreshed_bms": 3, "bms_stable_seconds": 8600, "balancers_allowed": True, "degraded": False, "forced_releases": 0}
@@ -303,6 +314,9 @@ def make(name, obj):
             if name == "power":
                 qs = dict(x.split("=", 1) for x in q.split("&") if "=" in x)
                 if path == "/api/history/chart-data": return self._j(200, obj.chart_data(float(qs.get("hours", 24))))
+                if path == "/api/history/alarms":
+                    from urllib.parse import unquote
+                    return self._j(200, obj.alarms(unquote(qs["start"]).replace("Z", "+00:00"), unquote(qs["end"]).replace("Z", "+00:00")))
                 if path == "/api/history/contributions":
                     from urllib.parse import unquote
                     return self._j(200, obj.contributions(unquote(qs["start"]).replace("Z", "+00:00"), unquote(qs["end"]).replace("Z", "+00:00")))

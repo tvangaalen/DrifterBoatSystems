@@ -25,7 +25,7 @@ const SETTINGS = [   // [key, label, hint, min, max, step, unit] — the server'
   ["balancer_connection_retry_seconds", "Balancer reconnect after", "", 5, 300, 1, "s"],
   ["history_retention_days", "Keep history", "Lowering this deletes older history", 1, 365, 1, "days"],
 ];
-let notif = null, view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
+let notif = null, alarmData = null, view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
 const busy = new Set();
 const zoom = [0, 1000];     // History: the part of the period shown, in thousandths (two-handled slider; all charts)
 let zoomRaf = 0;
@@ -48,7 +48,8 @@ const m = {
         chartT = Date.now(); chartFor = hours;
         const end = new Date(), start = new Date(+end - hours * 3600e3);
         jobs.push(D.api("power", `/api/history/chart-data?hours=${hours}`, undefined, {timeout: 45000}).then(d => chart = d).catch(e => D.toast(e.message, true)),
-                  D.api("power", `/api/history/contributions?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, undefined, {timeout: 45000}).then(d => contrib = d).catch(() => {}));
+                  D.api("power", `/api/history/contributions?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, undefined, {timeout: 45000}).then(d => contrib = d).catch(() => {}),
+                  D.api("power", `/api/history/alarms?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, undefined, {timeout: 45000}).then(d => alarmData = d).catch(() => {}));
       }
     }
     if (D.visibleIs("power") && view === "settings" && !setDirty) jobs.push(D.api("power", "/api/settings").then(d => settings = d).catch(() => {}),
@@ -469,6 +470,32 @@ function crosshair(canvas, tip, ev) {      // the values at the touched time
   tip.hidden = false; tip.style.left = Math.min(r.width - tip.offsetWidth - 4, Math.max(4, x - tip.offsetWidth / 2)) + "px";
   const cur = canvas.parentElement.querySelector(".cross"); cur.style.left = x + "px"; cur.hidden = false;
 }
+// ---- Alarms: per battery its episodes, time in alarm and the share of each alarm type; a lane per battery, coloured by type.
+// The episodes come from the server's full-resolution history (/api/history/alarms), for the period; the zoom shows a part.
+/** @type {[RegExp, string][]} */
+const ALARM_COL = [[/^cell voltage high/i, "#ef5b5b"], [/^cell voltage low/i, "#60a5fa"], [/^pack voltage/i, "#f472b6"], [/temperature/i, "#a78bfa"],
+  [/overcurrent/i, "#f4a631"], [/^soc/i, "#fbbf24"]];
+const alarmColor = (/** @type {string} */ t, /** @type {number} */ i) => colorOf((ALARM_COL.find(([r]) => r.test(t)) || [, "#94a3b8"])[1], i);
+const dur = (/** @type {number} */ s) => s >= 3600 ? `${(s / 3600).toFixed(1)} h` : s > 0 && s < 60 ? "<1 min" : `${Math.round(s / 60)} min`;
+/** @param {number} t0 @param {number} t1 the part of the period shown */
+function renderAlarms(t0, t1) {
+  const box = $("eAlarmBody"); if (!box) return;
+  if (!alarmData) { box.innerHTML = `<div class="empty">Loading…</div>`; return; }
+  const span = t1 - t0, at = (/** @type {number} */ t) => (t - t0) / span * 100;
+  const eps = alarmData.episodes.map(e => ({...e, a: Math.max(t0, Date.parse(e.start)), b: Math.min(t1, Date.parse(e.end))})).filter(e => e.b >= e.a);
+  const types = [...new Set(eps.map(e => e.type))].sort();
+  const per = BAT_META.slice(1).map(([k, l]) => { const mine = eps.filter(e => e.battery === k);
+    return {k, l, mine, sec: mine.reduce((s, e) => s + (e.b - e.a) / 1000, 0), byType: types.map(t => mine.filter(e => e.type === t).reduce((s, e) => s + Math.max(1, (e.b - e.a) / 1000), 0))}; });
+  const step = [3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3, 24 * 3600e3, 48 * 3600e3, 7 * 864e5].find(s => span / s <= 6) || 7 * 864e5, ticks = [];
+  for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) { const d = new Date(t); ticks.push([at(t), step >= 864e5 ? `${D.pad(d.getDate())}-${D.pad(d.getMonth() + 1)}` : `${D.pad(d.getHours())}:00`]); }
+  box.innerHTML = `<div class="minis">${per.map(p => { const tot = p.byType.reduce((s, v) => s + v, 0);
+      return `<div class="mini"><div class="l">${esc(p.l)}</div><div class="n">${p.mine.length}<small> episode${p.mine.length === 1 ? "" : "s"}</small></div><div class="l">${dur(p.sec)}</div>
+        <div class="tbar">${tot ? types.map((t, i) => `<i style="width:${(p.byType[i] / tot * 100).toFixed(1)}%;background:${alarmColor(t, i)}"></i>`).join("") : ""}</div></div>`; }).join("")}</div>
+    <div class="alanes">${per.map(p => `<div class="alane"><span class="an">${esc(p.l.replace("Battery ", "B"))}</span><div class="at">${p.mine.map(e =>
+      `<i style="left:${at(e.a).toFixed(2)}%;width:${Math.max(0, at(e.b) - at(e.a)).toFixed(2)}%;background:${alarmColor(e.type, types.indexOf(e.type))}" title="${esc(`${e.type} (level ${e.level}) · ${p.l} · ${D.dayTime(Date.parse(e.start))} – ${D.hm(Date.parse(e.end))}`)}"></i>`).join("")}</div></div>`).join("")}
+      <div class="aaxis">${ticks.map(([x, l]) => `<span style="left:${x.toFixed(2)}%">${l}</span>`).join("")}</div></div>
+    <div class="alegend">${types.length ? types.map((t, i) => `<span><i style="background:${alarmColor(t, i)}"></i>${esc(t)}</span>`).join("") : "<span>No alarms in this period</span>"}</div>`;
+}
 /** The zoom slider: its handles, the band between them and the times at both ends. @param {number} t0 @param {number} t1 */
 function zoomShow(t0, t1) {
   const a = $("eZA"), b = $("eZB"); if (!a) return;
@@ -506,7 +533,8 @@ function renderCharts() {
   if (!box.dataset.built) {
     box.dataset.built = "1";
     box.innerHTML = defs.map(([id, title, unit]) => `<div class="card chartcard"><div class="hd"><h3>${title}</h3><span class="muted">${unit}</span></div>
-      <div class="legend" id="${id}Leg"></div><div class="chartwrap no-swipe"><canvas id="${id}"></canvas><div class="cross" hidden></div><div class="charttip" hidden></div></div></div>`).join("");
+      <div class="legend" id="${id}Leg"></div><div class="chartwrap no-swipe"><canvas id="${id}"></canvas><div class="cross" hidden></div><div class="charttip" hidden></div></div></div>`).join("")
+      + `<div class="card chartcard"><div class="hd"><h3>Alarms</h3><span class="muted">per battery</span></div><div class="alarmbody" id="eAlarmBody"></div></div>`;
     for (const [id] of defs) { const cv = $(id), tip = cv.parentElement.querySelector(".charttip");
       const move = e => crosshair(cv, tip, e), leave = () => { tip.hidden = true; cv.parentElement.querySelector(".cross").hidden = true; };
       cv.addEventListener("pointermove", move); cv.addEventListener("pointerdown", move); cv.addEventListener("pointerleave", leave); }
@@ -518,6 +546,7 @@ function renderCharts() {
     // one series on its own: a battery's band is then its whole state of charge, not its share of the bank
     drawChart($(id), {...o, unit, t0, t1, series: one ? o.series.filter(s => s.label === one).map(s => ({...s, part: 1})) : o.series});
   }
+  renderAlarms(t0, t1);
   const c = contrib;
   // shore power is not in the DC balance: it reaches the bank through the Charger House, so it is shown on its own
   const src = c ? c.sources.map(x => { const i = SRC_META.findIndex(m => m[0] === x.key); return {label: (SRC_META[i] || [, x.key])[1], color: (SRC_META[i] || [, , "#888"])[2], i, wh: x.wh}; }) : [];
@@ -707,7 +736,7 @@ async function onClick(e) {
   if (b.id === "eHistUpd") {     // the latest history now, instead of at the next minute
     b.disabled = true; b.lastChild.textContent = " Updating…"; chartT = 0;
     D.poll(m, true).finally(() => { b.disabled = false; b.lastChild.textContent = " Update"; }); return; }
-  if (b.dataset.hours) { hours = +b.dataset.hours; zoom[0] = 0; zoom[1] = 1000; chartT = 0; chart = null; contrib = null; renderCharts(); D.poll(m, true); return; }
+  if (b.dataset.hours) { hours = +b.dataset.hours; zoom[0] = 0; zoom[1] = 1000; chartT = 0; chart = null; alarmData = null; contrib = null; renderCharts(); D.poll(m, true); return; }
   if (b.id === "eRepRun") {
     const days = +$("eRepDays").value;
     if (!Number.isInteger(days) || days < 1 || days > 365) return D.toast("Days: a whole number from 1 to 365", true);

@@ -68,7 +68,8 @@ class GatewayTest(unittest.TestCase):
         for path in ("/api/power/api/bms/2/set-soc-charge", "/api/power/api/bms/set-all-soc/value", "/api/power/api/reports/battery-health"):
             code, _ = self.post(path, {"percent": 80} if path.endswith("value") else {}); self.assertEqual(code, 200, path)
         self.assertEqual(self.post("/api/power/api/notifications", {"float_notification": False})[0], 200)
-        for path in ("/api/power/api/notifications", "/api/power/api/history/status", "/api/power/api/version"):
+        for path in ("/api/power/api/notifications", "/api/power/api/history/status", "/api/power/api/version",
+                     "/api/power/api/history/alarms?start=2026-10-01T00:00:00Z&end=2026-10-02T00:00:00Z"):
             self.assertEqual(self.req("GET", path)[0], 200, path)
 
     def test_get_is_not_a_command(self):

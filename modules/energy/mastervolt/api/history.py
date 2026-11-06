@@ -68,6 +68,15 @@ def export(svc: Services = Depends(services)):
     )
 
 
+@router.get("/alarms")
+def alarms(start: str, end: str, svc: Services = Depends(services)):
+    """Alarm episodes per battery and alarm type between start and end (the History page's Alarms chart)."""
+    try:
+        return svc.history.alarm_episodes(start, end)
+    except ValueError as exc:
+        raise HTTPException(400, detail=str(exc)) from exc
+
+
 @router.get("/contributions")
 def contributions(start: str, end: str, svc: Services = Depends(services)):
     try:

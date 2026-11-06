@@ -538,3 +538,12 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 /* anchor Settings: the map colour pickers (light and dark) */
 .colpick{width:48px;height:38px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--card2);cursor:pointer;flex:none}
 .colhd{width:48px;flex:none;text-align:center;font-size:12px;color:var(--muted)}.colpair{display:flex;gap:10px;flex:none}
+/* History, Alarms: tiles per battery (with the share of each alarm type), a lane per battery, the type legend */
+.alarmbody{padding:2px 16px 14px}.alarmbody .minis{margin-top:0}
+.mini .tbar{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:6px;background:var(--bg2)}.mini .tbar i{display:block;height:100%}
+.alanes{margin-top:12px}.alane{display:flex;align-items:center;gap:8px;height:26px}.alane .an{width:22px;flex:none;font-size:11.5px;color:var(--muted)}
+.alane .at{position:relative;flex:1;height:14px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.alane .at i{position:absolute;top:0;bottom:0;min-width:3px;border-radius:3px}
+.aaxis{position:relative;height:18px;margin:2px 0 0 30px;font-size:11px;color:var(--muted)}.aaxis span{position:absolute;top:2px;transform:translateX(-50%);white-space:nowrap}
+.alegend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-top:8px}
+.alegend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}

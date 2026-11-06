@@ -80,3 +80,17 @@ test("Energy settings: Save sends every setting (also the hidden BMS pop-up), th
   await expect.poll(() => posts.find(p => p.url.endsWith("/api/notifications"))?.body).toEqual({ float_notification: false });
   expect(errors).toEqual([]);
 });
+
+test("History: Alarms shows per battery its episodes, a lane coloured by alarm type, and the types", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#power", "#eViews [data-view=history]");
+  const box = page.locator("#eAlarmBody");
+  await expect(box.locator(".mini")).toHaveCount(3);
+  await expect(box.locator(".mini").first()).toContainText("4 episodes");
+  await expect(box.locator(".alane")).toHaveCount(3);
+  await expect(box.locator(".alane").first().locator("i")).toHaveCount(4);
+  await expect(box.locator(".alegend")).toContainText("Cell voltage high");
+  await page.locator("#eZA").fill("500");     // zoomed: only what is in the part shown
+  await expect(box.locator(".alane").first().locator("i")).toHaveCount(2);
+  expect(errors).toEqual([]);
+});

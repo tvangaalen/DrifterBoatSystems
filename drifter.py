@@ -37,7 +37,7 @@ log = logging.getLogger("drifter")
 ROUTES = {
     "power": [  # MasterVolt YMS
         ("GET", r"/api/(energy|settings|bms|balancers|bluetooth-coordinator|bluetooth-events|history)"),
-        ("GET", r"/api/history/(chart-data|contributions|status)"),
+        ("GET", r"/api/history/(chart-data|contributions|status|alarms)"),
         ("GET", r"/api/(reports/battery-health|version|notifications)"),
         ("POST", r"/api/reports/battery-health"),      # runs in a separate low-priority process on the server
         ("POST", r"/api/settings"),
