@@ -33,6 +33,8 @@
   0-100 A with watts; smooth cell spread
 - History: no gaps when zoomed in, Sources and DC consumers smooth with 250 W / 25 A scales; no BMS pop-up setting;
   anchor map: info button for credits, magenta track and max swing, Holding fixed above the map
+- History: Energy in this period as a flow diagram (share with kWh) and battery charged/discharged bars; DC consumers in
+  100 W / 5 A steps
 
 ## 1.2
 
