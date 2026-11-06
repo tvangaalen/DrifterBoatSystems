@@ -48,6 +48,8 @@
 - Date format dd/mm/yyyy by default, chosen on the System page; Engine log: date fields typed or picked, padding in the
   forms, engine hours must keep rising, Settings with the fuel tank capacity
 - Engine log: engine hours on maintenance entries
+- Battery current with flexible scales in 200 W / 20 A steps; Engine log chart of the fills (litres per fill, L per
+  engine hour on the right)
 
 ## 1.2
 
