@@ -4,7 +4,7 @@
 :root{
   --bg:#eef2f6;--bg2:#e4e9ef;--card:#fff;--card2:#f6f8fa;--fg:#121820;--muted:#5f6b78;--faint:#8b96a2;--line:#dde3e9;
   --accent:#0b62c4;--onaccent:#fff;--accentbg:#e2edfb;
-  --ok:#1b8a4b;--okbg:#e2f4e9;--warn:#b26a00;--warnbg:#fdf0da;--bad:#c62828;--badbg:#fbe3e3;--off:#a3acb6;
+  --trk:#d1009a;--ok:#1b8a4b;--okbg:#e2f4e9;--warn:#b26a00;--warnbg:#fdf0da;--bad:#c62828;--badbg:#fbe3e3;--off:#a3acb6;
   --solar:#d89a00;--shore:#0b62c4;--batt:#1b8a4b;--load:#7b4fc9;--alt:#d4572a;
   --knob:#fff;--field:#f3f6f9;--shadow:0 1px 2px rgba(16,24,32,.06),0 4px 16px rgba(16,24,32,.05);
   --scrim:rgba(10,16,24,.45);--map-filter:none;
@@ -16,7 +16,7 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme]){
   --bg:#0c1014;--bg2:#12171c;--card:#161c22;--card2:#1c232a;--fg:#e7ecf0;--muted:#8f9aa5;--faint:#66717c;--line:#262e36;
   --accent:#4f9cf0;--onaccent:#0c1014;--accentbg:#132538;
-  --ok:#47c07a;--okbg:#122a1c;--warn:#f0a63a;--warnbg:#30230e;--bad:#ef5b5b;--badbg:#361616;--off:#4f5962;
+  --trk:#ff3bd4;--ok:#47c07a;--okbg:#122a1c;--warn:#f0a63a;--warnbg:#30230e;--bad:#ef5b5b;--badbg:#361616;--off:#4f5962;
   --solar:#f2c14e;--shore:#4f9cf0;--batt:#47c07a;--load:#a685ea;--alt:#f08a5d;
   --knob:#fff;--field:#0f1418;--shadow:none;--scrim:rgba(0,0,0,.6);--map-filter:brightness(.72) contrast(1.05);
   --meter-glow:.6;--meter-sheen:rgba(255,255,255,.35);--onoff-text:#fff;
@@ -27,7 +27,7 @@
 :root[data-theme="dark"]{
   --bg:#0c1014;--bg2:#12171c;--card:#161c22;--card2:#1c232a;--fg:#e7ecf0;--muted:#8f9aa5;--faint:#66717c;--line:#262e36;
   --accent:#4f9cf0;--onaccent:#0c1014;--accentbg:#132538;
-  --ok:#47c07a;--okbg:#122a1c;--warn:#f0a63a;--warnbg:#30230e;--bad:#ef5b5b;--badbg:#361616;--off:#4f5962;
+  --trk:#ff3bd4;--ok:#47c07a;--okbg:#122a1c;--warn:#f0a63a;--warnbg:#30230e;--bad:#ef5b5b;--badbg:#361616;--off:#4f5962;
   --solar:#f2c14e;--shore:#4f9cf0;--batt:#47c07a;--load:#a685ea;--alt:#f08a5d;
   --knob:#fff;--field:#0f1418;--shadow:none;--scrim:rgba(0,0,0,.6);--map-filter:brightness(.72) contrast(1.05);
   --meter-glow:.6;--meter-sheen:rgba(255,255,255,.35);--onoff-text:#fff;
@@ -39,7 +39,7 @@
 :root[data-theme="night"]{
   --bg:#000;--bg2:#050000;--card:#0a0000;--card2:#100100;--fg:#c22a1f;--muted:#7a1d15;--faint:#4e120c;--line:#240704;
   --accent:#8a1d13;--onaccent:#ff8a7a;--accentbg:#1a0301;
-  --ok:#a8241b;--okbg:#120100;--warn:#d8352a;--warnbg:#1c0302;--bad:#ff4a3a;--badbg:#2e0603;--off:#3a0c08;
+  --trk:#ff4a3a;--ok:#a8241b;--okbg:#120100;--warn:#d8352a;--warnbg:#1c0302;--bad:#ff4a3a;--badbg:#2e0603;--off:#3a0c08;
   --solar:#c22a1f;--shore:#a8241b;--batt:#c22a1f;--load:#8a1d13;--alt:#d8352a;
   --knob:#c22a1f;--field:#000;--shadow:none;--scrim:rgba(0,0,0,.75);
   --map-filter:grayscale(1) invert(1) brightness(.35) sepia(1) hue-rotate(-50deg) saturate(5);
@@ -530,6 +530,10 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 .dual input::-moz-range-track{background:none}
 .dual input::-moz-range-thumb{pointer-events:auto;width:22px;height:22px;border-radius:50%;background:var(--fg);border:3px solid var(--accent);cursor:grab}
 /* History: the tabs, periods and zoom slider stay at the top (top is set to the header's height by the page) */
+#aHead:not(.fixed){position:static;border-bottom:0}#aHead .hero{margin-bottom:10px}
 .histhead{position:sticky;z-index:15;top:60px;background:var(--bg);margin:0 -16px 12px;padding:2px 16px 0;border-bottom:1px solid var(--line)}
 .histhead .zoomrow{margin-bottom:6px}.histhead #eViews{margin-top:0}
 @media (min-width:820px){.histhead{margin:0 -24px 12px;padding:2px 24px 0}}
+/* the map's info button: the credits are on the anchor GPS & links view (track and max swing: --trk, magenta on every map) */
+.mapinfo{position:absolute;right:8px;bottom:8px;z-index:500;width:28px;height:28px;border-radius:50%;border:0;background:var(--card);color:var(--fg);
+  font:italic 600 15px/28px Georgia,serif;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:pointer;padding:0}

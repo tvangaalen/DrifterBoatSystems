@@ -24,7 +24,6 @@ const SETTINGS = [   // [key, label, hint, min, max, step, unit] — the server'
   ["balancer_refresh_interval", "Balancer read interval", "", 5, 300, 1, "s"],
   ["balancer_connection_retry_seconds", "Balancer reconnect after", "", 5, 300, 1, "s"],
   ["history_retention_days", "Keep history", "Lowering this deletes older history", 1, 365, 1, "days"],
-  ["bms_popup_seconds", "BMS pop-up (classic page)", "Only used by the classic Energy page", 1, 60, 1, "s"],
 ];
 let view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
 const busy = new Set();
@@ -352,6 +351,7 @@ function smoothPath(g, P, join) {
     g.bezierCurveTo(P[i][0] + h, P[i][1] + m[i] * h, P[i + 1][0] - h, P[i + 1][1] - m[i + 1] * h, P[i + 1][0], P[i + 1][1]); }
 }
 // left: {mul}: the left labels are the value times `mul` (amps → watts); tip: the unit of the touched values when it differs
+// step: a scale for the data in whole steps (W); right.step: the right scale in its own steps (A)
 // right: {unit, per}: a second scale on the right, the left value divided by `per` (watts → amps at the bank voltage)
 // opt: {t0, t1, unit, stacked (areas) | columns (binned smooth stacked areas, part = a series' share; line = a smooth line over them),
 //   fixed: [lo, hi], zero, series:[{label, color, pts:[{t, v}], part, line, width}]}
@@ -367,14 +367,25 @@ function drawChart(canvas, opt) {
     const n = Math.max(24, Math.min(120, Math.floor((R - L) / 7))), dt = (opt.t1 - opt.t0) / n;
     const bin = pts => { const sum = new Array(n).fill(0), cnt = new Array(n).fill(0);
       for (const p of pts) { if (p.v == null) continue; const i = Math.floor((p.t - opt.t0) / dt); if (i >= 0 && i < n) { sum[i] += p.v; cnt[i]++; } }
-      return sum.map((v, i) => ({t: opt.t0 + (i + .5) * dt, v: cnt[i] ? v / cnt[i] : null})); };
+      const out = sum.map((v, i) => ({t: opt.t0 + (i + .5) * dt, v: cnt[i] ? v / cnt[i] : null}));
+      // zoomed in, a bin can be shorter than the spacing of the samples: fill it between its neighbours, but keep real gaps
+      const ts = pts.filter(p => p.v != null).map(p => p.t), d = []; for (let i = 1; i < ts.length; i += Math.max(1, ts.length >> 8)) d.push(ts[i] - ts[i - 1]);
+      d.sort((a, b) => a - b); const maxGap = Math.max(600e3, 3 * (d[d.length >> 1] || 0));
+      for (let i = 0, prev = -1; i < n; i++) if (out[i].v != null) {
+        if (prev >= 0 && i - prev > 1 && (i - prev) * dt <= maxGap) for (let j = prev + 1; j < i; j++) out[j].v = out[prev].v + (out[i].v - out[prev].v) * (j - prev) / (i - prev);
+        prev = i; }
+      return out; };
     const cols = opt.series.filter(s => !s.line).map(s => ({...s, pts: bin(s.pts)}));
     const lines = opt.series.filter(s => s.line).map(s => { const own = bin(s.pts);
       return {...s, pts: own.map((p, i) => cols.length && cols.every(c => c.pts[i].v != null) ? {t: p.t, v: cols.reduce((a, c) => a + c.pts[i].v * (c.part ?? 1), 0)} : p)}; });
     opt = {...opt, series: opt.series.map(s => (s.line ? lines : cols).find(x => x.label === s.label)), bins: {n, dt}};
   }
   if (opt.fixed) [lo, hi] = opt.fixed;
-  else if (opt.columns) { lo = 0; hi = 1; for (const s of opt.series) for (const p of s.pts) if (p.v != null) hi = Math.max(hi, p.v * (s.line ? 1 : s.part ?? 1)); }
+  else if (opt.columns) { lo = 0; hi = 1;     // the highest stack (or line) in any bin
+    for (let i = 0; i < opt.bins.n; i++) { let sum = 0; for (const s of opt.series) { const v = s.pts[i].v; if (v == null) continue;
+      if (s.line) hi = Math.max(hi, v); else sum += Math.max(0, v) * (s.part ?? 1); } hi = Math.max(hi, sum); }
+    if (opt.right && opt.right.step) hi = Math.max(hi, opt.right.step * opt.right.per);     // at least one step on the right scale
+  }
   else if (opt.stacked) {     // stack on a shared time axis: the first series' timestamps
     const base = opt.series[0] ? opt.series[0].pts.map(p => p.t) : [];
     opt.stackTops = base.map((t, i) => opt.series.reduce((acc, s) => acc + Math.max(0, (s.pts[i] || {}).v || 0), 0));
@@ -383,12 +394,21 @@ function drawChart(canvas, opt) {
   if (!isFinite(lo)) { lo = 0; hi = 1; }
   if (opt.zero) lo = Math.min(lo, 0);
   if (hi - lo < 1e-6) { hi += 1; lo -= opt.zero ? 0 : 1; }
-  if (!opt.fixed) { const pad = (hi - lo) * .06; hi += pad; if (!opt.stacked && !opt.columns && lo !== 0) lo -= pad; }
+  let ticks = null;
+  if (opt.step && !opt.fixed) {     // a scale for the data shown, in whole steps (at most about six lines)
+    const st = opt.step * Math.ceil(Math.max(hi, opt.step) / opt.step / 6); lo = 0; hi = Math.max(st, Math.ceil(hi / st) * st);
+    ticks = []; for (let v = 0; v <= hi + 1e-9; v += st) ticks.push(v);
+  } else if (!opt.fixed) { const pad = (hi - lo) * .06; hi += pad; if (!opt.stacked && !opt.columns && lo !== 0) lo -= pad; }
+  if (!ticks) ticks = [0, 1, 2, 3, 4].map(i => lo + (hi - lo) * i / 4);
   const X = t => L + (t - opt.t0) / (opt.t1 - opt.t0) * (R - L), Y = v => B - (v - lo) / (hi - lo) * (B - T);
   g.font = "11px -apple-system, Segoe UI, sans-serif"; g.fillStyle = muted; g.strokeStyle = line; g.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, y = Y(v); g.beginPath(); g.moveTo(L, y); g.lineTo(R, y); g.stroke();
+  ticks.forEach((v, i) => { const y = Y(v); g.beginPath(); g.moveTo(L, y); g.lineTo(R, y); g.stroke();
     g.textAlign = "right"; g.fillText(opt.left ? Math.round(v * opt.left.mul) : Math.abs(hi - lo) >= 20 ? Math.round(v) : v.toFixed(1), L - 6, y + 4);
-    if (opt.right) { g.textAlign = "left"; g.fillText(Math.round(v / opt.right.per) + (i === 4 ? " " + opt.right.unit : ""), R + 6, y + 4); } }
+    if (opt.right && !opt.right.step) { g.textAlign = "left"; g.fillText(Math.round(v / opt.right.per) + (i === ticks.length - 1 ? " " + opt.right.unit : ""), R + 6, y + 4); } });
+  if (opt.right && opt.right.step) {     // its own steps (amps): a short tick and the value at each
+    const top = hi / opt.right.per, st = opt.right.step * Math.max(1, Math.ceil(top / opt.right.step / 6)); g.textAlign = "left";
+    for (let a = 0; a <= top + 1e-9; a += st) { const y = Y(a * opt.right.per); g.beginPath(); g.moveTo(R, y); g.lineTo(R + 4, y); g.stroke();
+      g.fillText(Math.round(a) + (a + st > top + 1e-9 ? " " + opt.right.unit : ""), R + 6, y + 4); } }
   const span = opt.t1 - opt.t0, step = [3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3, 24 * 3600e3, 48 * 3600e3, 7 * 864e5].find(s => span / s <= 6) || 7 * 864e5;
   g.textAlign = "center";
   for (let t = Math.ceil(opt.t0 / step) * step; t <= opt.t1; t += step) { const d = new Date(t), x = X(t);
@@ -477,8 +497,8 @@ function renderCharts() {
   const defs = [
     ["eChSoc", "State of charge", "%", {columns: true, fixed: [0, 100], series: [{label: "Total", color: BAT_META[0][2], width: 2.6, line: true, pts: S.tot},
       ...BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, part: 1 / 3, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.rem != null ? p.rem / S.perAh * 100 : null}))}))]}],
-    ["eChSrc", "Sources", "W · A", {columns: true, fixed: [0, 1400], right: {unit: "A", per: houseV()}, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
-    ["eChLoad", "DC consumers", "W", {stacked: true, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
+    ["eChSrc", "Sources", "W · A", {columns: true, step: 250, right: {unit: "A", per: houseV(), step: 25}, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
+    ["eChLoad", "DC consumers", "W · A", {columns: true, step: 250, right: {unit: "A", per: houseV(), step: 25}, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
     ["eChCur", "Battery current", "W · A", {columns: true, fixed: [0, 100], tip: "A", left: {mul: houseV()}, right: {unit: "A", per: 1}, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
     ["eChSpread", "Cell spread", "mV", {series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.spread}))}))}],
   ];

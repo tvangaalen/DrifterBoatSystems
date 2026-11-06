@@ -8,16 +8,16 @@
 <button class="btn sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device">Sound off</button>
 </div>
 <section data-page="anchor"><div id="aDown"></div>
-<div class="u-d-flex u-gap-8 u-ai-center u-m-4-0-14 u-fw-wrap">
+<div class="histhead fixed" id="aHead" style="top: 61px;"><div class="u-d-flex u-gap-8 u-ai-center u-m-4-0-14 u-fw-wrap">
 <div class="u-flex-1 u-minw-250 u-maxw-460 seg" id="aViews"><button type="button" data-aview="watch" aria-pressed="true">Watch</button><button type="button" data-aview="gps" aria-pressed="false">GPS &amp; links</button><button type="button" data-aview="settings" aria-pressed="false">Settings</button></div>
 <button class="btn sec sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device (keeps the screen on)"><svg class="i"><use href="#i-alert"></use></svg> Sound off</button></div>
+<div class="hero " id="aHero"><div class="lamp"></div><div class="grow"><b id="aHeroT">Anchor not set</b><span id="aHeroS">Drop the anchor to start the watch</span></div><div class="herobig num" id="aHeroBig"></div></div></div>
 <div id="aWatch"><div class="grid g2l">
 <div class="stack">
 <div class="map no-swipe leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" id="aMap" tabindex="0"></div>
 <div class="trackbar"><span class="hint" id="aTrackInfo">Track since 16:28 · 1 points</span><button class="btn ghost sm" type="button" id="aNewTrack">Start new track</button></div>
 </div>
 <div class="stack">
-<div class="hero " id="aHero"><div class="lamp"></div><div class="grow"><b id="aHeroT">Anchor not set</b><span id="aHeroS">Drop the anchor to start the watch</span></div><div class="herobig num" id="aHeroBig"></div></div>
 <div class="card pad" id="aCtl" data-mode="drop"><div class="seg" id="aDropMode"><button type="button" data-dmode="here" aria-pressed="true">Dropping now</button><button type="button" data-dmode="ahead" aria-pressed="false">Already lying to it</button></div>
 <div class="u-p-0 rows">
 <div class="row" id="aAheadRow" hidden=""><span class="k">Anchor ahead of the bow</span><label class="numf"><input class="field" type="number" id="aAhead" min="0" max="2000" step="1" value="30" inputmode="decimal"><span class="u">m</span></label></div>

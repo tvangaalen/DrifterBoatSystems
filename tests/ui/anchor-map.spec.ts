@@ -20,3 +20,16 @@ test("Anchor watch map: resized while hidden, the boat is still in the middle", 
   }, { timeout: 5_000 }).toBeLessThan(0.25);
   expect(errors).toEqual([]);
 });
+
+test("Anchor map: no credits on the map, its info button opens them on GPS & links; Holding stays at the top", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#anchor", null);
+  await expect(page.locator("#aMap .leaflet-control-zoom")).toBeVisible();
+  await expect(page.locator("#aMap .leaflet-control-attribution")).toHaveCount(0);
+  await expect(page.locator("#aHead #aHero")).toBeVisible();
+  await page.locator("#aCreditsBtn").click();
+  await expect(page.locator("#aViews [data-aview=gps]")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#aCredits")).toBeInViewport();
+  await expect(page.locator("#aHero")).toBeHidden();
+  expect(errors).toEqual([]);
+});

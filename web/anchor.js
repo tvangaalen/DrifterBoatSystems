@@ -96,9 +96,10 @@ const m = {
   },
   mount(el) {
     el.innerHTML = `<div id="aDown"></div>
-      <div class="u-d-flex u-gap-8 u-ai-center u-m-4-0-14 u-fw-wrap">
+      <div class="histhead" id="aHead"><div class="u-d-flex u-gap-8 u-ai-center u-m-4-0-14 u-fw-wrap">
         <div class="u-flex-1 u-minw-250 u-maxw-460 seg" id="aViews"><button type="button" data-aview="watch" aria-pressed="true">Watch</button><button type="button" data-aview="gps" aria-pressed="false">GPS &amp; links</button><button type="button" data-aview="settings" aria-pressed="false">Settings</button></div>
         <button class="btn sec sm" type="button" data-sound aria-pressed="false" title="Sound alarms on this device (keeps the screen on)">${icon("alert")} Sound off</button></div>
+        <div class="hero" id="aHero"><div class="lamp"></div><div class="grow"><b id="aHeroT">Loading…</b><span id="aHeroS"></span></div><div class="herobig num" id="aHeroBig"></div></div></div>
       <div id="aWatch"><div class="grid g2l">
         <div class="stack">
           <div class="map no-swipe" id="aMap">
@@ -106,6 +107,7 @@ const m = {
               <button class="btn" type="button" id="aSea" aria-pressed="true">Seamarks</button>
               <button class="btn" type="button" id="aFit" title="Fit circle and boat, and follow">${icon("anchor")} Fit</button>
               <button class="btn" type="button" id="aWindy" title="Weather forecast on Windy.com for the boat's position">${icon("wave")} Windy</button></div>
+            <button class="mapinfo" type="button" id="aCreditsBtn" aria-label="Map credits" title="Map credits">i</button>
             <div class="movebar" id="aMovebar" hidden><div class="u-c-fg hint">Tap the map or nudge 1 m: <b id="aMoveOff">not moved yet</b></div>
               <div class="btns"><button class="btn sec sm" type="button" data-nudge="W" aria-label="West 1 m">←</button><button class="btn sec sm" type="button" data-nudge="N" aria-label="North 1 m">↑</button>
               <button class="btn sec sm" type="button" data-nudge="S" aria-label="South 1 m">↓</button><button class="btn sec sm" type="button" data-nudge="E" aria-label="East 1 m">→</button>
@@ -114,7 +116,6 @@ const m = {
           <div class="trackbar"><span class="hint" id="aTrackInfo">Track: –</span><button class="btn ghost sm" type="button" id="aNewTrack">Start new track</button></div>
         </div>
         <div class="stack">
-          <div class="hero" id="aHero"><div class="lamp"></div><div class="grow"><b id="aHeroT">Loading…</b><span id="aHeroS"></span></div><div class="herobig num" id="aHeroBig"></div></div>
           <div class="card pad" id="aCtl"></div>
         </div></div>
         <div class="tiles" id="aTiles"></div>
@@ -140,6 +141,8 @@ const m = {
     $("aDown").innerHTML = m.state.err ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
     document.querySelectorAll("#aViews button").forEach(b => b.setAttribute("aria-pressed", b.dataset.aview === view));
     $("aWatch").hidden = view !== "watch"; $("aGps").hidden = view !== "gps"; $("aSet").hidden = view !== "settings";
+    // Watch keeps the tabs and the Holding tile at the top; the other views scroll as before
+    $("aHero").hidden = view !== "watch"; $("aHead").classList.toggle("fixed", view === "watch"); $("aHead").style.top = $("top").offsetHeight + "px";
     const s = m.state.data; if (!s) return;
     if (view === "watch") renderWatch(s); else if (view === "gps") renderGps(s); else renderSettings(s);
   },
@@ -188,8 +191,8 @@ function loadLeaflet() {
 }
 function initMap(lib) {
   L = lib;
-  map = L.map("aMap", {zoomControl: true, attributionControl: true, tap: true, maxZoom: 21}).setView([39, 1.5], 9);
-  map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+  // the credits are on the GPS & links view; the map only has an info button that opens them
+  map = L.map("aMap", {zoomControl: true, attributionControl: false, tap: true, maxZoom: 21}).setView([39, 1.5], 9);
   L.control.scale({imperial: false, position: "bottomleft"}).addTo(map);
   const tl = (l, ext, maxN, attr) => L.tileLayer(`api/anchor/tiles/${l}/{z}/{x}/{y}.${ext}`, {maxZoom: 21, maxNativeZoom: maxN, attribution: attr});
   layers.osm = tl("osm", "png", 19, '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>');
@@ -207,7 +210,7 @@ function initMap(lib) {
   ly.track = L.layerGroup().addTo(map); ly.ais = L.layerGroup().addTo(map);
   map.on("dragstart zoomstart", () => { if (!m._fitting) follow = false; });
   map.on("click", e => { if (draft) { draft = {lat: e.latlng.lat, lon: e.latlng.lng}; showDraft(); } });
-  L.DomEvent.disableClickPropagation(document.querySelector("#aMap .mapbtns")); L.DomEvent.disableClickPropagation($("aMovebar"));
+  L.DomEvent.disableClickPropagation(document.querySelector("#aMap .mapbtns")); L.DomEvent.disableClickPropagation($("aMovebar")); L.DomEvent.disableClickPropagation($("aCreditsBtn"));
   // Leaflet measures its box only on a window resize: hidden (another page or tab) it measures 0 x 0 and then draws from the
   // top-left corner. Measure again whenever the box itself changes size, which includes being shown again.
   new ResizeObserver(() => { const c = $("aMap");
@@ -223,7 +226,7 @@ function drawMap(s) {
   show(ly.circle, !!a); show(ly.maxc, !!a && s.max_dist > 0); show(ly.anchor, !!a); show(ly.rode, !!(a && p)); show(ly.boat, !!p);
   if (a) {
     ly.circle.setLatLng([a.lat, a.lon]).setRadius(a.radius).setStyle({color: c, fillColor: c, fillOpacity: alarm ? .18 : .07});
-    ly.maxc.setLatLng([a.lat, a.lon]).setRadius(Math.max(s.max_dist, .1)).setStyle({color: cssv("--muted")});
+    ly.maxc.setLatLng([a.lat, a.lon]).setRadius(Math.max(s.max_dist, .1)).setStyle({color: cssv("--trk"), weight: 2});
     ly.anchor.setLatLng([a.lat, a.lon]); const el = ly.anchor.getElement(); if (el) el.style.color = c;
   }
   if (p) {
@@ -239,7 +242,7 @@ function drawMap(s) {
       const now = Date.now() / 1000, span = Math.max(600, now - track[0][0]), B = 8, buckets = Array.from({length: B}, () => []);
       for (let i = 1; i < track.length; i++) { const [ta, la, lo] = track[i - 1], [tb, lb, lob] = track[i]; if (tb - ta > 120) continue;
         buckets[Math.min(B - 1, Math.floor(Math.max(0, 1 - (now - tb) / span) * B))].push([[la, lo], [lb, lob]]); }
-      buckets.forEach((segs, k) => { if (segs.length) L.polyline(segs, {color: cssv("--accent"), weight: 2.5, opacity: .2 + .8 * (k + 1) / B, interactive: false}).addTo(ly.track); });
+      buckets.forEach((segs, k) => { if (segs.length) L.polyline(segs, {color: cssv("--trk"), weight: 3, opacity: .2 + .8 * (k + 1) / B, interactive: false}).addTo(ly.track); });
     }
   }
   ly.ais.clearLayers();
@@ -461,7 +464,7 @@ function renderGps(s) {
       <div class="row"><span class="k">Network GPS</span><span class="v">${!nm.on ? "Off on this server" : nm.error ? `<span class="badc">${esc(nm.error)}</span>` : nm.port ? `<span class="good">Listening</span><small>port ${nm.port}, UDP and TCP</small>` : "opening…"}</span></div>
       <div class="row"><span class="k">Anchor watch</span><span class="v">v${esc(s.version)}<small>${(s.track_points || 0).toLocaleString("en-GB")} track points</small></span></div>
     </div></div>
-    <div class="card pad"><h3 class="u-m-0-0-6 u-fs-15">Credits</h3><ul class="u-m-0 u-pl-18 hint">
+    <div class="card pad" id="aCredits"><h3 class="u-m-0-0-6 u-fs-15">Credits</h3><ul class="u-m-0 u-pl-18 hint">
       <li>Street map © OpenStreetMap contributors (ODbL)</li><li>Satellite imagery © Esri, Maxar, Earthstar Geographics and the GIS User Community</li>
       <li>Seamarks © OpenSeaMap contributors (CC BY-SA)</li><li>Tide: weather data by Open-Meteo.com (CC BY 4.0)</li><li>Internet AIS: aisstream.io</li><li>Map library: Leaflet © Vladimir Agafonkin (BSD-2-Clause)</li></ul>
       <p class="u-m-8-0-0 hint">Charts, tide and AIS are not for navigation.</p></div></div></div>`;
@@ -513,6 +516,7 @@ async function save() {
 const cmd = (body, ok, el) => D.run(m, el, () => D.api("anchor", "/api/command", body), ok).catch(() => {});
 async function onClick(e) {
   const b = e.target.closest("button"); if (!b) return;
+  if (b.id === "aCreditsBtn") { view = "gps"; if (draft) setMove(false); m.render(); const c = $("aCredits"); if (c) c.scrollIntoView({block: "center"}); return; }
   if (b.dataset.aview) { view = b.dataset.aview; if (draft) setMove(false); m.render(); return; }
   if (b.dataset.base && map) { map.removeLayer(layers[base]); base = b.dataset.base; layers[base].addTo(map); if (layers[base].bringToBack) layers[base].bringToBack();
     document.querySelectorAll("#aBase button").forEach(x => x.setAttribute("aria-pressed", x.dataset.base === base)); return; }
