@@ -143,7 +143,8 @@ function renderOverview() {
     let body = `<div class="line muted">Loading…</div>`;
     try { if (m.tile && (m.state.data || m.state.err)) body = m.tile(); } catch (e) { body = `<div class="err">${esc(e.message)}</div>`; }
     const b = m.badge ? m.badge() : null;
-    return `<a class="card tile" href="#${m.id}"><div class="th"><span class="ic">${icon(m.icon)}</span><h3>${esc(m.title)}</h3>
+    let tag = ""; try { if (m.tag && !m.state.err) tag = m.tag(); } catch { tag = ""; }     // optional short status in the header
+    return `<a class="card tile" href="#${m.id}"><div class="th"><span class="ic">${icon(m.icon)}</span><h3>${esc(m.title)}</h3>${tag}
       ${m.state.err ? '<span class="badge warn">offline</span>' : b === "bad" ? '<span class="badge bad">alarm</span>' : b === "warn" ? '<span class="badge warn">check</span>' : ""}
       ${icon("chev", "i chev")}</div>${body}</a>`;
   }).join("");

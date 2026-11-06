@@ -210,6 +210,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .tile .th .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--accentbg);color:var(--accent)}
 :root[data-theme="night"] .tile .th .ic{color:var(--fg)}
 .tile .th h3{margin:0;font-size:16px;flex:1}
+.tile .th .badge.tag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}   /* a module's short status (Energy: Float) */
 .tile .big{font-size:30px;font-weight:750;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
 .tile .big small{font-size:15px;color:var(--muted);font-weight:600}
 .tile .line{color:var(--muted);font-size:13.5px;margin-top:4px}

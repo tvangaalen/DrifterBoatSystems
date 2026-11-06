@@ -62,14 +62,9 @@ const m = {
   },
   tile() {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
-    const h = d.storage.house, s = d.sources, t = d.totals;
-    return `<div class="meter-row"><div><div class="u-fs-22 big">House bank</div><div class="big">${W(h.power)}</div>
-      <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A ${h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : ""}</div></div>${meter(h.soc, "eT")}</div>
-      <div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
-      <div class="mini"><div class="l">Alternator</div><div class="n">${W((s.alternator || {}).power)}</div></div>
-      <div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
-      <div class="mini"><div class="l">DC load</div><div class="n">${outW(t.consumer_power)}</div></div></div>`;
+    return bankBody(d, "eT", true);
   },
+  tag() { const d = m.state.data; return d ? floatTag(d.high_soc_float_policy) : ""; },     // the Float status in the tile's header
   mount(el) {
     el.innerHTML = `<div id="eDown"></div>
       <div class="u-m-4-0-14 u-maxw-460 seg" role="tablist" id="eViews">
@@ -116,6 +111,28 @@ function flowRow(x, ic, kind, sub, live, ctl = undefined, out = false) {
     <div class="w">${out ? outW(w) : W(w)}<small>${num(x.voltage, 1)} V · ${num(x.current, 1)} A</small></div>${ctl ?? ""}</div>`;
 }
 const NOSW = `<span class="sw-gap"></span>`;   // in place of a switch: keeps the values in line
+/** The House bank tile: the same on the Overview and the Control view (that one with its own header, without the title).
+ * @param {any} d @param {string} id the meter's id @param {boolean} title */
+function bankBody(d, id, title) {
+  const h = d.storage.house, s = d.sources, t = d.totals;
+  const state = h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : "idle";
+  return `<div class="meter-row"><div>${title ? `<div class="u-fs-22 big">House bank</div>` : ""}<div class="big">${flowW(h.power)}</div>
+      <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A${h.temperature != null ? ` · ${num(h.temperature, 1)} °C` : ""}</div>
+      <div class="line">${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""} · ${state}</div></div>${meter(h.soc, id)}</div>
+    <div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
+      <div class="mini"><div class="l">Alternator</div><div class="n">${W((s.alternator || {}).power)}</div></div>
+      <div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
+      <div class="mini"><div class="l">DC load</div><div class="n">${outW(t.consumer_power)}</div></div></div>
+    ${h.soc == null ? `<div class="u-mt-8"><span class="badge warn wrap">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span></div>` : ""}`;
+}
+/** The Float status, short, for a tile header; the full text is its title. @param {any} f */
+function floatTag(f) {
+  if (!f) return "";
+  const [c, full] = floatText(f);
+  const short = !f.enabled ? "Float protection off" : f.active ? `Float · Bulk below ${num(f.cell_resume_mv)} mV`
+    : f.max_cell_mv != null ? `Bulk · now ${num(f.max_cell_mv)} / ${num(f.cell_trigger_mv)} mV` : `Bulk · Float at ${num(f.cell_trigger_mv)} mV`;
+  return `<span class="badge tag ${c}" title="${esc(full)}">${esc(short)}</span>`;
+}
 function floatText(f) {
   if (!f) return ["", "–"];
   if (!f.enabled) return ["", "Float protection off"];
@@ -126,7 +143,6 @@ function renderNow() {
   const d = m.state.data, box = $("eNow");
   if (!d) { box.innerHTML = m.state.err ? "" : `<div class="empty">Loading…</div>`; return; }
   const h = d.storage.house, s = d.sources, c = d.consumers, t = d.totals, cm = d.combimaster || {}, ctl = d.controls || {}, f = d.high_soc_float_policy;
-  const [fc, ft] = floatText(f), charging = h.current != null && h.current > 0.3;
   const srcSub = {shore: s.shore.connected ? `${num(s.shore.input_frequency, 1)} Hz` : "Not connected", charger_house: s.charger_house.charge_state || "–",
     alternator: `${s.alternator.state || "–"}${s.alternator.estimated ? " · estimated" : ""}`, solar: `${s.solar.state || "–"} · panel ${num(s.solar.panel_voltage, 1)} V`};
   const sw = (id, val, extra = "") => D.sw(id, val, (busy.has(id) ? "disabled " : "") + extra);
@@ -145,14 +161,7 @@ function renderNow() {
       <p class="u-m-8-2-0 hint">${d.active_mode ? `${esc(d.active_mode[0].toUpperCase() + d.active_mode.slice(1))} mode is active (until a single control changes). ` : ""}Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
     <div class="grid g2l">
       <div class="stack">
-        <div class="card tile bank"><div class="meter-row"><div><div class="u-fs-22 big">House bank</div>
-            <div class="line">${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""} · ${charging ? "charging" : h.current < -0.3 ? "discharging" : "idle"}</div>
-            <div class="big">${h.power != null && h.power > 0 ? "+" : ""}${W(h.power)}</div></div>${meter(h.soc, "eP")}</div>
-          <div class="minis"><div class="mini"><div class="l">Voltage</div><div class="n">${num(h.voltage, 2)} V</div></div>
-            <div class="mini"><div class="l">Current</div><div class="n">${num(h.current, 1)} A</div></div>
-            <div class="mini"><div class="l">Temperature</div><div class="n">${h.temperature != null ? num(h.temperature, 1) + " °C" : "–"}</div></div></div>
-          <div class="u-mt-8 u-d-flex u-gap-6 u-fw-wrap"><span class="badge wrap ${fc}">${esc(ft)}</span>${h.soc == null ? `<span class="badge warn">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span>` : ""}</div>
-        </div>
+        <div class="card tile bank"><div class="th"><span class="ic">${icon("batt")}</span><h3>House bank</h3>${floatTag(f)}</div>${bankBody(d, "eP", false)}</div>
         <div class="card"><div class="hd">${icon("sun")}<h3>Energy providers</h3><span class="muted num">Total DC in ${W(t.dc_input_power)}</span></div><div class="rows">
           ${Object.entries(s).map(([k, x]) => flowRow(x, SRC_IC[k][0], SRC_IC[k][1], esc(srcSub[k]), k === "shore" ? x.connected : k === "alternator" ? x.running : undefined, srcCtl[k] ?? NOSW)).join("")}</div></div>
         <div class="card"><div class="hd">${icon("load")}<h3>Energy consumers</h3><span class="muted num">Total DC out ${outW(t.consumer_power)}</span></div><div class="rows">
