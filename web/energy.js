@@ -383,9 +383,9 @@ function drawChart(canvas, opt) {
     opt = {...opt, series: opt.series.map(s => (s.line ? lines : cols).find(x => x.label === s.label)), bins: {n, dt}};
   }
   if (opt.fixed) [lo, hi] = opt.fixed;
-  else if (opt.columns) { lo = 0; hi = 1;     // the highest stack (or line) in any bin
-    for (let i = 0; i < opt.bins.n; i++) { let sum = 0; for (const s of opt.series) { const v = s.pts[i].v; if (v == null) continue;
-      if (s.line) hi = Math.max(hi, v); else sum += Math.max(0, v) * (s.part ?? 1); } hi = Math.max(hi, sum); }
+  else if (opt.columns) { lo = 0; hi = 1;     // the highest stack (or line) in any bin; negative values stack downwards
+    for (let i = 0; i < opt.bins.n; i++) { let sum = 0, neg = 0; for (const s of opt.series) { const v = s.pts[i].v; if (v == null) continue;
+      if (s.line) hi = Math.max(hi, v); else if (v >= 0) sum += v * (s.part ?? 1); else neg += v * (s.part ?? 1); } hi = Math.max(hi, sum); lo = Math.min(lo, neg); }
     if (opt.right && opt.right.step) hi = Math.max(hi, opt.right.step * opt.right.per);     // at least one step on the right scale
   }
   else if (opt.stacked) {     // stack on a shared time axis: the first series' timestamps
@@ -398,9 +398,9 @@ function drawChart(canvas, opt) {
   if (hi - lo < 1e-6) { hi += 1; lo -= opt.zero ? 0 : 1; }
   let ticks = null;
   if (opt.left && opt.left.step && !opt.fixed) {     // the left scale in whole steps of its own unit (amps drawn, watts on the left)
-    const mul = opt.left.mul, top = Math.max(hi, opt.left.step / mul) * mul, st = opt.left.step * Math.ceil(top / opt.left.step / 6);
-    lo = 0; hi = Math.max(st, Math.ceil(top / st) * st) / mul;
-    ticks = []; for (let w = 0; w <= hi * mul + 1e-6; w += st) ticks.push(w / mul);
+    const mul = opt.left.mul, top = Math.max(hi, opt.left.step / mul) * mul, bot = Math.min(0, lo) * mul, st = opt.left.step * Math.ceil((top - bot) / opt.left.step / 6);
+    lo = bot < 0 ? -Math.ceil(-bot / st) * st / mul : 0; hi = Math.max(st, Math.ceil(top / st) * st) / mul;
+    ticks = []; for (let w = lo * mul; w <= hi * mul + 1e-6; w += st) ticks.push(w / mul);
   } else if (opt.step && !opt.fixed) {     // a scale for the data shown, in whole steps (at most about six lines)
     const st = opt.step * Math.ceil(Math.max(hi, opt.step) / opt.step / 6); lo = 0; hi = Math.max(st, Math.ceil(hi / st) * st);
     ticks = []; for (let v = 0; v <= hi + 1e-9; v += st) ticks.push(v);
@@ -412,8 +412,8 @@ function drawChart(canvas, opt) {
     g.textAlign = "right"; g.fillText(opt.left ? Math.round(v * opt.left.mul) : Math.abs(hi - lo) >= 20 ? Math.round(v) : v.toFixed(1), L - 6, y + 4);
     if (opt.right && !opt.right.step) { g.textAlign = "left"; g.fillText(Math.round(v / opt.right.per) + (i === ticks.length - 1 ? " " + opt.right.unit : ""), R + 6, y + 4); } });
   if (opt.right && opt.right.step) {     // its own steps (amps): a short tick and the value at each
-    const top = hi / opt.right.per, st = opt.right.step * Math.max(1, Math.ceil(top / opt.right.step / 6)); g.textAlign = "left";
-    for (let a = 0; a <= top + 1e-9; a += st) { const y = Y(a * opt.right.per); g.beginPath(); g.moveTo(R, y); g.lineTo(R + 4, y); g.stroke();
+    const top = hi / opt.right.per, bot = lo / opt.right.per, st = opt.right.step * Math.max(1, Math.ceil((top - bot) / opt.right.step / 6)); g.textAlign = "left";
+    for (let a = Math.ceil(bot / st - 1e-9) * st; a <= top + 1e-9; a += st) { const y = Y(a * opt.right.per); g.beginPath(); g.moveTo(R, y); g.lineTo(R + 4, y); g.stroke();
       g.fillText(Math.round(a) + (a + st > top + 1e-9 ? " " + opt.right.unit : ""), R + 6, y + 4); } }
   const span = opt.t1 - opt.t0, step = [3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3, 24 * 3600e3, 48 * 3600e3, 7 * 864e5].find(s => span / s <= 6) || 7 * 864e5;
   g.textAlign = "center";
@@ -430,13 +430,15 @@ function drawChart(canvas, opt) {
     for (const [a, z] of runs) {
       const xs = [X(opt.t0 + a * dt)]; for (let i = a; i <= z; i++) xs.push(X(opt.t0 + (i + .5) * dt)); xs.push(X(opt.t0 + (z + 1) * dt));
       const idx = [a, ...Array.from({length: z - a + 1}, (_, j) => a + j), z];     // the run's ends reach the bin edges
-      let below = idx.map(() => 0);
+      // positive values stack up from 0, negative ones (discharging) down from 0, each band on the ones before it
+      const up = idx.map(() => 0), down = idx.map(() => 0);
       for (const [s, k] of bands) {
-        const top = idx.map((i, j) => below[j] + Math.max(0, s.pts[i].v) * (s.part ?? 1));     // a band never goes below the one under it
+        const from = [], to = [];
+        idx.forEach((i, j) => { const v = s.pts[i].v * (s.part ?? 1), acc = v >= 0 ? up : down; from.push(acc[j]); acc[j] += v; to.push(acc[j]); });
         g.fillStyle = colorOf(s.color, k); g.beginPath();
-        smoothPath(g, xs.map((x, j) => [x, Y(top[j])]));
-        smoothPath(g, xs.map((x, j) => [x, Y(below[j])]).reverse(), true);
-        g.closePath(); g.fill(); below = top;
+        smoothPath(g, xs.map((x, j) => [x, Y(to[j])]));
+        smoothPath(g, xs.map((x, j) => [x, Y(from[j])]).reverse(), true);
+        g.closePath(); g.fill();
       }
     }
     opt.series.forEach((s, k) => { if (!s.line) return;
@@ -531,7 +533,7 @@ function renderCharts() {
       ...BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, part: 1 / 3, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.rem != null ? p.rem / S.perAh * 100 : null}))}))]}],
     ["eChSrc", "Sources", "W · A", {columns: true, step: 250, right: {unit: "A", per: houseV(), step: 25}, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
     ["eChLoad", "DC consumers", "W · A", {columns: true, step: 100, right: {unit: "A", per: houseV(), step: 5}, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
-    ["eChCur", "Battery current", "W · A", {columns: true, tip: "A", left: {mul: houseV(), step: 200}, right: {unit: "A", per: 1, step: 20}, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
+    ["eChCur", "Battery current", "W · A", {columns: true, zero: true, tip: "A", left: {mul: houseV(), step: 200}, right: {unit: "A", per: 1, step: 20}, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
     ["eChSpread", "Cell spread", "mV", {series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.spread}))}))}],
   ];
   if (!box.dataset.built) {

@@ -14,16 +14,14 @@ test("Engine log: a new fuel entry is filled in automatically and saves what the
   await expect(page.locator("#lPos")).toContainText("N");
   await page.locator("#lCountry").fill("Otherland");          // a changed value is what is saved
   await page.locator("#lHours").fill("2330.5"); await page.locator("#lLitres").fill("95");
-  await page.locator("#lTime").fill("9:5");
-  await page.locator("#lSave").click();
-  await expect(page.locator("#lErr")).toContainText("HH:MM");
-  await page.locator("#lTime").fill("09:05");
-  await page.locator("#lSave").click();
+  await page.locator("#lAmount").fill("-3"); await page.locator("#lSave").click();
+  await expect(page.locator("#lErr")).toContainText("Amount");
+  await page.locator("#lAmount").fill("152.50"); await page.locator("#lSave").click();
   await expect.poll(() => posts.length).toBe(1);
   const b = posts[0].body as any;
   expect(posts[0].url).toBe("/api/enginelog/api/fuel");
   expect([b.engine_hours, b.litres, b.country, b.marina]).toEqual([2330.5, 95, "Otherland", "Mock Marina North"]);
-  expect(b.time).toMatch(/T09:05:00[+-]\d\d:\d\d$/); expect(typeof b.lat).toBe("number");
+  expect(b.amount).toBe(152.5); expect(b.date).toMatch(/^\d{4}-\d\d-\d\d$/); expect(b.time).toBeUndefined(); expect(typeof b.lat).toBe("number");
   await expect(page.locator("#lForm")).toHaveCount(0);
   expect(errors).toEqual([]);
 });

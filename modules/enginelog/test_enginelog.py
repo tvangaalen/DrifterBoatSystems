@@ -1,6 +1,6 @@
 """Engine log: create, read, change and delete fuel fills and maintenance entries, validation, the stats, the module
 contract, and the country/marina lookup (with a fake: no test reaches the internet)."""
-import tempfile, unittest
+import json, tempfile, unittest
 from pathlib import Path
 
 from enginelog import VERSION  # noqa: F401  (puts common/ on sys.path)
@@ -11,7 +11,7 @@ from enginelog.lookup import Lookup
 from enginelog.store import Store, fuel_stats
 
 TOKEN = {"X-Drifter-Token": "t"}
-FILL = {"time": "2026-11-06T14:20:00+01:00", "engine_hours": 2315, "litres": 182, "lat": 10.5, "lon": -20.25, "country": "Testland", "marina": "Test Marina"}
+FILL = {"date": "2026-11-06", "engine_hours": 2315, "litres": 182, "amount": 301.95, "lat": 10.5, "lon": -20.25, "country": "Testland", "marina": "Test Marina"}
 
 
 class FakeGet:
@@ -41,7 +41,7 @@ class EngineLogTest(unittest.TestCase):
 
     def test_fuel_crud(self):
         r = self.post("/api/fuel", FILL); self.assertEqual(r.status_code, 200, r.text); e = r.json()
-        self.assertRegex(e["id"], r"^[0-9a-f]{12}$"); self.assertEqual((e["litres"], e["marina"], e["time"]), (182.0, "Test Marina", "2026-11-06T14:20+01:00"))
+        self.assertRegex(e["id"], r"^[0-9a-f]{12}$"); self.assertEqual((e["litres"], e["marina"], e["date"], e["amount"]), (182.0, "Test Marina", "2026-11-06", 301.95))
         r = self.post(f"/api/fuel/{e['id']}", {**FILL, "litres": 190, "marina": "  Other   Marina "}); self.assertEqual(r.json()["litres"], 190.0)
         self.assertEqual(r.json()["marina"], "Other Marina")
         log = self.c.get("/api/log", headers=TOKEN).json(); self.assertEqual(len(log["fuel"]), 1); self.assertEqual(log["fuel"][0]["litres"], 190.0)
@@ -64,7 +64,7 @@ class EngineLogTest(unittest.TestCase):
         self.assertEqual(len(self.c.get("/api/log", headers=TOKEN).json()["maintenance"]), 1)
 
     def test_validation(self):
-        for bad, why in (({**FILL, "litres": 0}, "Litres"), ({**FILL, "engine_hours": "x"}, "Engine hours"), ({**FILL, "time": "2026-11-06T14:20"}, "time zone"),
+        for bad, why in (({**FILL, "litres": 0}, "Litres"), ({**FILL, "engine_hours": "x"}, "Engine hours"), ({**FILL, "date": "06-11-2026"}, "Date"), ({**FILL, "amount": -1}, "Amount"),
                          ({**FILL, "lat": None}, "both"), ({**FILL, "marina": "x" * 101}, "Marina")):
             r = self.post("/api/fuel", bad); self.assertEqual(r.status_code, 400, bad); self.assertIn(why, r.json()["detail"])
         self.assertEqual(self.post("/api/maintenance", {"date": "2026-11-06", "text": "  "}).status_code, 400)
@@ -76,11 +76,11 @@ class EngineLogTest(unittest.TestCase):
 
     def test_engine_hours_only_rise(self):     # the meter's running total
         self.post("/api/fuel", FILL)
-        r = self.post("/api/fuel", {**FILL, "time": "2026-11-20T10:00:00+01:00", "engine_hours": 2300}); self.assertEqual(r.status_code, 400)
+        r = self.post("/api/fuel", {**FILL, "date": "2026-11-20", "engine_hours": 2300}); self.assertEqual(r.status_code, 400)
         self.assertIn("at least 2315", r.json()["detail"])
-        r = self.post("/api/fuel", {**FILL, "time": "2026-10-01T10:00:00+01:00", "engine_hours": 2400}); self.assertIn("at most 2315", r.json()["detail"])
-        e = self.post("/api/fuel", {**FILL, "time": "2026-11-20T10:00:00+01:00", "engine_hours": 2330}).json()
-        self.assertEqual(self.post(f"/api/fuel/{e['id']}", {**FILL, "time": "2026-11-20T10:00:00+01:00", "engine_hours": 2320}).status_code, 200)
+        r = self.post("/api/fuel", {**FILL, "date": "2026-10-01", "engine_hours": 2400}); self.assertIn("at most 2315", r.json()["detail"])
+        e = self.post("/api/fuel", {**FILL, "date": "2026-11-20", "engine_hours": 2330}).json()
+        self.assertEqual(self.post(f"/api/fuel/{e['id']}", {**FILL, "date": "2026-11-20", "engine_hours": 2320}).status_code, 200)
 
     def test_settings(self):
         self.assertEqual(self.c.get("/api/log", headers=TOKEN).json()["settings"], {"tank_capacity_l": None})
@@ -91,10 +91,16 @@ class EngineLogTest(unittest.TestCase):
 
     def test_stats(self):
         self.assertIsNone(fuel_stats([])["avg_l_per_h"])
-        fills = [{"time": "2026-10-01T10:00+00:00", "engine_hours": 2200, "litres": 150}, {"time": "2026-10-20T10:00+00:00", "engine_hours": 2250, "litres": 160},
-                 {"time": "2026-11-06T10:00+00:00", "engine_hours": 2300, "litres": 180}]
+        fills = [{"date": "2026-10-01", "engine_hours": 2200, "litres": 150, "amount": 240}, {"date": "2026-10-20", "engine_hours": 2250, "litres": 160},
+                 {"date": "2026-11-06", "engine_hours": 2300, "litres": 180, "amount": 300}]
         s = fuel_stats(fills)
-        self.assertEqual((s["last_litres"], s["avg_l_per_h"], s["fills"], s["litres_total"]), (180, 3.4, 3, 490.0))
+        self.assertEqual((s["last_litres"], s["avg_l_per_h"], s["fills"], s["litres_total"], s["amount_total"], s["last_date"]), (180, 3.4, 3, 490.0, 540, "2026-11-06"))
+
+    def test_old_fills_with_a_time_read_as_their_date(self):
+        self.path.write_text(json.dumps({"fuel": [{"id": "a1b2c3d4e5f6", "time": "2026-07-20T12:00+02:00", "engine_hours": 19, "litres": 280, "lat": None, "lon": None,
+                                                  "country": "", "marina": ""}]}), encoding="utf-8")
+        e = Store(self.path).all()["fuel"][0]
+        self.assertEqual((e["date"], e["amount"]), ("2026-07-20", None)); self.assertNotIn("time", e)
 
     def test_lookup(self):
         r = self.c.get("/api/lookup?lat=10.5&lon=-20.25", headers=TOKEN).json()

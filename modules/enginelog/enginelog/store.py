@@ -1,7 +1,7 @@
 """The engine log in one JSON file: {"fuel": [...], "maintenance": [...]}, newest first.
 
-A fuel fill: time (ISO 8601 with offset), engine hours, litres, the position (lat/lon, optional), country and marina (text,
-optional). A maintenance entry: date (YYYY-MM-DD), engine hours (optional) and text. Every entry has a 12-hex id. The file is written to a temporary
+A fuel fill: date (YYYY-MM-DD), engine hours, litres, amount paid (optional), the position (lat/lon, optional), country and
+marina (text, optional); fills of 1.0.0 had a time, which is read as its date. A maintenance entry: date (YYYY-MM-DD), engine hours (optional) and text. Every entry has a 12-hex id. The file is written to a temporary
 file and renamed, so a power cut never leaves half a log; positions stay on the boat PC (never in the repository).
 """
 from __future__ import annotations
@@ -34,13 +34,12 @@ def _text(value, name: str, limit: int, required: bool = False) -> str:
 
 
 def clean_fuel(d: dict) -> dict:
-    try: t = datetime.fromisoformat(str(d.get("time") or ""))
-    except ValueError: raise ValueError("Date and time must be like 2026-11-06T14:20:00+01:00") from None
-    if t.tzinfo is None: raise ValueError("Date and time need a time zone offset")
+    try: day = date.fromisoformat(str(d.get("date") or str(d.get("time") or "")[:10]))
+    except ValueError: raise ValueError("Date must be like 2026-11-06") from None
     lat, lon = _num(d.get("lat"), "Latitude", -90, 90, False), _num(d.get("lon"), "Longitude", -180, 180, False)
     if (lat is None) != (lon is None): raise ValueError("A position needs both latitude and longitude")
-    return {"time": t.isoformat(timespec="minutes"), "engine_hours": _num(d.get("engine_hours"), "Engine hours", 0, 100000),
-            "litres": _num(d.get("litres"), "Litres", 0.1, 5000), "lat": lat, "lon": lon,
+    return {"date": day.isoformat(), "engine_hours": _num(d.get("engine_hours"), "Engine hours", 0, 100000),
+            "litres": _num(d.get("litres"), "Litres", 0.1, 5000), "amount": _num(d.get("amount"), "Amount", 0, 100000, False), "lat": lat, "lon": lon,
             "country": _text(d.get("country"), "Country", 60), "marina": _text(d.get("marina"), "Marina", 100)}
 
 
@@ -52,7 +51,7 @@ def clean_maintenance(d: dict) -> dict:
 
 
 CLEAN = {"fuel": clean_fuel, "maintenance": clean_maintenance}
-ORDER = {"fuel": lambda e: e["time"], "maintenance": lambda e: (e["date"], e.get("created", ""))}
+ORDER = {"fuel": lambda e: (e["date"], e.get("created", "")), "maintenance": lambda e: (e["date"], e.get("created", ""))}
 
 
 class Store:
@@ -64,6 +63,9 @@ class Store:
         try: d = json.loads(self.path.read_text(encoding="utf-8"))
         except FileNotFoundError: d = {}
         out = {k: list(d.get(k) or []) for k in KINDS}
+        for e in out["fuel"]:     # 1.0.0 kept a time: only the date matters
+            if "time" in e: e["date"] = e.pop("time")[:10]
+            e.setdefault("amount", None)
         out["settings"] = {**SETTINGS, **{k: v for k, v in (d.get("settings") or {}).items() if k in SETTINGS}}
         return out
 
@@ -90,14 +92,13 @@ class Store:
 
     def _check_hours(self, entry: dict, skip: str | None = None) -> None:
         """The engine hours are the meter's running total: never fewer than at an earlier fill, never more than at a later one."""
-        t, h = datetime.fromisoformat(entry["time"]), entry["engine_hours"]
+        t, h = entry["date"], entry["engine_hours"]
         for e in self.data["fuel"]:
             if e["id"] == skip: continue
-            et = datetime.fromisoformat(e["time"])
-            if et < t and e["engine_hours"] > h:
-                raise ValueError(f"Engine hours: at least {e['engine_hours']:g} h, the meter showed that at the fill of {e['time'][:10]}")
-            if et > t and e["engine_hours"] < h:
-                raise ValueError(f"Engine hours: at most {e['engine_hours']:g} h, the meter showed that at the later fill of {e['time'][:10]}")
+            if e["date"] < t and e["engine_hours"] > h:
+                raise ValueError(f"Engine hours: at least {e['engine_hours']:g} h, the meter showed that at the fill of {e['date']}")
+            if e["date"] > t and e["engine_hours"] < h:
+                raise ValueError(f"Engine hours: at most {e['engine_hours']:g} h, the meter showed that at the later fill of {e['date']}")
 
     def create(self, kind: str, body: dict) -> dict:
         entry = {"id": secrets.token_hex(6), **CLEAN[kind](body), "created": datetime.now().astimezone().isoformat(timespec="seconds")}
@@ -128,10 +129,11 @@ class Store:
 def fuel_stats(fuel: list[dict]) -> dict:
     """The tiles: the last fill, how long ago, and the average use in litres per engine hour (the litres of every fill
     after the first, over the engine hours between the first and the last fill)."""
-    if not fuel: return {"last_litres": None, "last_time": None, "last_hours": None, "avg_l_per_h": None, "fills": 0, "litres_total": 0.0}
-    by_time = sorted(fuel, key=lambda e: e["time"])
+    if not fuel: return {"last_litres": None, "last_date": None, "last_hours": None, "avg_l_per_h": None, "fills": 0, "litres_total": 0.0, "amount_total": 0.0}
+    by_time = sorted(fuel, key=lambda e: (e["date"], e["engine_hours"]))
     span = by_time[-1]["engine_hours"] - by_time[0]["engine_hours"]
     used = sum(e["litres"] for e in by_time[1:])
-    return {"last_litres": by_time[-1]["litres"], "last_time": by_time[-1]["time"], "last_hours": by_time[-1]["engine_hours"],
+    return {"last_litres": by_time[-1]["litres"], "last_date": by_time[-1]["date"], "last_hours": by_time[-1]["engine_hours"],
+            "amount_total": round(sum(e.get("amount") or 0 for e in fuel), 2),
             "avg_l_per_h": round(used / span, 2) if len(by_time) > 1 and span > 0 else None, "fills": len(fuel),
             "litres_total": round(sum(e["litres"] for e in fuel), 1)}

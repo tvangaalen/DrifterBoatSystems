@@ -1,5 +1,5 @@
 // Engine log module: diesel fuel fills and engine maintenance. The log lives on the engine log server (data/log.json on
-// the boat PC); this page shows it and sends new, changed and deleted entries. A new fill takes the time now, the boat's
+// the boat PC); this page shows it and sends new, changed and deleted entries. A new fill takes today's date, the boat's
 // position from the anchor watch, and the country and nearest marina from the server's OpenStreetMap lookup: every
 // automatic value can be changed before saving. Deleting always asks first (Keep is the default).
 import Drifter from "./core/app.js";
@@ -12,22 +12,17 @@ const dmy = (/** @type {string} */ iso) => D.dateText(iso) || "–";
  * so a tap opens the device's own calendar on every browser. @param {string} id @param {string} iso YYYY-MM-DD */
 const dateField = (id, iso) => `<div class="datef"><input class="field lf-date" id="${id}" value="${esc(D.dateText(iso))}" placeholder="${esc(D.dateFmt())}" inputmode="numeric" maxlength="10" autocomplete="off" aria-label="Date (${esc(D.dateFmt())})">
   <span class="pickbtn">${icon("calendar")}<input type="date" id="${id}Pick" value="${iso}" tabindex="-1" aria-label="Pick a date"></span></div>`;
-/** The local date (YYYY-MM-DD) and 24-hour time (HH:MM) of an ISO time, or of now. @param {string} [iso] */
-function parts(iso) {
-  const d = iso ? new Date(iso) : new Date();
-  return {date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}`};
-}
-/** ISO 8601 with this device's offset for a local date and time. @param {string} date @param {string} time */
-function isoOf(date, time) {
-  const [y, mo, d] = date.split("-").map(Number), [h, mi] = time.split(":").map(Number), t = new Date(y, mo - 1, d, h, mi), off = -t.getTimezoneOffset();
-  return `${date}T${time}:00${off >= 0 ? "+" : "-"}${pad(Math.floor(Math.abs(off) / 60))}:${pad(Math.abs(off) % 60)}`;
-}
+/** Today as YYYY-MM-DD (this device's date). */
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+/** YYYY-MM-DD to local midnight, in ms. @param {string} iso */
+const dayMs = iso => new Date(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)).getTime();
+const euro = (/** @type {number | null | undefined} */ v) => v == null ? "" : `€ ${num(v, 2)}`;
 const boatPos = () => { const a = D.byId.anchor && D.byId.anchor.state.data, p = a && a.boat && a.boat.pos; return p && p.lat != null ? {lat: p.lat, lon: p.lon} : null; };
 /** @param {number} v @param {string} pos @param {string} neg */
 const dm = (v, pos, neg) => { const a = Math.abs(v), d = Math.floor(a); return `${d}° ${((a - d) * 60).toFixed(3)}′ ${v >= 0 ? pos : neg}`; };
 const posText = (/** @type {any} */ p) => p && p.lat != null ? `${dm(p.lat, "N", "S")}  ${dm(p.lon, "E", "W")}` : "No position";
 /** Time since a moment, short: minutes, hours, then days. @param {number} t ms */
-const since = t => { const h = (Date.now() - t) / 3600e3; return h < 1 ? `${Math.max(0, Math.round(h * 60))} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} days`; };
+const since = t => { const d = Math.round((dayMs(today()) - t) / 864e5); return d <= 0 ? "today" : d === 1 ? "1 day" : `${d} days`; };
 const auto = (/** @type {string} */ t) => `<span class="autochip">${t}</span>`;
 
 const m = {
@@ -38,7 +33,7 @@ const m = {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const f = d.fuel[0], mt = d.maintenance[0], s = d.stats;
     return `<div class="u-fs-22 big">${f ? `${num(f.litres, 0)} L` : "No fills yet"}</div>
-      <div class="line">${f ? `${esc(D.dayTime(Date.parse(f.time)))}${f.marina || f.country ? ` · ${esc(f.marina || f.country)}` : ""}` : "Log the next fill on the Engine log page"}</div>
+      <div class="line">${f ? `${esc(dmy(f.date))}${f.marina || f.country ? ` · ${esc(f.marina || f.country)}` : ""}` : "Log the next fill on the Engine log page"}</div>
       <div class="minis"><div class="mini"><div class="l">Engine hours</div><div class="n">${f ? num(f.engine_hours, 0) + " h" : "–"}</div></div>
       <div class="mini"><div class="l">Avg use</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) + " L/h" : "–"}</div></div>
       <div class="mini"><div class="l">Maintenance</div><div class="n">${mt ? esc(dmy(mt.date)) : "–"}</div></div></div>`;
@@ -68,21 +63,21 @@ function fuelView(d) {
   const s = d.stats;
   return `<div class="u-maxw-720 card pad">
     <div class="minis u-mt-0"><div class="mini"><div class="l">Last fill</div><div class="n">${s.last_litres != null ? num(s.last_litres, 0) + " L" : "–"}</div></div>
-      <div class="mini"><div class="l">Since</div><div class="n">${s.last_time ? since(Date.parse(s.last_time)) : "–"}</div></div>
+      <div class="mini"><div class="l">Since</div><div class="n">${s.last_date ? since(dayMs(s.last_date)) : "–"}</div></div>
       <div class="mini"><div class="l">Avg use</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) + " L/h" : "–"}</div></div></div>
     <div class="fuelchart" id="lChart">${fuelChart(d.fuel, s.avg_l_per_h)}</div>
     <button class="u-mt-12 btn wide" type="button" data-new="fuel">${icon("fuel")} New fuel entry</button>
-    <div class="lrows">${d.fuel.map(f => `<button class="lrow" type="button" data-edit="fuel:${esc(f.id)}"><span class="t"><b>${num(f.litres, 0)} L</b> <span class="muted">· ${num(f.engine_hours, 0)} h</span>
-        <small>${esc(D.dayTime(Date.parse(f.time)))}${f.marina ? ` · ${esc(f.marina)}` : ""}${f.country ? `, ${esc(f.country)}` : ""}</small></span>${icon("chev", "i chev")}</button>`).join("")
+    <div class="lrows">${d.fuel.map(f => `<button class="lrow" type="button" data-edit="fuel:${esc(f.id)}"><span class="t"><b>${num(f.litres, 0)} L</b> <span class="muted">· ${num(f.engine_hours, 0)} h${f.amount != null ? ` · ${euro(f.amount)} (${euro(f.amount / f.litres)}/L)` : ""}</span>
+        <small>${esc(dmy(f.date))}${f.marina ? ` · ${esc(f.marina)}` : ""}${f.country ? `, ${esc(f.country)}` : ""}</small></span>${icon("chev", "i chev")}</button>`).join("")
       || `<div class="empty">No fills logged yet</div>`}</div>
-    ${s.fills ? `<p class="u-m-8-0-0 hint">${s.fills} fill${s.fills === 1 ? "" : "s"} · ${num(s.litres_total, 0)} L in total. Average use: the litres of every fill after the first over the engine hours since the first.</p>` : ""}</div>`;
+    ${s.fills ? `<p class="u-m-8-0-0 hint">${s.fills} fill${s.fills === 1 ? "" : "s"} · ${num(s.litres_total, 0)} L in total. Average use: the litres of every fill after the first over the engine hours since the first.${s.amount_total ? ` Paid: ${euro(s.amount_total)}.` : ""}</p>` : ""}</div>`;
 }
 // ---- the fills over time: litres per fill as columns (left), the use since the fill before in L per engine hour as a
 // smooth line with the average dashed (right). Drawn at the box's own width, so the text never scales.
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /** @param {any[]} fuel @param {number | null} avg */
 function fuelChart(fuel, avg) {
-  const F = fuel.slice().sort((a, b) => a.time < b.time ? -1 : 1).map(f => ({...f, t: Date.parse(f.time)}));
+  const F = fuel.slice().sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.engine_hours - b.engine_hours).map(f => ({...f, t: dayMs(f.date)}));
   if (F.length < 2) return `<p class="u-m-8-0-0 hint">The chart appears after two fills.</p>`;
   const box = $("lChart"), W = Math.max(280, Math.round(box ? box.clientWidth : 340)), H = 170, L = 40, R = W - 40, T = 10, B = H - 22;
   const span = F[F.length - 1].t - F[0].t, t0 = F[0].t - span * .04, t1 = F[F.length - 1].t + span * .04, X = (/** @type {number} */ t) => L + (t - t0) / (t1 - t0) * (R - L);
@@ -133,12 +128,11 @@ function openForm(kind, id) {
   const btns = `<div class="u-d-flex u-gap-8 u-fw-wrap u-mt-12"><button class="btn" type="submit" id="lSave">Save</button><button class="btn sec" type="button" data-cancel>Cancel</button>
     ${id ? `<span class="u-flex-1"></span><button class="btn sec danger" type="button" data-delete>Delete</button>` : ""}</div><p class="err" id="lErr" hidden></p>`;
   if (kind === "fuel") {
-    const p = parts(e ? e.time : undefined);
     $("lBody").innerHTML = `<form class="u-maxw-720 card lform" id="lForm" novalidate><div class="hd">${icon("fuel")}<h3>${id ? "Fuel entry" : "New fuel entry"}</h3></div><div class="rows">
-      <div class="row stackrow"><div class="k"><b>Date and time</b>${id ? "" : auto("auto")}</div><div class="u-d-flex u-gap-6 u-ai-center">${dateField("lDate", p.date)}
-        <input class="field lf-time" id="lTime" value="${p.time}" inputmode="numeric" maxlength="5" placeholder="HH:MM" aria-label="Time (24-hour)"></div></div>
+      <div class="row"><div class="k"><b>Date</b>${id ? "" : auto("today")}</div>${dateField("lDate", e ? e.date : today())}</div>
       <div class="row"><div class="k"><b>Engine hours</b></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lHours" min="0" max="100000" step="0.1" value="${e ? e.engine_hours : ""}"><span class="u">h</span></label></div>
       <div class="row"><div class="k"><b>Litres</b></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lLitres" min="0.1" max="5000" step="0.1" value="${e ? e.litres : ""}"><span class="u">L</span></label></div>
+      <div class="row"><div class="k"><b>Amount</b><small>Paid; empty = not noted</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lAmount" min="0" max="100000" step="0.01" value="${e && e.amount != null ? e.amount : ""}"><span class="u">€</span></label></div>
       <div class="row"><div class="k"><b>Position</b>${id ? "" : auto("GPS")}<small id="lPos">${esc(posText(edit.pos))}</small></div>${edit.pos ? `<button class="btn sec sm" type="button" data-nopos>Remove</button>` : ""}</div>
       <div class="row stackrow"><div class="k"><b>Country</b>${id ? "" : auto("auto")}</div><input class="field lf-text" id="lCountry" maxlength="60" value="${esc(e ? e.country : "")}" autocomplete="off"></div>
       <div class="row stackrow"><div class="k"><b>Nearest marina</b>${id ? "" : auto("auto")}<small id="lLook"></small></div><input class="field lf-text" id="lMarina" maxlength="100" value="${esc(e ? e.marina : "")}" autocomplete="off"></div>
@@ -146,7 +140,7 @@ function openForm(kind, id) {
     if (!id) { if (edit.pos) look(edit.pos); else $("lLook").textContent = "No position from the anchor watch: type them in"; }
   } else {
     $("lBody").innerHTML = `<form class="u-maxw-720 card lform" id="lForm" novalidate><div class="hd">${icon("wrench")}<h3>${id ? "Maintenance entry" : "New maintenance entry"}</h3></div><div class="rows">
-      <div class="row"><div class="k"><b>Date</b>${id ? "" : auto("today")}</div>${dateField("lDate", e ? e.date : parts().date)}</div>
+      <div class="row"><div class="k"><b>Date</b>${id ? "" : auto("today")}</div>${dateField("lDate", e ? e.date : today())}</div>
       <div class="row"><div class="k"><b>Engine hours</b><small>The meter's total; empty = not noted</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lHours" min="0" max="100000" step="0.1" value="${e && e.engine_hours != null ? e.engine_hours : ""}"><span class="u">h</span></label></div>
       <div class="row col"><div class="k"><b>What was done</b></div><textarea class="field" id="lText" maxlength="2000" rows="5" placeholder="Oil and oil filter changed…">${esc(e ? e.text : "")}</textarea></div>
       </div>${btns}</form>`;
@@ -174,11 +168,11 @@ function body() {
     if (hours !== "" && !(+hours >= 0 && +hours <= 100000)) return fail("Engine hours: 0–100000");
     return {date, engine_hours: hours === "" ? null : +hours, text};
   }
-  const time = $("lTime").value.trim(), hours = $("lHours").value, litres = $("lLitres").value;
-  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return fail("Time as HH:MM (24-hour)");
+  const hours = $("lHours").value, litres = $("lLitres").value, amount = $("lAmount").value;
   if (hours === "" || !(+hours >= 0 && +hours <= 100000)) return fail("Engine hours: 0–100000");
   if (litres === "" || !(+litres >= 0.1 && +litres <= 5000)) return fail("Litres: 0.1–5000");
-  return {time: isoOf(date, time), engine_hours: +hours, litres: +litres, lat: edit.pos ? edit.pos.lat : null, lon: edit.pos ? edit.pos.lon : null,
+  if (amount !== "" && !(+amount >= 0 && +amount <= 100000)) return fail("Amount: 0–100000");
+  return {date, engine_hours: +hours, litres: +litres, amount: amount === "" ? null : +amount, lat: edit.pos ? edit.pos.lat : null, lon: edit.pos ? edit.pos.lon : null,
     country: $("lCountry").value.trim(), marina: $("lMarina").value.trim()};
 }
 async function save() {

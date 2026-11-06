@@ -307,17 +307,17 @@ class EngineLog:
     def __init__(self):
         now = datetime.now().astimezone()
         at = lambda d: (now - timedelta(days=d)).replace(second=0, microsecond=0).isoformat(timespec="minutes")
-        self.fuel = [{"id": "a1b2c3d4e5f6", "time": at(1), "engine_hours": 2315.0, "litres": 182.0, "lat": 10.5, "lon": -20.25, "country": "Testland", "marina": "Mock Marina North"},
-                     {"id": "b2c3d4e5f6a1", "time": at(17), "engine_hours": 2288.0, "litres": 205.0, "lat": 10.2, "lon": -20.6, "country": "Testland", "marina": "Mock Marina South"},
-                     {"id": "c3d4e5f6a1b2", "time": at(38), "engine_hours": 2251.0, "litres": 160.0, "lat": 11.0, "lon": -21.0, "country": "Otherland", "marina": "Mock Harbour"}]
+        self.fuel = [{"id": "a1b2c3d4e5f6", "date": at(1)[:10], "engine_hours": 2315.0, "litres": 182.0, "amount": 301.95, "lat": 10.5, "lon": -20.25, "country": "Testland", "marina": "Mock Marina North"},
+                     {"id": "b2c3d4e5f6a1", "date": at(17)[:10], "engine_hours": 2288.0, "litres": 205.0, "amount": None, "lat": 10.2, "lon": -20.6, "country": "Testland", "marina": "Mock Marina South"},
+                     {"id": "c3d4e5f6a1b2", "date": at(38)[:10], "engine_hours": 2251.0, "litres": 160.0, "amount": 248.0, "lat": 11.0, "lon": -21.0, "country": "Otherland", "marina": "Mock Harbour"}]
         self.settings = {"tank_capacity_l": 400.0}
         self.maint = [{"id": "d4e5f6a1b2c3", "date": at(5)[:10], "engine_hours": 2300.0, "text": "Oil and oil filter changed"}, {"id": "e5f6a1b2c3d4", "date": at(22)[:10], "engine_hours": None, "text": "Impeller replaced"}]
 
     def log(self):
-        f = sorted(self.fuel, key=lambda e: e["time"]); span = f[-1]["engine_hours"] - f[0]["engine_hours"] if f else 0
-        stats = {"last_litres": f[-1]["litres"] if f else None, "last_time": f[-1]["time"] if f else None, "last_hours": f[-1]["engine_hours"] if f else None,
+        f = sorted(self.fuel, key=lambda e: e["date"]); span = f[-1]["engine_hours"] - f[0]["engine_hours"] if f else 0
+        stats = {"last_litres": f[-1]["litres"] if f else None, "last_date": f[-1]["date"] if f else None, "amount_total": sum(e.get("amount") or 0 for e in f), "last_hours": f[-1]["engine_hours"] if f else None,
                  "avg_l_per_h": round(sum(e["litres"] for e in f[1:]) / span, 2) if span > 0 else None, "fills": len(f), "litres_total": sum(e["litres"] for e in f)}
-        return {"fuel": sorted(self.fuel, key=lambda e: e["time"], reverse=True), "maintenance": sorted(self.maint, key=lambda e: e["date"], reverse=True), "stats": stats,
+        return {"fuel": sorted(self.fuel, key=lambda e: e["date"], reverse=True), "maintenance": sorted(self.maint, key=lambda e: e["date"], reverse=True), "stats": stats,
                 "settings": self.settings}
 
     def post(self, path, body):
