@@ -542,5 +542,8 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 .bflow{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}.bflow .el{width:76px;flex:none}
 .bflow .bv{width:34px;flex:none;text-align:center;font-weight:650;font-variant-numeric:tabular-nums;font-size:12px}
 .bflow .bl,.bflow .br{flex:1;height:10px;display:flex}.bflow .bl{justify-content:flex-end}
-.bflow .bl i{background:var(--bad);border-radius:5px 0 0 5px}.bflow .br i{background:var(--ok);border-radius:0 5px 5px 0}
+.bflow .bl i{background:var(--ok);border-radius:5px 0 0 5px}.bflow .br i{background:var(--bad);border-radius:0 5px 5px 0}
+.flowfoot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;max-width:440px;margin:8px auto 0}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--ctl);border-radius:20px;padding:5px 11px;font-size:12.5px;color:var(--muted)}
+.chip b{color:var(--fg);font-variant-numeric:tabular-nums}.chip i{width:9px;height:9px;border-radius:2px;display:inline-block}
 .bflow .bz{width:1px;height:16px;background:var(--muted);flex:none}.bflow.hint{font-size:11px;padding-top:0}

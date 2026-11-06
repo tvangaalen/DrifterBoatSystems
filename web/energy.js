@@ -518,11 +518,11 @@ function renderCharts() {
     drawChart($(id), {...o, unit, t0, t1, series: one ? o.series.filter(s => s.label === one).map(s => ({...s, part: 1})) : o.series});
   }
   const c = contrib;
-  const src = c ? [...c.sources.map(x => { const i = SRC_META.findIndex(m => m[0] === x.key); return {label: (SRC_META[i] || [, x.key])[1], color: (SRC_META[i] || [, , "#888"])[2], i, wh: x.wh}; }),
-    ...(c.shore ? [{label: "Shore (AC in)", color: "#0b62c4", i: 4, wh: c.shore.wh}] : [])] : [];
+  // shore power is not in the DC balance: it reaches the bank through the Charger House, so it is shown on its own
+  const src = c ? c.sources.map(x => { const i = SRC_META.findIndex(m => m[0] === x.key); return {label: (SRC_META[i] || [, x.key])[1], color: (SRC_META[i] || [, , "#888"])[2], i, wh: x.wh}; }) : [];
   const load = c ? c.consumers.map(x => { const i = LOAD_META.findIndex(m => m[0] === x.key); return {label: (LOAD_META[i] || [, x.key])[1], color: (LOAD_META[i] || [, , "#888"])[2], i, wh: x.wh}; }) : [];
   $("eContrib").innerHTML = !c ? `<div class="empty">Loading…</div>` : `
-    <div class="ebars"><h4>Energy flow</h4>${sankey(src, load)}</div>
+    <div class="ebars"><h4>Energy flow</h4>${sankey(src, load)}${flowFoot(src, load, c.shore)}</div>
     <div class="ebars"><h4>Batteries</h4>${battFlow(c.batteries || [])}</div>
     <p class="u-m-6-0-0 hint">${D.dayTime(Date.parse(c.start))} – ${D.dayTime(Date.parse(c.end))} · from the full-resolution history on the server${c.sources_covered_seconds != null && c.span_seconds ? ` · data for ${Math.round(c.sources_covered_seconds / c.span_seconds * 100)} % of the time` : ""}</p>`;
 }
@@ -553,15 +553,21 @@ function sankey(src, load) {
     <text x="0" y="11" fill="${mu}" font-size="10.5">In ${kwh(tin)} kWh</text><text x="${W}" y="11" text-anchor="end" fill="${mu}" font-size="10.5">Out ${kwh(tout)} kWh</text>
     ${side(L, true)}${side(R, false)}
     <rect x="${xB0}" y="${bankY}" width="${xB1 - xB0}" height="${bankH}" rx="5" fill="${colorOf(BAT_META[0][2], 0)}"/>
-    <text x="${(xB0 + xB1) / 2}" y="${bankY + bankH + 13}" text-anchor="middle" fill="${mu}" font-size="10">House bank</text></svg>`;
+    <text transform="translate(${(xB0 + xB1) / 2 + 4} ${bankY + bankH / 2}) rotate(-90)" text-anchor="middle" fill="#0c1014" font-size="11" font-weight="700" letter-spacing=".06em">HOUSE BANK</text></svg>`;
 }
-/** Per battery: discharged to the left (red), charged to the right (green), on one scale. @param {any[]} bats */
+/** Under the flow: shore power on its own (not in the balance) and the net of DC in and out. */
+function flowFoot(src, load, shore) {
+  const net = src.reduce((a, x) => a + Math.max(0, x.wh), 0) - load.reduce((a, x) => a + Math.max(0, x.wh), 0);
+  return `<div class="flowfoot">${shore ? `<span class="chip" title="Not in the balance: it reaches the bank through the Charger House"><i style="background:${colorOf("#0b62c4", 4)}"></i>Shore (AC in) <b>${kwh(shore.wh)} kWh</b></span>` : "<span></span>"}
+    <span class="chip">Net <b style="color:var(${net >= 0 ? "--ok" : "--bad"})">${net >= 0 ? "+" : "−"}${kwh(Math.abs(net))} kWh</b></span></div>`;
+}
+/** Per battery: charged (in) to the left in green, discharged (out) to the right in red, on one scale. @param {any[]} bats */
 function battFlow(bats) {
   const max = Math.max(1, ...bats.map(x => Math.max(x.charge_wh || 0, x.discharge_wh || 0)));
   return bats.map(x => `<div class="bflow"><span class="el">${esc(x.key[0] + x.key.slice(1).toLowerCase())}</span>
-      <span class="bv">${kwh(x.discharge_wh || 0)}</span><span class="bl"><i style="width:${((x.discharge_wh || 0) / max * 100).toFixed(1)}%"></i></span>
-      <span class="bz"></span><span class="br"><i style="width:${((x.charge_wh || 0) / max * 100).toFixed(1)}%"></i></span><span class="bv">${kwh(x.charge_wh || 0)}</span></div>`).join("")
-    + `<div class="bflow hint"><span class="el"></span><span class="u-flex-1 u-ta-right">← discharged kWh</span><span class="bz"></span><span class="u-flex-1">charged kWh →</span></div>`;
+      <span class="bv">${kwh(x.charge_wh || 0)}</span><span class="bl"><i style="width:${((x.charge_wh || 0) / max * 100).toFixed(1)}%"></i></span>
+      <span class="bz"></span><span class="br"><i style="width:${((x.discharge_wh || 0) / max * 100).toFixed(1)}%"></i></span><span class="bv">${kwh(x.discharge_wh || 0)}</span></div>`).join("")
+    + `<div class="bflow hint"><span class="el"></span><span class="u-flex-1 u-ta-right">← charged (in)</span><span class="bz"></span><span class="u-flex-1">discharged (out) →</span></div>`;
 }
 function renderHistory() {
   const box = $("eHist"), r = report || {}, h = hstat || {}, MB = v => v == null ? "–" : v >= 1e9 ? (v / 1e9).toFixed(2) + " GB" : (v / 1e6).toFixed(0) + " MB";
