@@ -24,18 +24,18 @@ ROOT = Path(__file__).resolve().parent.parent
 LIVE = Path(r"C:\Drifter")
 CLAUDE = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ALL = {"gateway", "supervisor", "common", "privacy-scan", "proc", "drifterd", "verify-live", "watchdog", "backup", "ship",
-       "energy", "anchor", "guard", "guard-api", "washer"}
-COMMON_USERS = {"common", "gateway", "proc", "drifterd", "supervisor", "watchdog", "anchor", "guard", "guard-api", "washer"}
+       "energy", "anchor", "guard", "guard-api", "washer", "enginelog"}
+COMMON_USERS = {"common", "gateway", "proc", "drifterd", "supervisor", "watchdog", "anchor", "guard", "guard-api", "washer", "enginelog"}
 SUITE_RULES = [   # (path or prefix, suites of tests/run_all.py)
     ("drifter.py", {"gateway", "watchdog", "backup"}), ("supervisor.py", {"supervisor", "drifterd"}), ("drifterd.py", {"drifterd"}),
     ("common/", COMMON_USERS), ("modules.json", {"gateway", "drifterd", "supervisor", "backup"}),
     ("tools/privacy_scan.py", {"privacy-scan"}), ("tools/verify_live.py", {"verify-live"}), ("tools/backup.py", {"backup", "gateway"}),
     ("tools/ship.py", {"ship"}), ("web/sw.js", {"gateway"}),
     ("modules/energy/", {"energy"}), ("modules/anchor/", {"anchor"}), ("modules/guard/", {"guard", "guard-api"}),
-    ("modules/washer/", {"washer"}), ("pyproject.toml", ALL), ("uv.lock", ALL)]
-PAGES = {"energy": "overview|energy-|Engine ECU", "anchor": "overview|anchor at", "guard": "overview|guard at", "washer": "overview|washer at"}
+    ("modules/washer/", {"washer"}), ("modules/enginelog/", {"enginelog"}), ("pyproject.toml", ALL), ("uv.lock", ALL)]
+PAGES = {"energy": "overview|energy-|Engine ECU", "anchor": "overview|anchor at", "guard": "overview|guard at", "washer": "overview|washer at", "enginelog": "overview|enginelog|Engine log"}
 UI_ALL = ("tests/ui/", "tools/mock_upstreams.py", "tools/config.mock.json", "playwright.config.ts", "package.json", "package-lock.json")
-ORDER = ("energy", "anchor", "guard", "washer", "gateway")          # the gateway last: it answers the restart requests
+ORDER = ("energy", "anchor", "guard", "washer", "enginelog", "gateway")          # the gateway last: it answers the restart requests
 
 
 # ------------------------------------------------------------------------------------------------- plans (pure, tested)
@@ -50,7 +50,7 @@ def test_plan(files: list[str]) -> dict:
         if f.endswith(".py"): ruff.add("modules/energy" if f.startswith("modules/energy/") else ".")
         if f.startswith(UI_ALL): ui_all = True
         elif f.startswith("web/"):
-            page = re.fullmatch(r"web/(energy|anchor|guard|washer)\.js", f)
+            page = re.fullmatch(r"web/(energy|anchor|guard|washer|enginelog)\.js", f)
             if page: ui.add(PAGES[page.group(1)])
             else: ui_all = True
     pattern = "all" if ui_all else "|".join(sorted(ui)) or None
@@ -68,9 +68,9 @@ def restart_plan(files: list[str]) -> tuple[list[str], list[str]]:
         elif f in ("pyproject.toml", "uv.lock"):
             todo.append(f"{f} changed: rebuild the environments (py -3.12 tools\\sync_envs.py --into .venv-next <module>), then restart")
         elif f in ("drifter.py", "modules.json", "tools/backup.py"): want.add("gateway")
-        elif f == "common/service.py": want |= {"anchor", "guard", "washer"}
-        elif f.startswith("common/"): want |= {"gateway", "anchor", "guard", "washer"}
-        elif m := re.match(r"modules/(energy|anchor|guard|washer)/", f):
+        elif f == "common/service.py": want |= {"anchor", "guard", "washer", "enginelog"}
+        elif f.startswith("common/"): want |= {"gateway", "anchor", "guard", "washer", "enginelog"}
+        elif m := re.match(r"modules/(energy|anchor|guard|washer|enginelog)/", f):
             if not (f.endswith(".md") or "/docs/" in f or "/tests/" in f or name.startswith("test_")): want.add(m.group(1))
     return [m for m in ORDER if m in want], list(dict.fromkeys(todo))
 

@@ -1,4 +1,4 @@
-# Drifter Boat Systems: one lockfile (uv.lock) for the gateway and the four module servers.
+# Drifter Boat Systems: one lockfile (uv.lock) for the gateway and the five module servers.
 # Each module's packages are a dependency group; tools/sync_envs.py builds every environment from the lock on the
 # python.org Python 3.12 (never the Microsoft Store Python: it hung at boot in session 0 and cannot be started through
 # Win32_Process Create): the gateway in .venv, each module in modules/<name>/.venv.
@@ -18,6 +18,8 @@ anchor = ["websockets==13.1", "fastapi==0.141.1", "starlette==1.6.0", "uvicorn==
 guard = ["pyezviz==0.2.2.3", "fastapi==0.141.1", "starlette==1.6.0", "uvicorn==0.52.4", "httpx==0.28.1"]
 # the washer on FastAPI since 4.0 (Flask until 3.8)
 washer = ["fastapi==0.141.1", "starlette==1.6.0", "uvicorn==0.52.4", "httpx==0.28.1", "python-miio==0.5.12", "micloud==0.6"]
+# the engine log (diesel fuel and maintenance), on FastAPI from the start
+enginelog = ["fastapi==0.141.1", "starlette==1.6.0", "uvicorn==0.52.4", "httpx==0.28.1"]
 dev = ["ruff==0.14.14", "black==26.5.1"]   # black: MasterVolt's formatter
 
 [tool.uv]

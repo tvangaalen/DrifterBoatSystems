@@ -163,6 +163,7 @@ const RESTART_TEXT = {
   anchor: ["The anchor watch pauses for about a minute; the anchor, settings and track are kept.", "Refused while an alarm is active."],
   guard: ["BoatGuard pauses for a few seconds; whether it armed the camera is kept.", ""],
   washer: ["The controller pauses for a few seconds; a running program carries on in the washer.", ""],
+  enginelog: ["The engine log pauses for a few seconds; every entry is kept.", ""],
 };
 function supState(s) {
   if (!s) return "";

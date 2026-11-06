@@ -547,3 +547,11 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 .aaxis{position:relative;height:18px;margin:2px 0 0 30px;font-size:11px;color:var(--muted)}.aaxis span{position:absolute;top:2px;transform:translateX(-50%);white-space:nowrap}
 .alegend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-top:8px}
 .alegend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+/* Engine log: the lists (a row per entry opens it), the forms, the "auto" marks on automatic values */
+.lrows{margin:10px -16px 0}.lrow{display:flex;width:100%;align-items:center;gap:10px;min-height:52px;padding:9px 16px;border:0;border-top:1px solid var(--line);
+  background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}.lrow .t{flex:1;min-width:0}.lrow small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.lrow small.pre{white-space:pre-line;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}.lrow .chev{color:var(--faint);flex:none}
+.lrows .empty{border-top:1px solid var(--line)}
+.autochip{font-size:10.5px;font-weight:600;color:var(--ok);background:var(--okbg);border-radius:10px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.lform{padding-bottom:14px}.lform .rows{padding:0}.lform>.u-d-flex,.lform>.err{padding:0 16px}.lf-time{width:84px;text-align:center}.lf-text{flex:1;width:auto;max-width:240px;margin-left:12px}
+.lform textarea.field{width:100%;min-height:120px;padding:10px 12px;resize:vertical;font:inherit;font-size:16px}

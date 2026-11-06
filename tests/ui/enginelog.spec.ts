@@ -1,0 +1,62 @@
+// Engine log: every entry can be created, read, changed and deleted; a new fill takes the time, the boat's position and
+// the looked-up country and marina, all of which can be changed; deleting asks first with Keep as the default.
+import { test, expect, setUp, open, type Posted } from "./support";
+
+test("Engine log: a new fuel entry is filled in automatically and saves what the form shows", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { theme: "dark", posts });
+  await open(page, "#anchor", null);                          // the anchor watch knows the boat's position
+  await open(page, "#enginelog", null);
+  await expect(page.locator("#lBody .lrow")).toHaveCount(3);
+  await page.locator("[data-new=fuel]").click();
+  await expect(page.locator("#lMarina")).toHaveValue("Mock Marina North");
+  await expect(page.locator("#lCountry")).toHaveValue("Testland");
+  await expect(page.locator("#lPos")).toContainText("N");
+  await page.locator("#lCountry").fill("Otherland");          // a changed value is what is saved
+  await page.locator("#lHours").fill("2330.5"); await page.locator("#lLitres").fill("95");
+  await page.locator("#lTime").fill("9:5");
+  await page.locator("#lSave").click();
+  await expect(page.locator("#lErr")).toContainText("HH:MM");
+  await page.locator("#lTime").fill("09:05");
+  await page.locator("#lSave").click();
+  await expect.poll(() => posts.length).toBe(1);
+  const b = posts[0].body as any;
+  expect(posts[0].url).toBe("/api/enginelog/api/fuel");
+  expect([b.engine_hours, b.litres, b.country, b.marina]).toEqual([2330.5, 95, "Otherland", "Mock Marina North"]);
+  expect(b.time).toMatch(/T09:05:00[+-]\d\d:\d\d$/); expect(typeof b.lat).toBe("number");
+  await expect(page.locator("#lForm")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("Engine log: change and delete a fill (Keep is the default), and add, change and delete maintenance", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { theme: "dark", posts });
+  await open(page, "#enginelog", null);
+  await page.locator("[data-edit='fuel:a1b2c3d4e5f6']").click();
+  await expect(page.locator("#lLitres")).toHaveValue("182");
+  await page.locator("#lLitres").fill("185"); await page.locator("#lSave").click();
+  await expect.poll(() => posts.map(p => p.url)).toEqual(["/api/enginelog/api/fuel/a1b2c3d4e5f6"]);
+  expect((posts[0].body as any).litres).toBe(185);
+  await page.locator("[data-edit='fuel:a1b2c3d4e5f6']").click();
+  await page.locator("[data-delete]").click();
+  await page.keyboard.press("Escape");                        // Escape keeps it
+  expect(posts.length).toBe(1);
+  await page.locator("[data-delete]").click();
+  await page.locator("#dlgSheet [data-value]:not([data-default])").click();
+  await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/fuel/a1b2c3d4e5f6/delete");
+  await page.locator("#lViews [data-lview=maintenance]").click();
+  await expect(page.locator("#lBody .lrow")).toHaveCount(2);
+  await page.locator("[data-new=maintenance]").click();
+  await page.locator("#lSave").click();
+  await expect(page.locator("#lErr")).toContainText("what was done");
+  await page.locator("#lText").fill("Fuel filters\nprimary and secondary"); await page.locator("#lSave").click();
+  await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/maintenance");
+  expect((posts.at(-1)!.body as any).text).toBe("Fuel filters\nprimary and secondary");
+  await page.locator("[data-edit='maintenance:e5f6a1b2c3d4']").click();
+  await page.locator("#lText").fill("Impeller and gasket"); await page.locator("#lSave").click();
+  await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/maintenance/e5f6a1b2c3d4");
+  await page.locator("[data-edit='maintenance:e5f6a1b2c3d4']").click();
+  await page.locator("[data-delete]").click(); await page.locator("#dlgSheet [data-value]:not([data-default])").click();
+  await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/maintenance/e5f6a1b2c3d4/delete");
+  expect(errors).toEqual([]);
+});

@@ -4,5 +4,6 @@ import "./energy.js";
 import "./anchor.js";
 import "./guard.js";
 import "./washer.js";
+import "./enginelog.js";
 
 Drifter.start();

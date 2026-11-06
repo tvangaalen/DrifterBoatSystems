@@ -16,9 +16,9 @@ class Clock:
 
 class Rig:
     """A supervisor with fake ports, starts and stops."""
-    def __init__(self, up=("energy", "anchor", "guard", "washer"), precheck=None):
+    def __init__(self, up=("energy", "anchor", "guard", "washer", "enginelog"), precheck=None):
         self.tmp = tempfile.TemporaryDirectory(); self.data = Path(self.tmp.name)
-        self.ports = {"energy": 8000, "anchor": 8766, "guard": 8095, "washer": 8080}
+        self.ports = {"energy": 8000, "anchor": 8766, "guard": 8095, "washer": 8080, "enginelog": 8097}
         self.up = {self.ports[n] for n in up}; self.started, self.stopped = [], []; self.clock = Clock()
         self.logs = {n: self.data / "logs" / f"{n}.console.log" for n in S.LOG_NAMES}
         self.sup = S.Supervisor(ports=self.ports, data=self.data, listening=lambda: set(self.up), start=self.started.append,
@@ -41,7 +41,7 @@ class SupervisorTest(unittest.TestCase):
         self.assertIn("adopted", r.sup.mods["energy"]["last_event"]["text"])
 
     def test_down_at_start_is_started_at_once(self):
-        r = Rig(up=("anchor", "guard", "washer")); r.tick()                   # e.g. after a boot: nobody else starts it
+        r = Rig(up=("anchor", "guard", "washer", "enginelog")); r.tick()                   # e.g. after a boot: nobody else starts it
         self.assertEqual(r.started, ["energy"]); self.assertEqual(r.state("energy"), "starting")
         r.tick(S.TICK_S); self.assertEqual(r.started, ["energy"])              # no second start while it comes up
         r.up.add(8000); r.tick(40); self.assertEqual(r.state("energy"), "running"); self.assertEqual(r.sup.mods["energy"]["starts"], 1)
@@ -54,9 +54,9 @@ class SupervisorTest(unittest.TestCase):
         r.sup.start_fn, r.sup.start_async = start, True
         t0 = time.monotonic(); r.tick(); self.assertLess(time.monotonic() - t0, 1)
         for _ in range(100):
-            if len(seen) == 4: break
+            if len(seen) == 5: break
             time.sleep(0.01)
-        self.assertEqual(sorted(seen), ["anchor", "energy", "guard", "washer"]); gate.set()
+        self.assertEqual(sorted(seen), ["anchor", "energy", "enginelog", "guard", "washer"]); gate.set()
         self.assertEqual(r.sup.mods["washer"]["last_start"], r.clock.t)      # timed from its own start, not from a stale tick time
 
     def test_module_that_stops_later_is_started_after_grace(self):
@@ -79,7 +79,7 @@ class SupervisorTest(unittest.TestCase):
         r.tick(S.STABLE_S + 1); self.assertEqual(r.sup.mods["washer"]["attempts"], 0)
 
     def test_hold_blocks_starts(self):
-        r = Rig(up=("energy", "guard", "washer")); r.hold("anchor"); r.tick()
+        r = Rig(up=("energy", "guard", "washer", "enginelog")); r.hold("anchor"); r.tick()
         for _ in range(10): r.tick(60)
         self.assertEqual(r.started, []); self.assertEqual(r.state("anchor"), "held")
         r.hold("anchor", False); r.tick(); self.assertEqual(r.started, [])     # a fresh grace period after the hold
@@ -141,7 +141,7 @@ class SupervisorTest(unittest.TestCase):
     def test_shutdown_all_stops_everything_and_nothing_restarts(self):
         r = Rig(); r.tick(); done = threading.Event()
         r.sup.shutdown_all(on_done=done.set); self.assertTrue(done.wait(2))
-        self.assertEqual(r.stopped, ["washer", "guard", "anchor", "energy"])
+        self.assertEqual(r.stopped, ["enginelog", "washer", "guard", "anchor", "energy"])
         snap = r.sup.snapshot()["shutdown"]; self.assertEqual((snap["state"], snap["stopped"], snap["failed"]), ("done", r.stopped, {}))
         for n in r.ports: self.assertEqual(r.state(n), "stopped")
         r.sup.run()                                                            # the loop has been stopped: returns at once
@@ -165,7 +165,7 @@ class SupervisorTest(unittest.TestCase):
             r.stopped.append(n)
         r.sup.stop_fn = stop; r.sup.shutdown_all(on_done=done.set); self.assertTrue(done.wait(2))
         snap = r.sup.snapshot()["shutdown"]
-        self.assertEqual(snap["state"], "failed"); self.assertIn("guard", snap["failed"]); self.assertEqual(r.stopped, ["washer", "anchor", "energy"])
+        self.assertEqual(snap["state"], "failed"); self.assertIn("guard", snap["failed"]); self.assertEqual(r.stopped, ["enginelog", "washer", "anchor", "energy"])
 
     def test_log_tail(self):
         r = Rig(); f = r.logs["anchor"]; f.parent.mkdir()

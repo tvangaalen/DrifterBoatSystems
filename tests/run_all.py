@@ -34,6 +34,7 @@ SUITES = [  # (name, folder, command)
     ("guard", ROOT / "modules/guard", [python("guard"), "test_core.py"]),
     ("guard-api", ROOT / "modules/guard", [python("guard"), "-m", "unittest", "test_guard"]),
     ("washer", ROOT / "modules/washer", [python("washer"), "-m", "unittest", "test_washer"]),
+    ("enginelog", ROOT / "modules/enginelog", [python("enginelog"), "-m", "unittest", "test_enginelog"]),
 ]
 
 unknown = set(ONLY) - {n for n, _, _ in SUITES}

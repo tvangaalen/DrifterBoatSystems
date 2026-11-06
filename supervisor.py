@@ -1,4 +1,4 @@
-"""Supervisor: keeps the module servers (energy, anchor, guard, washer) running, shows their state, restarts on request.
+"""Supervisor: keeps the module servers (energy, anchor, guard, washer, enginelog) running, shows their state, restarts on request.
 It runs inside drifterd (the service), which gives it start/stop functions that run each server as drifterd's child in
 its own job object.
 
@@ -31,7 +31,7 @@ GRACE_S, START_WAIT_S, STABLE_S, TICK_S = 30, 300, 600, 5
 BACKOFF = [60, 120, 300, 600, 900]          # s between failed start attempts
 SUPERVISED = M.MODULES                                  # the gateway is kept running by drifterd itself
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-SHUTDOWN_ORDER = ("washer", "guard", "anchor", "energy")
+SHUTDOWN_ORDER = ("enginelog", "washer", "guard", "anchor", "energy")
 LOG_NAMES = M.NAMES
 
 

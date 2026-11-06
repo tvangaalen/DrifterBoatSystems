@@ -1,0 +1,24 @@
+<h1 id="title">Engine log<span class="sub" id="subtitle"></span></h1>
+<div id="sideNav"><a href="#overview" data-page="overview"><svg class="i"><use href="#i-home"></use></svg><span>Overview</span><i class="dotbadge" data-badge="overview"></i></a><a href="#power" data-page="power"><svg class="i"><use href="#i-power"></use></svg><span>Energy</span><i class="dotbadge" data-badge="power"></i></a><a href="#anchor" data-page="anchor"><svg class="i"><use href="#i-anchor"></use></svg><span>Anchor watch</span><i class="dotbadge" data-badge="anchor"></i></a><a href="#guard" data-page="guard"><svg class="i"><use href="#i-guard"></use></svg><span>BoatGuard</span><i class="dotbadge" data-badge="guard"></i></a><a href="#washer" data-page="washer"><svg class="i"><use href="#i-washer"></use></svg><span>Washer</span><i class="dotbadge" data-badge="washer"></i></a><a href="#enginelog" data-page="enginelog" aria-current="page"><svg class="i"><use href="#i-fuel"></use></svg><span>Engine log</span><i class="dotbadge" data-badge="enginelog"></i></a></div>
+<nav class="tabbar" id="tabbar" aria-label="Systems"><a href="#overview" data-page="overview"><svg class="i"><use href="#i-home"></use></svg><span>Overview</span><i class="dotbadge" data-badge="overview"></i></a><a href="#power" data-page="power"><svg class="i"><use href="#i-power"></use></svg><span>Energy</span><i class="dotbadge" data-badge="power"></i></a><a href="#anchor" data-page="anchor"><svg class="i"><use href="#i-anchor"></use></svg><span>Anchor</span><i class="dotbadge" data-badge="anchor"></i></a><a href="#guard" data-page="guard"><svg class="i"><use href="#i-guard"></use></svg><span>Guard</span><i class="dotbadge" data-badge="guard"></i></a><a href="#washer" data-page="washer"><svg class="i"><use href="#i-washer"></use></svg><span>Washer</span><i class="dotbadge" data-badge="washer"></i></a><a href="#enginelog" data-page="enginelog" aria-current="page"><svg class="i"><use href="#i-fuel"></use></svg><span>Engine</span><i class="dotbadge" data-badge="enginelog"></i></a></nav>
+<div class="alarmbar" id="alarmbar" role="alert">
+<svg class="i"><use href="#i-alert"></use></svg>
+<div class="grow"><b id="alarmTitle"></b><span id="alarmSub"></span></div>
+<button class="btn sm" id="alarmSilence" type="button">Silence</button>
+<button class="btn sm" type="button" data-sound="" aria-pressed="false" title="Sound alarms on this device">Sound off</button>
+</div>
+<section data-page="enginelog"><div id="lDown"></div>
+<div class="u-m-4-0-14 u-maxw-460 seg" id="lViews"><button type="button" data-lview="fuel" aria-pressed="true">Diesel fuel</button><button type="button" data-lview="maintenance" aria-pressed="false">Maintenance</button></div>
+<div id="lBody"><div class="u-maxw-720 card pad">
+<div class="minis u-mt-0"><div class="mini"><div class="l">Last fill</div><div class="n">182 L</div></div>
+<div class="mini"><div class="l">Since</div><div class="n">24 h</div></div>
+<div class="mini"><div class="l">Avg use</div><div class="n">6.0 L/h</div></div></div>
+<button class="u-mt-12 btn wide" type="button" data-new="fuel"><svg class="i"><use href="#i-fuel"></use></svg> New fuel entry</button>
+<div class="lrows"><button class="lrow" type="button" data-edit="fuel:a1b2c3d4e5f6"><span class="t"><b>182 L</b>
+<span class="muted">· 2315 h</span>
+<small>01-11 16:28 · Mock Marina North, Testland</small></span><svg class="i chev"><use href="#i-chev"></use></svg></button><button class="lrow" type="button" data-edit="fuel:b2c3d4e5f6a1"><span class="t"><b>205 L</b>
+<span class="muted">· 2288 h</span>
+<small>16-10 17:28 · Mock Marina South, Testland</small></span><svg class="i chev"><use href="#i-chev"></use></svg></button><button class="lrow" type="button" data-edit="fuel:c3d4e5f6a1b2"><span class="t"><b>160 L</b>
+<span class="muted">· 2251 h</span>
+<small>25-09 17:28 · Mock Harbour, Otherland</small></span><svg class="i chev"><use href="#i-chev"></use></svg></button></div>
+<p class="u-m-8-0-0 hint">3 fills · 547 L in total. Average use: the litres of every fill after the first over the engine hours since the first.</p></div></div></section>

@@ -69,6 +69,8 @@ export const SCREENS: [string, string, string | null][] = [
   ["anchor", "#anchor", null],
   ["guard", "#guard", null],
   ["washer", "#washer", null],
+  ["enginelog", "#enginelog", null],
+  ["enginelog-maintenance", "#enginelog", "#lViews [data-lview=maintenance]"],
   ["system", "#system", null],
 ];
 

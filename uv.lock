@@ -326,6 +326,12 @@ energy = [
     { name = "starlette" },
     { name = "uvicorn", extra = ["standard"], marker = "extra == 'group-20-drifter-boat-systems-energy'" },
 ]
+enginelog = [
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "starlette" },
+    { name = "uvicorn" },
+]
 guard = [
     { name = "fastapi" },
     { name = "httpx" },
@@ -363,6 +369,12 @@ energy = [
     { name = "httpx", specifier = "==0.28.1" },
     { name = "starlette", specifier = "==1.6.0" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.52.4" },
+]
+enginelog = [
+    { name = "fastapi", specifier = "==0.141.1" },
+    { name = "httpx", specifier = "==0.28.1" },
+    { name = "starlette", specifier = "==1.6.0" },
+    { name = "uvicorn", specifier = "==0.52.4" },
 ]
 guard = [
     { name = "fastapi", specifier = "==0.141.1" },

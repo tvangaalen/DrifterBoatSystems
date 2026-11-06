@@ -33,6 +33,11 @@
       "name": "Washer (VIOMI)", "port": 8080, "dir": "modules\\washer",
       "command": [".venv\\Scripts\\python.exe", "-m", "washer"],
       "health": "http:/health"
+    },
+    "enginelog": {
+      "name": "Engine log", "port": 8097, "dir": "modules\\enginelog",
+      "command": [".venv\\Scripts\\python.exe", "-m", "enginelog"],
+      "health": "http:/health"
     }
   }
 }

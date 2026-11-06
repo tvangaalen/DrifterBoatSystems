@@ -2,7 +2,7 @@
 
     py -3.12 tools/verify_live.py [module ...] [--wait 240] [--config C:\\Drifter\\config.json]
 
-Modules: gateway, energy, anchor, guard, washer (default: all). Per module: /health on 127.0.0.1 (version, uptime), a
+Modules: gateway, energy, anchor, guard, washer, enginelog (default: all). Per module: /health on 127.0.0.1 (version, uptime), a
 403 without the token (the module contract), the supervisor's state and health check, the gateway's upstream state, and
 what that module needs to be useful: energy - all 3 BMS units connected, no BMS control busy, Float not latched; anchor -
 Orca Core connected, network GPS (NMEA) listening, Pushover and still-alive configured, no alarm; guard - router and
@@ -15,9 +15,9 @@ import argparse, json, socket, ssl, sys, time, urllib.error, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-NAMES = ("gateway", "energy", "anchor", "guard", "washer")
-UPSTREAM = {"energy": "power", "anchor": "anchor", "guard": "guard", "washer": "washer"}   # the gateway's names
-PROBE = {"energy": "/api/energy", "anchor": "/api/state", "guard": "/api/status", "washer": "/api/status"}   # must say 403
+NAMES = ("gateway", "energy", "anchor", "guard", "washer", "enginelog")
+UPSTREAM = {"energy": "power", "anchor": "anchor", "guard": "guard", "washer": "washer", "enginelog": "enginelog"}   # the gateway's names
+PROBE = {"energy": "/api/energy", "anchor": "/api/state", "guard": "/api/status", "washer": "/api/status", "enginelog": "/api/log"}   # must say 403
 
 
 def need(ok, text): return (bool(ok), text)
@@ -120,6 +120,9 @@ class Live:
             out.append(need(_listens((self.specs["anchor"].get("lan") or "")), "NMEA port accepts TCP"))
         elif name == "guard": out += check_guard(self.gw(p + "/api/status")[1] or {})
         elif name == "washer": out += check_washer(self.gw(p + "/api/status")[1] or {})
+        elif name == "enginelog":
+            log = self.gw(p + "/api/log")[1] or {}
+            out.append(need("fuel" in log and "maintenance" in log, f"log answers: {len(log.get('fuel') or [])} fills, {len(log.get('maintenance') or [])} maintenance"))
         return out
 
 

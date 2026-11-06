@@ -27,8 +27,6 @@ function display(d) {
 }
 const offline = () => m.state.err && !m.state.err.down && m.state.err.status === 503;   // controller up, washer not answering
 
-/** The Overview tile's washing machine (graphite, glass door, a display with the time left); colours from --wm-* and --cam-line. */
-
 const m = {
   id: "washer", title: "Washer", short: "Washer", icon: "washer", every: 5000, background: 10000,
   async load() {

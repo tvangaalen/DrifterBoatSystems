@@ -2,7 +2,7 @@
 
 Never point this at, or run it instead of, the real servers: it only simulates. Commands change the fake state so
 the page's controls can be tried. Positions are a made-up spot, not an anchorage of this boat.
-Usage: py tools/mock_upstreams.py  (ports 18000 power, 18766 anchor, 18095 guard, 18080 washer, localhost only)
+Usage: py tools/mock_upstreams.py  (ports 18000 power, 18766 anchor, 18095 guard, 18080 washer, 18097 enginelog, localhost only)
        --offset N moves every port up by N (the browser tests use 1000, so they never meet a mock someone left running)
 """
 from __future__ import annotations
@@ -302,6 +302,34 @@ class Washer:
         return 200, {"ok": True}
 
 
+class EngineLog:
+    """Made-up fills and maintenance (no real position); create, change and delete work in memory."""
+    def __init__(self):
+        now = datetime.now().astimezone()
+        at = lambda d: (now - timedelta(days=d)).replace(second=0, microsecond=0).isoformat(timespec="minutes")
+        self.fuel = [{"id": "a1b2c3d4e5f6", "time": at(1), "engine_hours": 2315.0, "litres": 182.0, "lat": 10.5, "lon": -20.25, "country": "Testland", "marina": "Mock Marina North"},
+                     {"id": "b2c3d4e5f6a1", "time": at(17), "engine_hours": 2288.0, "litres": 205.0, "lat": 10.2, "lon": -20.6, "country": "Testland", "marina": "Mock Marina South"},
+                     {"id": "c3d4e5f6a1b2", "time": at(38), "engine_hours": 2251.0, "litres": 160.0, "lat": 11.0, "lon": -21.0, "country": "Otherland", "marina": "Mock Harbour"}]
+        self.maint = [{"id": "d4e5f6a1b2c3", "date": at(5)[:10], "text": "Oil and oil filter changed, 2 300 h"}, {"id": "e5f6a1b2c3d4", "date": at(22)[:10], "text": "Impeller replaced"}]
+
+    def log(self):
+        f = sorted(self.fuel, key=lambda e: e["time"]); span = f[-1]["engine_hours"] - f[0]["engine_hours"] if f else 0
+        stats = {"last_litres": f[-1]["litres"] if f else None, "last_time": f[-1]["time"] if f else None, "last_hours": f[-1]["engine_hours"] if f else None,
+                 "avg_l_per_h": round(sum(e["litres"] for e in f[1:]) / span, 2) if span > 0 else None, "fills": len(f), "litres_total": sum(e["litres"] for e in f)}
+        return {"fuel": sorted(self.fuel, key=lambda e: e["time"], reverse=True), "maintenance": sorted(self.maint, key=lambda e: e["date"], reverse=True), "stats": stats}
+
+    def post(self, path, body):
+        parts = path.strip("/").split("/")[1:]
+        lst = self.fuel if parts[0] == "fuel" else self.maint if parts[0] == "maintenance" else None
+        if lst is None: return 404, {"detail": "Unknown entry kind"}
+        if len(parts) == 1:
+            e = {"id": f"{random.getrandbits(48):012x}", **body}; lst.append(e); return 200, e
+        e = next((x for x in lst if x["id"] == parts[1]), None)
+        if e is None: return 404, {"detail": "No such entry (deleted?)"}
+        if len(parts) == 3: lst.remove(e); return 200, {"ok": True}
+        e.update(body); return 200, e
+
+
 def make(name, obj):
     class H(BaseHTTPRequestHandler):
         def log_message(self, *a): pass
@@ -311,6 +339,9 @@ def make(name, obj):
 
         def do_GET(self):
             path, _, q = self.path.partition("?")
+            if name == "enginelog":
+                if path == "/api/log": return self._j(200, obj.log())
+                if path == "/api/lookup": return self._j(200, {"country": "Testland", "marina": "Mock Marina North", "marina_distance_m": 420, "error": None})
             if name == "power":
                 qs = dict(x.split("=", 1) for x in q.split("&") if "=" in x)
                 if path == "/api/history/chart-data": return self._j(200, obj.chart_data(float(qs.get("hours", 24))))
@@ -350,7 +381,7 @@ def make(name, obj):
 
         def do_POST(self):
             n = int(self.headers.get("Content-Length") or 0); body = json.loads(self.rfile.read(n) or b"{}")
-            if name in ("washer", "guard", "anchor", "power") and self.headers.get("X-Drifter-Token") != os.environ.get("DRIFTER_TOKEN"):   # the module contract
+            if name in ("washer", "guard", "anchor", "power", "enginelog") and self.headers.get("X-Drifter-Token") != os.environ.get("DRIFTER_TOKEN"):   # the module contract
                 return self._j(403, {"ok": False, "error": "Request not sent by the Drifter gateway"})
             if name == "anchor":
                 try: obj.command(body); return self._j(200, {"ok": True, "state": obj.state()})
@@ -361,7 +392,7 @@ def make(name, obj):
 
 if __name__ == "__main__":
     OFF = int(sys.argv[sys.argv.index("--offset") + 1]) if "--offset" in sys.argv else 0
-    for name, port, obj in (("power", 18000, Power()), ("anchor", 18766, Anchor()), ("guard", 18095, Guard()), ("washer", 18080, Washer())):
+    for name, port, obj in (("power", 18000, Power()), ("anchor", 18766, Anchor()), ("guard", 18095, Guard()), ("washer", 18080, Washer()), ("enginelog", 18097, EngineLog())):
         port += OFF
         s = ThreadingHTTPServer(("127.0.0.1", port), make(name, obj)); s.daemon_threads = True
         threading.Thread(target=s.serve_forever, daemon=True).start(); print(f"mock {name} on http://127.0.0.1:{port}")
@@ -379,7 +410,7 @@ if __name__ == "__main__":
 
         class MockSupervisor(supervisor.Supervisor):
             def shutdown_all(self, on_done=None): super().shutdown_all(None)
-        fake = MockSupervisor(ports={"energy": 18000 + OFF, "anchor": 18766 + OFF, "guard": 18095 + OFF, "washer": 18080 + OFF}, data=tmp, logs=logs,
+        fake = MockSupervisor(ports={"energy": 18000 + OFF, "anchor": 18766 + OFF, "guard": 18095 + OFF, "washer": 18080 + OFF, "enginelog": 18097 + OFF}, data=tmp, logs=logs,
                               start=lambda n: logging.info("mock supervisor: would start %s", n),
                               stop=lambda n: (logging.info("mock supervisor: would stop %s", n), time.sleep(1)))
         fake.start_thread()

@@ -7,8 +7,6 @@ const PRIO_HINT = {"-2": "No alert: only listed in the Pushover app", "-1": "No 
 const label = s => s === "" ? "App default" : s === "none" ? "Silent" : s === "vibrate" ? "Vibrate only" : s[0].toUpperCase() + s.slice(1);
 let dirty = false, built = false, logLines = [], logT = 0, tickT = null;
 
-/** The tile's wall camera (outlined cartoon style): bracket, blue sunshield, grey body, big lens; colours from --cam-*. */
-
 const m = {
   id: "guard", title: "BoatGuard", short: "Guard", icon: "guard", every: 4000, background: 8000,
   async load() {

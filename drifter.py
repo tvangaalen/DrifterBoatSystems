@@ -67,6 +67,11 @@ ROUTES = {
         ("POST", r"/api/(power/on|power/off|start|pause|schedule|schedule/cancel)"),
         ("POST", r"/api/(program|temperature|spin|rinses)/\d{1,3}"),
     ],
+    "enginelog": [  # Engine log: diesel fuel and maintenance
+        ("GET", r"/api/(log|lookup)"),                 # lookup?lat=..&lon=..: country and nearest marina (OpenStreetMap)
+        ("POST", r"/api/(fuel|maintenance)"),
+        ("POST", r"/api/(fuel|maintenance)/[0-9a-f]{12}(/delete)?"),
+    ],
 }
 COMPILED = {m: [(meth, re.compile(p + r"$")) for meth, p in rs] for m, rs in ROUTES.items()}
 # Every upstream request carries the module token (common/service.py), added after the gateway's own checks; drifterd
@@ -87,6 +92,7 @@ DEFAULT_CONFIG = {
         "anchor": {"name": "Anchor watch", "url": "http://127.0.0.1:8766", "classic": None},
         "guard": {"name": "BoatGuard", "url": "http://127.0.0.1:8095", "classic": None},
         "washer": {"name": "Washer", "url": "http://127.0.0.1:8080", "classic": None},
+        "enginelog": {"name": "Engine log", "url": "http://127.0.0.1:8097", "classic": None},
     },
 }
 

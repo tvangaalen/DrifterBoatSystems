@@ -33,7 +33,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(ship.restart_plan(["web/energy.js", "web/app.css", "CHANGELOG.md"]), ([], []))
         self.assertEqual(ship.restart_plan(["drifter.py", "modules/energy/mastervolt/soc.py"])[0], ["energy", "gateway"])
         self.assertEqual(ship.restart_plan(["modules/anchor/CHANGELOG.md", "modules/anchor/test_anchor.py"])[0], [])
-        self.assertEqual(ship.restart_plan(["common/service.py"])[0], ["anchor", "guard", "washer"])
+        self.assertEqual(ship.restart_plan(["common/service.py"])[0], ["anchor", "guard", "washer", "enginelog"])
         mods, todo = ship.restart_plan(["drifterd.py", "uv.lock"])
         self.assertEqual(mods, []); self.assertEqual(len(todo), 2)              # never done by ship.py itself
 

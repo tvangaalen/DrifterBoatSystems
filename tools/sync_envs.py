@@ -16,7 +16,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ENVS = {"gateway": (ROOT, None), "energy": (ROOT / "modules/energy", "energy"), "anchor": (ROOT / "modules/anchor", "anchor"),
-        "guard": (ROOT / "modules/guard", "guard"), "washer": (ROOT / "modules/washer", "washer")}
+        "guard": (ROOT / "modules/guard", "guard"), "washer": (ROOT / "modules/washer", "washer"),
+        "enginelog": (ROOT / "modules/enginelog", "enginelog")}
 
 
 def python312() -> str:
