@@ -42,6 +42,7 @@
   as docs/TECHNICAL.md); no pictures in the BoatGuard and Washer tiles
 - History: Alarms chart per battery with alarm types (server: /api/history/alarms); anchor Fit puts the largest circle
   just inside the map; an open colour picker is no longer rebuilt
+- Shore power ON/OFF notification with its own switch; Anchor watch Events foldable
 
 ## 1.2
 
