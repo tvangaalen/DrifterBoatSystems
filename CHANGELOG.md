@@ -24,6 +24,8 @@
 - History: state of charge as stacked columns on a fixed 0-100 % scale with a smooth total line; a legend tap shows one
   series in any chart
 - History: state of charge as smooth stacked areas instead of columns
+- Energy tile: one House bank tile on the Overview and Control, with temperature, battery type and the Float state in
+  its header
 
 ## 1.2
 
