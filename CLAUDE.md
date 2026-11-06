@@ -90,7 +90,7 @@ the time, the anchor watch's boat position and the server's country/marina looku
 
 - The log holds positions: never commit it, and keep real positions out of tests and fixtures (made-up ones only).
 - Country and marina come from OpenStreetMap (Nominatim reverse, Overpass `leisure=marina` within 15 km), only when a new fill is opened, cached per ~100 m, with a generic User-Agent (no personal data). Tests use a fake: never reach the internet from a test.
-- Engine hours are the meter's running total: the server refuses a fill with fewer hours than an earlier fill or more than a later one. Settings (fuel tank capacity) are in the same file.
+- A fill has a date (no time: the user's choice of 2026-11-06), engine hours, litres and the amount paid (optional, €). Engine hours are the meter's running total: the server refuses a fill with fewer hours than an earlier fill or more than a later one. Settings (fuel tank capacity) are in the same file.
 - Deleting an entry always asks first, *Keep it* the default. The page never rebuilds an open form on a poll.
 - Verify: `testsun_all.py enginelog` (or `.venv\Scripts\python.exe -m unittest test_enginelog` in the module). Release: `VERSION` in `enginelog/__init__.py` and its CHANGELOG.
 

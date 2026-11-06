@@ -50,6 +50,8 @@
 - Engine log: engine hours on maintenance entries
 - Battery current with flexible scales in 200 W / 20 A steps; Engine log chart of the fills (litres per fill, L per
   engine hour on the right)
+- Battery current shows discharging below zero; Engine log fills: a date instead of date and time, and the amount paid
+  (with the price per litre)
 
 ## 1.2
 
