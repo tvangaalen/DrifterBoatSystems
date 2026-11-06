@@ -84,6 +84,10 @@ const m = {
     document.querySelectorAll("#eViews button").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view));
     $("eNow").hidden = view !== "now"; $("eBatt").hidden = view !== "batt"; $("eHist").hidden = view !== "history"; $("eSet").hidden = view !== "settings";
     if (view === "now") renderNow(); else if (view === "batt") renderBatt(); else if (view === "history") renderHistory(); else renderSettings();
+    // History keeps the view tabs, periods and zoom slider at the top: the tabs move into its fixed head while it is shown
+    const tabs = $("eViews"), head = $("eHistHead");
+    if (view === "history" && head) { if (tabs.parentElement !== head) head.prepend(tabs); head.style.top = $("top").offsetHeight + "px"; }
+    else if (tabs.parentElement !== m.el) m.el.insertBefore(tabs, $("eNow"));
   },
 };
 
@@ -347,6 +351,7 @@ function smoothPath(g, P, join) {
   for (let i = 0; i < n - 1; i++) { const h = (P[i + 1][0] - P[i][0]) / 3;
     g.bezierCurveTo(P[i][0] + h, P[i][1] + m[i] * h, P[i + 1][0] - h, P[i + 1][1] - m[i + 1] * h, P[i + 1][0], P[i + 1][1]); }
 }
+// left: {mul}: the left labels are the value times `mul` (amps → watts); tip: the unit of the touched values when it differs
 // right: {unit, per}: a second scale on the right, the left value divided by `per` (watts → amps at the bank voltage)
 // opt: {t0, t1, unit, stacked (areas) | columns (binned smooth stacked areas, part = a series' share; line = a smooth line over them),
 //   fixed: [lo, hi], zero, series:[{label, color, pts:[{t, v}], part, line, width}]}
@@ -382,7 +387,7 @@ function drawChart(canvas, opt) {
   const X = t => L + (t - opt.t0) / (opt.t1 - opt.t0) * (R - L), Y = v => B - (v - lo) / (hi - lo) * (B - T);
   g.font = "11px -apple-system, Segoe UI, sans-serif"; g.fillStyle = muted; g.strokeStyle = line; g.lineWidth = 1;
   for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, y = Y(v); g.beginPath(); g.moveTo(L, y); g.lineTo(R, y); g.stroke();
-    g.textAlign = "right"; g.fillText(Math.abs(hi - lo) >= 20 ? Math.round(v) : v.toFixed(1), L - 6, y + 4);
+    g.textAlign = "right"; g.fillText(opt.left ? Math.round(v * opt.left.mul) : Math.abs(hi - lo) >= 20 ? Math.round(v) : v.toFixed(1), L - 6, y + 4);
     if (opt.right) { g.textAlign = "left"; g.fillText(Math.round(v / opt.right.per) + (i === 4 ? " " + opt.right.unit : ""), R + 6, y + 4); } }
   const span = opt.t1 - opt.t0, step = [3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3, 24 * 3600e3, 48 * 3600e3, 7 * 864e5].find(s => span / s <= 6) || 7 * 864e5;
   g.textAlign = "center";
@@ -401,7 +406,7 @@ function drawChart(canvas, opt) {
       const idx = [a, ...Array.from({length: z - a + 1}, (_, j) => a + j), z];     // the run's ends reach the bin edges
       let below = idx.map(() => 0);
       for (const [s, k] of bands) {
-        const top = idx.map((i, j) => below[j] + s.pts[i].v * (s.part ?? 1));
+        const top = idx.map((i, j) => below[j] + Math.max(0, s.pts[i].v) * (s.part ?? 1));     // a band never goes below the one under it
         g.fillStyle = colorOf(s.color, k); g.beginPath();
         smoothPath(g, xs.map((x, j) => [x, Y(top[j])]));
         smoothPath(g, xs.map((x, j) => [x, Y(below[j])]).reverse(), true);
@@ -422,11 +427,12 @@ function drawChart(canvas, opt) {
       g.closePath(); g.fill();
       base.forEach((p, i) => acc[i] += Math.max(0, (s.pts[i] || {}).v || 0));
     });
-  } else opt.series.forEach((s, k) => {
-    g.strokeStyle = colorOf(s.color, k); g.lineWidth = s.width || 1.6; g.beginPath(); let on = false, last = null;
-    for (const p of s.pts) { if (p.v == null || (last && p.t - last > Math.max(600e3, span / 150))) { on = false; } if (p.v == null) { last = null; continue; }
-      g[on ? "lineTo" : "moveTo"](X(p.t), Y(p.v)); on = true; last = p.t; }
-    g.stroke();
+  } else opt.series.forEach((s, k) => {     // smooth lines, broken where data is missing
+    g.strokeStyle = colorOf(s.color, k); g.lineWidth = s.width || 1.6; g.lineJoin = "round"; g.beginPath(); let run = [], last = null;
+    const flush = () => { if (run.length > 1) smoothPath(g, run); run = []; };
+    for (const p of s.pts) { if (p.v == null || (last && p.t - last > Math.max(600e3, span / 150))) flush(); if (p.v == null) { last = null; continue; }
+      run.push([X(p.t), Y(p.v)]); last = p.t; }
+    flush(); g.stroke();
   });
   g.restore();
   canvas._map = {X, Y, L, R, T, B, opt};
@@ -438,7 +444,7 @@ function crosshair(canvas, tip, ev) {      // the values at the touched time
   const near = pts => { let lo = 0, hi = pts.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (pts[mid].t < t) lo = mid + 1; else hi = mid; } return pts[lo]; };
   const rows = mp.opt.series.map((s, k) => { const p = s.pts.length ? near(s.pts) : null;
     return `<span><i style="background:${colorOf(s.color, k)}"></i>${esc(s.label)} <b>${p && p.v != null ? num(p.v, Math.abs(p.v) < 20 ? 1 : 0) : "–"}</b></span>`; }).join("");
-  tip.innerHTML = `<b>${D.dayTime(t)}</b> ${mp.opt.unit ? `<small>${esc(mp.opt.unit)}</small>` : ""}<div class="tiprows">${rows}</div>`;
+  tip.innerHTML = `<b>${D.dayTime(t)}</b> ${mp.opt.tip || mp.opt.unit ? `<small>${esc(mp.opt.tip || mp.opt.unit)}</small>` : ""}<div class="tiprows">${rows}</div>`;
   tip.hidden = false; tip.style.left = Math.min(r.width - tip.offsetWidth - 4, Math.max(4, x - tip.offsetWidth / 2)) + "px";
   const cur = canvas.parentElement.querySelector(".cross"); cur.style.left = x + "px"; cur.hidden = false;
 }
@@ -448,6 +454,7 @@ function zoomShow(t0, t1) {
   a.value = String(zoom[0]); b.value = String(zoom[1]);
   $("eZFill").style.left = zoom[0] / 10 + "%"; $("eZFill").style.width = (zoom[1] - zoom[0]) / 10 + "%";
   $("eZFrom").textContent = D.dayTime(t0); $("eZTo").textContent = D.dayTime(t1);
+  $("eZReset").disabled = zoom[0] === 0 && zoom[1] === 1000;
 }
 /** A handle moved: keep the handles apart (at least 2 % of the period) and redraw once per frame. @param {any} el */
 function zoomInput(el) {
@@ -470,9 +477,9 @@ function renderCharts() {
   const defs = [
     ["eChSoc", "State of charge", "%", {columns: true, fixed: [0, 100], series: [{label: "Total", color: BAT_META[0][2], width: 2.6, line: true, pts: S.tot},
       ...BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, part: 1 / 3, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.rem != null ? p.rem / S.perAh * 100 : null}))}))]}],
-    ["eChSrc", "Sources", "W · A", {columns: true, fixed: [0, 1800], right: {unit: "A", per: houseV()}, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
+    ["eChSrc", "Sources", "W · A", {columns: true, fixed: [0, 1400], right: {unit: "A", per: houseV()}, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
     ["eChLoad", "DC consumers", "W", {stacked: true, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
-    ["eChCur", "Battery current", "A", {zero: true, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
+    ["eChCur", "Battery current", "W · A", {columns: true, fixed: [0, 100], tip: "A", left: {mul: houseV()}, right: {unit: "A", per: 1}, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
     ["eChSpread", "Cell spread", "mV", {series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.spread}))}))}],
   ];
   if (!box.dataset.built) {
@@ -507,11 +514,12 @@ function renderHistory() {
   const box = $("eHist"), r = report || {}, h = hstat || {}, MB = v => v == null ? "–" : v >= 1e9 ? (v / 1e9).toFixed(2) + " GB" : (v / 1e6).toFixed(0) + " MB";
   if (!box.dataset.built) {
     box.dataset.built = "1";
-    box.innerHTML = `<div class="u-d-flex u-gap-8 u-ai-center u-mb-12"><div class="u-maxw-460 u-flex-1 seg" id="eRange">${RANGES.map(([h, l]) => `<button type="button" data-hours="${h}" aria-pressed="${h === hours}">${l}</button>`).join("")}</div>
+    box.innerHTML = `<div class="histhead" id="eHistHead"><div class="u-d-flex u-gap-8 u-ai-center u-mb-12"><div class="u-maxw-460 u-flex-1 seg" id="eRange">${RANGES.map(([h, l]) => `<button type="button" data-hours="${h}" aria-pressed="${h === hours}">${l}</button>`).join("")}</div>
         <button class="btn sec" type="button" id="eHistUpd" title="Read the latest history now">${icon("refresh")} Update</button></div>
       <div class="zoomrow"><span class="num" id="eZFrom"></span><div class="dual no-swipe"><div class="track"></div><div class="fill" id="eZFill"></div>
         <input type="range" id="eZA" min="0" max="1000" step="1" value="${zoom[0]}" aria-label="Zoom: start of the part shown">
-        <input type="range" id="eZB" min="0" max="1000" step="1" value="${zoom[1]}" aria-label="Zoom: end of the part shown"></div><span class="num u-ta-right" id="eZTo"></span></div>
+        <input type="range" id="eZB" min="0" max="1000" step="1" value="${zoom[1]}" aria-label="Zoom: end of the part shown"></div><span class="num u-ta-right" id="eZTo"></span>
+        <button class="btn sec sm" type="button" id="eZReset" title="Show the whole period">Reset</button></div></div>
       <div class="grid g2 charts" id="eCharts"></div>
       <h2 class="sec">Energy in this period</h2><div class="card pad" id="eContrib"></div>
       <h2 class="sec">Reports and data</h2>
@@ -617,7 +625,7 @@ async function onChange(e) {
 }
 async function onClick(e) {
   const b = e.target.closest("button"); if (!b) return;
-  if (b.dataset.view) { view = b.dataset.view; m.render(); D.poll(m, true); return; }
+  if (b.dataset.view) { const was = view; view = b.dataset.view; m.render(); if (was !== view) window.scrollTo(0, 0); D.poll(m, true); return; }
   if (b.dataset.solo) { const id = b.dataset.solo; solo[id] = solo[id] === b.dataset.label ? null : b.dataset.label; renderCharts(); return; }
   if (b.dataset.mode) {
     const k = b.dataset.mode;
@@ -632,6 +640,7 @@ async function onClick(e) {
     const a = limitDraft; await control("ec-limit", () => D.api("power", "/api/control/ac-limit", {amps: a}), `AC limit ${a} A`); limitDraft = null; m.render(); return;
   }
   if (b.dataset.soc) return setSoc(b.dataset.soc, b);
+  if (b.id === "eZReset") { zoom[0] = 0; zoom[1] = 1000; renderCharts(); return; }
   if (b.id === "eHistUpd") {     // the latest history now, instead of at the next minute
     b.disabled = true; b.lastChild.textContent = " Updating…"; chartT = 0;
     D.poll(m, true).finally(() => { b.disabled = false; b.lastChild.textContent = " Update"; }); return; }

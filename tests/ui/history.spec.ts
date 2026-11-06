@@ -42,7 +42,15 @@ test("History: the zoom slider shows part of the period in every chart; a period
   await page.locator("#eZA").fill("500");
   await expect(page.locator("#eZFrom")).not.toHaveText(from || "");
   await expect.poll(async () => (await span()).map((s, i) => Math.round(s / whole[i] * 10) / 10)).toEqual([0.5, 0.5, 0.5]);
+  await expect(page.locator("#eZReset")).toBeEnabled();
+  await page.locator("#eZReset").click();
+  await expect(page.locator("#eZA")).toHaveValue("0");
+  await expect(page.locator("#eZReset")).toBeDisabled();
+  await page.locator("#eZA").fill("500");
   await page.locator("#eRange [data-hours='24']").click();
   await expect(page.locator("#eZA")).toHaveValue("0");
+  await page.mouse.wheel(0, 1500);     // the tabs, periods and slider stay at the top
+  await expect.poll(() => page.locator("#eHistHead").evaluate(e => Math.round(e.getBoundingClientRect().top))).toBeLessThan(120);
+  await expect(page.locator("#eHistHead #eViews")).toBeVisible();
   expect(errors).toEqual([]);
 });

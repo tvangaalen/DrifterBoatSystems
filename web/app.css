@@ -529,3 +529,7 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 .dual input::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:28px;height:28px;margin-top:6px;border-radius:50%;background:var(--fg);border:3px solid var(--accent);cursor:grab}
 .dual input::-moz-range-track{background:none}
 .dual input::-moz-range-thumb{pointer-events:auto;width:22px;height:22px;border-radius:50%;background:var(--fg);border:3px solid var(--accent);cursor:grab}
+/* History: the tabs, periods and zoom slider stay at the top (top is set to the header's height by the page) */
+.histhead{position:sticky;z-index:15;top:60px;background:var(--bg);margin:0 -16px 12px;padding:2px 16px 0;border-bottom:1px solid var(--line)}
+.histhead .zoomrow{margin-bottom:6px}.histhead #eViews{margin-top:0}
+@media (min-width:820px){.histhead{margin:0 -24px 12px;padding:2px 24px 0}}
