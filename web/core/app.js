@@ -60,6 +60,7 @@ function go() {
   else {
     const m = byId[id]; $("title").firstChild.textContent = m.title;
     if (!m.el) { m.el = el; m.mount(el); }
+    if (prev !== id && m.enter) m.enter();     // opened from elsewhere (Overview, navigation): the module's first view
     paint(m);
   }
   $("subtitle").textContent = "";

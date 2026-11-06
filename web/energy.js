@@ -7,6 +7,7 @@ const D = Drifter, {$, esc, num, W, icon, hms, ago} = D;
 const MODES = {   // what each mode does, as applied by the server (masterbus_service.set_operating_mode)
   motor: ["Inverter OFF", "Engine ECU ON", "Solar ON", "Charger Start ON", "Charger Bowthruster ON", "Alternator ON", "Charger House OFF"],
   anchor: ["Inverter OFF", "Charger House OFF", "Alternator OFF", "Solar ON", "Charger Start OFF", "Charger Bowthruster OFF"],
+  generator: ["Inverter OFF", "Charger House ON", "Alternator OFF", "Solar ON", "Charger Start OFF", "Charger Bowthruster OFF"],
   marina: ["Inverter ON", "AC IN support ON", "AC limit = default", "Alternator OFF", "Solar ON", "Charger Start ON", "Charger Bowthruster ON", "Charger House ON"],
   sail: ["Inverter OFF", "Charger House OFF", "Alternator OFF", "Solar ON", "Charger Start OFF", "Charger Bowthruster OFF", "Engine ECU ON"],
 };
@@ -64,6 +65,7 @@ const m = {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
     return bankBody(d, "eT", true);
   },
+  enter() { view = "now"; },     // from the Overview or the navigation: always the Control view
   tag() { const d = m.state.data; return d ? floatTag(d.high_soc_float_policy) : ""; },     // the Float status in the tile's header
   mount(el) {
     el.innerHTML = `<div id="eDown"></div>
@@ -342,6 +344,7 @@ function smoothPath(g, P, join) {
   for (let i = 0; i < n - 1; i++) { const h = (P[i + 1][0] - P[i][0]) / 3;
     g.bezierCurveTo(P[i][0] + h, P[i][1] + m[i] * h, P[i + 1][0] - h, P[i + 1][1] - m[i + 1] * h, P[i + 1][0], P[i + 1][1]); }
 }
+// right: {unit, per}: a second scale on the right, the left value divided by `per` (watts → amps at the bank voltage)
 // opt: {t0, t1, unit, stacked (areas) | columns (binned smooth stacked areas, part = a series' share; line = a smooth line over them),
 //   fixed: [lo, hi], zero, series:[{label, color, pts:[{t, v}], part, line, width}]}
 function drawChart(canvas, opt) {
@@ -350,7 +353,7 @@ function drawChart(canvas, opt) {
   canvas.width = W * dpr; canvas.height = H * dpr;
   const g = canvas.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
   const css = n => getComputedStyle(document.body).getPropertyValue(n).trim(), muted = css("--muted"), line = css("--line");
-  const L = 44, R = W - 8, T = 8, B = H - 22;
+  const L = 44, R = W - (opt.right ? 36 : 8), T = 8, B = H - 22;
   let lo = Infinity, hi = -Infinity;
   if (opt.columns) {     // average every series per time bin (about every 7 px); the line is the bands' total
     const n = Math.max(24, Math.min(120, Math.floor((R - L) / 7))), dt = (opt.t1 - opt.t0) / n;
@@ -376,7 +379,8 @@ function drawChart(canvas, opt) {
   const X = t => L + (t - opt.t0) / (opt.t1 - opt.t0) * (R - L), Y = v => B - (v - lo) / (hi - lo) * (B - T);
   g.font = "11px -apple-system, Segoe UI, sans-serif"; g.fillStyle = muted; g.strokeStyle = line; g.lineWidth = 1;
   for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, y = Y(v); g.beginPath(); g.moveTo(L, y); g.lineTo(R, y); g.stroke();
-    g.textAlign = "right"; g.fillText(Math.abs(hi - lo) >= 20 ? Math.round(v) : v.toFixed(1), L - 6, y + 4); }
+    g.textAlign = "right"; g.fillText(Math.abs(hi - lo) >= 20 ? Math.round(v) : v.toFixed(1), L - 6, y + 4);
+    if (opt.right) { g.textAlign = "left"; g.fillText(Math.round(v / opt.right.per) + (i === 4 ? " " + opt.right.unit : ""), R + 6, y + 4); } }
   const span = opt.t1 - opt.t0, step = [3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3, 24 * 3600e3, 48 * 3600e3, 7 * 864e5].find(s => span / s <= 6) || 7 * 864e5;
   g.textAlign = "center";
   for (let t = Math.ceil(opt.t0 / step) * step; t <= opt.t1; t += step) { const d = new Date(t), x = X(t);
@@ -435,6 +439,8 @@ function crosshair(canvas, tip, ev) {      // the values at the touched time
   tip.hidden = false; tip.style.left = Math.min(r.width - tip.offsetWidth - 4, Math.max(4, x - tip.offsetWidth / 2)) + "px";
   const cur = canvas.parentElement.querySelector(".cross"); cur.style.left = x + "px"; cur.hidden = false;
 }
+/** The house bank voltage now, for the amps scale (12 V system: 13.2 V when unknown). */
+function houseV() { const v = ((((m.state.data || {}).storage || {}).house) || {}).voltage; return v > 9 && v < 16 ? v : 13.2; }
 function renderCharts() {
   const box = $("eCharts"); if (!box) return;
   document.querySelectorAll("#eRange button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.hours === hours));
@@ -444,7 +450,7 @@ function renderCharts() {
   const defs = [
     ["eChSoc", "State of charge", "%", {columns: true, fixed: [0, 100], series: [{label: "Total", color: BAT_META[0][2], width: 2.6, line: true, pts: S.tot},
       ...BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, part: 1 / 3, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.rem != null ? p.rem / S.perAh * 100 : null}))}))]}],
-    ["eChSrc", "Sources", "W", {stacked: true, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
+    ["eChSrc", "Sources", "W · A", {columns: true, fixed: [0, 1800], right: {unit: "A", per: houseV()}, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
     ["eChLoad", "DC consumers", "W", {stacked: true, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
     ["eChCur", "Battery current", "A", {zero: true, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
     ["eChSpread", "Cell spread", "mV", {series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.spread}))}))}],
@@ -481,7 +487,8 @@ function renderHistory() {
   const box = $("eHist"), r = report || {}, h = hstat || {}, MB = v => v == null ? "–" : v >= 1e9 ? (v / 1e9).toFixed(2) + " GB" : (v / 1e6).toFixed(0) + " MB";
   if (!box.dataset.built) {
     box.dataset.built = "1";
-    box.innerHTML = `<div class="u-maxw-460 u-mb-12 seg" id="eRange">${RANGES.map(([h, l]) => `<button type="button" data-hours="${h}" aria-pressed="${h === hours}">${l}</button>`).join("")}</div>
+    box.innerHTML = `<div class="u-d-flex u-gap-8 u-ai-center u-mb-12"><div class="u-maxw-460 u-flex-1 seg" id="eRange">${RANGES.map(([h, l]) => `<button type="button" data-hours="${h}" aria-pressed="${h === hours}">${l}</button>`).join("")}</div>
+        <button class="btn sec" type="button" id="eHistUpd" title="Read the latest history now">${icon("refresh")} Update</button></div>
       <div class="grid g2 charts" id="eCharts"></div>
       <h2 class="sec">Energy in this period</h2><div class="card pad" id="eContrib"></div>
       <h2 class="sec">Reports and data</h2>
@@ -602,6 +609,9 @@ async function onClick(e) {
     const a = limitDraft; await control("ec-limit", () => D.api("power", "/api/control/ac-limit", {amps: a}), `AC limit ${a} A`); limitDraft = null; m.render(); return;
   }
   if (b.dataset.soc) return setSoc(b.dataset.soc, b);
+  if (b.id === "eHistUpd") {     // the latest history now, instead of at the next minute
+    b.disabled = true; b.lastChild.textContent = " Updating…"; chartT = 0;
+    D.poll(m, true).finally(() => { b.disabled = false; b.lastChild.textContent = " Update"; }); return; }
   if (b.dataset.hours) { hours = +b.dataset.hours; chart = null; contrib = null; renderCharts(); D.poll(m, true); return; }
   if (b.id === "eRepRun") {
     const days = +$("eRepDays").value;

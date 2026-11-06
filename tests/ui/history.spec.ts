@@ -15,3 +15,19 @@ test("History: a legend tap shows one series on its own, a second tap all of the
   await expect(leg.locator('[aria-pressed="true"]')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test("Energy opens on Control from the Overview, and History's Update reads the charts again", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#power", "#eViews [data-view=history]");
+  await expect(page.locator("#eChSrc")).toBeVisible();
+  const reads = [];
+  page.on("request", r => { if (r.url().includes("/api/history/chart-data")) reads.push(r.url()); });
+  await page.locator("#eHistUpd").click();
+  await expect.poll(() => reads.length).toBeGreaterThan(0);
+  await expect(page.locator("#eHistUpd")).toBeEnabled();
+  await page.goto("/#overview");
+  await page.locator("#ovTiles a[href='#power']").click();
+  await expect(page.locator("#eViews [data-view=now]")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#eNow")).toBeVisible();
+  expect(errors).toEqual([]);
+});

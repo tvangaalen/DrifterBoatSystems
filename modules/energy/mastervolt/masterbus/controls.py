@@ -280,6 +280,15 @@ class DeviceControls:
                 ("Charger Start OFF", start, False),
                 ("Charger Bowthruster OFF", bow, False),
             ]
+        if mode == "generator":     # Anchor, with the house charger on (AC from the generator)
+            return [
+                ("inverter OFF", inverter, False),
+                ("Charger House ON", charger, True),
+                ("Alternator OFF", alternator, False),
+                ("Solar ON", solar, True),
+                ("Charger Start OFF", start, False),
+                ("Charger Bowthruster OFF", bow, False),
+            ]
         if mode == "marina":
             limit = self.get_settings()["default_ac_limit"]
             return [
