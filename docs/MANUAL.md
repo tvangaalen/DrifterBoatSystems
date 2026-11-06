@@ -46,12 +46,12 @@ and the boat PC.
 
 ## 4. Energy
 
-Four views at the top of the page. The full description of every value and of how it is measured is in the energy
+Four views at the top of the page; coming from the Overview or the navigation, the page always opens on Control. The full description of every value and of how it is measured is in the energy
 manual: History → *Open the manual*.
 
 - **Control:** the house bank (the same tile as on the Overview, with the Float/Bulk state in its header), the energy providers (shore, charger, alternator, solar; total DC in at the top) and the energy consumers
   (with a minus sign, as they take power; total DC out at the top).
-  - **Modes** switch several devices at once: *Motor*, *Anchor*, *Marina*, *Sail*; the active mode is marked until a
+  - **Modes** switch several devices at once: *Motor*, *Anchor*, *Generator* (Anchor with the house charger on), *Marina*, *Sail*; the active mode is marked until a
     single control changes. A mode never switches the Engine ECU off.
   - **Switches** sit on their own line: the charger, alternator and solar under the providers; the inverter, the start
     and bow chargers and the Engine ECU under the consumers (a greyed-out switch is not verified on the boat yet). AC
@@ -73,7 +73,9 @@ manual: History → *Open the manual*.
 - **History:** charts of the state of charge, sources, DC consumers, battery current and cell spread for 6 hours up to 31
   days (touch a chart for the values at that moment), and the energy per period. The state of charge is smooth stacked areas on
   a fixed 0–100 % scale: each battery its share of the house bank, with the total as a smooth line on top. Tap a name in a
-  chart's legend to show only that one (a battery's band is then its own state of charge); tap it again for all. Also the battery health report, the
+  chart's legend to show only that one (a battery's band is then its own state of charge); tap it again for all. *Sources* is smooth stacked areas on a fixed 0–1800 W scale, with
+  amps on the right (the watts at the house bank's present voltage). *Update* reads the charts again at once (they
+  otherwise refresh once a minute). Also the battery health report, the
   energy manual and the state of the history database.
 - **Settings:** Float protection thresholds, the default AC limit, refresh intervals and how long history is kept. A
   shorter history asks first: older data is deleted.

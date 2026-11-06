@@ -26,6 +26,8 @@
 - History: state of charge as smooth stacked areas instead of columns
 - Energy tile: one House bank tile on the Overview and Control, with temperature, battery type and the Float state in
   its header
+- Energy: opens on Control; Generator mode; Sources chart smooth on a fixed 0-1800 W scale with amps; History Update
+  button
 
 ## 1.2
 
