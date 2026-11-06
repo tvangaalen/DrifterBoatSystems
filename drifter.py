@@ -69,7 +69,7 @@ ROUTES = {
     ],
     "enginelog": [  # Engine log: diesel fuel and maintenance
         ("GET", r"/api/(log|lookup)"),                 # lookup?lat=..&lon=..: country and nearest marina (OpenStreetMap)
-        ("POST", r"/api/(fuel|maintenance)"),
+        ("POST", r"/api/(fuel|maintenance|settings)"),
         ("POST", r"/api/(fuel|maintenance)/[0-9a-f]{12}(/delete)?"),
     ],
 }

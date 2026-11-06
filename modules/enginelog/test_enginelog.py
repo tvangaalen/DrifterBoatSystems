@@ -70,6 +70,21 @@ class EngineLogTest(unittest.TestCase):
         ok = {**FILL, "lat": None, "lon": None, "country": "", "marina": ""}
         self.assertEqual(self.post("/api/fuel", ok).status_code, 200)        # no position, no place: still fine
 
+    def test_engine_hours_only_rise(self):     # the meter's running total
+        self.post("/api/fuel", FILL)
+        r = self.post("/api/fuel", {**FILL, "time": "2026-11-20T10:00:00+01:00", "engine_hours": 2300}); self.assertEqual(r.status_code, 400)
+        self.assertIn("at least 2315", r.json()["detail"])
+        r = self.post("/api/fuel", {**FILL, "time": "2026-10-01T10:00:00+01:00", "engine_hours": 2400}); self.assertIn("at most 2315", r.json()["detail"])
+        e = self.post("/api/fuel", {**FILL, "time": "2026-11-20T10:00:00+01:00", "engine_hours": 2330}).json()
+        self.assertEqual(self.post(f"/api/fuel/{e['id']}", {**FILL, "time": "2026-11-20T10:00:00+01:00", "engine_hours": 2320}).status_code, 200)
+
+    def test_settings(self):
+        self.assertEqual(self.c.get("/api/log", headers=TOKEN).json()["settings"], {"tank_capacity_l": None})
+        self.assertEqual(self.post("/api/settings", {"tank_capacity_l": 400}).json(), {"tank_capacity_l": 400.0})
+        self.assertEqual(Store(self.path).settings(), {"tank_capacity_l": 400.0})
+        self.assertEqual(self.post("/api/settings", {"tank_capacity_l": 0}).status_code, 400)
+        self.assertEqual(self.post("/api/settings", {"tank_capacity_l": None}).json(), {"tank_capacity_l": None})
+
     def test_stats(self):
         self.assertIsNone(fuel_stats([])["avg_l_per_h"])
         fills = [{"time": "2026-10-01T10:00+00:00", "engine_hours": 2200, "litres": 150}, {"time": "2026-10-20T10:00+00:00", "engine_hours": 2250, "litres": 160},

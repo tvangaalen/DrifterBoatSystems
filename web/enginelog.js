@@ -7,7 +7,11 @@ import Drifter from "./core/app.js";
 const D = Drifter, {$, esc, num, icon, pad} = D;
 let view = "fuel", edit = null;     // edit: {kind, id (null = new), touched: Set of fields the user changed} while a form is open
 
-const dmy = (/** @type {string} */ iso) => iso ? `${iso.slice(8, 10)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}` : "–";
+const dmy = (/** @type {string} */ iso) => D.dateText(iso) || "–";
+/** A date in the chosen format (System page), typed or picked: the calendar button lies under an invisible native date input,
+ * so a tap opens the device's own calendar on every browser. @param {string} id @param {string} iso YYYY-MM-DD */
+const dateField = (id, iso) => `<div class="datef"><input class="field lf-date" id="${id}" value="${esc(D.dateText(iso))}" placeholder="${esc(D.dateFmt())}" inputmode="numeric" maxlength="10" autocomplete="off" aria-label="Date (${esc(D.dateFmt())})">
+  <span class="pickbtn">${icon("calendar")}<input type="date" id="${id}Pick" value="${iso}" tabindex="-1" aria-label="Pick a date"></span></div>`;
 /** The local date (YYYY-MM-DD) and 24-hour time (HH:MM) of an ISO time, or of now. @param {string} [iso] */
 function parts(iso) {
   const d = iso ? new Date(iso) : new Date();
@@ -41,17 +45,19 @@ const m = {
   },
   mount(el) {
     el.innerHTML = `<div id="lDown"></div>
-      <div class="u-m-4-0-14 u-maxw-460 seg" id="lViews"><button type="button" data-lview="fuel">Diesel fuel</button><button type="button" data-lview="maintenance">Maintenance</button></div>
+      <div class="u-m-4-0-14 u-maxw-460 seg" id="lViews"><button type="button" data-lview="fuel">Diesel fuel</button><button type="button" data-lview="maintenance">Maintenance</button><button type="button" data-lview="settings">Settings</button></div>
       <div id="lBody"></div>`;
     el.addEventListener("click", onClick);
     el.addEventListener("input", e => { if (edit && e.target.id) edit.touched.add(e.target.id); });
-    el.addEventListener("submit", e => { if (e.target.id === "lForm") { e.preventDefault(); save(); } });
+    el.addEventListener("change", e => { const t = e.target; if (t.id && t.id.endsWith("Pick") && t.value) { const f = $(t.id.slice(0, -4)); f.value = D.dateText(t.value); edit && edit.touched.add(f.id); } });
+    el.addEventListener("submit", e => { e.preventDefault(); if (e.target.id === "lForm") save(); else if (e.target.id === "lSetForm") saveSettings(); });
   },
   render() {
     $("lDown").innerHTML = m.state.err ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
     document.querySelectorAll("#lViews button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lview === view));
     if (edit) return;                                    // never rebuild an open form under the user's hands
     const d = m.state.data; if (!d) { $("lBody").innerHTML = m.state.err ? "" : `<div class="empty">Loading…</div>`; return; }
+    if (view === "settings") { if (!$("lSetForm")) $("lBody").innerHTML = setView(d); return; }    // a form: built once, kept while open
     $("lBody").innerHTML = view === "fuel" ? fuelView(d) : maintView(d);
   },
 };
@@ -75,6 +81,18 @@ function maintView(d) {
         <small class="pre">${esc(x.text)}</small></span>${icon("chev", "i chev")}</button>`).join("") || `<div class="empty">No maintenance logged yet</div>`}</div></div>`;
 }
 
+function setView(d) {
+  const cap = (d.settings || {}).tank_capacity_l;
+  return `<form class="u-maxw-720 card lform" id="lSetForm" novalidate><div class="hd">${icon("gear")}<h3>Settings</h3></div><div class="rows">
+    <div class="row"><div class="k"><b>Fuel tank capacity</b><small>Litres; empty = not set</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lTank" min="1" max="10000" step="1" value="${cap ?? ""}"><span class="u">L</span></label></div>
+    </div><div class="u-d-flex u-gap-8 u-mt-12"><button class="btn" type="submit" id="lSetSave">Save</button></div><p class="err" id="lSetErr" hidden></p></form>`;
+}
+async function saveSettings() {
+  const v = $("lTank").value.trim(), err = $("lSetErr"); err.hidden = true;
+  if (v !== "" && !(+v >= 1 && +v <= 10000)) { err.textContent = "Fuel tank capacity: 1–10000 L"; err.hidden = false; return; }
+  try { await D.run(m, $("lSetSave"), () => D.api("enginelog", "/api/settings", {tank_capacity_l: v === "" ? null : +v}), "Settings saved"); } catch (e) { err.textContent = e.message; err.hidden = false; }
+}
+
 // ------------------------------------------------------------------ forms
 function openForm(kind, id) {
   const d = m.state.data, e = id ? d[kind].find(x => x.id === id) : null;
@@ -85,18 +103,18 @@ function openForm(kind, id) {
   if (kind === "fuel") {
     const p = parts(e ? e.time : undefined);
     $("lBody").innerHTML = `<form class="u-maxw-720 card lform" id="lForm" novalidate><div class="hd">${icon("fuel")}<h3>${id ? "Fuel entry" : "New fuel entry"}</h3></div><div class="rows">
-      <div class="row"><div class="k"><b>Date and time</b>${id ? "" : auto("auto")}</div><div class="u-d-flex u-gap-6"><input class="field" type="date" id="lDate" value="${p.date}">
+      <div class="row stackrow"><div class="k"><b>Date and time</b>${id ? "" : auto("auto")}</div><div class="u-d-flex u-gap-6 u-ai-center">${dateField("lDate", p.date)}
         <input class="field lf-time" id="lTime" value="${p.time}" inputmode="numeric" maxlength="5" placeholder="HH:MM" aria-label="Time (24-hour)"></div></div>
       <div class="row"><div class="k"><b>Engine hours</b></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lHours" min="0" max="100000" step="0.1" value="${e ? e.engine_hours : ""}"><span class="u">h</span></label></div>
       <div class="row"><div class="k"><b>Litres</b></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lLitres" min="0.1" max="5000" step="0.1" value="${e ? e.litres : ""}"><span class="u">L</span></label></div>
       <div class="row"><div class="k"><b>Position</b>${id ? "" : auto("GPS")}<small id="lPos">${esc(posText(edit.pos))}</small></div>${edit.pos ? `<button class="btn sec sm" type="button" data-nopos>Remove</button>` : ""}</div>
-      <div class="row"><div class="k"><b>Country</b>${id ? "" : auto("auto")}</div><input class="field lf-text" id="lCountry" maxlength="60" value="${esc(e ? e.country : "")}" autocomplete="off"></div>
-      <div class="row"><div class="k"><b>Nearest marina</b>${id ? "" : auto("auto")}<small id="lLook"></small></div><input class="field lf-text" id="lMarina" maxlength="100" value="${esc(e ? e.marina : "")}" autocomplete="off"></div>
+      <div class="row stackrow"><div class="k"><b>Country</b>${id ? "" : auto("auto")}</div><input class="field lf-text" id="lCountry" maxlength="60" value="${esc(e ? e.country : "")}" autocomplete="off"></div>
+      <div class="row stackrow"><div class="k"><b>Nearest marina</b>${id ? "" : auto("auto")}<small id="lLook"></small></div><input class="field lf-text" id="lMarina" maxlength="100" value="${esc(e ? e.marina : "")}" autocomplete="off"></div>
       </div>${btns}</form>`;
     if (!id) { if (edit.pos) look(edit.pos); else $("lLook").textContent = "No position from the anchor watch: type them in"; }
   } else {
     $("lBody").innerHTML = `<form class="u-maxw-720 card lform" id="lForm" novalidate><div class="hd">${icon("wrench")}<h3>${id ? "Maintenance entry" : "New maintenance entry"}</h3></div><div class="rows">
-      <div class="row"><div class="k"><b>Date</b>${id ? "" : auto("today")}</div><input class="field" type="date" id="lDate" value="${e ? e.date : parts().date}"></div>
+      <div class="row"><div class="k"><b>Date</b>${id ? "" : auto("today")}</div>${dateField("lDate", e ? e.date : parts().date)}</div>
       <div class="row col"><div class="k"><b>What was done</b></div><textarea class="field" id="lText" maxlength="2000" rows="5" placeholder="Oil and oil filter changed…">${esc(e ? e.text : "")}</textarea></div>
       </div>${btns}</form>`;
   }
@@ -116,8 +134,8 @@ async function look(pos) {
 function fail(msg) { const el = $("lErr"); el.textContent = msg; el.hidden = false; return null; }
 function body() {
   $("lErr").hidden = true;
-  const date = $("lDate").value;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail("Choose a date");
+  const date = D.parseDate($("lDate").value);
+  if (!date) return fail(`Date as ${D.dateFmt()}`);
   if (edit.kind === "maintenance") {
     const text = $("lText").value.trim(); if (!text) return fail("Say what was done");
     return {date, text};
@@ -143,7 +161,7 @@ function close() { edit = null; m.render(); }
 
 async function onClick(e) {
   const b = e.target.closest("button"); if (!b) return;
-  if (b.dataset.lview) { view = b.dataset.lview; edit = null; m.render(); return; }
+  if (b.dataset.lview) { view = b.dataset.lview; edit = null; $("lBody").innerHTML = ""; m.render(); return; }
   if (b.dataset.new) return openForm(b.dataset.new, null);
   if (b.dataset.edit) { const [kind, id] = b.dataset.edit.split(":"); return openForm(kind, id); }
   if (b.hasAttribute("data-cancel")) return close();

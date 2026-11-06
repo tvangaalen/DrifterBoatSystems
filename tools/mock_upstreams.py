@@ -310,16 +310,19 @@ class EngineLog:
         self.fuel = [{"id": "a1b2c3d4e5f6", "time": at(1), "engine_hours": 2315.0, "litres": 182.0, "lat": 10.5, "lon": -20.25, "country": "Testland", "marina": "Mock Marina North"},
                      {"id": "b2c3d4e5f6a1", "time": at(17), "engine_hours": 2288.0, "litres": 205.0, "lat": 10.2, "lon": -20.6, "country": "Testland", "marina": "Mock Marina South"},
                      {"id": "c3d4e5f6a1b2", "time": at(38), "engine_hours": 2251.0, "litres": 160.0, "lat": 11.0, "lon": -21.0, "country": "Otherland", "marina": "Mock Harbour"}]
+        self.settings = {"tank_capacity_l": 400.0}
         self.maint = [{"id": "d4e5f6a1b2c3", "date": at(5)[:10], "text": "Oil and oil filter changed, 2 300 h"}, {"id": "e5f6a1b2c3d4", "date": at(22)[:10], "text": "Impeller replaced"}]
 
     def log(self):
         f = sorted(self.fuel, key=lambda e: e["time"]); span = f[-1]["engine_hours"] - f[0]["engine_hours"] if f else 0
         stats = {"last_litres": f[-1]["litres"] if f else None, "last_time": f[-1]["time"] if f else None, "last_hours": f[-1]["engine_hours"] if f else None,
                  "avg_l_per_h": round(sum(e["litres"] for e in f[1:]) / span, 2) if span > 0 else None, "fills": len(f), "litres_total": sum(e["litres"] for e in f)}
-        return {"fuel": sorted(self.fuel, key=lambda e: e["time"], reverse=True), "maintenance": sorted(self.maint, key=lambda e: e["date"], reverse=True), "stats": stats}
+        return {"fuel": sorted(self.fuel, key=lambda e: e["time"], reverse=True), "maintenance": sorted(self.maint, key=lambda e: e["date"], reverse=True), "stats": stats,
+                "settings": self.settings}
 
     def post(self, path, body):
         parts = path.strip("/").split("/")[1:]
+        if parts == ["settings"]: self.settings = {"tank_capacity_l": body.get("tank_capacity_l")}; return 200, self.settings
         lst = self.fuel if parts[0] == "fuel" else self.maint if parts[0] == "maintenance" else None
         if lst is None: return 404, {"detail": "Unknown entry kind"}
         if len(parts) == 1:

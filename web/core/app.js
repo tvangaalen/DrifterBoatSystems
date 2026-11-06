@@ -1,7 +1,7 @@
 // Drifter Boat Systems — app core: modules, routing, polling, themes, the overview and the system page.
 // The page only displays and sends commands; every decision (Float, anchor alarm, arming, washer schedule) is made
 // by the module's own server. Times are always 24-hour.
-import {$, esc, pad, hm, hms, day, dayTime, dur, ago, num, W, icon} from "./format.js";
+import {$, esc, pad, hm, hms, day, dm, dayTime, dateText, parseDate, dateFmt, DATE_FORMATS, dur, ago, num, W, icon} from "./format.js";
 import {api} from "./api.js";
 import {sheet, closeSheet, confirm, toast} from "./dialogs.js";
 import {downCard, sw} from "./ui.js";
@@ -122,6 +122,9 @@ function setTheme(t) {
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => setTheme(getTheme()));
 const themeSeg = () => `<div class="seg" role="group" aria-label="Theme">${THEMES.map(([k, l]) => `<button type="button" data-theme-btn="${k}" aria-pressed="${getTheme() === k}">${l}</button>`).join("")}</div>`;
 document.addEventListener("click", e => { const b = e.target.closest("[data-theme-btn]"); if (b) setTheme(b.dataset.themeBtn); });
+const dateSeg = () => `<div class="seg" role="group" aria-label="Date format">${DATE_FORMATS.map(f => `<button type="button" data-datefmt="${f}" aria-pressed="${dateFmt() === f}">${f}</button>`).join("")}</div>`;
+document.addEventListener("click", e => { const b = e.target.closest("[data-datefmt]"); if (!b) return;     // every page shows dates: start again
+  try { localStorage.setItem("drifter-datefmt", b.dataset.datefmt); } catch (x) {} location.reload(); });
 $("themeBtn").addEventListener("click", () => sheet(`<h3 id="dlgTitle">Display</h3><p>Auto follows the iPhone or iPad (light or dark). Night is dim red on black, to keep your night vision.</p>
   <div class="u-mt-14">${themeSeg()}</div><div class="acts"><button class="btn" data-close>Done</button></div>`));
 
@@ -192,7 +195,8 @@ function backupCard(b) {
     replacing the previous copy. ${b.last ? `Last copied ${esc(dayTime(b.last))}.` : "Not copied yet."}</p></div>`;
 }
 async function renderSystem(el) {
-  el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="u-m-10-2-0 hint">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p></div>
+  el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="u-m-10-2-0 hint">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p>
+      <div class="u-mt-12">${dateSeg()}</div><p class="u-m-10-2-0 hint">Date format, for every page (times are always 24-hour). Remembered on this device.</p></div>
     <h2 class="sec">Systems</h2><div class="card"><div class="rows" id="sysRows"><div class="empty">Loading…</div></div></div>
     <div id="sysEvWrap" hidden><h2 class="sec">Supervisor events</h2><div class="card"><div class="log" id="sysEvents"></div></div></div>
     <div id="sysOffWrap" hidden><h2 class="sec">Switch off</h2><div class="card pad"><p class="u-m-0-0-12 hint">Stops every system's server and this app's server on the boat PC. Switches, chargers and the camera stay as they are. Start everything again with the <b>Drifter Boat Systems</b> icon on the boat PC's desktop.</p>
@@ -318,5 +322,5 @@ function start() {
 
 
 // The API the page modules use (energy.js, anchor.js, guard.js, washer.js): `import Drifter from "./core/app.js"`.
-const Drifter = {register, start, api, poll, run, confirm, sheet, closeSheet, toast, page, setSubtitle, downCard, sw, visibleIs, byId, $, esc, pad, hm, hms, day, dayTime, dur, ago, num, W, icon, getTheme};
+const Drifter = {register, start, api, poll, run, confirm, sheet, closeSheet, toast, page, setSubtitle, downCard, sw, visibleIs, byId, $, esc, pad, hm, hms, day, dm, dayTime, dateText, parseDate, dateFmt, dur, ago, num, W, icon, getTheme};
 export default Drifter;

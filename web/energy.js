@@ -414,7 +414,7 @@ function drawChart(canvas, opt) {
   const span = opt.t1 - opt.t0, step = [3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3, 24 * 3600e3, 48 * 3600e3, 7 * 864e5].find(s => span / s <= 6) || 7 * 864e5;
   g.textAlign = "center";
   for (let t = Math.ceil(opt.t0 / step) * step; t <= opt.t1; t += step) { const d = new Date(t), x = X(t);
-    const lab = step >= 864e5 ? `${D.pad(d.getDate())}-${D.pad(d.getMonth() + 1)}` : `${D.pad(d.getHours())}:00`;
+    const lab = step >= 864e5 ? D.dm(d) : `${D.pad(d.getHours())}:00`;
     g.beginPath(); g.moveTo(x, B); g.lineTo(x, B + 4); g.stroke(); g.fillText(lab, x, H - 6); }
   if (opt.zero && lo < 0) { g.strokeStyle = muted; g.beginPath(); g.moveTo(L, Y(0)); g.lineTo(R, Y(0)); g.stroke(); }
   g.save(); g.beginPath(); g.rect(L, T, R - L, B - T); g.clip();
@@ -487,7 +487,7 @@ function renderAlarms(t0, t1) {
   const per = BAT_META.slice(1).map(([k, l]) => { const mine = eps.filter(e => e.battery === k);
     return {k, l, mine, sec: mine.reduce((s, e) => s + (e.b - e.a) / 1000, 0), byType: types.map(t => mine.filter(e => e.type === t).reduce((s, e) => s + Math.max(1, (e.b - e.a) / 1000), 0))}; });
   const step = [3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3, 24 * 3600e3, 48 * 3600e3, 7 * 864e5].find(s => span / s <= 6) || 7 * 864e5, ticks = [];
-  for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) { const d = new Date(t); ticks.push([at(t), step >= 864e5 ? `${D.pad(d.getDate())}-${D.pad(d.getMonth() + 1)}` : `${D.pad(d.getHours())}:00`]); }
+  for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) { const d = new Date(t); ticks.push([at(t), step >= 864e5 ? D.dm(d) : `${D.pad(d.getHours())}:00`]); }
   box.innerHTML = `<div class="minis">${per.map(p => { const tot = p.byType.reduce((s, v) => s + v, 0);
       return `<div class="mini"><div class="l">${esc(p.l)}</div><div class="n">${p.mine.length}<small> episode${p.mine.length === 1 ? "" : "s"}</small></div><div class="l">${dur(p.sec)}</div>
         <div class="tbar">${tot ? types.map((t, i) => `<i style="width:${(p.byType[i] / tot * 100).toFixed(1)}%;background:${alarmColor(t, i)}"></i>`).join("") : ""}</div></div>`; }).join("")}</div>

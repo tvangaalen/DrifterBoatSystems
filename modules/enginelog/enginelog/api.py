@@ -5,6 +5,7 @@
     POST /api/fuel | /api/maintenance      create an entry; answers the entry
     POST /api/<kind>/<id>                  change it
     POST /api/<kind>/<id>/delete           delete it (the page asks first)
+    POST /api/settings                     {"tank_capacity_l": litres or null}
 
 Wrong input answers 400 with a readable message; an unknown id 404.
 """
@@ -36,7 +37,11 @@ def create_app(store: Store, lookup: Lookup | None = None, token: str | None = N
     @app.get("/api/log")
     def log():
         d = store.all()
-        return {**d, "stats": fuel_stats(d["fuel"])}
+        return {**d, "stats": fuel_stats(d["fuel"]), "settings": store.settings()}
+
+    @app.post("/api/settings")
+    def settings(body: dict = JSON_BODY):
+        return guarded(lambda: store.set_settings(body))
 
     @app.get("/api/lookup")
     def place(lat: float, lon: float):

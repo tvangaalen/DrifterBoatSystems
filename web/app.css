@@ -553,5 +553,12 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 .lrow small.pre{white-space:pre-line;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}.lrow .chev{color:var(--faint);flex:none}
 .lrows .empty{border-top:1px solid var(--line)}
 .autochip{font-size:10.5px;font-weight:600;color:var(--ok);background:var(--okbg);border-radius:10px;padding:1px 7px;margin-left:6px;vertical-align:1px}
-.lform{padding-bottom:14px}.lform .rows{padding:0}.lform>.u-d-flex,.lform>.err{padding:0 16px}.lf-time{width:84px;text-align:center}.lf-text{flex:1;width:auto;max-width:240px;margin-left:12px}
+.lform{padding-bottom:14px}.lform>.u-d-flex,.lform>.err{padding:0 16px}.lf-time{width:84px;text-align:center}.lf-text{flex:1;width:auto;max-width:240px;margin-left:12px}
 .lform textarea.field{width:100%;min-height:120px;padding:10px 12px;resize:vertical;font:inherit;font-size:16px}
+/* a date in the chosen format with the device's own calendar: an invisible native date input lies over the button */
+.datef{display:flex;align-items:center;gap:6px}.lf-date{width:128px;text-align:center}
+.pickbtn{position:relative;width:44px;height:44px;flex:none;display:grid;place-items:center;border-radius:10px;background:var(--ctl);color:var(--fg)}
+.pickbtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+/* on a phone the long fields go under their label */
+@media (max-width:560px){.lform .row.stackrow{flex-direction:column;align-items:stretch;gap:8px}.lform .row.stackrow .lf-text{width:100%;max-width:none;margin:0}
+  .lform .row.stackrow .k{display:flex;align-items:center;flex-wrap:wrap;gap:2px 0}.lform .row.stackrow .k small{flex-basis:100%}}

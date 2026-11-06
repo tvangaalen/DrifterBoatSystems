@@ -60,3 +60,28 @@ test("Engine log: change and delete a fill (Keep is the default), and add, chang
   await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/maintenance/e5f6a1b2c3d4/delete");
   expect(errors).toEqual([]);
 });
+
+test("Engine log: dates as dd/mm/yyyy (or as chosen on System), typed or picked; Settings saves the fuel tank capacity", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { theme: "dark", posts });
+  await open(page, "#enginelog", "#lViews [data-lview=maintenance]");
+  await expect(page.locator("#lBody .lrow").first()).toContainText(/\d\d\/\d\d\/\d{4}/);
+  await page.locator("[data-new=maintenance]").click();
+  await expect(page.locator("#lDate")).toHaveValue(/^\d\d\/\d\d\/\d{4}$/);
+  await page.locator("#lDatePick").fill("2026-10-03");                 // the device's calendar
+  await expect(page.locator("#lDate")).toHaveValue("03/10/2026");
+  await page.locator("#lDate").fill("31/02/2026"); await page.locator("#lText").fill("x"); await page.locator("#lSave").click();
+  await expect(page.locator("#lErr")).toContainText("dd/mm/yyyy");
+  await page.locator("#lDate").fill("1/9/2026"); await page.locator("#lSave").click();
+  await expect.poll(() => (posts.at(-1)?.body as any)?.date).toBe("2026-09-01");
+  await page.locator("#lViews [data-lview=settings]").click();
+  await expect(page.locator("#lTank")).toHaveValue("400");
+  await page.locator("#lTank").fill("380"); await page.locator("#lSetSave").click();
+  await expect.poll(() => posts.at(-1)?.body).toEqual({ tank_capacity_l: 380 });
+  await open(page, "#system", null);
+  await page.locator("[data-datefmt='yyyy-mm-dd']").click();
+  await page.waitForLoadState();
+  await open(page, "#enginelog", "#lViews [data-lview=maintenance]");
+  await expect(page.locator("#lBody .lrow").first()).toContainText(/\d{4}-\d\d-\d\d/);
+  expect(errors).toEqual([]);
+});

@@ -12,6 +12,7 @@ from pathlib import Path
 
 ID_RE = re.compile(r"^[0-9a-f]{12}$")
 KINDS = ("fuel", "maintenance")
+SETTINGS = {"tank_capacity_l": None}     # the fuel tank's capacity in litres (None: not set)
 
 
 def _num(value, name: str, lo: float, hi: float, required: bool = True) -> float | None:
@@ -61,7 +62,9 @@ class Store:
     def _load(self) -> dict:
         try: d = json.loads(self.path.read_text(encoding="utf-8"))
         except FileNotFoundError: d = {}
-        return {k: list(d.get(k) or []) for k in KINDS}
+        out = {k: list(d.get(k) or []) for k in KINDS}
+        out["settings"] = {**SETTINGS, **{k: v for k, v in (d.get("settings") or {}).items() if k in SETTINGS}}
+        return out
 
     def _save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -75,9 +78,30 @@ class Store:
     def all(self) -> dict:
         with self.lock: return {k: [dict(e) for e in self.data[k]] for k in KINDS}
 
+    def settings(self) -> dict:
+        with self.lock: return dict(self.data["settings"])
+
+    def set_settings(self, body: dict) -> dict:
+        cap = _num(body.get("tank_capacity_l"), "Fuel tank capacity", 1, 10000, False)
+        with self.lock:
+            self.data["settings"]["tank_capacity_l"] = cap; self._save()
+            return dict(self.data["settings"])
+
+    def _check_hours(self, entry: dict, skip: str | None = None) -> None:
+        """The engine hours are the meter's running total: never fewer than at an earlier fill, never more than at a later one."""
+        t, h = datetime.fromisoformat(entry["time"]), entry["engine_hours"]
+        for e in self.data["fuel"]:
+            if e["id"] == skip: continue
+            et = datetime.fromisoformat(e["time"])
+            if et < t and e["engine_hours"] > h:
+                raise ValueError(f"Engine hours: at least {e['engine_hours']:g} h, the meter showed that at the fill of {e['time'][:10]}")
+            if et > t and e["engine_hours"] < h:
+                raise ValueError(f"Engine hours: at most {e['engine_hours']:g} h, the meter showed that at the later fill of {e['time'][:10]}")
+
     def create(self, kind: str, body: dict) -> dict:
         entry = {"id": secrets.token_hex(6), **CLEAN[kind](body), "created": datetime.now().astimezone().isoformat(timespec="seconds")}
         with self.lock:
+            if kind == "fuel": self._check_hours(entry)
             self.data[kind].append(entry); self._sort(kind); self._save()
         return dict(entry)
 
@@ -90,6 +114,7 @@ class Store:
         clean = CLEAN[kind](body)
         with self.lock:
             i = self._find(kind, entry_id)
+            if kind == "fuel": self._check_hours(clean, skip=entry_id)
             self.data[kind][i] = {**self.data[kind][i], **clean, "changed": datetime.now().astimezone().isoformat(timespec="seconds")}
             entry = dict(self.data[kind][i]); self._sort(kind); self._save()
         return entry
