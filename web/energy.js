@@ -352,7 +352,7 @@ function smoothPath(g, P, join) {
   for (let i = 0; i < n - 1; i++) { const h = (P[i + 1][0] - P[i][0]) / 3;
     g.bezierCurveTo(P[i][0] + h, P[i][1] + m[i] * h, P[i + 1][0] - h, P[i + 1][1] - m[i + 1] * h, P[i + 1][0], P[i + 1][1]); }
 }
-// left: {mul}: the left labels are the value times `mul` (amps → watts); tip: the unit of the touched values when it differs
+// left: {mul, step}: the left labels are the value times `mul` (amps → watts), in whole steps of `step` (W) when given; tip: the unit of the touched values when it differs
 // step: a scale for the data in whole steps (W); right.step: the right scale in its own steps (A)
 // right: {unit, per}: a second scale on the right, the left value divided by `per` (watts → amps at the bank voltage)
 // opt: {t0, t1, unit, stacked (areas) | columns (binned smooth stacked areas, part = a series' share; line = a smooth line over them),
@@ -397,7 +397,11 @@ function drawChart(canvas, opt) {
   if (opt.zero) lo = Math.min(lo, 0);
   if (hi - lo < 1e-6) { hi += 1; lo -= opt.zero ? 0 : 1; }
   let ticks = null;
-  if (opt.step && !opt.fixed) {     // a scale for the data shown, in whole steps (at most about six lines)
+  if (opt.left && opt.left.step && !opt.fixed) {     // the left scale in whole steps of its own unit (amps drawn, watts on the left)
+    const mul = opt.left.mul, top = Math.max(hi, opt.left.step / mul) * mul, st = opt.left.step * Math.ceil(top / opt.left.step / 6);
+    lo = 0; hi = Math.max(st, Math.ceil(top / st) * st) / mul;
+    ticks = []; for (let w = 0; w <= hi * mul + 1e-6; w += st) ticks.push(w / mul);
+  } else if (opt.step && !opt.fixed) {     // a scale for the data shown, in whole steps (at most about six lines)
     const st = opt.step * Math.ceil(Math.max(hi, opt.step) / opt.step / 6); lo = 0; hi = Math.max(st, Math.ceil(hi / st) * st);
     ticks = []; for (let v = 0; v <= hi + 1e-9; v += st) ticks.push(v);
   } else if (!opt.fixed) { const pad = (hi - lo) * .06; hi += pad; if (!opt.stacked && !opt.columns && lo !== 0) lo -= pad; }
@@ -527,7 +531,7 @@ function renderCharts() {
       ...BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, part: 1 / 3, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.rem != null ? p.rem / S.perAh * 100 : null}))}))]}],
     ["eChSrc", "Sources", "W · A", {columns: true, step: 250, right: {unit: "A", per: houseV(), step: 25}, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
     ["eChLoad", "DC consumers", "W · A", {columns: true, step: 100, right: {unit: "A", per: houseV(), step: 5}, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
-    ["eChCur", "Battery current", "W · A", {columns: true, fixed: [0, 100], tip: "A", left: {mul: houseV()}, right: {unit: "A", per: 1}, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
+    ["eChCur", "Battery current", "W · A", {columns: true, tip: "A", left: {mul: houseV(), step: 200}, right: {unit: "A", per: 1, step: 20}, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
     ["eChSpread", "Cell spread", "mV", {series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.spread}))}))}],
   ];
   if (!box.dataset.built) {

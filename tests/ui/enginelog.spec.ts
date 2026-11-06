@@ -86,3 +86,14 @@ test("Engine log: dates as dd/mm/yyyy (or as chosen on System), typed or picked;
   await expect(page.locator("#lBody .lrow").first()).toContainText(/\d{4}-\d\d-\d\d/);
   expect(errors).toEqual([]);
 });
+
+test("Engine log: the fills over time, litres per fill and the use per engine hour", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#enginelog", null);
+  const svg = page.locator("#lChart svg.fsvg");
+  await expect(svg.locator("rect.fbar")).toHaveCount(3);
+  await expect(svg.locator("circle.usedot")).toHaveCount(2);
+  await expect(svg.locator("line.avg")).toHaveCount(1);
+  await expect(page.locator("#lChart .flegend")).toContainText("Average 6.0 L/h");
+  expect(errors).toEqual([]);
+});

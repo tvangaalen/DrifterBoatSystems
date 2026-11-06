@@ -562,3 +562,9 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 /* on a phone the long fields go under their label */
 @media (max-width:560px){.lform .row.stackrow{flex-direction:column;align-items:stretch;gap:8px}.lform .row.stackrow .lf-text{width:100%;max-width:none;margin:0}
   .lform .row.stackrow .k{display:flex;align-items:center;flex-wrap:wrap;gap:2px 0}.lform .row.stackrow .k small{flex-basis:100%}}
+/* Engine log, the fills over time: columns of litres (left scale), the use in L/h as a line (right scale), the average dashed */
+.fuelchart{margin-top:14px}.fsvg{display:block;max-width:100%}.fsvg .gl{stroke:var(--line)}.fsvg .ax{fill:var(--muted);font-size:10.5px}.fsvg .ax.use{fill:var(--accent)}
+.fsvg .fbar{fill:var(--warn)}.fsvg .useline{fill:none;stroke:var(--accent);stroke-width:2.2}.fsvg .usedot{fill:var(--accent)}
+.fsvg .avg{stroke:var(--muted);stroke-dasharray:4 4}
+.flegend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-top:4px}.flegend i{display:inline-block;width:12px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.flegend i.fbar{background:var(--warn)}.flegend i.useline{height:3px;background:var(--accent);vertical-align:3px}.flegend i.avg{height:0;border-top:2px dashed var(--muted);vertical-align:3px}

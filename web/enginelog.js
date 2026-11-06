@@ -59,6 +59,7 @@ const m = {
     const d = m.state.data; if (!d) { $("lBody").innerHTML = m.state.err ? "" : `<div class="empty">Loading…</div>`; return; }
     if (view === "settings") { if (!$("lSetForm")) $("lBody").innerHTML = setView(d); return; }    // a form: built once, kept while open
     $("lBody").innerHTML = view === "fuel" ? fuelView(d) : maintView(d);
+    if (view === "fuel" && $("lChart")) $("lChart").innerHTML = fuelChart(d.fuel, d.stats.avg_l_per_h);     // again at the box's real width
   },
 };
 
@@ -69,12 +70,43 @@ function fuelView(d) {
     <div class="minis u-mt-0"><div class="mini"><div class="l">Last fill</div><div class="n">${s.last_litres != null ? num(s.last_litres, 0) + " L" : "–"}</div></div>
       <div class="mini"><div class="l">Since</div><div class="n">${s.last_time ? since(Date.parse(s.last_time)) : "–"}</div></div>
       <div class="mini"><div class="l">Avg use</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) + " L/h" : "–"}</div></div></div>
+    <div class="fuelchart" id="lChart">${fuelChart(d.fuel, s.avg_l_per_h)}</div>
     <button class="u-mt-12 btn wide" type="button" data-new="fuel">${icon("fuel")} New fuel entry</button>
     <div class="lrows">${d.fuel.map(f => `<button class="lrow" type="button" data-edit="fuel:${esc(f.id)}"><span class="t"><b>${num(f.litres, 0)} L</b> <span class="muted">· ${num(f.engine_hours, 0)} h</span>
         <small>${esc(D.dayTime(Date.parse(f.time)))}${f.marina ? ` · ${esc(f.marina)}` : ""}${f.country ? `, ${esc(f.country)}` : ""}</small></span>${icon("chev", "i chev")}</button>`).join("")
       || `<div class="empty">No fills logged yet</div>`}</div>
     ${s.fills ? `<p class="u-m-8-0-0 hint">${s.fills} fill${s.fills === 1 ? "" : "s"} · ${num(s.litres_total, 0)} L in total. Average use: the litres of every fill after the first over the engine hours since the first.</p>` : ""}</div>`;
 }
+// ---- the fills over time: litres per fill as columns (left), the use since the fill before in L per engine hour as a
+// smooth line with the average dashed (right). Drawn at the box's own width, so the text never scales.
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** @param {any[]} fuel @param {number | null} avg */
+function fuelChart(fuel, avg) {
+  const F = fuel.slice().sort((a, b) => a.time < b.time ? -1 : 1).map(f => ({...f, t: Date.parse(f.time)}));
+  if (F.length < 2) return `<p class="u-m-8-0-0 hint">The chart appears after two fills.</p>`;
+  const box = $("lChart"), W = Math.max(280, Math.round(box ? box.clientWidth : 340)), H = 170, L = 40, R = W - 40, T = 10, B = H - 22;
+  const span = F[F.length - 1].t - F[0].t, t0 = F[0].t - span * .04, t1 = F[F.length - 1].t + span * .04, X = (/** @type {number} */ t) => L + (t - t0) / (t1 - t0) * (R - L);
+  const maxL = Math.max(...F.map(f => f.litres)), stL = maxL > 400 ? 200 : maxL > 200 ? 100 : 50, topL = Math.ceil(maxL / stL) * stL, YL = (/** @type {number} */ v) => B - v / topL * (B - T);
+  const use = F.slice(1).map((f, i) => ({t: f.t, u: f.engine_hours > F[i].engine_hours ? f.litres / (f.engine_hours - F[i].engine_hours) : null})).filter(u => u.u != null);
+  const topU = Math.max(2, Math.ceil(Math.max(avg || 0, ...use.map(u => u.u)) / 2) * 2), YU = (/** @type {number} */ v) => B - v / topU * (B - T);
+  let g = "";
+  for (let v = 0; v <= topL; v += stL) g += `<line class="gl" x1="${L}" x2="${R}" y1="${YL(v)}" y2="${YL(v)}"/><text class="ax" x="${L - 5}" y="${YL(v) + 3.5}" text-anchor="end">${v}${v === topL ? " L" : ""}</text>`;
+  for (let v = 0; v <= topU; v += topU / 4) g += `<text class="ax use" x="${R + 5}" y="${YU(v) + 3.5}">${num(v, v % 1 ? 1 : 0)}${v === topU ? " L/h" : ""}</text>`;
+  for (let d = new Date(new Date(t0).getFullYear(), new Date(t0).getMonth() + 1, 1); +d <= t1; d.setMonth(d.getMonth() + 1))
+    g += `<text class="ax" x="${X(+d)}" y="${H - 6}" text-anchor="middle">${MON[d.getMonth()]}</text>`;
+  const bw = Math.max(4, Math.min(14, (R - L) / F.length * .5));
+  g += F.map(f => `<rect class="fbar" x="${(X(f.t) - bw / 2).toFixed(1)}" y="${YL(f.litres).toFixed(1)}" width="${bw.toFixed(1)}" height="${(B - YL(f.litres)).toFixed(1)}" rx="2"><title>${esc(`${D.day(f.t)} · ${num(f.litres, 0)} L · ${num(f.engine_hours, 0)} h`)}</title></rect>`).join("");
+  if (avg != null) g += `<line class="avg" x1="${L}" x2="${R}" y1="${YU(avg)}" y2="${YU(avg)}"/>`;
+  if (use.length) {
+    const P = use.map(u => [X(u.t), YU(u.u)]);
+    let path = `M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+    for (let i = 1; i < P.length; i++) { const m = (P[i - 1][0] + P[i][0]) / 2; path += ` C${m.toFixed(1)} ${P[i - 1][1].toFixed(1)} ${m.toFixed(1)} ${P[i][1].toFixed(1)} ${P[i][0].toFixed(1)} ${P[i][1].toFixed(1)}`; }
+    g += `<path class="useline" d="${path}"/>` + use.map(u => `<circle class="usedot" cx="${X(u.t).toFixed(1)}" cy="${YU(u.u).toFixed(1)}" r="3"><title>${esc(`${D.day(u.t)} · ${num(u.u, 1)} L/h since the fill before`)}</title></circle>`).join("");
+  }
+  return `<svg class="fsvg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Diesel fills over time and the fuel use per engine hour">${g}</svg>
+    <div class="flegend"><span><i class="fbar"></i>Litres per fill</span><span><i class="useline"></i>L per engine hour since the fill before</span>${avg != null ? `<span><i class="avg"></i>Average ${num(avg, 1)} L/h</span>` : ""}</div>`;
+}
+window.addEventListener("resize", () => { if (D.visibleIs("enginelog") && view === "fuel" && !edit && m.state.data && $("lChart")) $("lChart").innerHTML = fuelChart(m.state.data.fuel, m.state.data.stats.avg_l_per_h); });
 function maintView(d) {
   return `<div class="u-maxw-720 card pad"><button class="btn wide" type="button" data-new="maintenance">${icon("wrench")} New maintenance entry</button>
     <div class="lrows">${d.maintenance.map(x => `<button class="lrow" type="button" data-edit="maintenance:${esc(x.id)}"><span class="t"><b>${esc(dmy(x.date))}</b>${x.engine_hours != null ? ` <span class="muted">· ${num(x.engine_hours, 0)} h</span>` : ""}
