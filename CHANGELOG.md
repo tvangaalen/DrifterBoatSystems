@@ -45,6 +45,8 @@
 - Shore power ON/OFF notification with its own switch; Anchor watch Events foldable
 - New module Engine log: diesel fuel fills and engine maintenance with create, read, change and delete; time, boat
   position, country and nearest marina filled in automatically and editable
+- Date format dd/mm/yyyy by default, chosen on the System page; Engine log: date fields typed or picked, padding in the
+  forms, engine hours must keep rising, Settings with the fuel tank capacity
 
 ## 1.2
 

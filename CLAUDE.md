@@ -32,7 +32,7 @@ There is no user manual for now (all removed on 2026-11-06, the user's choice; n
 - LAN only: never bind a public address, port-forward or tunnel. Remote access is UniFi Teleport (clients 192.168.2.x), so never restrict requests to 192.168.1.x.
 - HTTPS certificates come from the existing Mastervolt Local CA through `common/issue_cert.ps1` (only reads the CA folder, refuses without it). Never create a new CA, write into the CA folder or change the Windows trust store: every phone would have to be set up again. Only the gateway serves HTTPS; the modules serve plain HTTP on 127.0.0.1.
 - **Shared code goes in `common/`** (stdlib only, except `common/service.py`, the FastAPI module contract): network checks, HTTPS, logging, clock texts, Pushover posting, processes, the certificate script. Change it with every user in mind (gateway, drifterd, anchor, guard, washer) and run the whole `run_all.py`. Keep module behaviour in the module: alarm decisions, Pushover queues/priorities and retries stay where they are. MasterVolt does not import `common`. A change in `common/` means restarting every module that uses it.
-- Times are always 24-hour (`hm`/`hms`/`dayTime` in `web/core/format.js`); never locale time defaults (AM/PM).
+- Times are always 24-hour (`hm`/`hms`/`dayTime` in `web/core/format.js`); never locale time defaults (AM/PM). Dates follow the format chosen on the System page (`day`/`dm`/`dateText`/`parseDate`; dd/mm/yyyy by default, per device); never a native date input's own display: type the date as text, with the device's calendar under a button (`dateField` in `web/enginelog.js`).
 - Live data is never cached by the service worker (`/api/` is skipped). `CACHE` in `web/sw.js` is `drifter-__BUILD__-shell`: the gateway fills in the version and a fingerprint of `web/` (`web_build`); never hard-code it.
 
 ## Energy (MasterVolt YMS, `modules/energy`)
@@ -90,6 +90,7 @@ the time, the anchor watch's boat position and the server's country/marina looku
 
 - The log holds positions: never commit it, and keep real positions out of tests and fixtures (made-up ones only).
 - Country and marina come from OpenStreetMap (Nominatim reverse, Overpass `leisure=marina` within 15 km), only when a new fill is opened, cached per ~100 m, with a generic User-Agent (no personal data). Tests use a fake: never reach the internet from a test.
+- Engine hours are the meter's running total: the server refuses a fill with fewer hours than an earlier fill or more than a later one. Settings (fuel tank capacity) are in the same file.
 - Deleting an entry always asks first, *Keep it* the default. The page never rebuilds an open form on a poll.
 - Verify: `testsun_all.py enginelog` (or `.venv\Scripts\python.exe -m unittest test_enginelog` in the module). Release: `VERSION` in `enginelog/__init__.py` and its CHANGELOG.
 
