@@ -519,3 +519,13 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 .u-w-130{width:130px !important}
 .u-w-150{width:150px !important}
 .u-w-26{width:26px !important}
+/* History zoom: two handles on one track pick the part of the period all charts show */
+.zoomrow{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:12px;color:var(--muted)}.zoomrow .num{min-width:40px}
+#eRange button{white-space:nowrap;padding:0 4px}#eHistUpd{white-space:nowrap;flex:none}
+.dual{position:relative;flex:1;height:40px}
+.dual .track,.dual .fill{position:absolute;top:17px;height:6px;border-radius:3px;pointer-events:none}.dual .track{left:0;right:0;background:var(--ctl)}.dual .fill{background:var(--accent)}
+.dual input{position:absolute;left:0;top:0;width:100%;height:40px;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
+.dual input::-webkit-slider-runnable-track{background:none;height:40px}
+.dual input::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:28px;height:28px;margin-top:6px;border-radius:50%;background:var(--fg);border:3px solid var(--accent);cursor:grab}
+.dual input::-moz-range-track{background:none}
+.dual input::-moz-range-thumb{pointer-events:auto;width:22px;height:22px;border-radius:50%;background:var(--fg);border:3px solid var(--accent);cursor:grab}

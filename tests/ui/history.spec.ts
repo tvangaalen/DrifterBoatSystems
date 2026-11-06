@@ -31,3 +31,18 @@ test("Energy opens on Control from the Overview, and History's Update reads the 
   await expect(page.locator("#eNow")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("History: the zoom slider shows part of the period in every chart; a period choice shows it whole again", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#power", "#eViews [data-view=history]");
+  await expect(page.locator("#eChSrc")).toBeVisible();
+  const span = () => page.evaluate(() => ["eChSoc", "eChSrc", "eChSpread"].map(id => { const o = (document.getElementById(id) as any)._map.opt; return o.t1 - o.t0; }));
+  const whole = await span();
+  const from = await page.locator("#eZFrom").textContent();
+  await page.locator("#eZA").fill("500");
+  await expect(page.locator("#eZFrom")).not.toHaveText(from || "");
+  await expect.poll(async () => (await span()).map((s, i) => Math.round(s / whole[i] * 10) / 10)).toEqual([0.5, 0.5, 0.5]);
+  await page.locator("#eRange [data-hours='24']").click();
+  await expect(page.locator("#eZA")).toHaveValue("0");
+  expect(errors).toEqual([]);
+});

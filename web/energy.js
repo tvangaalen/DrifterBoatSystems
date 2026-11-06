@@ -28,6 +28,8 @@ const SETTINGS = [   // [key, label, hint, min, max, step, unit] — the server'
 ];
 let view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
 const busy = new Set();
+const zoom = [0, 1000];     // History: the part of the period shown, in thousandths (two-handled slider; all charts)
+let zoomRaf = 0;
 const solo = {};     // History: per chart the one series a legend tap shows on its own (absent: all of them)
 const on = v => v != null && +v >= .5;
 const flowW = v => v == null || !isFinite(+v) ? "–" : Math.round(+v) > 0 ? "+" + W(+v) : outW(-v);   // into a battery +, out of it −
@@ -73,7 +75,8 @@ const m = {
         <button type="button" data-view="now" aria-pressed="true">Control</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
       <div id="eNow"></div><div id="eBatt" hidden></div><div id="eHist" hidden></div><div id="eSet" hidden></div>`;
     el.addEventListener("click", onClick); el.addEventListener("change", onChange);
-    el.addEventListener("input", e => { if (e.target.closest("#eSetForm")) { setDirty = true; validateSettings(); } });
+    el.addEventListener("input", e => { if (e.target.closest("#eSetForm")) { setDirty = true; validateSettings(); }
+      else if (e.target.closest(".dual")) zoomInput(e.target); });
     el.addEventListener("submit", e => { if (e.target.id === "eSetForm") { e.preventDefault(); saveSettings(); } });
   },
   render() {
@@ -439,13 +442,30 @@ function crosshair(canvas, tip, ev) {      // the values at the touched time
   tip.hidden = false; tip.style.left = Math.min(r.width - tip.offsetWidth - 4, Math.max(4, x - tip.offsetWidth / 2)) + "px";
   const cur = canvas.parentElement.querySelector(".cross"); cur.style.left = x + "px"; cur.hidden = false;
 }
+/** The zoom slider: its handles, the band between them and the times at both ends. @param {number} t0 @param {number} t1 */
+function zoomShow(t0, t1) {
+  const a = $("eZA"), b = $("eZB"); if (!a) return;
+  a.value = String(zoom[0]); b.value = String(zoom[1]);
+  $("eZFill").style.left = zoom[0] / 10 + "%"; $("eZFill").style.width = (zoom[1] - zoom[0]) / 10 + "%";
+  $("eZFrom").textContent = D.dayTime(t0); $("eZTo").textContent = D.dayTime(t1);
+}
+/** A handle moved: keep the handles apart (at least 2 % of the period) and redraw once per frame. @param {any} el */
+function zoomInput(el) {
+  let a = +$("eZA").value, b = +$("eZB").value;
+  if (b - a < 20) { if (el.id === "eZA") a = b - 20; else b = a + 20; }
+  zoom[0] = Math.max(0, Math.min(980, a)); zoom[1] = Math.min(1000, Math.max(20, b));
+  cancelAnimationFrame(zoomRaf); zoomRaf = requestAnimationFrame(renderCharts);
+}
 /** The house bank voltage now, for the amps scale (12 V system: 13.2 V when unknown). */
 function houseV() { const v = ((((m.state.data || {}).storage || {}).house) || {}).voltage; return v > 9 && v < 16 ? v : 13.2; }
 function renderCharts() {
   const box = $("eCharts"); if (!box) return;
   document.querySelectorAll("#eRange button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.hours === hours));
-  if (!chart) { box.innerHTML = `<div class="empty">Loading history…</div>`; delete box.dataset.built; if ($("eContrib")) $("eContrib").innerHTML = `<div class="empty">Loading…</div>`; return; }
-  const S = seriesFrom(chart), t1 = Date.parse(chart.latest), t0 = Date.parse(chart.cutoff);
+  if (!chart) { if ($("eZA")) { $("eZA").value = String(zoom[0]); $("eZB").value = String(zoom[1]); }
+    box.innerHTML = `<div class="empty">Loading history…</div>`; delete box.dataset.built; if ($("eContrib")) $("eContrib").innerHTML = `<div class="empty">Loading…</div>`; return; }
+  const S = seriesFrom(chart), p1 = Date.parse(chart.latest), p0 = Date.parse(chart.cutoff);
+  const t0 = p0 + (p1 - p0) * zoom[0] / 1000, t1 = p0 + (p1 - p0) * zoom[1] / 1000;     // the zoomed part of the period
+  zoomShow(t0, t1);
   /** @type {[string, string, string, any][]} */
   const defs = [
     ["eChSoc", "State of charge", "%", {columns: true, fixed: [0, 100], series: [{label: "Total", color: BAT_META[0][2], width: 2.6, line: true, pts: S.tot},
@@ -489,6 +509,9 @@ function renderHistory() {
     box.dataset.built = "1";
     box.innerHTML = `<div class="u-d-flex u-gap-8 u-ai-center u-mb-12"><div class="u-maxw-460 u-flex-1 seg" id="eRange">${RANGES.map(([h, l]) => `<button type="button" data-hours="${h}" aria-pressed="${h === hours}">${l}</button>`).join("")}</div>
         <button class="btn sec" type="button" id="eHistUpd" title="Read the latest history now">${icon("refresh")} Update</button></div>
+      <div class="zoomrow"><span class="num" id="eZFrom"></span><div class="dual no-swipe"><div class="track"></div><div class="fill" id="eZFill"></div>
+        <input type="range" id="eZA" min="0" max="1000" step="1" value="${zoom[0]}" aria-label="Zoom: start of the part shown">
+        <input type="range" id="eZB" min="0" max="1000" step="1" value="${zoom[1]}" aria-label="Zoom: end of the part shown"></div><span class="num u-ta-right" id="eZTo"></span></div>
       <div class="grid g2 charts" id="eCharts"></div>
       <h2 class="sec">Energy in this period</h2><div class="card pad" id="eContrib"></div>
       <h2 class="sec">Reports and data</h2>
@@ -612,7 +635,7 @@ async function onClick(e) {
   if (b.id === "eHistUpd") {     // the latest history now, instead of at the next minute
     b.disabled = true; b.lastChild.textContent = " Updating…"; chartT = 0;
     D.poll(m, true).finally(() => { b.disabled = false; b.lastChild.textContent = " Update"; }); return; }
-  if (b.dataset.hours) { hours = +b.dataset.hours; chart = null; contrib = null; renderCharts(); D.poll(m, true); return; }
+  if (b.dataset.hours) { hours = +b.dataset.hours; zoom[0] = 0; zoom[1] = 1000; chartT = 0; chart = null; contrib = null; renderCharts(); D.poll(m, true); return; }
   if (b.id === "eRepRun") {
     const days = +$("eRepDays").value;
     if (!Number.isInteger(days) || days < 1 || days > 365) return D.toast("Days: a whole number from 1 to 365", true);
