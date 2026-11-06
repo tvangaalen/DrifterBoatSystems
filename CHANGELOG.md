@@ -31,6 +31,8 @@
 - History: a two-handled slider zooms all charts into part of the period; tapping the chosen period reloads it
 - History: fixed head with tabs, periods and zoom slider plus Reset; Sources 0-1400 W; Battery current smooth stacked
   0-100 A with watts; smooth cell spread
+- History: no gaps when zoomed in, Sources and DC consumers smooth with 250 W / 25 A scales; no BMS pop-up setting;
+  anchor map: info button for credits, magenta track and max swing, Holding fixed above the map
 
 ## 1.2
 

@@ -73,8 +73,9 @@ manual: History → *Open the manual*.
 - **History:** charts of the state of charge, sources, DC consumers, battery current and cell spread for 6 hours up to 31
   days (touch a chart for the values at that moment), and the energy per period. The state of charge is smooth stacked areas on
   a fixed 0–100 % scale: each battery its share of the house bank, with the total as a smooth line on top. Tap a name in a
-  chart's legend to show only that one (a battery's band is then its own state of charge); tap it again for all. *Sources* is smooth stacked areas on a fixed 0–1400 W scale, with
-  amps on the right (the watts at the house bank's present voltage). The slider under the periods zooms all charts into part of the
+  chart's legend to show only that one (a battery's band is then its own state of charge); tap it again for all. *Sources* and *DC consumers* are smooth stacked areas with a scale
+  for the data shown in steps of 250 W, and amps on the right in steps of 25 A (the watts at the house bank's present
+  voltage). The slider under the periods zooms all charts into part of the
   period: drag its two handles (the times at both ends show what is shown); choosing a period or *Reset* shows it whole again. The
   view tabs, periods and zoom slider stay at the top while the charts scroll. *Battery current* is smooth stacked areas
   on a fixed 0–100 A scale, watts on the left (the amps at the present bank voltage) and amps on the right (discharging
@@ -98,8 +99,9 @@ Four views: **Watch**, **Map**, **GPS & links** and **Settings**.
 - **Watch:** distance to the anchor and its maximum, depth, wind, AIS targets, speed, heading, the sun, the position
   (choose its format in Settings), and the tide over the next hours with chain advice and keel clearance.
 - **Map:** street map, satellite (*Sat*) or *Plain*, with *Seamarks*; the boat, the anchor circle, the maximum swing, the
-  rode, a fading track and AIS targets. *Start new track* clears the track (asks first). The Windy button opens the
-  forecast for the boat's position.
+  rode, a fading track and AIS targets; the track and the maximum swing are magenta, which shows on every map. *Start
+  new track* clears the track (asks first). The Windy button opens the forecast for the boat's position; the *i* opens
+  the map credits (on *GPS & links*). On Watch the tabs and the Holding tile stay at the top above the map.
 - **Alarms:** anchor drag (the only emergency alert), GPS lost, no data from the Orca Core, an AIS target too close,
   shallow water and the wind limit. A drag alarm is only raised from a trustworthy position: a GPS that stops changing is
   not used.
