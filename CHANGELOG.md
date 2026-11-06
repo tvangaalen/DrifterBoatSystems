@@ -35,6 +35,8 @@
   anchor map: info button for credits, magenta track and max swing, Holding fixed above the map
 - History: Energy in this period as a flow diagram (share with kWh) and battery charged/discharged bars; DC consumers in
   100 W / 5 A steps
+- Energy flow: shore power out of the DC balance and shown on its own with the net; HOUSE BANK label in the bar;
+  batteries charged left, discharged right
 
 ## 1.2
 

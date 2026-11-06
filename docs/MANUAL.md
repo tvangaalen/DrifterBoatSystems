@@ -75,9 +75,10 @@ manual: History → *Open the manual*.
   a fixed 0–100 % scale: each battery its share of the house bank, with the total as a smooth line on top. Tap a name in a
   chart's legend to show only that one (a battery's band is then its own state of charge); tap it again for all. *Sources* and *DC consumers* are smooth stacked areas with a scale
   for the data shown (Sources in steps of 250 W and 25 A, DC consumers in 100 W and 5 A; the amps are the watts at the
-  house bank's present voltage). *Energy in this period* shows the flow from the sources through the house bank to the
-  DC consumers, each as its share of the total in or out with the energy in brackets, and per battery the energy
-  discharged (left) and charged (right). The slider under the periods zooms all charts into part of the
+  house bank's present voltage). *Energy in this period* shows the DC flow from the charger, alternator and solar through
+  the house bank to the DC consumers, each as its share of the total in or out with the energy in brackets. Shore power
+  is shown on its own under it, not in the balance (it reaches the bank through the house charger), next to the net of
+  DC in and out. Per battery: the energy charged (left, in) and discharged (right, out). The slider under the periods zooms all charts into part of the
   period: drag its two handles (the times at both ends show what is shown); choosing a period or *Reset* shows it whole again. The
   view tabs, periods and zoom slider stay at the top while the charts scroll. *Battery current* is smooth stacked areas
   on a fixed 0–100 A scale, watts on the left (the amps at the present bank voltage) and amps on the right (discharging
