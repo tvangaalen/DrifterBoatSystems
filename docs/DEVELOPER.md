@@ -15,7 +15,8 @@ The rules for Claude Code (and for anyone): [../CLAUDE.md](../CLAUDE.md).
    │     ├── energy  (MasterVolt, FastAPI)  :8000  USB MasterBus, Bluetooth DALY
    │     ├── anchor  (FastAPI)              :8766  Orca Core 2 (read-only), NMEA :10110 on the LAN
    │     ├── guard   (BoatGuard, FastAPI)   :8095  UniFi router, EZVIZ camera, Pushover
-   │     └── washer  (FastAPI)              :8080  VIOMI W1 (miio)
+   │     ├── washer  (FastAPI)              :8080  VIOMI W1 (miio)
+   │     └── enginelog (FastAPI)            :8097  the engine log (data/log.json); OpenStreetMap lookups
    │  supervisor.py (start, restart on request, health); the gateway's watchdog pushes alerts
    └────────────────────────────────────────────────────────────────┘
 ```
@@ -24,7 +25,7 @@ The rules for Claude Code (and for anyone): [../CLAUDE.md](../CLAUDE.md).
   the camera and the washer schedule run on their own servers and keep working when the app is closed. The gateway only
   passes requests on: it never decides, retries a command or polls hardware. The page only displays and sends commands.
 - **drifterd** (`drifterd.py`, stdlib, the plain python.org Python) is the Windows service. It runs the gateway and the
-  four modules as child processes, each in its own kill-on-close job object (`common/proc.py`), writes their output to
+  five modules as child processes, each in its own kill-on-close job object (`common/proc.py`), writes their output to
   `<data>\logs\<module>.console.log`, and answers the gateway on 127.0.0.1:8099 (token file `C:\DrifterData\drifterd.token`):
   `GET /status`, `GET /log`, `POST /restart`, `POST /shutdown`. It reads `modules.json` at every start and health check.
 - **supervisor.py** (inside drifterd) starts a module that is down, never stops one on its own, restarts on request (after
@@ -55,6 +56,7 @@ modules/energy   MasterVolt YMS (package mastervolt/, its own tests and docs/TEC
 modules/anchor   anchor watch (package anchor/, orca_reader.py)
 modules/guard    BoatGuard (package guard/)
 modules/washer   VIOMI controller (package washer/)
+modules/enginelog  Engine log (package enginelog/)
 common/          shared by gateway, drifterd and modules (stdlib, except service.py): net, web, logs, timefmt, pushover, proc, service
 tools/           sync_envs, verify_live, backup, mock_upstreams, privacy_scan, install_service.ps1, session0_check, ...
 tests/           gateway/supervisor/drifterd/common tests, run_all.py, ui/ (browser tests)

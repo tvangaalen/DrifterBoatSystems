@@ -43,6 +43,8 @@
 - History: Alarms chart per battery with alarm types (server: /api/history/alarms); anchor Fit puts the largest circle
   just inside the map; an open colour picker is no longer rebuilt
 - Shore power ON/OFF notification with its own switch; Anchor watch Events foldable
+- New module Engine log: diesel fuel fills and engine maintenance with create, read, change and delete; time, boat
+  position, country and nearest marina filled in automatically and editable
 
 ## 1.2
 

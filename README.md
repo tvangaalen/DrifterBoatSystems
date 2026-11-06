@@ -9,8 +9,9 @@ every system behind it in one repository:
 | **Anchor watch** | Orca Core 2 anchor alarm, GPS, AIS, tide | Anchor watch, `127.0.0.1:8766` (network GPS stays on the LAN) | `modules/anchor` |
 | **BoatGuard** | EZVIZ camera armed when the iPhone leaves the boat | BoatGuard, `127.0.0.1:8095` | `modules/guard` |
 | **Washer** | VIOMI W1 washing machine and its schedule | VIOMI controller, `127.0.0.1:8080` | `modules/washer` |
+| **Engine log** | Diesel fuel fills and engine maintenance | Engine log, `127.0.0.1:8097` | `modules/enginelog` |
 
-The Drifter service (`drifterd.py`, a Windows service) runs the app's gateway and the four module servers on the boat PC,
+The Drifter service (`drifterd.py`, a Windows service) runs the app's gateway and the five module servers on the boat PC,
 whether anybody is logged on or not. Each module server keeps its own logic: Float protection, the anchor alarm and its
 push alerts, arming the camera and the washer schedule keep working when the app is closed. The gateway (`drifter.py`)
 serves the app over HTTPS and passes the app's requests on; it makes no decisions and talks to no hardware itself.

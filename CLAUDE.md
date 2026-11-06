@@ -1,15 +1,15 @@
 # Drifter Boat Systems
 
 One repository for the boat's systems: the Drifter app (iPhone/iPad PWA, `web/`), its stdlib gateway `drifter.py`, the
-service `drifterd.py`, and the four module servers in `modules/` — `energy` (MasterVolt YMS), `anchor` (Orca Core 2
-anchor watch), `guard` (BoatGuard) and `washer` (VIOMI W1). This is the only CLAUDE.md: every rule for the app and for
+service `drifterd.py`, and the five module servers in `modules/` — `energy` (MasterVolt YMS), `anchor` (Orca Core 2
+anchor watch), `guard` (BoatGuard), `washer` (VIOMI W1) and `enginelog` (Engine log). This is the only CLAUDE.md: every rule for the app and for
 each module is here. Overview: `README.md`; architecture and tests: `docs/DEVELOPER.md`; operations: `docs/RUNBOOK.md`.
 There is no user manual for now (all removed on 2026-11-06, the user's choice; new ones per tab will follow).
 
 ## Live
 
 - Everything runs from the clone `C:\Drifter`; runtime files in `C:\DrifterData\<module>` (gateway: `config.json`, `certs`, `logs` in `C:\Drifter`).
-- **The Windows service `Drifter` (drifterd.py)** runs the gateway and all four modules as its own children, each in a kill-on-close job object, in session 0, as the user's account, whether anybody is logged on or not; output in `<data>\logs\<module>.console.log`, its own log in `C:\DrifterData\logs\drifterd.log`. It is installed (and removed with `-Remove`) by the user's `tools\install_service.ps1`: it needs the user's password and an elevated shell, so the user runs it, never Claude.
+- **The Windows service `Drifter` (drifterd.py)** runs the gateway and all five modules as its own children, each in a kill-on-close job object, in session 0, as the user's account, whether anybody is logged on or not; output in `<data>\logs\<module>.console.log`, its own log in `C:\DrifterData\logs\drifterd.log`. It is installed (and removed with `-Remove`) by the user's `tools\install_service.ps1`: it needs the user's password and an elevated shell, so the user runs it, never Claude.
 - **Shipping** (the user's choice of 2026-11-03: a change live in about a minute): `py -3.12 tools\ship.py change "Summary" --claude` runs only the tests for what changed (`ship.py check` alone; `--dry-run` shows the plan), commits code and docs apart (the privacy hook runs), adds the summary under `## Unreleased` in CHANGELOG.md, pushes, pulls in `C:\Drifter`, restarts only what needs it and runs verify_live. A change the user asked for goes live this way as soon as it is built and its tests pass, without asking again (the user's choice of 2026-11-03); never for a mockup. Small changes get no version: they collect under Unreleased until the user asks for a release (`ship.py release X.Y.Z --claude`: version, README, changelog, tag `vX.Y.Z`, gateway restart). It never restarts the service or rebuilds environments: it prints those as steps left to do. Still read the staged diff it prints. GitHub CI runs every test after the push.
 - **Deploying** by hand = commit and push here, then `git pull --ff-only` in `C:\Drifter`, then restart only what changed through the gateway (System page, or `POST /api/supervisor/restart` with `X-Drifter-Request: 1`; the gateway itself: module `gateway`); a change to drifterd.py, supervisor.py or common/proc.py needs a service restart (`Restart-Service Drifter`, or Stop/Start; the user's account may do both), which restarts every module. Claude's session cannot stop session-0 processes directly. New packages: `py -3.12 tools\sync_envs.py --into .venv-next <module>`, then restart that module. Never edit files in `C:\Drifter` directly. A web-only change needs no restart (files are read per request; the gateway puts a fingerprint of `web/` into `sw.js`'s cache name, so home-screen apps reload it).
 - **After a deploy or restart**, verify with `py -3.12 tools\verify_live.py [module ...]` (read-only GETs, about a second; it waits for what can still come right, like the BMS units ~2 minutes after an energy restart, up to `--wait 240`). Exit code = failed checks.
@@ -81,6 +81,17 @@ reader `orca_reader.py`. `anchor_watch.py` only re-exports the package for `test
 - Map tiles are fetched on demand only (OpenStreetMap policy). No sea charts (removed in 1.12.0; Seamarks stay); only add a map source whose terms allow it; no HNHS tiles without written agreement; never decode, convert or commit CM93/C-MAP or other proprietary chart data. Never colour-invert charts in dark mode (dim them); Night may tint them red.
 - Never commit `pushover.json`, `still_alive.json`, `aisstream.json`, `nfl.json`, `tide_cache.json`, `anchor_state.json`, `tile_cache/`, `captures/` or `recordings/`; keep real MMSIs and anchorage positions out of tests.
 - Verify: `.venv\Scripts\python.exe -m unittest test_anchor_watch test_anchor` in `modules\anchor`. Release: `VERSION` in `anchor/settings.py` and its `CHANGELOG.md`.
+
+## Engine log (`modules/enginelog`)
+
+FastAPI server (package `enginelog/`, `python -m enginelog`, port 8097): diesel fuel fills and engine maintenance, CRUD for
+every entry, in `C:\DrifterData\enginelog\log.json` (atomic writes). The page (`web/enginelog.js`) fills a new fill with
+the time, the anchor watch's boat position and the server's country/marina lookup; every automatic value stays editable.
+
+- The log holds positions: never commit it, and keep real positions out of tests and fixtures (made-up ones only).
+- Country and marina come from OpenStreetMap (Nominatim reverse, Overpass `leisure=marina` within 15 km), only when a new fill is opened, cached per ~100 m, with a generic User-Agent (no personal data). Tests use a fake: never reach the internet from a test.
+- Deleting an entry always asks first, *Keep it* the default. The page never rebuilds an open form on a poll.
+- Verify: `testsun_all.py enginelog` (or `.venv\Scripts\python.exe -m unittest test_enginelog` in the module). Release: `VERSION` in `enginelog/__init__.py` and its CHANGELOG.
 
 ## BoatGuard and the washer (`modules/guard`, `modules/washer`)
 
