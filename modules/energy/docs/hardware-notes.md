@@ -149,7 +149,7 @@ Float protection at all. There is deliberately no MasterShunt fallback (see abov
 
 Tools run from the project folder as `py -m tools.<name>` (the web server must be stopped first: it holds the USB Link and the
 Bluetooth radio). Tools marked **writes** change device state and require an explicit confirmation flag. The tests are listed in
-[`MANUAL.md`](MANUAL.md#92-tests).
+[`TECHNICAL.md`](TECHNICAL.md) (*Developer guide*).
 
 | Tool | Purpose |
 |---|---|
@@ -159,7 +159,6 @@ Bluetooth radio). Tools marked **writes** change device state and require an exp
 | `tools.capture_hid [--seconds N]` | Print the raw HID input reports of the USB Link (read-only; for a capture of MasterAdjust use USBPcap, below) |
 | `tools.reversible_write_test <device> --confirm-write` | **writes** - switch a Mass Charger, the ECU (field 43) or Solar to the opposite state with the verified control code, verify, restore |
 | `tools.cache_product_images [--force]` | Download the tile product photos into `static/products/` |
-| `tools.build_manual` | Build `docs/manual.html` from `docs/MANUAL.md` |
 | `python -m mastervolt.reports.battery_health` | Read-only battery health report from the stored history (verdict per battery, cell resistance, current sharing, alarms, balancers); `--split` compares before/after a change; also available in the app under History → Reports |
 | `tools\find_masterbus_usb.ps1`, `tools\ecu_capture_session.ps1` | USB Link detection and guided USBPcap capture |
 

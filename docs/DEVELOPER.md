@@ -1,7 +1,7 @@
 # Drifter Boat Systems — developer guide
 
 How the code is organised and how to change it safely. Running the live system: [RUNBOOK.md](RUNBOOK.md). Using the
-app: [MANUAL.md](MANUAL.md). The rules for Claude Code (and for anyone): [../CLAUDE.md](../CLAUDE.md).
+The rules for Claude Code (and for anyone): [../CLAUDE.md](../CLAUDE.md).
 
 ## 1. Architecture
 
@@ -51,17 +51,17 @@ Every module server (`common/service.py` for anchor, guard and washer; MasterVol
 drifter.py, drifterd.py, supervisor.py   gateway, service, supervisor
 modules.json                             per server: folder, command, port, health, pre-check; the key files to back up
 web/                                     the app: index.html, app.css, main.js, core/*.js, energy/anchor/guard/washer.js
-modules/energy   MasterVolt YMS (package mastervolt/, its own tests and manual docs/MANUAL.md)
+modules/energy   MasterVolt YMS (package mastervolt/, its own tests and docs/TECHNICAL.md)
 modules/anchor   anchor watch (package anchor/, orca_reader.py)
 modules/guard    BoatGuard (package guard/)
 modules/washer   VIOMI controller (package washer/)
 common/          shared by gateway, drifterd and modules (stdlib, except service.py): net, web, logs, timefmt, pushover, proc, service
 tools/           sync_envs, verify_live, backup, mock_upstreams, privacy_scan, install_service.ps1, session0_check, ...
 tests/           gateway/supervisor/drifterd/common tests, run_all.py, ui/ (browser tests)
-docs/            RUNBOOK.md, DEVELOPER.md, MANUAL.md (the user manual, also served by the app)
+docs/            RUNBOOK.md, DEVELOPER.md
 ```
 
-Each module has its own README and CHANGELOG; MasterVolt also `docs/MANUAL.md` (the energy system in depth) and
+Each module has its own README and CHANGELOG; MasterVolt also `docs/TECHNICAL.md` (the energy system in depth) and
 `docs/hardware-notes.md`.
 
 ## 3. Environments
@@ -91,9 +91,7 @@ environment by hand. Node (`package.json`: Playwright, TypeScript) is a developm
 - `sw.js` caches only the shell; `api/` is never cached. Its `CACHE` name is filled in by the gateway (version + a fingerprint
   of `web/`), so every deploy of `web/` reaches the home-screen apps without a version bump.
 - `npm run typecheck` (`tsc --checkJs`, JSDoc types, `web/types.d.ts` for browser facts) must stay at 0 errors.
-- The user manual is `docs/MANUAL.md`; `py -3.12 tools\build_manual.py` turns it into `web/manual.html` (System → *Manual*,
-  the app's theme, a "‹ Drifter" button back). `tests/test_manual.py` fails until the page is rebuilt. Change the manual with
-  every change a user can see.
+- There is no user manual for now (removed on 2026-11-06, the user's choice): new manuals per tab will follow.
 
 ## 5. Tests
 

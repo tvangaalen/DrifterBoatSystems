@@ -1,7 +1,6 @@
 # Drifter Boat Systems — runbook
 
-How to run, check, update and recover the boat PC's systems. For what the app shows, see the user manual (System →
-*Manual* in the app, or [MANUAL.md](MANUAL.md)); for how the code is built, [DEVELOPER.md](DEVELOPER.md).
+How to run, check, update and recover the boat PC's systems. For how the code is built, see [DEVELOPER.md](DEVELOPER.md).
 
 All times are 24-hour. Paths are the boat PC's.
 

@@ -1,68 +1,10 @@
-# Mastervolt Energy - Manual
+# Mastervolt Energy - technical guide
 
-**Version 3.0.1** - the complete guide to using, operating and maintaining the application. It explains what every screen
-shows, how every number is obtained, what the application does on its own (Float protection, Bluetooth recovery, history),
-which files it keeps, what to do when something goes wrong, and how the code is organised for whoever changes it next.
+How the energy server works, for whoever runs, maintains or changes it: the safety model, how every number is obtained,
+files, the API, operations and the developer guide. The user manuals were removed on 2026-11-06 (new ones per tab will
+follow); this is what remains of the former manual's technical chapters.
 
-How to read it: chapters 1-2 are for everybody, 3-4 for the person using the app on the boat, 5-8 for the person who runs and
-maintains it, 9-10 for the person who changes the code.
-
----
-
-## 1. What the application does
-
-Mastervolt Energy is a private web application for a boat's electrical system. It runs on a Windows PC that stays on board
-and is used from a phone or a browser on the boat's own network. It does four things:
-
-1. **Shows** what the system is doing right now: shore power, house charger, solar, alternator, the three batteries and every
-   load, in volts, amps and watts, plus the state of charge of the house bank.
-2. **Controls** the equipment: inverter, house charger, shore-power AC limit, `AC IN support`, the two Mass chargers, the Solar
-   controller, the alternator regulator and the Yanmar engine ECU - singly, or together as the operating modes *Motor*,
-   *Anchor*, *Marina* and *Sail*.
-3. **Protects** the house batteries: when any single cell of the three lithium batteries gets too high, it switches the
-   charging sources to Float by itself, and back to Bulk when every cell has come down. This runs on the PC, whether or not a
-   phone is connected.
-4. **Remembers**: every ten seconds the picture is stored, so you can look back hours or weeks, see totals per source and per
-   consumer, review alarms, and generate a battery health report.
-
-### The equipment it talks to
-
-| Equipment | Connection | What the application does with it |
-|---|---|---|
-| CombiMaster (shore power, inverter, house charger) | MasterBus, USB Link | measures; switches inverter, charger, `AC IN support`; sets the AC limit; Float/Bulk events |
-| Solar ChargeMaster | MasterBus | measures; On/Off; Float/Bulk events |
-| Alpha Pro alternator regulator | MasterBus | measures; *Stop charge* On/Off; Float/Bulk events |
-| Two Mass chargers (start battery, bow-thruster battery) | MasterBus | measures their input; On/Standby |
-| Yanmar engine ECU interface | MasterBus | measures; ECU power On/Off (always with a safety confirmation) |
-| Three MasterShunts (house, start, bow battery) | MasterBus | voltage, current, battery type and capacity; SOC of the start and bow batteries |
-| Three DALY BMS units (`BATTERY 1`-`3`) | Bluetooth LE | cell voltages, temperatures, alarms, SOC, charge/discharge MOSFET state and control, Set SOC |
-| Three DALY balancers (`DL-BAL1`-`3`) | Bluetooth LE | read-only: cell voltages, balance current, which cell is being balanced |
-
-The MasterBus connection is the **Mastervolt USB Link**, a USB device on the PC. The Bluetooth connections use the PC's own
-Bluetooth adapter.
-
-### The software in one picture
-
-```text
-   phone / browser  ──HTTPS──►  FastAPI web server (this PC)  ──►  the page itself (HTML, CSS, JavaScript)
-                                       │
-        ┌──────────────────────────────┼───────────────────────────────┐
-        ▼                              ▼                               ▼
-   MasterBus service              Bluetooth services               History service
-   poller + cache + controls      BMS workers (persistent)         recorder → SQLite database
-   energy model, Float protection balancer worker                  chart cache, energy totals
-        │                              │
-        ▼                              ▼
-   Mastervolt USB Link            Bluetooth radio (one gate:
-   (HID, one at a time)           the "coordinator")
-```
-
-Everything is one Python process. The browser never talks to the equipment: it asks the server for the latest cached picture
-(`GET /api/energy`, once a second) and sends commands, which the server carries out and verifies.
-
----
-
-## 2. Safety model
+## Safety model
 
 The application writes to real equipment: a charger, the inverter, the alternator regulator, the engine ECU and the battery
 MOSFETs. These rules are built in and are the reason the code is cautious.
@@ -92,203 +34,7 @@ MOSFETs. These rules are built in and are the reason the code is cautious.
 
 ---
 
-## 3. Installation and first start
-
-### 3.1 Requirements
-
-* Windows 10/11 with the **Mastervolt USB Link** attached and a **Bluetooth adapter**.
-* The python.org **Python 3.12** with the environment built from the repository's `uv.lock`
-  (`py -3.12 tools\sync_envs.py` in the Drifter Boat Systems checkout; never `pip install` by hand).
-* OpenSSL (on `PATH`, or in the FireDaemon OpenSSL folder) for the certificate set-up.
-
-### 3.2 Folders
-
-* The code: `C:\Drifter\modules\energy` (a git checkout of Drifter Boat Systems; never edited by hand).
-* The runtime files: `C:\DrifterData\energy` — `user_settings.json`, the history database `data\history.sqlite3`,
-  `backups\` and `logs\`. The CA stays in `certs\` of the code folder.
-
-### 3.3 HTTPS and the phone
-
-Since 3.0 the phone reaches Energy through the Drifter app, whose server (the Drifter gateway) serves HTTPS with a certificate
-from the private certificate authority that lives here, `Mastervolt Local CA` (`certs\`, created once by
-`setup_local_https.ps1`; never remove or recreate it, or every phone must be set up again). One-time phone set-up (profile install
-and trust) is in `docs/local-https.md`. This server itself serves plain HTTP on 127.0.0.1 and has no page of its own.
-
-### 3.4 Starting and stopping
-
-**On the boat (Drifter Boat Systems, since 2.2.0)** the Windows service *Drifter* starts the server as
-`python -m mastervolt` and keeps it running; restart and stop it from the Drifter app's System page. It then serves plain
-HTTP on 127.0.0.1:8000 under the Drifter module contract: only the Drifter gateway on this PC calls it, with the token the
-service gives both (`X-Drifter-Token`; every request without it but `GET /health` is refused). The phone reaches the
-dashboard through the Drifter app, which serves HTTPS with a certificate from the same Mastervolt Local CA. The CA stays in
-`certs\` of this folder; never remove it. There is no other way to start it: never start a second server by hand, it would compete for the USB Link and the
-Bluetooth radio.
-
-* After a stop or crash the service starts it again within a minute; Float protection is not active while it is stopped.
-* A server that "does not respond" while its process is alive: `netstat -ano | findstr :8000`. No `LISTENING` line means it
-  is stuck shutting down; *Restart* it from the System page. It limits that wait itself (`timeout_graceful_shutdown=5`).
-
-Before the first start after changing control code, check the mappings:
-
-```powershell
-py -m tools.show_fields
-```
-
-`engine_ecu` must show `verified True`, address `3AE394`, field `43`.
-
-### 3.5 Installing on the phone
-
-Install the Drifter app (Drifter Boat Systems): open its address in Safari, then *Share → Add to Home Screen*. Energy is one of
-its pages.
-
----
-
-## 4. Using the application
-
-### 4.1 The basics
-
-Since 3.0 the screens are the **Energy** page of the Drifter app, with four views at the top: **Now** (the control panel of
-section 4.2), **Batteries** (the BMS page, 4.3), **History** (4.4, with the reports and this manual) and **Settings** (4.5). The
-sections below describe what each view shows and does; the Drifter app arranges them in its own design and themes, and its
-manual (Drifter Boat Systems) describes the screens themselves. When this server cannot be reached the page says so and keeps
-showing the last values.
-
-### 4.2 Control panel
-
-Three sections, each with a total in its header, and a row of operating modes at the bottom.
-
-**Sources** (*Total DC Input*): what feeds the 12 V system.
-
-| Tile | Shows | Button |
-|---|---|---|
-| **Shore Power** | connected or not, frequency, voltage/amps/watts of the AC input | the **AC limit (A)** box (3-15 A, whole numbers) sets the CombiMaster's input limit; **SUP** switches `AC IN support` (blinks while it is actually supporting) |
-| **Charger House** | the CombiMaster's charge state (Off/Bulk/Absorption/Float) and its DC output | ON/OFF: the CombiMaster charger |
-| **Alternator** | state (Off/Bulk/Absorption/Float/Stopped), temperature, estimated output | ON/OFF: *Stop charge* (OFF asks for confirmation) |
-| **Solar** | charge state, PV voltage, charge current and power | ON/OFF: the Solar controller (it may fall straight back to OFF at night - that is the controller, not a fault) |
-
-**Storage**: the three batteries as arc gauges. **House Battery** is the lithium bank: its SOC is the *average of the three DALY
-BMS units*, shown only while their readings are fresh (otherwise the gauge shows "-"). Start and Bow use their MasterShunt SOC.
-Below each name: battery type and capacity. A negative current is a discharge; the header says *Charging*, *Discharging* or
-*Idle*. A discharge above 100 A is highlighted.
-
-**Loads** (*Total DC Load*; AC loads are listed but not added): **House AC loads**, **Inverter** (its DC draw only while it is
-actually *Inverting* or *Supporting*), **Charger Start** and **Charger Bow** (Mass chargers; their *input* is the load; ON/OFF
-= On/Standby), **Engine ECU** (input current is *estimated* from its output at 85% efficiency; ON/OFF with the safety
-confirmation), **Alternator** (the regulator's own field current) and **Other DC loads**.
-
-The columns are always *kind* (AC/DC), volts, amps, watts.
-
-**Operating modes** - four buttons that carry out a whole set of switch actions, each verified:
-
-| Mode | What it does |
-|---|---|
-| **Motor** | inverter OFF, Engine ECU ON, Solar ON, both Mass chargers ON, Alternator ON, house charger OFF |
-| **Anchor** | inverter OFF, house charger OFF, Alternator OFF, Solar ON, both Mass chargers OFF |
-| **Marina** | inverter ON, `AC IN support` ON, AC limit = the *Default AC limit* from Settings, Alternator OFF, Solar ON, both Mass chargers ON, house charger ON |
-| **Sail** | inverter OFF, house charger OFF, Alternator OFF, Solar ON, both Mass chargers OFF, Engine ECU ON |
-
-Every action is attempted; if some fail, the rest still run and the failures are reported together. The mode you applied last
-stays **highlighted, for every phone** - the server remembers it - until you switch any device individually (then no mode
-highlight remains). The highlight is not remembered over a server restart.
-
-**Float notices.** When Float protection switches the sources to Float (or back to Bulk) a message appears and stays until you
-press OK: it names the battery and cell voltage that triggered it.
-
-### 4.3 BMS page
-
-The page shows the three batteries side by side, with each battery's balancer merged into the same column
-(balancer *n* belongs to battery *n*).
-
-**Top buttons.** **Refresh BMS** reads all three batteries now. **Refresh BAL** reads all three balancers now (it is greyed
-out while a refresh you started is still running). Under them, two status lines say when each was last updated. Tapping a
-battery's name refreshes just that battery; tapping a balancer's status line refreshes just that balancer.
-
-**Battery tiles** (one per battery):
-
-* the **SOC gauge** - below it volts, amps and °C;
-* the **balancer bars**: one bar per cell, drawn *around the balancer's own average voltage* (the horizontal line; its value,
-  with the unit, is on the left, and on the right the **maximum difference** between the cells in mV). The lowest cell is blue,
-  the highest red, the others green. A cell the balancer is balancing right now has a ⚡ above or below its bar, and the balance
-  current is printed under the chart. A bar that **blinks red** is a cell whose *BMS* reading is at or above the Float trigger
-  voltage. Without a fresh balancer reading, the bars fall back to the BMS cell values and the figures are dimmed.
-
-**The table below the tiles**, one column per battery:
-
-* **STATUS** - *Ah remaining* and *kWh remaining* (Ah × 13.2 V nominal), *Alarms*, *Cycles*, *SOC - Charging* and
-  *SOC - Discharging* (the SOC read from the average cell voltage on a charging or a discharging reference curve - comparison
-  figures), and the **Set SOC** buttons (below).
-* **BALANCING** - the balancer's *Balance status* (Active/Inactive), *Balance current*, *Balance position* (which cells are being
-  balanced) and its *Temperature*. The column header shows the balancer's own state and age.
-* **CELLS** - *Average*, *Max difference* and one row per cell, all from the BMS (the balancer's readings are in the tile bars and the
-  BALANCING section). The lowest and highest cells carry a blue and a red dot.
-* **CONTROL** - **Charge** and **Discharge** MOSFET switches for each battery (green = ON), and **All charge / All discharge** for
-  all three. Switching a MOSFET OFF is only offered while it is safe: *Charge OFF* while the battery's current is zero or positive
-  (it is not being discharged through that path), *Discharge OFF* while the current is zero or negative. A disabled button's
-  tooltip says why.
-
-**Set SOC.** The BMS keeps its own state of charge by counting current; it drifts until it is re-anchored. *Set SOC* writes a new
-value to the BMS: **Charge %** or **Discharge %** (the value from the voltage curve), **100%**, or a **Manual %** you type. It is
-offered per battery and for all batteries. When Float protection freshly starts, every battery is set to 100% automatically once
-(the triggering cell is at the Float voltage, so the battery is effectively full).
-
-**Controls are guarded.** A Charge/Discharge or Set SOC command asks for confirmation (switching a battery off while it carries
-current is serious), waits for the Bluetooth queue, writes, reads back, and shows a progress message. All three batteries must
-be connected before an *All* command; if one step fails, the command stops and says which batteries were changed and which were
-not.
-
-### 4.4 History
-
-Header: **Update** (loads everything newer from the server) and five tabs: **Sources**, **Storage**, **Loads**, **Alarms**,
-**Reports**.
-
-**Choosing the period.** The buttons **4 h, 12 h, 24 h, 3 d, 7 d, All** select the period ending now (the page opens on
-**4 h**). **Custom** shows *From* and *To* sliders for any period; **Zoom** narrows the selected period further, without
-changing it; *Reset zoom* undoes the zoom. The charts' time axes use whole hours or days. A short period (up to 48 h) is
-fetched at full resolution as soon as it is selected, so nothing is missing from the curve.
-
-**The tabs.**
-
-| Tab | Charts | Totals (donut) |
-|---|---|---|
-| **Sources** | *Generated power* (stacked: Charger House, Alternator, Solar, with a smooth Total line; the left axis in watts is stepped in 250 W, the right axis in amps from 0 in steps of 10 A), *Source conditions* (shore voltage on the left axis together with the shore current on the right axis, 0-20 A in steps of 5 A; solar panel voltage; alternator temperature; axes from zero) and *Shore power intake* (the AC power taken in from shore power, with **Total kWh intake over the selected period** underneath, summed on the server from the full-resolution history) | energy delivered by each source in the period |
-| **Storage** | *Remaining* energy (kWh), *Charge/discharge* (watts on the left axis, amps on the right), per-battery *Voltage* and *Cell voltages* with a selectable battery | energy in and out of each battery |
-| **Loads** | *Consumption*, stacked per consumer with a total line (watts and amps) and the AC loads | energy per consumer |
-| **Alarms** | a timeline of every BMS alarm and MOSFET change, with per-battery metrics | alarm episodes and samples per battery |
-| **Reports** | the **battery health report**, and a **Manual** button that opens this manual in a separate window | - |
-
-Tapping a name in a chart legend highlights that series. The donuts show the **exact totals from the full-resolution
-history**, not the sampled chart data; the line under a donut says how much of the period was actually recorded (a gap while
-the server or Bluetooth was down is not counted).
-
-**Battery health report.** *Reports → Battery health report* asks for a number of days (1-365), runs the analysis on the server
-in a separate low-priority process (it cannot slow down the measurements) and shows the result: a verdict per battery, cell
-connection resistance, how the parallel batteries share the current, cell-voltage exposure, alarms, Bluetooth reliability, the
-balancers and the start/bow batteries. Only one report runs at a time. Some cells show a dash on purpose: the resistance analysis only uses load steps while the bank is between 30% and 90% SOC (the flat part of the LiFePO4 curve), so after days at 99-100% SOC the recent rows are empty - that is missing qualifying data, not a failure.
-
-### 4.5 Settings
-
-Values are checked on the phone and again on the server; **Save settings** stores them in `user_settings.json`.
-
-| Setting | Range | What it does |
-|---|---|---|
-| **Default AC limit** | 3-15 A | the shore-power limit that *Marina* mode applies |
-| **Float protection** | ON/OFF | the master switch of the cell-voltage protection (section 5.3); OFF clears any Float latch |
-| **Switch to Float when any cell reaches** | 3300-3650 mV (default 3500) | the trigger; the highest single cell of any battery |
-| **Switch to Bulk once every cell is at or below** | 3200-3650 mV (default 3420) | the resume level; at least 30 mV below the trigger |
-| **BMS refresh interval** | 5-300 s | how often each battery's status is read (all three in parallel) |
-| **BMS connection retry** | 1-300 s | the first wait after a battery connection fails (it doubles per failure, up to 60 s) |
-| **Balancer refresh interval** | 5-300 s | how often each balancer is read |
-| **Balancer connection retry** | 5-300 s | the first wait after a balancer fails (doubles, up to 5 minutes) |
-| **BMS pop-up duration** | 1-60 s | how long information pop-ups stay |
-| **Save history period** | 1-365 days | measurements older than this are deleted automatically |
-
-Below the settings, the **database status** shows the size, the number of records per source, the oldest and newest record, the
-growth per day, the expected size at the chosen period, the free space in the file and on the disk, and the size of the chart
-cache in memory. A **Manual** link opens this manual.
-
----
-
-## 5. How it works
+## How it works
 
 ### 5.1 Architecture
 
@@ -468,7 +214,7 @@ silently: the first occurrence of each problem is logged with its traceback, rep
 
 ---
 
-## 6. Files and folders
+## Files and folders
 
 | Path | What it is | In Git? |
 |---|---|---|
@@ -492,7 +238,7 @@ is public.
 
 ---
 
-## 7. API reference
+## API reference
 
 Interactive documentation is at `/docs` while the server runs. All bodies are JSON. Errors have `{"detail": "..."}`; the
 browser shows `detail` to the user.
@@ -521,7 +267,7 @@ browser shows `detail` to the user.
 
 ---
 
-## 8. Operating and maintaining
+## Operating and maintaining
 
 ### 8.1 Day to day
 
@@ -570,7 +316,7 @@ protection for the minute it takes). The procedure, verification and rollback ar
 
 ---
 
-## 9. Developer guide
+## Developer guide
 
 ### 9.1 Layout
 
@@ -593,7 +339,7 @@ mastervolt/
                        bluetooth, history, reports; deps (Services dependency, error mapping)
 tools/                 diagnostic CLIs (py -m tools.<name>)
 tests/                 test_*.py, fakes, golden/*.json, run_all.py
-docs/                  MANUAL.md, hardware-notes.md, VERIFIED_FIELD_MAP.txt, local-https.md, device-schemas/, archive/
+docs/                  TECHNICAL.md, hardware-notes.md, VERIFIED_FIELD_MAP.txt, local-https.md, device-schemas/, archive/
 ```
 
 Dependencies point one way: `api` → `runtime` → services → protocol/IO modules. Nothing below `api` imports FastAPI; nothing in
@@ -690,7 +436,7 @@ All run from the project folder with the server **stopped**; the read-only ones 
 
 ---
 
-## 10. Glossary
+## Glossary
 
 | Term | Meaning |
 |---|---|

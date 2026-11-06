@@ -20,11 +20,10 @@ viomi-w1-controller, now archived on GitHub); their history and release tags are
 
 ## Documentation
 
-- **[User manual](docs/MANUAL.md)** — what every page shows and does (also in the app: System → *Manual*).
 - **[Runbook](docs/RUNBOOK.md)** — running the boat PC: start, restart, update, check, back-up, recovery.
 - **[Developer guide](docs/DEVELOPER.md)** — architecture, the module contract, environments, tests, releases.
 - [CHANGELOG.md](CHANGELOG.md), and each module's own README and CHANGELOG under `modules/`; the energy system in depth:
-  [modules/energy/docs/MANUAL.md](modules/energy/docs/MANUAL.md).
+  [modules/energy/docs/TECHNICAL.md](modules/energy/docs/TECHNICAL.md). User manuals per tab will follow.
 
 ## What the app does
 

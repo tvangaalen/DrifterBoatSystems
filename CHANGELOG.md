@@ -37,6 +37,9 @@
   100 W / 5 A steps
 - Energy flow: shore power out of the DC balance and shown on its own with the net; HOUSE BANK label in the bar;
   batteries charged left, discharged right
+- Tabs open on their first view; anchor map colours per light/dark and Fit one zoom closer; Float protection Pushover
+  notification with a switch; energy Save sends every setting again; all manuals removed (energy technical chapters kept
+  as docs/TECHNICAL.md); no pictures in the BoatGuard and Washer tiles
 
 ## 1.2
 

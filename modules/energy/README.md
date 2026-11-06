@@ -10,9 +10,9 @@ Mastervolt electrical system and its DALY battery management, from a Windows PC 
 - **DALY Bluetooth** for the three house-battery BMS units (`BATTERY 1`–`3`) and the three balancers (`DL-BAL1`–`3`).
 - **FastAPI** backend (the `mastervolt` package), SQLite measurement history; the page is the Drifter app's (since 3.0).
 
-**The complete guide is the [manual](docs/MANUAL.md)** (also served by the app at `/manual`): what every screen shows, how
-every number is obtained, Float protection, the Bluetooth design, files, API, operations, troubleshooting and the developer
-guide. Release history: [CHANGELOG.md](CHANGELOG.md). Protocol findings and field maps: [docs/hardware-notes.md](docs/hardware-notes.md).
+**The technical guide is [docs/TECHNICAL.md](docs/TECHNICAL.md)**: the safety model, how every number is obtained, Float
+protection, the Bluetooth design, files, API, operations, troubleshooting and the developer guide. (The user manual was
+removed on 2026-11-06; manuals per tab will follow.) Release history: [CHANGELOG.md](CHANGELOG.md). Protocol findings and field maps: [docs/hardware-notes.md](docs/hardware-notes.md).
 
 ## Pages
 
@@ -21,7 +21,7 @@ guide. Release history: [CHANGELOG.md](CHANGELOG.md). Protocol findings and fiel
 | **Control panel** | Sources, Storage and Loads tiles with live V/A/W and an arc-gauge SOC; ON/OFF controls; Motor / Anchor / Sail / Marina modes (the last one applied is remembered server-side and highlighted for every browser); shore-power AC limit; `INV` and `SUP`; Engine ECU power with a safety confirmation |
 | **BMS** | The three batteries side by side with their balancers: SOC gauge, V/A/°C and per-cell balancer bars in each tile; a table with status, balancing, the BMS cell voltages and Charge/Discharge controls; Set SOC (curve, 100% or a manual percentage); separate Refresh BMS and Refresh BAL |
 | **History** | Sources, Storage, Loads and Alarms charts from a server-side cache, with 4 h … All, Custom and Zoom ranges and a donut with exact totals per tab; a Reports tab with the battery health report |
-| **Settings** | Default AC limit, Float protection thresholds, refresh/retry intervals, history retention, database status, a link to the manual |
+| **Settings** | Default AC limit, Float protection thresholds, refresh/retry intervals, history retention, database status |
 
 Swipe left/right moves between pages on touch devices. A light UI (for sunlight) and a dark UI are available from the header.
 
@@ -57,7 +57,7 @@ mastervolt/             the application
   settings.py, soc.py, runtime.py, app.py, config.py, logs.py
 tests/                  hardware-free tests, simulated USB/Bluetooth, golden files from the verified 1.22.2 release
 tools/                  diagnostic command-line tools (py -m tools.<name>)
-docs/                   MANUAL.md (+ manual.html), hardware notes, verified field map, HTTPS guide, device schemas
+docs/                   TECHNICAL.md, hardware notes, verified field map, HTTPS guide, device schemas
 control_maps.json, mastershunt_config_maps.json     verified device/control mappings
 certs/, setup_local_https.ps1, install_*_certificate.cmd     local HTTPS
 ```
@@ -80,7 +80,7 @@ application against a simulated USB Link and Bluetooth stack.
 
 Python is formatted with black and checked with ruff (`pyproject.toml`).
 These are development tools only and are not needed to run the server. The release procedure, the rules that must not be broken
-and how to add a setting, field, control or page are in the manual, chapter 9.
+and how to add a setting, field, control or page are in docs/TECHNICAL.md, *Developer guide*.
 
 ## License and disclaimer
 
