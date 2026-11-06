@@ -57,7 +57,7 @@ class GatewayTest(unittest.TestCase):
         self.assertEqual(code, 200); self.assertEqual(Recorder.seen[-1]["path"], "/api/energy")
 
     def test_unknown_route_is_404_and_not_sent(self):
-        for path in ("/api/power/api/history/export", "/api/power/local-ca.cer", "/api/guard/", "/api/washer/api/program/abc", "/api/nope/x"):
+        for path in ("/api/power/api/history/export", "/api/power/local-ca.cer", "/api/power/manual", "/api/guard/", "/api/washer/api/program/abc", "/api/nope/x"):
             code, _ = self.req("GET", path); self.assertEqual(code, 404, path)
         code, _ = self.post("/api/power/api/bms/4/set-soc-100"); self.assertEqual(code, 404)   # only batteries 1-3
         code, _ = self.post("/api/power/api/bms/1/set-soc-50"); self.assertEqual(code, 404)    # a value goes in the body
@@ -67,7 +67,8 @@ class GatewayTest(unittest.TestCase):
     def test_soc_calibration_and_reports_pass(self):
         for path in ("/api/power/api/bms/2/set-soc-charge", "/api/power/api/bms/set-all-soc/value", "/api/power/api/reports/battery-health"):
             code, _ = self.post(path, {"percent": 80} if path.endswith("value") else {}); self.assertEqual(code, 200, path)
-        for path in ("/api/power/manual", "/api/power/api/history/status", "/api/power/api/version"):
+        self.assertEqual(self.post("/api/power/api/notifications", {"float_notification": False})[0], 200)
+        for path in ("/api/power/api/notifications", "/api/power/api/history/status", "/api/power/api/version"):
             self.assertEqual(self.req("GET", path)[0], 200, path)
 
     def test_get_is_not_a_command(self):

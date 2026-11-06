@@ -249,18 +249,6 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 /* Overview tiles with a picture on the right (BoatGuard: guard.js wallCam, red square while armed; Washer: washer.js washerPic) */
 .tile-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
 .tile-row>div:first-child{min-width:0}
-.tile-pic{width:64px;height:64px;border-radius:18px;flex:none;display:grid;place-items:center;background:var(--card2)}
-.tile-pic svg{width:52px;height:52px}
-.wallcam .c0{stop-color:var(--cam-0)}.wallcam .c2{stop-color:var(--cam-2)}.wallcam .v0{stop-color:var(--cam-visor-0)}.wallcam .v1{stop-color:var(--cam-visor-1)}
-.wallcam .l0{stop-color:var(--cam-lens-0)}.wallcam .l1{stop-color:var(--cam-lens-1)}.wallcam .l2{stop-color:var(--cam-lens-2)}.wallcam .l3{stop-color:var(--cam-lens-3)}
-.wallcam .ol{stroke:var(--cam-line);stroke-width:3.5;stroke-linejoin:round}.wallcam .ring{fill:var(--cam-ring)}.wallcam .dark{fill:var(--cam-dark)}
-.washpic .w0{stop-color:var(--wm-0)}.washpic .w1{stop-color:var(--wm-1)}.washpic .w2{stop-color:var(--wm-2)}
-.washpic .q0{stop-color:var(--wm-glass-0)}.washpic .q1{stop-color:var(--wm-glass-1)}.washpic .q2{stop-color:var(--wm-glass-2)}
-.washpic .ol{stroke:var(--cam-line);stroke-width:3.5;stroke-linejoin:round}.washpic .foot,.washpic .line{fill:var(--cam-line);stroke:var(--cam-line)}
-.washpic .knob{fill:var(--wm-1)}.washpic .ring{fill:var(--wm-ring)}.washpic .lcd{fill:var(--wm-lcd);stroke:var(--cam-line);stroke-width:2}
-.washpic .digits{fill:var(--wm-digit);font:700 9px ui-monospace,monospace}.washpic .led{fill:var(--wm-led)}.washpic .spot{fill:var(--cam-shine);opacity:.75}
-.wallcam .shine{fill:none;stroke:var(--cam-shine);stroke-opacity:.6;stroke-width:3;stroke-linecap:round}.wallcam .spot{fill:var(--cam-shine);opacity:.85}
-.tile-pic.armed{background:color-mix(in srgb,var(--bad) 20%,transparent)}
 
 /* SOC meter (Overview tile): half arc red → orange → green with a needle; the SVG comes from energy.js meter() */
 .meter-row{display:flex;align-items:center;justify-content:space-between;gap:20px}
@@ -547,3 +535,6 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--ctl);border-radius:20px;padding:5px 11px;font-size:12.5px;color:var(--muted)}
 .chip b{color:var(--fg);font-variant-numeric:tabular-nums}.chip i{width:9px;height:9px;border-radius:2px;display:inline-block}
 .bflow .bz{width:1px;height:16px;background:var(--muted);flex:none}.bflow.hint{font-size:11px;padding-top:0}
+/* anchor Settings: the map colour pickers (light and dark) */
+.colpick{width:48px;height:38px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--card2);cursor:pointer;flex:none}
+.colhd{width:48px;flex:none;text-align:center;font-size:12px;color:var(--muted)}.colpair{display:flex;gap:10px;flex:none}

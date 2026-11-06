@@ -28,7 +28,6 @@ SUITES = [  # (name, folder, command)
     ("verify-live", ROOT, [sys.executable, "tests/test_verify_live.py"]),
     ("watchdog", ROOT, [sys.executable, "tests/test_watchdog.py"]),
     ("backup", ROOT, [sys.executable, "tests/test_backup.py"]),
-    ("manual", ROOT, [sys.executable, "tests/test_manual.py"]),
     ("ship", ROOT, [sys.executable, "tests/test_ship.py"]),
     ("energy", ROOT / "modules/energy", [python("energy"), "-m", "tests.run_all"] + (["quick"] if QUICK else [])),
     ("anchor", ROOT / "modules/anchor", [python("anchor"), "-m", "unittest", "test_anchor_watch", "test_anchor"]),

@@ -20,9 +20,7 @@ def main():
     changelog = (PATHS.base / "CHANGELOG.md").read_text(encoding="utf-8")
     newest = re.search(r"^### (\d+\.\d+\.\d+)", changelog, re.M).group(1)
     assert newest == version, f"CHANGELOG.md's newest entry is {newest}, the version is {version}"
-    manual = (PATHS.base / "docs" / "MANUAL.md").read_text(encoding="utf-8")
-    assert f"version {version}" in manual.lower().replace("**", ""), "docs/MANUAL.md must state the version it describes"
-    print(f"Version {version}: README, CHANGELOG and the manual state it: OK")
+    print(f"Version {version}: README and CHANGELOG state it: OK")
 
 
 if __name__ == "__main__":

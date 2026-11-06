@@ -25,7 +25,7 @@ const SETTINGS = [   // [key, label, hint, min, max, step, unit] — the server'
   ["balancer_connection_retry_seconds", "Balancer reconnect after", "", 5, 300, 1, "s"],
   ["history_retention_days", "Keep history", "Lowering this deletes older history", 1, 365, 1, "days"],
 ];
-let view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
+let notif = null, view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
 const busy = new Set();
 const zoom = [0, 1000];     // History: the part of the period shown, in thousandths (two-handled slider; all charts)
 let zoomRaf = 0;
@@ -51,7 +51,8 @@ const m = {
                   D.api("power", `/api/history/contributions?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, undefined, {timeout: 45000}).then(d => contrib = d).catch(() => {}));
       }
     }
-    if (D.visibleIs("power") && view === "settings" && !setDirty) jobs.push(D.api("power", "/api/settings").then(d => settings = d).catch(() => {}));
+    if (D.visibleIs("power") && view === "settings" && !setDirty) jobs.push(D.api("power", "/api/settings").then(d => settings = d).catch(() => {}),
+      D.api("power", "/api/notifications").then(d => notif = d).catch(() => {}));
     await Promise.all(jobs);
   },
   badge() {
@@ -299,7 +300,7 @@ function bleCard() {
     <div class="card"><div class="log">${evs.map(e => `<div class="${/fail|error|timeout/i.test(e.kind) ? "warn" : ""}"><time>${esc(D.dayTime(Date.parse(e.time)))}</time><span class="msg"><b>${esc(e.device)}</b> ${esc(e.kind.replace(/_/g, " "))}${e.detail ? " · " + esc(e.detail) : ""}</span></div>`).join("") || `<div class="empty">No events</div>`}</div></div></details>`;
 }
 
-// ------------------------------------------------------------------ History (reports, manual, database; charts follow)
+// ------------------------------------------------------------------ History (reports, database; charts follow)
 function md(text) {     // the battery report is Markdown: headings, lists, tables, bold, code
   const inline = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
   const out = []; let list = false, table = [];
@@ -589,9 +590,7 @@ function renderHistory() {
             <button class="btn sm" type="button" id="eRepRun">Run report</button></div></div>
           <div class="row" id="eRepStatus"></div></div>
           <div class="mdreport" id="eRepOut" hidden></div></div></div>
-      <div class="stack"><div class="card"><div class="hd"><h3>History database</h3></div><div class="rows" id="eHStat"></div></div>
-        <div class="card pad"><a class="btn sec" href="api/power/manual" target="_blank" rel="noopener">${icon("ext")} Open the manual</a>
-          <p class="u-m-8-0-0 hint">The complete MasterVolt user manual, in a new window.</p></div></div></div>`;
+      <div class="stack"><div class="card"><div class="hd"><h3>History database</h3></div><div class="rows" id="eHStat"></div></div></div></div>`;
   }
   const running = r.state === "running";
   $("eRepRun").disabled = running;
@@ -619,11 +618,14 @@ function renderSettings() {
     ${SETTINGS.map(([k, l, h, lo, hi, step, u]) => lo === undefined
       ? `<div class="row"><div class="k"><b>${l}</b><small>${h}</small></div>${D.sw("es-" + k, settings[k])}</div>`
       : `<div class="row"><div class="k"><b>${l}</b>${h ? `<small>${h}</small>` : ""}</div><label class="numf"><input class="field" type="number" inputmode="decimal" id="es-${k}" min="${lo}" max="${hi}" step="${step}" value="${settings[k] ?? ""}" required><span class="u">${u}</span></label></div>`).join("")}
-    <div class="row"><span class="hint" id="eSetMsg"></span><button class="btn" type="submit" id="eSetSave" disabled>Save</button></div></div></form>`;
+    <div class="row"><span class="hint" id="eSetMsg"></span><button class="btn" type="submit" id="eSetSave" disabled>Save</button></div></div></form>
+    <div class="u-maxw-720 u-mt-12 card"><div class="rows"><div class="row"><div class="k"><b>Float protection notification</b>
+      <small>A Pushover message "Chargers switched to float" when Float protection starts${notif && !notif.pushover_configured ? " · Pushover is not set up on the boat PC" : ""}</small></div>
+      ${D.sw("en-float", notif ? notif.float_notification : false, notif ? "" : "disabled")}</div></div></div>`;
   validateSettings();
 }
 function readSettings() {
-  const o = {};
+  const o = {...settings};     // settings the page does not show (bms_popup_seconds) keep their saved value: the server wants them all
   for (const [k, , , lo, , step] of SETTINGS) { const el = $("es-" + k); o[k] = lo === undefined ? el.checked : (step >= 1 ? parseInt(el.value, 10) : parseFloat(el.value)); }
   return o;
 }
@@ -657,6 +659,8 @@ async function onChange(e) {
   const el = e.target; if (!el.matches('input[type="checkbox"]') || el.closest("#eSetForm")) return;
   const want = el.checked; el.checked = !want;                 // keep showing the real state until the server reads it back
   const id = el.id, d = m.state.data;
+  if (id === "en-float") return control(id, async () => { notif = await D.api("power", "/api/notifications", {float_notification: want}); $("eSet").dataset.built = ""; },
+    `Float protection notification ${want ? "on" : "off"}`);
   if (id === "ec-inverter") return control(id, () => D.api("power", "/api/control/inverter", {enabled: want}), `Inverter ${want ? "ON" : "OFF"}`);
   if (id === "ec-charger") return control(id, () => D.api("power", "/api/control/charger", {enabled: want}), `Charger House ${want ? "ON" : "OFF"}`);
   if (id === "ec-support") return control(id, () => D.api("power", "/api/control/ac-support", {enabled: want}), `AC IN support ${want ? "ON" : "OFF"}`);

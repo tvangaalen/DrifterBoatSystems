@@ -420,6 +420,9 @@ class AnchorWatch:
                     elif k == "own_mmsi":
                         v = str(v).strip()
                         if v and not (v.isdigit() and len(v) == 9): raise ValueError("My MMSI must be 9 digits (or empty)")
+                    elif k.startswith("col_"):
+                        v = str(v).strip().lower()
+                        if not re.fullmatch(r"#[0-9a-f]{6}", v): raise ValueError("A map colour must be #rrggbb")
                     elif k == "nmea_port":
                         try: f = float(v); v = int(f)
                         except (TypeError, ValueError, OverflowError): raise ValueError("NMEA port must be a whole number") from None

@@ -8,19 +8,6 @@ const label = s => s === "" ? "App default" : s === "none" ? "Silent" : s === "v
 let dirty = false, built = false, logLines = [], logT = 0, tickT = null;
 
 /** The tile's wall camera (outlined cartoon style): bracket, blue sunshield, grey body, big lens; colours from --cam-*. */
-const wallCam = () => `<svg class="wallcam" viewBox="4 10 112 100" aria-hidden="true"><defs>
-  <linearGradient id="gCamV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="v0"/><stop offset="1" class="v1"/></linearGradient>
-  <linearGradient id="gCamB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="c0"/><stop offset="1" class="c2"/></linearGradient>
-  <radialGradient id="gCamL" cx=".4" cy=".35" r=".7"><stop offset="0" class="l0"/><stop offset=".35" class="l1"/><stop offset=".75" class="l2"/><stop offset="1" class="l3"/></radialGradient></defs>
-  <rect class="ol" x="9" y="66" width="18" height="34" rx="5" fill="url(#gCamV)"/>
-  <path class="ol" d="M24 77h26a5 5 0 0 1 0 10H24z" fill="url(#gCamB)"/><path class="ol" d="M50 60h13v20H50z" fill="url(#gCamB)"/>
-  <circle class="ol" cx="56" cy="82" r="9" fill="url(#gCamB)"/><circle class="dark" cx="56" cy="82" r="4"/>
-  <path class="ol" d="M24 44c-1-6 3-9 8-9l50-3 12 32-58 4c-6 0-10-4-11-9z" fill="url(#gCamB)"/>
-  <path class="ol" d="M17 40c-1-12 8-17 20-18l57-4c11-1 18 4 17 14l-4 14-88 2z" fill="url(#gCamV)"/>
-  <path class="shine" d="M27 28c10-2 30-4 50-5"/>
-  <circle class="ol ring" cx="94" cy="56" r="20"/><circle class="dark" cx="94" cy="56" r="15"/>
-  <circle cx="94" cy="56" r="11" fill="url(#gCamL)"/><circle class="dark" cx="94" cy="56" r="4.2"/>
-  <ellipse class="spot" cx="89.5" cy="51" rx="3" ry="2"/><circle class="dark" cx="68" cy="58" r="2"/></svg>`;
 
 const m = {
   id: "guard", title: "BoatGuard", short: "Guard", icon: "guard", every: 4000, background: 8000,
@@ -53,8 +40,7 @@ const m = {
     const s = m.state.data; if (!s) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const h = m.hero(s), cam = s.camera || {};
     const tone = !s.enabled ? "" : s.arm_at && !s.armed_by_us ? "badc" : "good";   // off: plain; on: green; arming: red
-    return `<div class="tile-row"><div><div class="u-fs-22 big ${tone}">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div></div>
-      <span class="tile-pic ${cam.armed ? "armed" : ""}" title="${cam.armed ? "Camera armed" : "Camera disarmed"}">${wallCam()}</span></div>
+    return `<div class="tile-row"><div><div class="u-fs-22 big ${tone}">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div></div></div>
       <div class="minis"><div class="mini"><div class="l">Phone</div><div class="n ${s.present == null ? "" : s.present ? "good" : "badc"}">${s.present == null ? "–" : s.present ? "On board" : "Away"}</div></div>
       <div class="mini"><div class="l">Camera</div><div class="n ${cam.armed ? "badc" : ""}">${cam.armed == null ? "–" : cam.armed ? "Armed" : "Disarmed"}</div></div>
       <div class="mini"><div class="l">Battery</div><div class="n">${cam.battery == null ? "–" : cam.battery + "%"}</div></div></div>`;

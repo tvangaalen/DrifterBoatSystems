@@ -29,6 +29,7 @@ class Power:
         self.settings = {"default_ac_limit": 10, "float_protection_enabled": True, "float_cell_trigger_mv": 3550.0, "float_cell_resume_mv": 3375.0,
                          "bms_refresh_interval": 30, "bms_popup_seconds": 5, "bms_connection_retry_seconds": 5, "balancer_refresh_interval": 60,
                          "balancer_connection_retry_seconds": 30, "history_retention_days": 31}   # the v2 settings table
+        self.notif = {"float_notification": True, "pushover_configured": True, "last_sent": None, "last_error": None}
         self.active_mode = None; self.report = {"state": "idle", "days": None, "started_at": None, "finished_at": None, "duration_seconds": None, "markdown": None, "error": None}
 
     def energy(self):
@@ -125,6 +126,7 @@ class Power:
                 "records_per_day": 17469.3, "projected_bytes_at_retention": 1748263719}
 
     def post(self, path, body):
+        if path == "/api/notifications": self.notif["float_notification"] = bool(body["float_notification"]); return 200, self.notif
         if path == "/api/control/inverter": self.c["inverter"] = 1.0 if body["enabled"] else 0.0
         elif path == "/api/control/charger": self.c["charger"] = 1.0 if body["enabled"] else 0.0
         elif path == "/api/control/ac-support": self.c["support"] = 1.0 if body["enabled"] else 0.0
@@ -163,7 +165,9 @@ class Anchor:
         self.settings = {"default_radius": 40.0, "confirm_s": 10, "gps_timeout_s": 30, "core_timeout_s": 30, "min_depth": 0.0, "max_wind_kn": 0.0,
                          "bow_offset": 0.0, "gps_sources": "254", "own_mmsi": "", "pc_sound": True, "push_alerts": True, "alive_minutes": 60.0,
                          "internet_ais": True, "nfl_tracking": False, "nfl_on_anchor": False, "track_hours": 24, "bow_height": 1.2, "chain_formula": "5*(D+B)",
-                         "loa": 11.5, "min_ais_dist": 0.0, "pos_format": "dmm", "draught": 1.6, "transducer_depth": 0.4, "nmea_port": 10110}
+                         "loa": 11.5, "min_ais_dist": 0.0, "pos_format": "dmm", "draught": 1.6, "transducer_depth": 0.4, "nmea_port": 10110,
+                         "col_track_light": "#d1009a", "col_track_dark": "#ff3bd4", "col_limit_light": "#1b8a4b", "col_limit_dark": "#47c07a",
+                         "col_swing_light": "#d1009a", "col_swing_dark": "#ff3bd4"}
         self.track = []; self.gen = 1; self.forgotten = set(); self.pending_mock = False
 
     def pos(self):
@@ -297,7 +301,6 @@ def make(name, obj):
         def do_GET(self):
             path, _, q = self.path.partition("?")
             if name == "power":
-                if path == "/manual": b = b"<html><body><h1>MasterVolt manual (mock)</h1></body></html>"; self.send_response(200); self.send_header("Content-Type", "text/html"); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b); return
                 qs = dict(x.split("=", 1) for x in q.split("&") if "=" in x)
                 if path == "/api/history/chart-data": return self._j(200, obj.chart_data(float(qs.get("hours", 24))))
                 if path == "/api/history/contributions":
@@ -305,7 +308,7 @@ def make(name, obj):
                     return self._j(200, obj.contributions(unquote(qs["start"]).replace("Z", "+00:00"), unquote(qs["end"]).replace("Z", "+00:00")))
                 r = {"/api/energy": obj.energy, "/api/bms": obj.bms, "/api/balancers": obj.balancers, "/api/settings": lambda: obj.settings,
                      "/api/bluetooth-coordinator": obj.coordinator, "/api/bluetooth-events": obj.ble_events, "/api/history/status": obj.history_status,
-                     "/api/reports/battery-health": lambda: obj.report, "/api/version": lambda: {"version": "2.1.2 (mock)"}}.get(path)
+                     "/api/reports/battery-health": lambda: obj.report, "/api/notifications": lambda: obj.notif, "/api/version": lambda: {"version": "2.1.2 (mock)"}}.get(path)
                 return self._j(200, r()) if r else self._j(404, {"detail": "not found"})
             if name == "anchor":
                 if path == "/api/state": return self._j(200, obj.state())

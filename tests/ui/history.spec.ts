@@ -65,3 +65,18 @@ test("History: Energy in this period shows the flow as shares with kWh, and the 
   await expect(page.locator("#eContrib .bflow:not(.hint)")).toHaveCount(3);
   expect(errors).toEqual([]);
 });
+
+test("Energy settings: Save sends every setting (also the hidden BMS pop-up), the notification switch posts on its own", async ({ page }) => {
+  const posts: { url: string; body: any }[] = [];
+  const errors = await setUp(page, { theme: "dark", posts });
+  await open(page, "#power", "#eViews [data-view=settings]");
+  await page.locator("#es-default_ac_limit").fill("9");
+  await page.locator("#eSetSave").click();
+  await expect.poll(() => posts.filter(p => p.url.endsWith("/api/settings")).length).toBe(1);
+  const body = posts.find(p => p.url.endsWith("/api/settings"))!.body;
+  expect(body.default_ac_limit).toBe(9);
+  expect(body.bms_popup_seconds).toBeDefined();
+  await page.locator("label:has(#en-float)").click();
+  await expect.poll(() => posts.find(p => p.url.endsWith("/api/notifications"))?.body).toEqual({ float_notification: false });
+  expect(errors).toEqual([]);
+});

@@ -33,9 +33,18 @@ const card = d => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(d / 45
 const f0 = v => v == null ? "–" : String(Math.round(v)), f1 = v => v == null ? "–" : (+v).toFixed(1), f2 = v => v == null ? "–" : (+v).toFixed(2);
 const ago = s => s == null ? "–" : s < 60 ? Math.round(s) + " s" : s < 3600 ? Math.round(s / 60) + " min" : (s / 3600).toFixed(1) + " h";
 const cssv = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+const COLS = [["track", "Track"], ["limit", "Anchor circle"], ["swing", "Max swing"]];   // map colours, per light and dark
+/** A map colour for the theme in use: the user's choice (Settings) in light and dark; Night keeps its own reds.
+ * @param {string} name track, limit or swing */
+function mapCol(name) {
+  const t = document.documentElement.dataset.theme, s = (m.state.data || {}).settings || {}, own = cssv(name === "limit" ? "--ok" : "--trk");
+  if (t === "night") return own;
+  const th = t === "dark" || ((!t || t === "auto") && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  return s[`col_${name}_${th}`] || own;
+}
 const M_LAT = 180 / Math.PI / 6371008.8;          // degrees latitude per metre (same earth as the server)
 let L = null, map = null, layers = {}, base = "osm", follow = true, draft = null, lastOk = Date.now();
-let ly = {}, track = [], trackGen = -1, trackDrawn = -1, setDirty = false, setBuilt = false, view = "watch", dropMode = "here";
+let ly = {}, track = [], trackGen = -1, trackDrawn = -1, trackCol = "", setDirty = false, setBuilt = false, view = "watch", dropMode = "here";
 
 // ---------------------------------------------------------------- device alarm sound (this phone or tablet)
 // WebAudio needs a tap to start; while sound is on the screen is kept awake (iOS stops audio on lock).
@@ -137,6 +146,7 @@ const m = {
       if (dir) { e.preventDefault(); nudge(dir, e.shiftKey ? 10 : 1); } else if (e.key === "Enter") { e.preventDefault(); saveMove(); } else if (e.key === "Escape") setMove(false);
     });
   },
+  enter() { view = "watch"; },     // from the Overview or the navigation: always the Watch view
   render() {
     $("aDown").innerHTML = m.state.err ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
     document.querySelectorAll("#aViews button").forEach(b => b.setAttribute("aria-pressed", b.dataset.aview === view));
@@ -222,11 +232,11 @@ const show = (l, on) => { if (on && !map.hasLayer(l)) l.addTo(map); if (!on && m
 function drawMap(s) {
   if (!map) return;
   const a = draft && s.anchor ? {...s.anchor, lat: draft.lat, lon: draft.lon} : s.anchor, b = s.boat || {}, p = b.pos;
-  const alarm = (s.alarms || []).length > 0, c = alarm ? cssv("--bad") : draft ? cssv("--warn") : cssv("--ok");
+  const alarm = (s.alarms || []).length > 0, c = alarm ? cssv("--bad") : draft ? cssv("--warn") : mapCol("limit");
   show(ly.circle, !!a); show(ly.maxc, !!a && s.max_dist > 0); show(ly.anchor, !!a); show(ly.rode, !!(a && p)); show(ly.boat, !!p);
   if (a) {
     ly.circle.setLatLng([a.lat, a.lon]).setRadius(a.radius).setStyle({color: c, fillColor: c, fillOpacity: alarm ? .18 : .07});
-    ly.maxc.setLatLng([a.lat, a.lon]).setRadius(Math.max(s.max_dist, .1)).setStyle({color: cssv("--trk"), weight: 2});
+    ly.maxc.setLatLng([a.lat, a.lon]).setRadius(Math.max(s.max_dist, .1)).setStyle({color: mapCol("swing"), weight: 2});
     ly.anchor.setLatLng([a.lat, a.lon]); const el = ly.anchor.getElement(); if (el) el.style.color = c;
   }
   if (p) {
@@ -236,13 +246,14 @@ function drawMap(s) {
     const el = ly.boat.getElement(); if (el && el.innerHTML !== html) el.innerHTML = html;
     if (a) ly.rode.setLatLngs([[a.lat, a.lon], [p.lat, p.lon]]).setStyle({color: cssv("--muted")});
   }
-  if (track.length !== trackDrawn) {      // older parts fainter; rebuilt only when points were added
-    trackDrawn = track.length; ly.track.clearLayers();
+  const tc = mapCol("track");
+  if (track.length !== trackDrawn || tc !== trackCol) {      // older parts fainter; rebuilt only when points were added
+    trackDrawn = track.length; trackCol = tc; ly.track.clearLayers();
     if (track.length > 1) {
       const now = Date.now() / 1000, span = Math.max(600, now - track[0][0]), B = 8, buckets = Array.from({length: B}, () => []);
       for (let i = 1; i < track.length; i++) { const [ta, la, lo] = track[i - 1], [tb, lb, lob] = track[i]; if (tb - ta > 120) continue;
         buckets[Math.min(B - 1, Math.floor(Math.max(0, 1 - (now - tb) / span) * B))].push([[la, lo], [lb, lob]]); }
-      buckets.forEach((segs, k) => { if (segs.length) L.polyline(segs, {color: cssv("--trk"), weight: 3, opacity: .2 + .8 * (k + 1) / B, interactive: false}).addTo(ly.track); });
+      buckets.forEach((segs, k) => { if (segs.length) L.polyline(segs, {color: tc, weight: 3, opacity: .2 + .8 * (k + 1) / B, interactive: false}).addTo(ly.track); });
     }
   }
   ly.ais.clearLayers();
@@ -260,8 +271,9 @@ function fit(s) {
   if (a && p) bb = bb.extend(L.latLng(p.lat, p.lon).toBounds(30));
   const near = Math.max(120, a ? 2 * a.radius : 0);   // close neighbours stay in view
   for (const t of s.ais || []) if (t.dist <= near) bb = bb.extend(L.latLng(t.lat, t.lon).toBounds(30));
-  const z = Math.min(19, map.getBoundsZoom(bb, false, L.point(32, 32)));
-  if (Math.abs(z - map.getZoom()) > .3 || !map.getBounds().contains(bb)) { m._fitting = true; map.fitBounds(bb, {padding: [16, 16], maxZoom: 19, animate: false}); m._fitting = false; }
+  // one zoom step closer than the bounds that just fit: the circles fill the map (the user's choice of 2026-11-06)
+  const z = Math.min(20, map.getBoundsZoom(bb, false, L.point(32, 32)) + 1), c = a ? L.latLng(a.lat, a.lon) : bb.getCenter();
+  if (Math.abs(z - map.getZoom()) > .3 || map.getCenter().distanceTo(c) > 2) { m._fitting = true; map.setView(c, z, {animate: false}); m._fitting = false; }
 }
 function setMove(on) {
   const s = m.state.data; if (on && !(s && s.anchor)) return;
@@ -491,6 +503,10 @@ function renderSettings(s) {
         <div class="row col"><div class="u-d-flex u-jc-between u-gap-10 u-ai-center"><div class="k"><b>Minimum chain formula</b></div><input class="u-w-150 field" id="as-chain_formula" value="${esc(v.chain_formula)}" autocomplete="off" spellcheck="false"></div>
           <span class="hint">D = max water depth next 24 h, B = bow height, LOA. Numbers, + − * / (or x) and brackets, e.g. 3*D + LOA or 5*(D+B). Rounded up to whole metres.</span></div></div></div>
       <div class="card"><div class="hd"><h3>Network GPS</h3></div><div class="rows">${group("GPS")}</div></div>
+      <div class="card"><div class="hd"><h3>Map colours</h3></div><div class="rows">
+        <div class="row"><span class="k"></span><span class="colpair"><span class="colhd">Light</span><span class="colhd">Dark</span></span></div>
+        ${COLS.map(([k, l]) => `<div class="row"><span class="k"><b>${l}</b></span><span class="colpair">${["light", "dark"].map(t => `<input class="colpick" type="color" id="as-col_${k}_${t}" value="${esc(v[`col_${k}_${t}`] || "#000000")}" aria-label="${l}, ${t}">`).join("")}</span></div>`).join("")}
+        <div class="row"><span class="hint">The anchor circle is orange while you move it and red during an alarm. Night keeps its own reds.</span></div></div></div>
       <div class="u-d-flex u-gap-10 u-ai-center card pad"><span class="u-flex-1 hint" id="aSetMsg"></span><button class="btn" type="submit" id="aSetSave" disabled>Save settings</button></div></div>
   </div></form>`;
   $("as-pos_format").value = v.pos_format; validate();
@@ -509,6 +525,7 @@ async function save() {
   const cur = m.state.data.settings, out = {};
   for (const [k, , , lo] of SET) { const el = $("as-" + k), v = lo === undefined ? el.checked : +el.value; if (v !== cur[k]) out[k] = v; }
   for (const k of ["pos_format", "own_mmsi", "chain_formula"]) { const v = $("as-" + k).value.trim(); if (v !== cur[k]) out[k] = v; }
+  for (const [k] of COLS) for (const t of ["light", "dark"]) { const id = `col_${k}_${t}`, v = $("as-" + id).value.toLowerCase(); if (v !== cur[id]) out[id] = v; }
   try { await D.run(m, $("aSetSave"), () => D.api("anchor", "/api/command", {action: "settings", settings: out}), "Settings saved"); setDirty = false; setBuilt = false; } catch (e) {}
 }
 

@@ -1,6 +1,6 @@
 """Mastervolt Energy: a private web app that monitors and controls a boat's Mastervolt and DALY equipment.
 
-Package layout (see docs/MANUAL.md, chapter "Architecture"):
+Package layout (see docs/TECHNICAL.md, "How it works"):
 
 * `masterbus`  - the Mastervolt MasterBus USB Link: protocol, device I/O, controls, energy model, Float protection
 * `bluetooth`  - DALY BMS and balancer links over Bluetooth LE, and the radio arbitration between them

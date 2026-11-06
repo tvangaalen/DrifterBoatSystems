@@ -48,6 +48,12 @@ class AnchorWatchTest(unittest.TestCase):
 
     def tearDown(self): self.s.dir.cleanup()
 
+    def test_map_colours(self):     # per theme, #rrggbb only
+        self.w.command({"action": "settings", "settings": {"col_track_dark": " #ABCDEF "}})
+        self.assertEqual(self.w.settings["col_track_dark"], "#abcdef")
+        with self.assertRaises(ValueError): self.w.command({"action": "settings", "settings": {"col_limit_light": "red"}})
+        self.assertEqual(self.w.settings["col_limit_light"], "#1b8a4b")
+
     def test_geometry(self):
         lat, lon = offset(LAT, LON, 90, 100)
         d, b = dist_bearing_m(LAT, LON, lat, lon)

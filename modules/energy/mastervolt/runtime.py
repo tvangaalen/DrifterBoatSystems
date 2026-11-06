@@ -22,6 +22,7 @@ from .config import PATHS, Paths
 from .history.recorder import HistoryRecorder
 from .history.service import HistoryService
 from .masterbus.service import MasterBusService
+from .notify import Notifier
 from .reports.service import BatteryHealthReports
 from .soc import cell_voltage_stats, house_soc, max_age_seconds
 
@@ -39,12 +40,14 @@ class Services:
         self.balancers = DalyBalancerService(coordinator=self.coordinator)
         self.history = HistoryService(paths.history_db)
         self.reports = BatteryHealthReports(paths.runtime_base)
+        # live: also the anchor watch's Pushover keys (DRIFTER_DATA/anchor/pushover.json); never in a test or a checkout
+        self.notifier = Notifier(paths.data, paths.runtime.parent / "anchor" / "pushover.json" if paths.runtime else None)
         self._stop = threading.Event()
         self._recorder_thread: threading.Thread | None = None
         float_protection = self.masterbus.float_protection
         float_protection.details_getter = self.house_soc_details
         float_protection.soc_getter = self.house_soc
-        float_protection.started_callback = self._start_soc_100
+        float_protection.started_callback = self._float_started
 
     # ---- House SOC from the three BMS units -----------------------------------------------------------------
     def house_soc_details(self) -> dict:
@@ -63,6 +66,11 @@ class Services:
 
     def house_soc(self) -> float | None:
         return self.house_soc_details()["soc"]
+
+    def _float_started(self) -> None:
+        """Float protection freshly latched: every battery to 100 % and the phone notification, each in its own thread."""
+        self._start_soc_100()
+        self.notifier.float_started()
 
     def _start_soc_100(self) -> None:
         """Called once when Float protection freshly latches: the triggering cell is at the Float voltage, so the battery

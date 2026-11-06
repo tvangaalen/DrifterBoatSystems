@@ -32,8 +32,9 @@ SETTINGS_OK = {
 }
 
 MERGED_ROUTES = ("POST /api/bms/{battery_id}/set-soc-100",)
-# The classic page and its files, removed in 3.0 (the page is the Drifter app's): they now answer like any unknown path.
-REMOVED_ROUTES = ("GET /", "GET /manifest.webmanifest", "GET /service-worker.js", "GET /local-ca.cer")
+# The classic page and its files, removed in 3.0 (the page is the Drifter app's), and the manual (removed 2026-11-06; new
+# ones per tab will follow): they now answer like any unknown path.
+REMOVED_ROUTES = ("GET /", "GET /manifest.webmanifest", "GET /service-worker.js", "GET /local-ca.cer", "GET /manual")
 REQUESTS = [
     ("GET", "/api/settings", None),
     ("GET", "/api/bms", None),

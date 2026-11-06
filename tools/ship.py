@@ -23,15 +23,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LIVE = Path(r"C:\Drifter")
 CLAUDE = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
-ALL = {"gateway", "supervisor", "common", "privacy-scan", "proc", "drifterd", "verify-live", "watchdog", "backup", "manual", "ship",
+ALL = {"gateway", "supervisor", "common", "privacy-scan", "proc", "drifterd", "verify-live", "watchdog", "backup", "ship",
        "energy", "anchor", "guard", "guard-api", "washer"}
 COMMON_USERS = {"common", "gateway", "proc", "drifterd", "supervisor", "watchdog", "anchor", "guard", "guard-api", "washer"}
 SUITE_RULES = [   # (path or prefix, suites of tests/run_all.py)
     ("drifter.py", {"gateway", "watchdog", "backup"}), ("supervisor.py", {"supervisor", "drifterd"}), ("drifterd.py", {"drifterd"}),
     ("common/", COMMON_USERS), ("modules.json", {"gateway", "drifterd", "supervisor", "backup"}),
     ("tools/privacy_scan.py", {"privacy-scan"}), ("tools/verify_live.py", {"verify-live"}), ("tools/backup.py", {"backup", "gateway"}),
-    ("tools/build_manual.py", {"manual"}), ("tools/ship.py", {"ship"}), ("tests/run_all.py", {"manual"}),
-    ("docs/MANUAL.md", {"manual"}), ("web/manual.html", {"manual"}), ("web/sw.js", {"manual", "gateway"}),
+    ("tools/ship.py", {"ship"}), ("web/sw.js", {"gateway"}),
     ("modules/energy/", {"energy"}), ("modules/anchor/", {"anchor"}), ("modules/guard/", {"guard", "guard-api"}),
     ("modules/washer/", {"washer"}), ("pyproject.toml", ALL), ("uv.lock", ALL)]
 PAGES = {"energy": "overview|energy-|Engine ECU", "anchor": "overview|anchor at", "guard": "overview|guard at", "washer": "overview|washer at"}
@@ -50,11 +49,10 @@ def test_plan(files: list[str]) -> dict:
         if m: suites.add(m.group(1).replace("_", "-"))
         if f.endswith(".py"): ruff.add("modules/energy" if f.startswith("modules/energy/") else ".")
         if f.startswith(UI_ALL): ui_all = True
-        elif f.startswith("web/") and f != "web/manual.html":
+        elif f.startswith("web/"):
             page = re.fullmatch(r"web/(energy|anchor|guard|washer)\.js", f)
             if page: ui.add(PAGES[page.group(1)])
             else: ui_all = True
-        elif f == "web/manual.html": ui.add("the manual opens")
     pattern = "all" if ui_all else "|".join(sorted(ui)) or None
     typecheck = pattern is not None and any(f.startswith("web/") and f.endswith((".js", ".ts", ".json")) or f.startswith(UI_ALL) for f in files)
     return {"suites": sorted(suites & ALL), "ui": pattern, "typecheck": typecheck, "ruff": sorted(ruff)}
@@ -141,8 +139,6 @@ def py() -> str:
 
 
 def check(files: list[str], dry: bool) -> None:
-    if "docs/MANUAL.md" in files and not dry:
-        run([py(), "tools/build_manual.py"]); files = sorted(set(files) | {"web/manual.html"})
     p = test_plan(files)
     print(f"tests for {len(files)} changed file(s): suites {', '.join(p['suites']) or '-'}; browser {p['ui'] or '-'}"
           f"; type check {'yes' if p['typecheck'] else 'no'}; ruff {', '.join(p['ruff']) or '-'}")
@@ -160,7 +156,7 @@ def message(summary: str, body: str | None, claude: bool) -> str:
 
 
 def is_doc(f: str) -> bool:
-    return f.endswith(".md") or f.startswith("docs/") or f == "web/manual.html"
+    return f.endswith(".md") or f.startswith("docs/")
 
 
 def edit(path: Path, fn) -> None:
@@ -205,7 +201,7 @@ def release(a) -> None:
     edit(ROOT / "CHANGELOG.md", lambda s: cut_release(s, v, day)[0])
     edit(ROOT / "drifter.py", lambda s: s.replace(f'VERSION = "{cur}"', f'VERSION = "{v}"', 1))
     edit(ROOT / "README.md", lambda s: s.replace(f"Version {cur} ·", f"Version {v} ·", 1))
-    step("python tests", [py(), "tests/run_all.py", "gateway", "manual"])
+    step("python tests", [py(), "tests/run_all.py", "gateway"])
     git("add", "drifter.py", "README.md", "CHANGELOG.md")
     run(["git", "commit", "-q", "-m", message(f"Drifter {v}", notes, a.claude)])
     git("tag", f"v{v}"); git("push", "-q", "origin", "main", f"v{v}"); print(f"pushed with tag v{v}")

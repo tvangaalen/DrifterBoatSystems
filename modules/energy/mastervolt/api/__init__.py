@@ -1,6 +1,6 @@
 """The HTTP API. One module per area; `routers` lists them for the application factory."""
 
-from . import balancers, bluetooth, bms, controls, energy, history, reports, settings, system
+from . import balancers, bluetooth, bms, controls, energy, history, notifications, reports, settings, system
 
 routers = (
     system.router,
@@ -12,4 +12,5 @@ routers = (
     bluetooth.router,
     history.router,
     reports.router,
+    notifications.router,
 )

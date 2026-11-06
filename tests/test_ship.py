@@ -28,7 +28,6 @@ class Tests(unittest.TestCase):
     def test_docs_only_runs_nothing_heavy(self):
         p = ship.test_plan(["README.md", "docs/RUNBOOK.md"])
         self.assertEqual((p["suites"], p["ui"], p["typecheck"]), ([], None, False))
-        self.assertEqual(ship.test_plan(["docs/MANUAL.md"])["suites"], ["manual"])
 
     def test_restarts(self):
         self.assertEqual(ship.restart_plan(["web/energy.js", "web/app.css", "CHANGELOG.md"]), ([], []))

@@ -198,8 +198,7 @@ async function renderSystem(el) {
       <button class="btn danger" type="button" id="sysOff">${icon("off")} Switch all systems off</button></div></div>
     <div id="sysAlertsWrap"></div>
     <div id="sysBackupWrap"></div>
-    <h2 class="sec">Help</h2><div class="card pad"><a class="btn sec" href="manual.html">${icon("ext")} Manual</a><p class="u-m-10-2-0 hint">What every page shows and does.</p></div>
-    <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="u-m-0 hint">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's own certificate authority (Mastervolt Local CA) once; the manual says how.</p></div>
+    <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="u-m-0 hint">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's own certificate authority (Mastervolt Local CA) once.</p></div>
     <p class="u-ta-center u-m-18-0 hint" id="sysVer"></p>`;
   el.onclick = e => {
     const b = e.target.closest("[data-restart]"); if (b) restartModule(b.dataset.restart, b);

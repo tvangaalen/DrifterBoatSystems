@@ -3,7 +3,7 @@
 // gateway fills in __BUILD__ (version + a fingerprint of web/, drifter.py web_build), so every deploy of web/ changes it.
 const CACHE = "drifter-__BUILD__-shell";
 const SHELL = ["./", "app.css", "main.js", "core/app.js", "core/api.js", "core/dialogs.js", "core/format.js", "core/ui.js",
-  "energy.js", "anchor.js", "guard.js", "washer.js", "manual.html", "manifest.webmanifest", "icons/icon.svg", "icons/apple-touch-icon.png"];
+  "energy.js", "anchor.js", "guard.js", "washer.js", "manifest.webmanifest", "icons/icon.svg", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {

@@ -59,6 +59,10 @@ DEFAULTS = {
     "draught": 0.0,           # m, keel below the waterline; 0 = off. Shows the clearance under the keel
     "transducer_depth": 0.0,  # m, transducer below the waterline, used when the sounder does not report it
     "nmea_port": NET_GPS_PORT,  # network GPS (NMEA over UDP and TCP, e.g. GPS2IP) listens on this port
+    # map colours (#rrggbb) per theme for the track, the anchor circle and the max swing; Night keeps its own reds
+    "col_track_light": "#d1009a", "col_track_dark": "#ff3bd4",
+    "col_limit_light": "#1b8a4b", "col_limit_dark": "#47c07a",
+    "col_swing_light": "#d1009a", "col_swing_dark": "#ff3bd4",
 }
 SETTING_LIMITS = {"default_radius": (5, 2000), "confirm_s": (0, 600), "gps_timeout_s": (5, 600), "core_timeout_s": (5, 600),
                   "min_depth": (0, 500), "max_wind_kn": (0, 150), "bow_offset": (-50, 50), "track_hours": (1, 72),

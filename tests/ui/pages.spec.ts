@@ -32,14 +32,3 @@ test("every page loads on the iPhone (WebKit) @iphone", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("the manual opens from System and returns to it @iphone", async ({ page }) => {
-  const errors = await setUp(page, { theme: "night" });
-  await open(page, "#system", null);
-  await page.getByRole("link", { name: "Manual" }).click();
-  await expect(page.locator("h1")).toHaveText("Drifter — user manual");
-  await expect(page.locator("nav.toc li")).toHaveCount(9);
-  expect(await page.locator("html").getAttribute("data-theme")).toBe("night");      // the app's theme carries over
-  await page.locator("#back").click();
-  await expect(page).toHaveURL(/#system$/);
-  expect(errors).toEqual([]);
-});
