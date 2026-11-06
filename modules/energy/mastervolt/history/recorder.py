@@ -20,9 +20,10 @@ HOUSEKEEPING_EVERY = 6  # passes: prune + chart-cache sync roughly once a minute
 
 
 class HistoryRecorder:
-    def __init__(self, history, masterbus, bms, balancers, house_soc: Callable[[], float | None], stop: threading.Event):
+    def __init__(self, history, masterbus, bms, balancers, house_soc: Callable[[], float | None], stop: threading.Event,
+                 on_dashboard: Callable[[dict], None] | None = None):
         self.history, self.masterbus, self.bms, self.balancers = history, masterbus, bms, balancers
-        self.house_soc, self.stop = house_soc, stop
+        self.house_soc, self.stop, self.on_dashboard = house_soc, stop, on_dashboard
         self._last_bms: dict[str, str] = {}
         self._last_balancers: dict[str, str] = {}
 
@@ -37,6 +38,8 @@ class HistoryRecorder:
         if "house" in data.get("storage", {}):
             data["storage"]["house"]["soc"] = self.house_soc()
         self.history.record("dashboard", data)
+        if self.on_dashboard:
+            self.on_dashboard(data)     # e.g. the shore power notification; it must never stop the recording
 
     def _bms(self) -> None:
         for name, value in self.bms.snapshot().get("batteries", {}).items():

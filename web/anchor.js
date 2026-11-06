@@ -128,7 +128,8 @@ const m = {
           <div class="card pad" id="aCtl"></div>
         </div></div>
         <div class="tiles" id="aTiles"></div>
-        <h2 class="sec">Events</h2><div class="card"><div class="log" id="aLog"></div></div>
+        <details class="secfold" id="aLogFold"><summary><h2 class="sec">Events<span class="r" id="aLogSum"></span></h2></summary>
+          <div class="card"><div class="log" id="aLog"></div></div></details>
         <p class="u-ta-center u-m-14-0 hint" id="aFoot">Not for navigation.</p></div>
       <div id="aGps" hidden></div><div id="aSet" hidden></div>`;
     el.addEventListener("click", onClick);
@@ -335,6 +336,8 @@ function renderWatch(s) {
   } else { $("aDrop").disabled = !b.pos; scope(); }
   $("aTiles").innerHTML = tiles(s);
   $("aTrackInfo").textContent = s.track_points ? `Track since ${dayTime(s.track_start)} · ${s.track_points.toLocaleString("en-GB")} points` : "Track: empty, recording starts with the next position";
+  const evs = s.events || [], last = evs[evs.length - 1], nBad = evs.filter(e => e.kind === "alarm").length;     // folded: a one-line summary
+  $("aLogSum").innerHTML = `${last ? `${evs.length} · last ${esc(dayTime(last.t))}` : "none"}${nBad ? ` · <span class="badc">${nBad} alarm${nBad === 1 ? "" : "s"}</span>` : ""} ${icon("chev", "i chev")}`;
   $("aLog").innerHTML = (s.events || []).slice().reverse().map(e => `<div class="${e.kind === "alarm" ? "bad" : e.kind === "warn" ? "warn" : ""}"><time>${dayTime(e.t)}</time><span class="msg">${esc(e.text)}</span></div>`).join("") || `<div class="empty">Nothing yet</div>`;
   $("aFoot").textContent = `Anchor watch ${s.version || ""} · not for navigation`;
   drawMap(s);

@@ -29,7 +29,7 @@ class Power:
         self.settings = {"default_ac_limit": 10, "float_protection_enabled": True, "float_cell_trigger_mv": 3550.0, "float_cell_resume_mv": 3375.0,
                          "bms_refresh_interval": 30, "bms_popup_seconds": 5, "bms_connection_retry_seconds": 5, "balancer_refresh_interval": 60,
                          "balancer_connection_retry_seconds": 30, "history_retention_days": 31}   # the v2 settings table
-        self.notif = {"float_notification": True, "pushover_configured": True, "last_sent": None, "last_error": None}
+        self.notif = {"float_notification": True, "shore_notification": True, "pushover_configured": True, "shore_connected": False, "last_sent": None, "last_error": None}
         self.active_mode = None; self.report = {"state": "idle", "days": None, "started_at": None, "finished_at": None, "duration_seconds": None, "markdown": None, "error": None}
 
     def energy(self):
@@ -137,7 +137,7 @@ class Power:
                 "records_per_day": 17469.3, "projected_bytes_at_retention": 1748263719}
 
     def post(self, path, body):
-        if path == "/api/notifications": self.notif["float_notification"] = bool(body["float_notification"]); return 200, self.notif
+        if path == "/api/notifications": self.notif.update({k: bool(v) for k, v in body.items() if k in ("float_notification", "shore_notification")}); return 200, self.notif
         if path == "/api/control/inverter": self.c["inverter"] = 1.0 if body["enabled"] else 0.0
         elif path == "/api/control/charger": self.c["charger"] = 1.0 if body["enabled"] else 0.0
         elif path == "/api/control/ac-support": self.c["support"] = 1.0 if body["enabled"] else 0.0

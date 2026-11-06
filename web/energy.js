@@ -648,9 +648,11 @@ function renderSettings() {
       ? `<div class="row"><div class="k"><b>${l}</b><small>${h}</small></div>${D.sw("es-" + k, settings[k])}</div>`
       : `<div class="row"><div class="k"><b>${l}</b>${h ? `<small>${h}</small>` : ""}</div><label class="numf"><input class="field" type="number" inputmode="decimal" id="es-${k}" min="${lo}" max="${hi}" step="${step}" value="${settings[k] ?? ""}" required><span class="u">${u}</span></label></div>`).join("")}
     <div class="row"><span class="hint" id="eSetMsg"></span><button class="btn" type="submit" id="eSetSave" disabled>Save</button></div></div></form>
-    <div class="u-maxw-720 u-mt-12 card"><div class="rows"><div class="row"><div class="k"><b>Float protection notification</b>
-      <small>A Pushover message "Chargers switched to float" when Float protection starts${notif && !notif.pushover_configured ? " · Pushover is not set up on the boat PC" : ""}</small></div>
-      ${D.sw("en-float", notif ? notif.float_notification : false, notif ? "" : "disabled")}</div></div></div>`;
+    <div class="u-maxw-720 u-mt-12 card"><div class="hd"><h3>Notifications</h3>${notif && !notif.pushover_configured ? '<span class="warnc">Pushover is not set up on the boat PC</span>' : ""}</div><div class="rows">
+      <div class="row"><div class="k"><b>Float protection notification</b><small>A Pushover message "Chargers switched to float" when Float protection starts</small></div>
+        ${D.sw("en-float", notif ? notif.float_notification : false, notif ? "" : "disabled")}</div>
+      <div class="row"><div class="k"><b>Shore power notification</b><small>"Shore power ON" or "Shore power OFF" when shore power has been connected or disconnected for 30 s</small></div>
+        ${D.sw("en-shore", notif ? notif.shore_notification : false, notif ? "" : "disabled")}</div></div></div>`;
   validateSettings();
 }
 function readSettings() {
@@ -688,6 +690,8 @@ async function onChange(e) {
   const el = e.target; if (!el.matches('input[type="checkbox"]') || el.closest("#eSetForm")) return;
   const want = el.checked; el.checked = !want;                 // keep showing the real state until the server reads it back
   const id = el.id, d = m.state.data;
+  if (id === "en-shore") return control(id, async () => { notif = await D.api("power", "/api/notifications", {shore_notification: want}); $("eSet").dataset.built = ""; },
+    `Shore power notification ${want ? "on" : "off"}`);
   if (id === "en-float") return control(id, async () => { notif = await D.api("power", "/api/notifications", {float_notification: want}); $("eSet").dataset.built = ""; },
     `Float protection notification ${want ? "on" : "off"}`);
   if (id === "ec-inverter") return control(id, () => D.api("power", "/api/control/inverter", {enabled: want}), `Inverter ${want ? "ON" : "OFF"}`);

@@ -97,7 +97,8 @@ class Services:
         except Exception as exc:
             log.warning("Balancer Bluetooth did not start: %s", exc)
         self._stop.clear()
-        recorder = HistoryRecorder(self.history, self.masterbus, self.bms, self.balancers, self.house_soc, self._stop)
+        recorder = HistoryRecorder(self.history, self.masterbus, self.bms, self.balancers, self.house_soc, self._stop,
+                                   on_dashboard=lambda data: self.notifier.shore_seen(((data.get("sources") or {}).get("shore") or {}).get("connected")))
         self._recorder_thread = threading.Thread(target=recorder.run, daemon=True, name="measurement-history")
         self._recorder_thread.start()
         threading.Thread(target=self.history.refresh_chart_cache, daemon=True, name="history-chart-cache").start()

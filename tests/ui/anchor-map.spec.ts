@@ -44,3 +44,15 @@ test("Anchor settings: an open colour picker is not rebuilt by the next poll", a
   await expect(page.locator("#as-col_track_dark[data-mark='1']")).toHaveCount(1);
   expect(errors).toEqual([]);
 });
+
+test("Anchor watch: Events is folded with a one-line summary and opens on a tap (and stays open)", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#anchor", null);
+  await expect(page.locator("#aLogSum")).toContainText("last");
+  await expect(page.locator("#aLog")).toBeHidden();
+  await page.locator("#aLogFold summary").click();
+  await expect(page.locator("#aLog")).toBeVisible();
+  await page.waitForTimeout(3500);     // the next polls keep it open
+  await expect(page.locator("#aLog")).toBeVisible();
+  expect(errors).toEqual([]);
+});

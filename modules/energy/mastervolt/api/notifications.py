@@ -1,4 +1,5 @@
-"""Phone notifications: the Float protection notification switch (data/notifications.json, see mastervolt/notify.py)."""
+"""Phone notifications: the Float protection and shore power notification switches (data/notifications.json, see
+mastervolt/notify.py)."""
 
 from __future__ import annotations
 
@@ -12,7 +13,8 @@ router = APIRouter(tags=["notifications"])
 
 
 class NotificationsReq(BaseModel):
-    float_notification: bool
+    float_notification: bool | None = None
+    shore_notification: bool | None = None
 
 
 @router.get("/api/notifications")
@@ -22,5 +24,7 @@ def get_notifications(svc: Services = Depends(services)):
 
 @router.post("/api/notifications")
 def set_notifications(req: NotificationsReq, svc: Services = Depends(services)):
-    svc.notifier.set_float_enabled(req.float_notification)
+    for key, value in req.model_dump().items():
+        if value is not None:
+            svc.notifier.set_enabled(key, value)
     return svc.notifier.status()

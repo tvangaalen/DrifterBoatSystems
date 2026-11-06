@@ -31,7 +31,21 @@ def main():
         n.float_started(wait=True)
         assert len(sent) == 2
         assert "a" * 30 not in json.dumps(n.status())
-    print("Float protection notification (on by default, priority normal, switch kept, never without keys): OK")
+        # shore power: the first stable state is the baseline; a change counts after 30 s; a flicker and None do nothing
+        sent.clear()
+        for t in (0, 10, 20, 30):
+            n.shore_seen(False, now=t, wait=True)
+        assert sent == [] and n.status()["shore_connected"] is False
+        n.shore_seen(True, now=40, wait=True); n.shore_seen(False, now=50, wait=True); n.shore_seen(None, now=60, wait=True)
+        assert sent == []
+        for t in (100, 110, 120, 130):
+            n.shore_seen(True, now=t, wait=True)
+        assert [x["message"] for x in sent] == ["Shore power ON"] and sent[0]["priority"] == 0, sent
+        n.set_enabled("shore_notification", False)
+        for t in (200, 240):
+            n.shore_seen(False, now=t, wait=True)
+        assert len(sent) == 1 and n.status()["shore_connected"] is False and n.status()["float_notification"] is True
+    print("Float protection and shore power notifications (on by default, priority normal, switches kept, shore after 30 s): OK")
 
 
 if __name__ == "__main__":

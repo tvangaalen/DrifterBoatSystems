@@ -78,6 +78,8 @@ test("Energy settings: Save sends every setting (also the hidden BMS pop-up), th
   expect(body.bms_popup_seconds).toBeDefined();
   await page.locator("label:has(#en-float)").click();
   await expect.poll(() => posts.find(p => p.url.endsWith("/api/notifications"))?.body).toEqual({ float_notification: false });
+  await page.locator("label:has(#en-shore)").click();
+  await expect.poll(() => posts.filter(p => p.url.endsWith("/api/notifications")).map(p => p.body)).toContainEqual({ shore_notification: false });
   expect(errors).toEqual([]);
 });
 
