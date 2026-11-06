@@ -625,7 +625,8 @@ function renderHistory() {
             <button class="btn sm" type="button" id="eRepRun">Run report</button></div></div>
           <div class="row" id="eRepStatus"></div></div>
           <div class="mdreport" id="eRepOut" hidden></div></div></div>
-      <div class="stack"><div class="card"><div class="hd"><h3>History database</h3></div><div class="rows" id="eHStat"></div></div></div></div>`;
+      <div class="stack"><details class="card fold" id="eHStatFold"><summary class="hd"><h3>History database</h3><span class="muted num" id="eHStatSum"></span>${icon("chev", "i chev")}</summary>
+        <div class="rows" id="eHStat"></div></details></div></div>`;     // folded by default; built once, so it stays as the user left it
   }
   const running = r.state === "running";
   $("eRepRun").disabled = running;
@@ -634,6 +635,7 @@ function renderHistory() {
   const out = $("eRepOut");
   if (r.markdown && out.dataset.src !== r.finished_at) { out.innerHTML = md(r.markdown); out.dataset.src = r.finished_at; }
   out.hidden = !r.markdown;
+  $("eHStatSum").textContent = hstat ? `${num(h.span_days, 0)} days · ${MB(h.size_bytes)}` : "";
   $("eHStat").innerHTML = hstat ? `
     <div class="row"><span class="k">Records</span><span class="v">${(h.records || 0).toLocaleString("en-GB")}<small>${num(h.records_per_day, 0)} per day</small></span></div>
     <div class="row"><span class="k">Covers</span><span class="v">${num(h.span_days, 1)} days<small>${h.oldest ? D.dayTime(Date.parse(h.oldest)) : "–"} – ${h.newest ? D.dayTime(Date.parse(h.newest)) : "–"} · kept ${h.retention_days} days</small></span></div>
