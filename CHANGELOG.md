@@ -47,6 +47,7 @@
   position, country and nearest marina filled in automatically and editable
 - Date format dd/mm/yyyy by default, chosen on the System page; Engine log: date fields typed or picked, padding in the
   forms, engine hours must keep rising, Settings with the fuel tank capacity
+- Engine log: engine hours on maintenance entries
 
 ## 1.2
 

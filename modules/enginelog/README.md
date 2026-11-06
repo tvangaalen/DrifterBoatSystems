@@ -1,7 +1,7 @@
 # Engine log
 
 The API behind the **Engine log** module of the Drifter app, version `1.0.0`: diesel fuel fills (date and time, engine
-hours, litres, position, country, nearest marina) and engine maintenance (date, text), with create, read, change and
+hours, litres, position, country, nearest marina) and engine maintenance (date, engine hours, text), with create, read, change and
 delete for every entry. FastAPI on `127.0.0.1:8097`, on Drifter's module contract (`common/service.py`).
 
 | File | What |
