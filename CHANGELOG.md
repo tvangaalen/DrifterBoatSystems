@@ -52,6 +52,7 @@
   engine hour on the right)
 - Battery current shows discharging below zero; Engine log fills: a date instead of date and time, and the amount paid
   (with the price per litre)
+- Energy History: the History database card folds (folded by default)
 
 ## 1.2
 
