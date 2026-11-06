@@ -53,6 +53,8 @@
 - Battery current shows discharging below zero; Engine log fills: a date instead of date and time, and the amount paid
   (with the price per litre)
 - Energy History: the History database card folds (folded by default)
+- Engine log: four tiles above the fuel chart (Avg L/h, litres, average price, total cost); Fills next to Last fill and
+  Since
 
 ## 1.2
 
