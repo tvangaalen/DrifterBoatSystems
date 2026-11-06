@@ -54,3 +54,14 @@ test("History: the zoom slider shows part of the period in every chart; a period
   await expect(page.locator("#eHistHead #eViews")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("History: Energy in this period shows the flow as shares with kWh, and the batteries charged and discharged", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#power", "#eViews [data-view=history]");
+  const svg = page.locator("#eContrib svg.sankey");
+  await expect(svg).toBeVisible();
+  await expect(svg).toContainText("Alternator");
+  await expect(svg).toContainText(/\d+ % \(\d+\.\d\d kWh\)/);
+  await expect(page.locator("#eContrib .bflow:not(.hint)")).toHaveCount(3);
+  expect(errors).toEqual([]);
+});

@@ -537,3 +537,10 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 /* the map's info button: the credits are on the anchor GPS & links view (track and max swing: --trk, magenta on every map) */
 .mapinfo{position:absolute;right:8px;bottom:8px;z-index:500;width:28px;height:28px;border-radius:50%;border:0;background:var(--card);color:var(--fg);
   font:italic 600 15px/28px Georgia,serif;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:pointer;padding:0}
+/* Energy in this period: the flow diagram and the batteries' charged (right) / discharged (left) bars */
+.sankey{display:block;width:100%;max-width:440px;height:auto;margin:0 auto}#eContrib .bflow{max-width:560px;margin-left:auto;margin-right:auto}
+.bflow{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}.bflow .el{width:76px;flex:none}
+.bflow .bv{width:34px;flex:none;text-align:center;font-weight:650;font-variant-numeric:tabular-nums;font-size:12px}
+.bflow .bl,.bflow .br{flex:1;height:10px;display:flex}.bflow .bl{justify-content:flex-end}
+.bflow .bl i{background:var(--bad);border-radius:5px 0 0 5px}.bflow .br i{background:var(--ok);border-radius:0 5px 5px 0}
+.bflow .bz{width:1px;height:16px;background:var(--muted);flex:none}.bflow.hint{font-size:11px;padding-top:0}

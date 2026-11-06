@@ -498,7 +498,7 @@ function renderCharts() {
     ["eChSoc", "State of charge", "%", {columns: true, fixed: [0, 100], series: [{label: "Total", color: BAT_META[0][2], width: 2.6, line: true, pts: S.tot},
       ...BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, part: 1 / 3, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.rem != null ? p.rem / S.perAh * 100 : null}))}))]}],
     ["eChSrc", "Sources", "W · A", {columns: true, step: 250, right: {unit: "A", per: houseV(), step: 25}, series: SRC_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.sp[i]}))}))}],
-    ["eChLoad", "DC consumers", "W · A", {columns: true, step: 250, right: {unit: "A", per: houseV(), step: 25}, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
+    ["eChLoad", "DC consumers", "W · A", {columns: true, step: 100, right: {unit: "A", per: houseV(), step: 5}, series: LOAD_META.map(([k, l, c], i) => ({label: l, color: c, pts: S.dash.map(r => ({t: r.t, v: r.lp[i]}))}))}],
     ["eChCur", "Battery current", "W · A", {columns: true, fixed: [0, 100], tip: "A", left: {mul: houseV()}, right: {unit: "A", per: 1}, series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.cur}))}))}],
     ["eChSpread", "Cell spread", "mV", {series: BAT_META.slice(1).map(([k, l, c]) => ({label: l, color: c, pts: (S.byBat[k] || []).map(p => ({t: p.t, v: p.spread}))}))}],
   ];
@@ -518,18 +518,51 @@ function renderCharts() {
     drawChart($(id), {...o, unit, t0, t1, series: one ? o.series.filter(s => s.label === one).map(s => ({...s, part: 1})) : o.series});
   }
   const c = contrib;
-  const bars = (items, unitLabel) => { const max = Math.max(1, ...items.map(x => x.wh));
-    return items.map(x => `<div class="ebar"><span class="el">${esc(x.label)}</span><span class="eb"><i style="width:${(x.wh / max * 100).toFixed(1)}%;background:${colorOf(x.color, x.i)}"></i></span><span class="ev">${(x.wh / 1000).toFixed(2)} kWh${x.avg != null ? `<small>${num(x.avg, 0)} W avg</small>` : ""}</span></div>`).join(""); };
+  const src = c ? [...c.sources.map(x => { const i = SRC_META.findIndex(m => m[0] === x.key); return {label: (SRC_META[i] || [, x.key])[1], color: (SRC_META[i] || [, , "#888"])[2], i, wh: x.wh}; }),
+    ...(c.shore ? [{label: "Shore (AC in)", color: "#0b62c4", i: 4, wh: c.shore.wh}] : [])] : [];
+  const load = c ? c.consumers.map(x => { const i = LOAD_META.findIndex(m => m[0] === x.key); return {label: (LOAD_META[i] || [, x.key])[1], color: (LOAD_META[i] || [, , "#888"])[2], i, wh: x.wh}; }) : [];
   $("eContrib").innerHTML = !c ? `<div class="empty">Loading…</div>` : `
-    <div class="ebars"><h4>Sources</h4>${bars([...c.sources.map(x => { const i = SRC_META.findIndex(m => m[0] === x.key); return {label: (SRC_META[i] || [, x.key])[1], color: (SRC_META[i] || [, , "#888"])[2], i, wh: x.wh, avg: x.avg_w}; }),
-      ...(c.shore ? [{label: "Shore (AC in)", color: "#0b62c4", i: 4, wh: c.shore.wh, avg: c.shore.avg_w}] : [])])}</div>
-    <div class="ebars"><h4>DC consumers</h4>${bars(c.consumers.map(x => { const i = LOAD_META.findIndex(m => m[0] === x.key); return {label: (LOAD_META[i] || [, x.key])[1], color: (LOAD_META[i] || [, , "#888"])[2], i, wh: x.wh, avg: x.avg_w}; }))}</div>
-    <div class="ebars"><h4>Batteries</h4>${(c.batteries || []).map((x, i) => `<div class="ebar"><span class="el">${esc(x.key[0] + x.key.slice(1).toLowerCase())}</span><span class="u-flex-1 u-ta-left ev">charged ${(x.charge_wh / 1000).toFixed(2)} kWh · discharged ${(x.discharge_wh / 1000).toFixed(2)} kWh</span></div>`).join("")}</div>
+    <div class="ebars"><h4>Energy flow</h4>${sankey(src, load)}</div>
+    <div class="ebars"><h4>Batteries</h4>${battFlow(c.batteries || [])}</div>
     <p class="u-m-6-0-0 hint">${D.dayTime(Date.parse(c.start))} – ${D.dayTime(Date.parse(c.end))} · from the full-resolution history on the server${c.sources_covered_seconds != null && c.span_seconds ? ` · data for ${Math.round(c.sources_covered_seconds / c.span_seconds * 100)} % of the time` : ""}</p>`;
 }
 window.addEventListener("resize", () => { if (view === "history" && D.visibleIs("power")) renderCharts(); });
 window.addEventListener("drifter-theme", () => { if (view === "history") renderCharts(); });
 
+// ---- Energy in this period: sources → house bank → DC consumers. Band widths are each side's share; the values are that
+// share of the total in (or out) with the energy in brackets.
+const kwh = wh => (wh / 1000).toFixed(2);
+const pct = (wh, tot) => { const p = tot > 0 ? wh / tot * 100 : 0; return p > 0 && p < 1 ? "<1 %" : Math.round(p) + " %"; };
+/** @param {{label: string, color: string, i: number, wh: number}[]} src @param {{label: string, color: string, i: number, wh: number}[]} load */
+function sankey(src, load) {
+  const W = 360, bankH = 150, top = 22, gap = 6, xL = 118, xB0 = 168, xB1 = 192, xR = 242, fg = "var(--fg)", mu = "var(--muted)";
+  const tin = src.reduce((a, x) => a + Math.max(0, x.wh), 0), tout = load.reduce((a, x) => a + Math.max(0, x.wh), 0);
+  // each item is as tall as its band (at least room for its two lines); the bands stack on the house bank
+  const lay = (items, tot) => { let y = 0; const out = items.map(x => { const th = tot > 0 ? Math.max(0, x.wh) / tot * bankH : 0, h = Math.max(th, 29), r = {x, th, cy: y + h / 2}; y += h + gap; return r; });
+    return {out, h: y - gap}; };
+  const L = lay(src, tin), R = lay(load, tout), H = Math.max(L.h, R.h, bankH) + top + 16, bankY = top + (H - top - 16 - bankH) / 2;
+  const side = (S, left) => { const off = top + (H - top - 16 - S.h) / 2; let acc = bankY;
+    return S.out.map(({x, th, cy}) => { cy += off; const y = cy - th / 2, yb = acc; acc += th;
+      const [a, b] = left ? [xL, xB0] : [xR, xB1], m = (a + b) / 2, col = colorOf(x.color, x.i);
+      const band = th > .3 ? `<path d="M${a} ${y}C${m} ${y} ${m} ${yb} ${b} ${yb}L${b} ${yb + th}C${m} ${yb + th} ${m} ${y + th} ${a} ${y + th}Z" fill="${col}" opacity=".78"/>` : "";
+      const tx = left ? xL - 7 : xR + 7, an = left ? "end" : "start", nh = Math.max(th, 3);
+      return `${band}<rect x="${left ? xL - 3 : xR}" y="${cy - nh / 2}" width="3" height="${nh}" rx="1.5" fill="${col}"/>
+        <text x="${tx}" y="${cy - 2}" text-anchor="${an}" fill="${fg}" font-size="12">${esc(x.label)}</text>
+        <text x="${tx}" y="${cy + 12}" text-anchor="${an}" fill="${mu}" font-size="11.5"><tspan fill="${fg}" font-weight="600">${pct(x.wh, left ? tin : tout)}</tspan> (${kwh(x.wh)} kWh)</text>`; }).join(""); };
+  return `<svg class="sankey" viewBox="0 0 ${W} ${H}" role="img" aria-label="Energy flow: ${kwh(tin)} kWh in, ${kwh(tout)} kWh out">
+    <text x="0" y="11" fill="${mu}" font-size="10.5">In ${kwh(tin)} kWh</text><text x="${W}" y="11" text-anchor="end" fill="${mu}" font-size="10.5">Out ${kwh(tout)} kWh</text>
+    ${side(L, true)}${side(R, false)}
+    <rect x="${xB0}" y="${bankY}" width="${xB1 - xB0}" height="${bankH}" rx="5" fill="${colorOf(BAT_META[0][2], 0)}"/>
+    <text x="${(xB0 + xB1) / 2}" y="${bankY + bankH + 13}" text-anchor="middle" fill="${mu}" font-size="10">House bank</text></svg>`;
+}
+/** Per battery: discharged to the left (red), charged to the right (green), on one scale. @param {any[]} bats */
+function battFlow(bats) {
+  const max = Math.max(1, ...bats.map(x => Math.max(x.charge_wh || 0, x.discharge_wh || 0)));
+  return bats.map(x => `<div class="bflow"><span class="el">${esc(x.key[0] + x.key.slice(1).toLowerCase())}</span>
+      <span class="bv">${kwh(x.discharge_wh || 0)}</span><span class="bl"><i style="width:${((x.discharge_wh || 0) / max * 100).toFixed(1)}%"></i></span>
+      <span class="bz"></span><span class="br"><i style="width:${((x.charge_wh || 0) / max * 100).toFixed(1)}%"></i></span><span class="bv">${kwh(x.charge_wh || 0)}</span></div>`).join("")
+    + `<div class="bflow hint"><span class="el"></span><span class="u-flex-1 u-ta-right">← discharged kWh</span><span class="bz"></span><span class="u-flex-1">charged kWh →</span></div>`;
+}
 function renderHistory() {
   const box = $("eHist"), r = report || {}, h = hstat || {}, MB = v => v == null ? "–" : v >= 1e9 ? (v / 1e9).toFixed(2) + " GB" : (v / 1e6).toFixed(0) + " MB";
   if (!box.dataset.built) {
