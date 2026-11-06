@@ -128,12 +128,15 @@ class Store:
 
 def fuel_stats(fuel: list[dict]) -> dict:
     """The tiles: the last fill, how long ago, and the average use in litres per engine hour (the litres of every fill
-    after the first, over the engine hours between the first and the last fill)."""
-    if not fuel: return {"last_litres": None, "last_date": None, "last_hours": None, "avg_l_per_h": None, "fills": 0, "litres_total": 0.0, "amount_total": 0.0}
+    after the first, over the engine hours between the first and the last fill); the total paid and the average price per
+    litre over the fills with an amount."""
+    if not fuel: return {"last_litres": None, "last_date": None, "last_hours": None, "avg_l_per_h": None, "fills": 0, "litres_total": 0.0, "amount_total": 0.0, "avg_price": None}
     by_time = sorted(fuel, key=lambda e: (e["date"], e["engine_hours"]))
     span = by_time[-1]["engine_hours"] - by_time[0]["engine_hours"]
     used = sum(e["litres"] for e in by_time[1:])
+    paid = [e for e in fuel if e.get("amount") is not None]
+    paid_l = sum(e["litres"] for e in paid)
     return {"last_litres": by_time[-1]["litres"], "last_date": by_time[-1]["date"], "last_hours": by_time[-1]["engine_hours"],
-            "amount_total": round(sum(e.get("amount") or 0 for e in fuel), 2),
+            "amount_total": round(sum(e.get("amount") or 0 for e in fuel), 2), "avg_price": round(sum(e["amount"] for e in paid) / paid_l, 3) if paid_l else None,
             "avg_l_per_h": round(used / span, 2) if len(by_time) > 1 and span > 0 else None, "fills": len(fuel),
             "litres_total": round(sum(e["litres"] for e in fuel), 1)}

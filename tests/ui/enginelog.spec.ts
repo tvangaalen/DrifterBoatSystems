@@ -92,6 +92,9 @@ test("Engine log: the fills over time, litres per fill and the use per engine ho
   await expect(svg.locator("rect.fbar")).toHaveCount(3);
   await expect(svg.locator("circle.usedot")).toHaveCount(2);
   await expect(svg.locator("line.avg")).toHaveCount(1);
-  await expect(page.locator("#lChart .flegend")).toContainText("Average 6.0 L/h");
+  await expect(page.locator("#lChart .flegend")).toContainText("Average");
+  const tiles = page.locator("#lBody .minis.m4 .mini");
+  await expect(tiles).toHaveCount(4);
+  await expect(tiles.nth(0)).toContainText("6.0"); await expect(tiles.nth(2)).toContainText("€ 1.61"); await expect(tiles.nth(3)).toContainText("€ 550");
   expect(errors).toEqual([]);
 });

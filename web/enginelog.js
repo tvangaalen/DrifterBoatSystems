@@ -64,13 +64,17 @@ function fuelView(d) {
   return `<div class="u-maxw-720 card pad">
     <div class="minis u-mt-0"><div class="mini"><div class="l">Last fill</div><div class="n">${s.last_litres != null ? num(s.last_litres, 0) + " L" : "–"}</div></div>
       <div class="mini"><div class="l">Since</div><div class="n">${s.last_date ? since(dayMs(s.last_date)) : "–"}</div></div>
-      <div class="mini"><div class="l">Avg use</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) + " L/h" : "–"}</div></div></div>
+      <div class="mini"><div class="l">Fills</div><div class="n">${s.fills}</div></div></div>
+    <div class="minis m4 u-mt-12"><div class="mini"><div class="l">Avg L/h</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) : "–"}</div></div>
+      <div class="mini"><div class="l">Litres</div><div class="n">${num(s.litres_total, 0)}</div></div>
+      <div class="mini"><div class="l">Avg price</div><div class="n">${s.avg_price != null ? `€ ${num(s.avg_price, 2)}` : "–"}</div></div>
+      <div class="mini"><div class="l">Total cost</div><div class="n">${s.amount_total ? `€ ${num(s.amount_total, 0)}` : "–"}</div></div></div>
     <div class="fuelchart" id="lChart">${fuelChart(d.fuel, s.avg_l_per_h)}</div>
     <button class="u-mt-12 btn wide" type="button" data-new="fuel">${icon("fuel")} New fuel entry</button>
     <div class="lrows">${d.fuel.map(f => `<button class="lrow" type="button" data-edit="fuel:${esc(f.id)}"><span class="t"><b>${num(f.litres, 0)} L</b> <span class="muted">· ${num(f.engine_hours, 0)} h${f.amount != null ? ` · ${euro(f.amount)} (${euro(f.amount / f.litres)}/L)` : ""}</span>
         <small>${esc(dmy(f.date))}${f.marina ? ` · ${esc(f.marina)}` : ""}${f.country ? `, ${esc(f.country)}` : ""}</small></span>${icon("chev", "i chev")}</button>`).join("")
       || `<div class="empty">No fills logged yet</div>`}</div>
-    ${s.fills ? `<p class="u-m-8-0-0 hint">${s.fills} fill${s.fills === 1 ? "" : "s"} · ${num(s.litres_total, 0)} L in total. Average use: the litres of every fill after the first over the engine hours since the first.${s.amount_total ? ` Paid: ${euro(s.amount_total)}.` : ""}</p>` : ""}</div>`;
+    ${s.fills ? `<p class="u-m-8-0-0 hint">${s.fills} fill${s.fills === 1 ? "" : "s"} · ${num(s.litres_total, 0)} L in total. Average use: the litres of every fill after the first over the engine hours since the first.${s.amount_total ? ` Paid: ${euro(s.amount_total)}${s.avg_price != null ? `, on average ${euro(s.avg_price)} per litre` : ""}.` : ""}</p>` : ""}</div>`;
 }
 // ---- the fills over time: litres per fill as columns (left), the use since the fill before in L per engine hour as a
 // smooth line with the average dashed (right). Drawn at the box's own width, so the text never scales.
@@ -99,7 +103,7 @@ function fuelChart(fuel, avg) {
     g += `<path class="useline" d="${path}"/>` + use.map(u => `<circle class="usedot" cx="${X(u.t).toFixed(1)}" cy="${YU(u.u).toFixed(1)}" r="3"><title>${esc(`${D.day(u.t)} · ${num(u.u, 1)} L/h since the fill before`)}</title></circle>`).join("");
   }
   return `<svg class="fsvg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Diesel fills over time and the fuel use per engine hour">${g}</svg>
-    <div class="flegend"><span><i class="fbar"></i>Litres per fill</span><span><i class="useline"></i>L per engine hour since the fill before</span>${avg != null ? `<span><i class="avg"></i>Average ${num(avg, 1)} L/h</span>` : ""}</div>`;
+    <div class="flegend"><span><i class="fbar"></i>Litres per fill</span><span><i class="useline"></i>L per engine hour since the fill before</span>${avg != null ? `<span><i class="avg"></i>Average</span>` : ""}</div>`;
 }
 window.addEventListener("resize", () => { if (D.visibleIs("enginelog") && view === "fuel" && !edit && m.state.data && $("lChart")) $("lChart").innerHTML = fuelChart(m.state.data.fuel, m.state.data.stats.avg_l_per_h); });
 function maintView(d) {

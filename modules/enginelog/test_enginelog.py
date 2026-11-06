@@ -95,6 +95,7 @@ class EngineLogTest(unittest.TestCase):
                  {"date": "2026-11-06", "engine_hours": 2300, "litres": 180, "amount": 300}]
         s = fuel_stats(fills)
         self.assertEqual((s["last_litres"], s["avg_l_per_h"], s["fills"], s["litres_total"], s["amount_total"], s["last_date"]), (180, 3.4, 3, 490.0, 540, "2026-11-06"))
+        self.assertEqual(s["avg_price"], round(540 / 330, 3)); self.assertIsNone(fuel_stats([{**fills[1]}])["avg_price"])
 
     def test_old_fills_with_a_time_read_as_their_date(self):
         self.path.write_text(json.dumps({"fuel": [{"id": "a1b2c3d4e5f6", "time": "2026-07-20T12:00+02:00", "engine_hours": 19, "litres": 280, "lat": None, "lon": None,

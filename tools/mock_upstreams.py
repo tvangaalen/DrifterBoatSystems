@@ -315,7 +315,7 @@ class EngineLog:
 
     def log(self):
         f = sorted(self.fuel, key=lambda e: e["date"]); span = f[-1]["engine_hours"] - f[0]["engine_hours"] if f else 0
-        stats = {"last_litres": f[-1]["litres"] if f else None, "last_date": f[-1]["date"] if f else None, "amount_total": sum(e.get("amount") or 0 for e in f), "last_hours": f[-1]["engine_hours"] if f else None,
+        stats = {"last_litres": f[-1]["litres"] if f else None, "last_date": f[-1]["date"] if f else None, "amount_total": sum(e.get("amount") or 0 for e in f), "avg_price": round(sum(e["amount"] for e in f if e.get("amount") is not None) / (sum(e["litres"] for e in f if e.get("amount") is not None) or 1), 3), "last_hours": f[-1]["engine_hours"] if f else None,
                  "avg_l_per_h": round(sum(e["litres"] for e in f[1:]) / span, 2) if span > 0 else None, "fills": len(f), "litres_total": sum(e["litres"] for e in f)}
         return {"fuel": sorted(self.fuel, key=lambda e: e["date"], reverse=True), "maintenance": sorted(self.maint, key=lambda e: e["date"], reverse=True), "stats": stats,
                 "settings": self.settings}
