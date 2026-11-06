@@ -1,7 +1,7 @@
 """The engine log in one JSON file: {"fuel": [...], "maintenance": [...]}, newest first.
 
 A fuel fill: time (ISO 8601 with offset), engine hours, litres, the position (lat/lon, optional), country and marina (text,
-optional). A maintenance entry: date (YYYY-MM-DD) and text. Every entry has a 12-hex id. The file is written to a temporary
+optional). A maintenance entry: date (YYYY-MM-DD), engine hours (optional) and text. Every entry has a 12-hex id. The file is written to a temporary
 file and renamed, so a power cut never leaves half a log; positions stay on the boat PC (never in the repository).
 """
 from __future__ import annotations
@@ -47,7 +47,8 @@ def clean_fuel(d: dict) -> dict:
 def clean_maintenance(d: dict) -> dict:
     try: day = date.fromisoformat(str(d.get("date") or ""))
     except ValueError: raise ValueError("Date must be like 2026-11-06") from None
-    return {"date": day.isoformat(), "text": _text(d.get("text"), "Text", 2000, True)}
+    return {"date": day.isoformat(), "engine_hours": _num(d.get("engine_hours"), "Engine hours", 0, 100000, False),
+            "text": _text(d.get("text"), "Text", 2000, True)}
 
 
 CLEAN = {"fuel": clean_fuel, "maintenance": clean_maintenance}

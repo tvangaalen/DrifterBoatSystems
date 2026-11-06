@@ -49,9 +49,10 @@ test("Engine log: change and delete a fill (Keep is the default), and add, chang
   await page.locator("[data-new=maintenance]").click();
   await page.locator("#lSave").click();
   await expect(page.locator("#lErr")).toContainText("what was done");
-  await page.locator("#lText").fill("Fuel filters\nprimary and secondary"); await page.locator("#lSave").click();
+  await page.locator("#lText").fill("Fuel filters\nprimary and secondary"); await page.locator("#lHours").fill("2320"); await page.locator("#lSave").click();
   await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/maintenance");
   expect((posts.at(-1)!.body as any).text).toBe("Fuel filters\nprimary and secondary");
+  expect((posts.at(-1)!.body as any).engine_hours).toBe(2320);
   await page.locator("[data-edit='maintenance:e5f6a1b2c3d4']").click();
   await page.locator("#lText").fill("Impeller and gasket"); await page.locator("#lSave").click();
   await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/maintenance/e5f6a1b2c3d4");

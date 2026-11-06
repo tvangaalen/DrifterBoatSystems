@@ -77,7 +77,7 @@ function fuelView(d) {
 }
 function maintView(d) {
   return `<div class="u-maxw-720 card pad"><button class="btn wide" type="button" data-new="maintenance">${icon("wrench")} New maintenance entry</button>
-    <div class="lrows">${d.maintenance.map(x => `<button class="lrow" type="button" data-edit="maintenance:${esc(x.id)}"><span class="t"><b>${esc(dmy(x.date))}</b>
+    <div class="lrows">${d.maintenance.map(x => `<button class="lrow" type="button" data-edit="maintenance:${esc(x.id)}"><span class="t"><b>${esc(dmy(x.date))}</b>${x.engine_hours != null ? ` <span class="muted">· ${num(x.engine_hours, 0)} h</span>` : ""}
         <small class="pre">${esc(x.text)}</small></span>${icon("chev", "i chev")}</button>`).join("") || `<div class="empty">No maintenance logged yet</div>`}</div></div>`;
 }
 
@@ -115,6 +115,7 @@ function openForm(kind, id) {
   } else {
     $("lBody").innerHTML = `<form class="u-maxw-720 card lform" id="lForm" novalidate><div class="hd">${icon("wrench")}<h3>${id ? "Maintenance entry" : "New maintenance entry"}</h3></div><div class="rows">
       <div class="row"><div class="k"><b>Date</b>${id ? "" : auto("today")}</div>${dateField("lDate", e ? e.date : parts().date)}</div>
+      <div class="row"><div class="k"><b>Engine hours</b><small>The meter's total; empty = not noted</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lHours" min="0" max="100000" step="0.1" value="${e && e.engine_hours != null ? e.engine_hours : ""}"><span class="u">h</span></label></div>
       <div class="row col"><div class="k"><b>What was done</b></div><textarea class="field" id="lText" maxlength="2000" rows="5" placeholder="Oil and oil filter changed…">${esc(e ? e.text : "")}</textarea></div>
       </div>${btns}</form>`;
   }
@@ -137,8 +138,9 @@ function body() {
   const date = D.parseDate($("lDate").value);
   if (!date) return fail(`Date as ${D.dateFmt()}`);
   if (edit.kind === "maintenance") {
-    const text = $("lText").value.trim(); if (!text) return fail("Say what was done");
-    return {date, text};
+    const text = $("lText").value.trim(), hours = $("lHours").value; if (!text) return fail("Say what was done");
+    if (hours !== "" && !(+hours >= 0 && +hours <= 100000)) return fail("Engine hours: 0–100000");
+    return {date, engine_hours: hours === "" ? null : +hours, text};
   }
   const time = $("lTime").value.trim(), hours = $("lHours").value, litres = $("lLitres").value;
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return fail("Time as HH:MM (24-hour)");

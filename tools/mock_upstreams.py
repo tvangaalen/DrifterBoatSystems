@@ -311,7 +311,7 @@ class EngineLog:
                      {"id": "b2c3d4e5f6a1", "time": at(17), "engine_hours": 2288.0, "litres": 205.0, "lat": 10.2, "lon": -20.6, "country": "Testland", "marina": "Mock Marina South"},
                      {"id": "c3d4e5f6a1b2", "time": at(38), "engine_hours": 2251.0, "litres": 160.0, "lat": 11.0, "lon": -21.0, "country": "Otherland", "marina": "Mock Harbour"}]
         self.settings = {"tank_capacity_l": 400.0}
-        self.maint = [{"id": "d4e5f6a1b2c3", "date": at(5)[:10], "text": "Oil and oil filter changed, 2 300 h"}, {"id": "e5f6a1b2c3d4", "date": at(22)[:10], "text": "Impeller replaced"}]
+        self.maint = [{"id": "d4e5f6a1b2c3", "date": at(5)[:10], "engine_hours": 2300.0, "text": "Oil and oil filter changed"}, {"id": "e5f6a1b2c3d4", "date": at(22)[:10], "engine_hours": None, "text": "Impeller replaced"}]
 
     def log(self):
         f = sorted(self.fuel, key=lambda e: e["time"]); span = f[-1]["engine_hours"] - f[0]["engine_hours"] if f else 0

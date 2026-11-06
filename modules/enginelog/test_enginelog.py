@@ -56,6 +56,10 @@ class EngineLogTest(unittest.TestCase):
         log = self.c.get("/api/log", headers=TOKEN).json()["maintenance"]
         self.assertEqual([m["date"] for m in log], ["2026-11-02", "2026-10-15"]); self.assertIn("\n", log[0]["text"])
         self.assertEqual(self.post(f"/api/maintenance/{a['id']}", {"date": "2026-10-16", "text": "Impeller and gasket"}).json()["text"], "Impeller and gasket")
+        self.assertIsNone(a["engine_hours"])
+        h = self.post(f"/api/maintenance/{a['id']}", {"date": "2026-10-16", "engine_hours": 2290.5, "text": "Impeller"}).json()
+        self.assertEqual(h["engine_hours"], 2290.5)
+        self.assertEqual(self.post("/api/maintenance", {"date": "2026-11-06", "engine_hours": -1, "text": "x"}).status_code, 400)
         self.assertEqual(self.post(f"/api/maintenance/{a['id']}/delete").status_code, 200)
         self.assertEqual(len(self.c.get("/api/log", headers=TOKEN).json()["maintenance"]), 1)
 
