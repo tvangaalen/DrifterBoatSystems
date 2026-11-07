@@ -1,28 +1,32 @@
-"""Live engine data from the Orca Core 2, read-only: the Core's sensor stream filtered to `propulsion` (the Yanmar YD42 J1939
-gateway, NMEA 2000 source 3 on 2026-11-07), the same WebSocket the anchor watch reads. Nothing is ever sent to the Core.
+"""The engine: its live values and engine hours from the Orca Core 2, its alarms from the YDEN-02.
 
-What the Core passes on for the engine (seen 2026-11-07): rpm (speed), coolant temperature (K), oil pressure (Pa),
-alternator voltage (the Core spells it altenatorVoltage), fuel rate (L/h), load (%), boost (Pa) and the engine hours
-(totalHours, seconds). The engine's own warning bits (NMEA 2000 PGN 127489 discrete status) are NOT among them, so the
-engine alarms logged here are:
-  - any other propulsion field the Core reports with a value that is not 0 ("Engine reports <field>"), in case a
-    firmware passes the status on;
-  - High coolant temperature: at or above the limit (Settings, 95 °C by default) while the data is fresh;
-  - Low oil pressure: below the limit (Settings, 1.0 bar) while the engine runs (rpm >= RUN_RPM for RUN_SETTLE_S, so
-    the start and the stop, when the pressure is naturally low, never count).
-A condition must last HOLD_S to start an alarm and be gone HOLD_S to end it; when the engine data stops for LOST_S an
-open alarm ends. Each alarm goes into the log (Maintenance page) with its start, end, engine hours and worst value.
-The last engine hours are kept in the log too, so a new fuel fill or maintenance entry gets them with the engine off.
+Live values and engine hours: the Core's sensor stream filtered to `propulsion` (the Yanmar YD42 J1939 gateway, NMEA 2000
+source 3 on 2026-11-07), read-only, the same WebSocket the anchor watch reads; nothing is ever sent to the Core. The Core
+is always on, so the engine hours for a new entry come from it (the last ones are kept in the log for when the engine is off).
+
+The alarm log (the user's choice of 2026-11-07): from the Yacht Devices YDEN-02 (`yden.py`, listen only), because only
+the raw NMEA 2000 data carries the engine's own warning lights (PGN 127489 discrete status), which the Core drops. Logged:
+  - every status bit the engine sets ("Check engine", "Over temperature", "Water in fuel", ...). "Low oil pressure",
+    "Low system voltage" and "Charge indicator" only while the engine runs (with the ignition on and the engine still
+    they are the normal lamp test); "Preheat indicator" is no alarm;
+  - High coolant temperature: at or above the limit (Settings, 95 °C by default);
+  - Low oil pressure: below the limit (Settings, 1.0 bar) while the engine runs.
+"Runs" = rpm >= RUN_RPM for RUN_SETTLE_S, from the YDEN's own data. A condition must last HOLD_S to start an alarm and
+be gone HOLD_S to end it; when the YDEN's engine data stops for LOST_S (the YDEN is often off) an open alarm ends. Each
+alarm goes into the log (Maintenance page) with its start, end, engine hours and worst value.
 """
 from __future__ import annotations
 
 import asyncio, logging, math, threading, time
 
 from common.orca import SENSORS_URL, parse_message
+from enginelog.yden import YdenListener, status_names
 
 log = logging.getLogger("enginelog")
 FRESH_S, LOST_S = 10, 60
 RUN_RPM, RUN_SETTLE_S, HOLD_S = 300, 30, 10
+RUNNING_ONLY = {"Low oil pressure", "Low system voltage", "Charge indicator"}   # the lamp test with the engine still
+NOT_ALARMS = {"Preheat indicator"}
 # Core field -> (our name, conversion)
 FIELDS = {"speed": ("rpm", lambda v: v), "temperature": ("temp_c", lambda v: v - 273.15), "oilPressure": ("oil_bar", lambda v: v / 1e5),
           "altenatorVoltage": ("alt_v", lambda v: v), "alternatorVoltage": ("alt_v", lambda v: v), "fuelRate": ("fuel_lph", lambda v: v),
@@ -44,6 +48,8 @@ class Engine:
         self.pending: dict[str, float] = {}                 # condition on, since
         self.clearing: dict[str, float] = {}                # open alarm whose condition is off, since
         self.open: dict[str, dict] = {}                     # key -> {"id", "worst"}
+        self.yd: dict[str, tuple[object, float]] = {}       # the YDEN's engine fields -> (value, unix time received)
+        self.yden: YdenListener | None = None
         self.saved_hours = (store.engine() or {}).get("hours")
         store.close_open_alarms(_now_iso(clock()), "ended when the engine log restarted")
 
@@ -67,6 +73,17 @@ class Engine:
                     if f in self.values: self.values[f] = (self.values[f][0], now - a / 1000)
             self.last_message = now
 
+    def apply_yd(self, fields: dict, now: float | None = None) -> None:
+        """Decoded NMEA 2000 engine fields from the YDEN-02 (None = not available)."""
+        now = self.clock() if now is None else now
+        with self.lock:
+            for k, v in fields.items():
+                if v is not None: self.yd[k] = (v, now)
+
+    def _yd(self, now: float) -> dict:
+        """The YDEN's fields -> (value, age in s)."""
+        return {k: (v, now - t) for k, (v, t) in self.yd.items()}
+
     def _read(self, now: float) -> dict:
         """Our names -> (value, age in s), for the known fields with a number."""
         out = {}
@@ -86,26 +103,38 @@ class Engine:
                 "rpm": val("rpm", 0), "temp_c": val("temp_c", 1), "oil_bar": val("oil_bar", 2), "alt_v": val("alt_v", 2),
                 "fuel_lph": val("fuel_lph", 1), "load": val("load", 0), "boost_bar": val("boost_bar", 2), "hours": val("hours", 2),
                 "last_hours": e.get("hours"), "last_hours_at": e.get("t"), "other": extra,
-                "alarms_open": sorted(self.open)}
+                "alarms_open": sorted(self.open), "alarm_source": self.alarm_source(now)}
+
+    def alarm_source(self, now: float) -> dict:
+        """The YDEN-02 as the alarm log's source: listening, its engine data fresh, the status bits on now."""
+        with self.lock: y = self._yd(now)
+        rpm = y.get("rpm"); fresh = rpm is not None and rpm[1] < FRESH_S
+        st = lambda k: y[k][0] if k in y and y[k][1] < FRESH_S else None
+        yl = self.yden
+        return {"device": "YDEN-02", "host": yl.host if yl else None, "listening": bool(yl and yl.listening), "error": yl.error if yl else None,
+                "fresh": fresh, "age_s": round(min(a for _, a in y.values()), 1) if y else None, "source": yl.source() if yl else None,
+                "status": status_names(st("status1"), st("status2"))}
 
     # ---- alarms and the hours (every second, from the ticker) ------------------------------------------------
     def conditions(self, now: float) -> dict:
-        """key -> (name, worst-value text or None, value used for "worst", lower is worse) for the conditions that are on."""
-        with self.lock: r = self._read(now); extra = {f: (v, now - t) for f, (v, t) in self.values.items() if f not in FIELDS}
+        """key -> (name, worst-value text, value used for "worst", lower is worse or None) for the conditions that are on,
+        from the YDEN-02's engine data."""
+        with self.lock: y = self._yd(now)
+        fresh = lambda k: y[k][0] if k in y and y[k][1] < FRESH_S else None
         s = self.store.settings(); on = {}
-        rpm = r.get("rpm"); fresh = rpm is not None and rpm[1] < FRESH_S
-        if fresh and rpm[0] >= RUN_RPM: self.run_since = self.run_since or now
+        rpm = fresh("rpm")
+        if rpm is not None and rpm >= RUN_RPM: self.run_since = self.run_since or now
         else: self.run_since = None
         running = self.run_since is not None and now - self.run_since >= RUN_SETTLE_S
-        t = r.get("temp_c")
-        if t and t[1] < FRESH_S and t[0] >= s["temp_high_c"]:
-            on["temp_high"] = ("High coolant temperature", f"{{:.0f}} °C (limit {s['temp_high_c']:g} °C)", t[0], False)
-        o = r.get("oil_bar")
-        if running and o and o[1] < FRESH_S and o[0] < s["oil_low_bar"]:
-            on["oil_low"] = ("Low oil pressure", f"{{:.1f}} bar (limit {s['oil_low_bar']:g} bar)", o[0], True)
-        for f, (v, age) in extra.items():
-            if age < FRESH_S and v not in (0, 0.0, None, "", False, "0") and not isinstance(v, (dict, list)):
-                on[f"status:{f}"] = (f"Engine reports {f}", "{}", v, None)
+        t = fresh("temp_c")
+        if t is not None and t >= s["temp_high_c"]:
+            on["temp_high"] = ("High coolant temperature", f"{{:.0f}} °C (limit {s['temp_high_c']:g} °C)", t, False)
+        o = fresh("oil_bar")
+        if running and o is not None and o < s["oil_low_bar"]:
+            on["oil_low"] = ("Low oil pressure", f"{{:.1f}} bar (limit {s['oil_low_bar']:g} bar)", o, True)
+        for name in status_names(fresh("status1"), fresh("status2")):
+            if name in NOT_ALARMS or (name in RUNNING_ONLY and not running): continue
+            on[f"status:{name}"] = (f"Engine: {name}", "reported by the engine", None, None)
         return on
 
     def tick(self, now: float | None = None) -> None:
@@ -115,8 +144,8 @@ class Engine:
         if snap_hours and snap_hours[1] < FRESH_S:
             h = round(snap_hours[0], 2)
             if h != self.saved_hours: self.saved_hours = h; self.store.set_engine(h, _now_iso(now))
-        hours = self.saved_hours
-        with self.lock: lost = self.last_message is None or now - max([t for _, t in self.values.values()] or [0]) >= LOST_S
+        with self.lock: yh = self.yd.get("hours"); lost = now - max([t for _, t in self.yd.values()] or [0]) >= LOST_S
+        hours = round(yh[0], 2) if yh and now - yh[1] < FRESH_S else self.saved_hours
         for key, (name, fmt, value, low_bad) in on.items():
             self.clearing.pop(key, None)
             if key in self.open:
@@ -126,9 +155,9 @@ class Engine:
                 continue
             since = self.pending.setdefault(key, now)
             if now - since >= HOLD_S:
-                a = self.store.open_alarm(name, fmt.format(value), hours, _now_iso(since))
+                a = self.store.open_alarm(name, fmt.format(value) if value is not None else fmt, hours, _now_iso(since))
                 self.open[key] = {"id": a["id"], "worst": value}; self.pending.pop(key, None)
-                log.warning("engine alarm: %s, %s", name, fmt.format(value))
+                log.warning("engine alarm: %s", name)
         for key in [k for k in self.pending if k not in on]: del self.pending[key]
         for key in [k for k in self.open if k not in on]:
             since = self.clearing.setdefault(key, now)
@@ -152,8 +181,10 @@ class Engine:
             self.connected = False
             await asyncio.sleep(delay); delay = min(delay * 2, 30)
 
-    def start(self, host: str) -> None:
-        threading.Thread(target=lambda: asyncio.run(self._stream(host)), daemon=True, name="engine-stream").start()
+    def start(self, host: str | None, yden: str | None = None) -> None:
+        """host: the Orca Core (live values, hours); yden: the YDEN-02 (the alarms). None = without that one."""
+        if host: threading.Thread(target=lambda: asyncio.run(self._stream(host)), daemon=True, name="engine-stream").start()
+        if yden: self.yden = YdenListener(yden, self.apply_yd); self.yden.start()
 
         def ticker():
             while True:

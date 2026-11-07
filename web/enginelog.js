@@ -126,21 +126,26 @@ function maintView(d) {
         <small class="pre">${esc(x.text)}</small></span>${icon("chev", "i chev")}</button>`).join("") || `<div class="empty">No maintenance logged yet</div>`}</div></div>
     ${alarmView(d)}`;
 }
-// ---- the engine and its alarms (logged by the server from the Orca Core's engine data)
+// ---- the engine (live from the Orca Core) and its alarms (logged by the server from the YDEN-02's NMEA 2000 data)
 const clock = (/** @type {string} */ iso) => iso ? D.dayTime(Date.parse(iso)) : "–";
 function alarmView(d) {
   const e = d.engine || {}, al = d.alarms || [];
   const live = e.fresh ? `${e.running ? `<span class="good">Running</span>` : `<span class="muted">Ignition on, not running</span>`} · ${num(e.rpm, 0)} rpm · ${num(e.temp_c, 0)} °C · oil ${num(e.oil_bar, 1)} bar · ${num(e.alt_v, 1)} V · ${num(e.hours, 1)} h`
     : e.connected ? `<span class="muted">Engine off</span>${e.last_hours != null ? ` · ${num(e.last_hours, 1)} h at ${esc(clock(e.last_hours_at))}` : ""}`
     : `<span class="warnc">No engine data from the Orca Core</span>${e.error ? `<small>${esc(e.error)}</small>` : ""}`;
+  const y = e.alarm_source || {};
+  const src = y.fresh ? `<span class="good">Alarm watch on</span> · the YDEN-02 passes the engine's data${y.status && y.status.length ? ` · lights on: ${esc(y.status.join(", "))}` : ""}`
+    : y.listening ? `<span class="warnc">Alarm watch paused</span> · no engine data from the YDEN-02 (off, or the engine's gateway is)`
+    : `<span class="warnc">Alarm watch off</span> · not listening for the YDEN-02${y.error ? `<small>${esc(y.error)}</small>` : ""}`;
   return `<div class="u-maxw-720 u-mt-12 card pad"><div class="hd u-p-0">${icon("alert")}<h3>Engine</h3>${al.some(a => !a.end) ? '<span class="badge bad">alarm</span>' : ""}</div>
     <p class="u-m-6-0-0 hint" id="lEngine">${live}</p>
+    <p class="u-m-6-0-0 hint" id="lAlarmSrc">${src}</p>
     <details class="lfold" id="lAlarmFold" ${alarmsOpen ? "open" : ""}><summary><b>Alarm log</b><span class="muted">${al.length ? `${al.length} · last ${esc(clock(al[0].start))}` : "none"}</span>${icon("chev", "i chev")}</summary>
     <div class="lrows">${al.map(a => `<div class="lrowx"><div class="lrow"><span class="t"><b class="${a.end ? "" : "badc"}">${esc(a.name)}</b>${a.engine_hours != null ? ` <span class="muted">· ${num(a.engine_hours, 1)} h</span>` : ""}
         <small>${esc(clock(a.start))} – ${a.end ? esc(clock(a.end)) : "now"}${a.detail ? ` · ${esc(a.detail)}` : ""}</small></span></div>
         <button class="btn sec sm maps" type="button" data-delalarm="${esc(a.id)}" aria-label="Delete this alarm">Delete</button></div>`).join("")
       || `<div class="empty">No engine alarms logged</div>`}</div></details>
-    <p class="u-m-8-0-0 hint">The Orca Core passes on the engine's values, not its own warning lights. Logged: high coolant temperature and low oil pressure while running (limits in Settings), and any status the Core reports for the engine.</p></div>`;
+    <p class="u-m-8-0-0 hint">The alarms come from the YDEN-02, which passes the engine's own warning lights (the Orca Core does not). Logged: every warning light the engine sets (oil pressure, system voltage and charge only while running), and high coolant temperature and low oil pressure while running (limits in Settings). While the YDEN-02 is off, no alarms are logged.</p></div>`;
 }
 
 function setView(d) {

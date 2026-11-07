@@ -118,6 +118,7 @@ test("Engine log: a position opens Google Maps in its own window; the engine ala
   expect(opened[0][2]).toContain("popup");
   await page.locator("#lViews [data-lview=maintenance]").click();
   await expect(page.locator("#lEngine")).toContainText("1800 rpm");
+  await expect(page.locator("#lAlarmSrc")).toContainText("YDEN-02");          // the alarms come from the YDEN-02
   await expect(page.locator("#lAlarmFold")).not.toHaveAttribute("open", "");   // the alarm log is folded by default
   await page.locator("#lAlarmFold summary").click();
   await expect(page.locator("[data-delalarm]")).toHaveCount(1);

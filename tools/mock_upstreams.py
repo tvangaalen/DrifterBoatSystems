@@ -321,7 +321,7 @@ class EngineLog:
                         "start": at(3)[:16] + ":05", "end": at(3)[:11] + "23:59:00"}]
         self.engine = {"connected": True, "error": None, "fresh": True, "running": True, "age_s": 0.4, "source": "3.0", "rpm": 1800, "temp_c": 80.0,
                        "oil_bar": 3.5, "alt_v": 14.1, "fuel_lph": 3.2, "load": 40, "boost_bar": 0.0, "hours": 2321.37, "last_hours": 2321.37,
-                       "last_hours_at": at(0)[:16] + ":00", "other": {}, "alarms_open": []}
+                       "last_hours_at": at(0)[:16] + ":00", "other": {}, "alarms_open": [], "alarm_source": {"device": "YDEN-02", "host": "192.0.2.10", "listening": True, "error": None, "fresh": True, "age_s": 0.3, "source": "3.0", "status": []}}
         self.maint = [{"id": "d4e5f6a1b2c3", "date": at(5)[:10], "engine_hours": 2300.0, "text": "Oil and oil filter changed"}, {"id": "e5f6a1b2c3d4", "date": at(22)[:10], "engine_hours": None, "text": "Impeller replaced"}]
 
     def log(self):
