@@ -60,6 +60,8 @@
 - System page: saving the Pushover keys no longer rebuilds the Alerts card
 - Faster shipping: test suites side by side at low priority, passed test runs are not repeated, the live check no longer
   waits minutes for what is still starting
+- Every log foldable and folded by default (supervisor events, BoatGuard log, engine alarm log); an on/off switch for
+  every notification; History legends under the charts
 
 ## 1.2
 
