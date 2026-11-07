@@ -57,6 +57,7 @@
   Since
 - Shared Pushover keys on the System page, priority and sound per notification; Engine log: engine hours and engine
   alarms from the Orca Core, Maps button, foldable fuel list, country and marina removed
+- System page: saving the Pushover keys no longer rebuilds the Alerts card
 
 ## 1.2
 
