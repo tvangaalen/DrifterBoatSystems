@@ -226,7 +226,8 @@ async function renderSystem(el) {
   el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="u-m-10-2-0 hint">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p>
       <div class="u-mt-12">${dateSeg()}</div><p class="u-m-10-2-0 hint">Date format, for every page (times are always 24-hour). Remembered on this device.</p></div>
     <h2 class="sec">Systems</h2><div class="card"><div class="rows" id="sysRows"><div class="empty">Loading…</div></div></div>
-    <div id="sysEvWrap" hidden><h2 class="sec">Supervisor events</h2><div class="card"><div class="log" id="sysEvents"></div></div></div>
+    <div id="sysEvWrap" hidden><details class="secfold" id="sysEvFold"><summary><h2 class="sec">Supervisor events<span class="r"><span id="sysEvSum"></span> ${icon("chev", "i chev")}</span></h2></summary>
+      <div class="card"><div class="log" id="sysEvents"></div></div></details></div>
     <div id="sysOffWrap" hidden><h2 class="sec">Switch off</h2><div class="card pad"><p class="u-m-0-0-12 hint">Stops every system's server and this app's server on the boat PC. Switches, chargers and the camera stay as they are. Start everything again with the <b>Drifter Boat Systems</b> icon on the boat PC's desktop.</p>
       <button class="btn danger" type="button" id="sysOff">${icon("off")} Switch all systems off</button></div></div>
     <div id="sysAlertsWrap"></div>
@@ -271,6 +272,7 @@ async function refreshSystem(rebuild = false) {
     : `<div class="row"><span class="hint">The supervisor is off: servers are not restarted automatically.</span></div>`);
   $("sysEvWrap").hidden = !sup || !sup.events.length;
   $("sysOffWrap").hidden = !sup; $("sysOff").disabled = !!(sup && sup.shutdown && sup.shutdown.state === "running");
+  if (sup && sup.events.length) $("sysEvSum").textContent = `last ${dayTime(sup.events[sup.events.length - 1].t)}`;
   if (sup) $("sysEvents").innerHTML = sup.events.slice().reverse().slice(0, 30).map(e => `<div class="${e.kind === "bad" ? "bad" : e.kind === "warn" ? "warn" : ""}"><time>${esc(dayTime(e.t))}</time><span class="msg"><b>${esc(e.module)}</b> ${esc(e.text)}</span></div>`).join("");
   const busy = $("sysBackup") && $("sysBackup").disabled;           // never replace the button while it is copying
   const aw = $("sysAlertsWrap"), al = sup && sysInfo.alerts;      // built once: a poll never wipes a key being typed or a choice

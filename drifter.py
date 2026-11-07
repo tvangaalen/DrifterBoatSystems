@@ -164,7 +164,7 @@ class Watchdog:
            "anchor": "The anchor alarm and its push alerts are off while it is down."}
     HIGH = {"energy", "anchor"}                          # their own message, priority 1 by default: sounds even in quiet hours
     EVENTS = {"down_high": "Energy or anchor watch down", "down": "Another system down", "back": "System back"}
-    DEFAULTS = {"down_high": {"priority": 1, "sound": ""}, "down": {"priority": 0, "sound": ""}, "back": {"priority": 0, "sound": ""}}
+    DEFAULTS = {"down_high": {"on": True, "priority": 1, "sound": ""}, "down": {"on": True, "priority": 0, "sound": ""}, "back": {"on": True, "priority": 0, "sound": ""}}
 
     def __init__(self, sup, key_file, clock=time.time, send=None, shared=None):
         self.sup, self.key_file, self.clock = sup, Path(key_file), clock
@@ -201,7 +201,8 @@ class Watchdog:
         log.info("shared Pushover keys saved (%s)", "complete" if r["configured"] else "incomplete")   # never the keys
         return r
 
-    def _post(self, title: str, message: str, event: str) -> None:
+    def _post(self, title: str, message: str, event: str, force: bool = False) -> None:
+        if not force and not self.prefs()[event]["on"]: log.info("alert switched off, not sent: %s", message); return
         k = self.keys()
         if not k: log.warning("alert not sent (no Pushover keys in %s): %s", self.key_file, message); return
         p = self.prefs()[event]
@@ -232,7 +233,7 @@ class Watchdog:
 
     def test(self) -> None:
         if not self.keys(): raise ValueError(f"no Pushover keys in {self.key_file}")
-        self._post("Drifter: test", "Alerts from Drifter Boat Systems reach this phone.", "back")
+        self._post("Drifter: test", "Alerts from Drifter Boat Systems reach this phone.", "back", force=True)
         if self.error: raise ValueError(self.error)
 
     def status(self) -> dict:

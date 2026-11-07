@@ -50,6 +50,8 @@ def clean_prefs(body, current: dict | None = None) -> dict:
     for e, v in body.items():
         if e not in PREF_DEFAULTS or not isinstance(v, dict):
             raise ValueError(f"unknown notification {e}")
+        if "on" in v and not isinstance(v["on"], bool):
+            raise ValueError(f"{e}: on must be true or false")
         if "priority" in v:
             pr = v["priority"]
             if isinstance(pr, bool) or not isinstance(pr, (int, float)) or pr != int(pr) or int(pr) not in PRIORITIES:
@@ -100,9 +102,14 @@ class Notifier:
         tmp.replace(self.settings_file)
 
     def set_prefs(self, body) -> dict:
+        """Priority and sound per notification; an "on" in it is the notification's switch."""
         with self._lock:
             new = clean_prefs(body, self.prefs())
-            self._write({**self._switches(), "prefs": new})
+            sw = self._switches()
+            for key, e in SWITCH_EVENT.items():
+                if isinstance((body or {}).get(e), dict) and "on" in body[e]:
+                    sw[key] = body[e]["on"]
+            self._write({**sw, "prefs": new})
         return new
 
     def enabled(self, key: str) -> bool:
@@ -134,7 +141,9 @@ class Notifier:
         return None
 
     def status(self) -> dict:
-        return {**self._switches(), "prefs": self.prefs(), "events": EVENTS, "pushover_configured": self.keys() is not None, "shore_connected": self._shore_state,
+        sw = self._switches()
+        prefs = {e: {"on": sw[k], **self.prefs()[e]} for k, e in SWITCH_EVENT.items()}
+        return {**sw, "prefs": prefs, "events": EVENTS, "pushover_configured": self.keys() is not None, "shore_connected": self._shore_state,
                 "last_sent": self.last_sent, "last_error": self.last_error}
 
     # ---- sending -----------------------------------------------------------------------------------------------

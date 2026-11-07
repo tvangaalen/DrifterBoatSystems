@@ -25,6 +25,7 @@ const SETTINGS = [   // [key, label, hint, min, max, step, unit] — the server'
   ["balancer_connection_retry_seconds", "Balancer reconnect after", "", 5, 300, 1, "s"],
   ["history_retention_days", "Keep history", "Lowering this deletes older history", 1, 365, 1, "days"],
 ];
+const NOTIF_EV = {float: ["Chargers switched to float", "When Float protection starts"], shore: ["Shore power ON / OFF", "When shore power has been connected or disconnected for 30 s"]};
 let notif = null, alarmData = null, view = "now", bms = null, bal = null, settings = null, setDirty = false, notifDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
 const busy = new Set();
 const zoom = [0, 1000];     // History: the part of the period shown, in thousandths (two-handled slider; all charts)
@@ -539,7 +540,7 @@ function renderCharts() {
   if (!box.dataset.built) {
     box.dataset.built = "1";
     box.innerHTML = defs.map(([id, title, unit]) => `<div class="card chartcard"><div class="hd"><h3>${title}</h3><span class="muted">${unit}</span></div>
-      <div class="legend" id="${id}Leg"></div><div class="chartwrap no-swipe"><canvas id="${id}"></canvas><div class="cross" hidden></div><div class="charttip" hidden></div></div></div>`).join("")
+      <div class="chartwrap no-swipe"><canvas id="${id}"></canvas><div class="cross" hidden></div><div class="charttip" hidden></div></div><div class="legend" id="${id}Leg"></div></div>`).join("")   // the legend under the chart
       + `<div class="card chartcard"><div class="hd"><h3>Alarms</h3><span class="muted">per battery</span></div><div class="alarmbody" id="eAlarmBody"></div></div>`;
     for (const [id] of defs) { const cv = $(id), tip = cv.parentElement.querySelector(".charttip");
       const move = e => crosshair(cv, tip, e), leave = () => { tip.hidden = true; cv.parentElement.querySelector(".cross").hidden = true; };
@@ -657,11 +658,7 @@ function renderSettings() {
       : `<div class="row"><div class="k"><b>${l}</b>${h ? `<small>${h}</small>` : ""}</div><label class="numf"><input class="field" type="number" inputmode="decimal" id="es-${k}" min="${lo}" max="${hi}" step="${step}" value="${settings[k] ?? ""}" required><span class="u">${u}</span></label></div>`).join("")}
     <div class="row"><span class="hint" id="eSetMsg"></span><button class="btn" type="submit" id="eSetSave" disabled>Save</button></div></div></form>
     <div class="u-maxw-720 u-mt-12 card"><div class="hd"><h3>Notifications</h3>${notif && !notif.pushover_configured ? '<span class="warnc">Pushover is not set up on the boat PC</span>' : ""}</div><div class="rows">
-      <div class="row"><div class="k"><b>Float protection notification</b><small>A Pushover message "Chargers switched to float" when Float protection starts</small></div>
-        ${D.sw("en-float", notif ? notif.float_notification : false, notif ? "" : "disabled")}</div>
-      <div class="row"><div class="k"><b>Shore power notification</b><small>"Shore power ON" or "Shore power OFF" when shore power has been connected or disconnected for 30 s</small></div>
-        ${D.sw("en-shore", notif ? notif.shore_notification : false, notif ? "" : "disabled")}</div>
-      ${notif && notif.prefs ? `${D.notifyRows("enp-", notif.events, notif.prefs)}
+      ${notif && notif.prefs ? `${D.notifyRows("enp-", NOTIF_EV, notif.prefs)}
       <div class="row"><span class="hint" id="enpMsg">${notifDirty ? "Unsaved changes" : "Priority and sound of each notification"}</span><button class="btn" type="button" id="enpSave" ${notifDirty ? "" : "disabled"}>Save</button></div>` : ""}</div></div>`;
   validateSettings();
 }
@@ -734,7 +731,7 @@ async function onChange(e) {
 async function onClick(e) {
   const b = e.target.closest("button"); if (!b) return;
   if (b.id === "enpSave") {
-    try { notif = await D.run(m, b, () => D.api("power", "/api/notifications", {prefs: D.readNotify("enp-", notif.events)}), "Notifications saved"); notifDirty = false; $("eSet").dataset.built = ""; renderSettings(); } catch (e) {}
+    try { notif = await D.run(m, b, () => D.api("power", "/api/notifications", {prefs: D.readNotify("enp-", NOTIF_EV)}), "Notifications saved"); notifDirty = false; $("eSet").dataset.built = ""; renderSettings(); } catch (e) {}
     return;
   }
   if (b.dataset.view) { const was = view; view = b.dataset.view; m.render(); if (was !== view) window.scrollTo(0, 0); D.poll(m, true); return; }

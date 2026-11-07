@@ -74,7 +74,7 @@ class ApiContract:
         code, j = self.post("/api/settings", {"away_after_s": 600, "sounds": {"armed": "siren"}, "priorities": {"unguarded": 2}})
         self.assertEqual(code, 200)
         self.assertEqual(j, {"away_after_s": 600, "poll_s": 30, "sounds": {"armed": "siren", "disarmed": "", "unguarded": ""},
-                             "priorities": {"armed": 0, "disarmed": 0, "unguarded": 2}})
+                             "priorities": {"armed": 0, "disarmed": 0, "unguarded": 2}, "notify_on": {"armed": True, "disarmed": True, "unguarded": True}})
         disk = json.loads((self.dir / "config.json").read_text()); self.assertEqual((disk["away_after_s"], disk["sounds"]["armed"]), (600, "siren"))
         for body, msg in [({"away_after_s": 5}, "away_after_s must be a whole number of seconds between 30 and 3600"),
                           ({"poll_s": 12.5}, "poll_s must be a whole number of seconds between 10 and 300"),

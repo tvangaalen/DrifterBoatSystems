@@ -39,6 +39,7 @@ class GuardConfig(BaseModel):
     ezviz: Ezviz
     sounds: dict[str, str] = {}
     priorities: dict[str, int] = {}
+    notify_on: dict[str, bool] = {}          # a notification switched off in the app (missing = on)
 
     @field_validator("phone_macs")
     @classmethod

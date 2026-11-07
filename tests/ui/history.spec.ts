@@ -66,7 +66,7 @@ test("History: Energy in this period shows the flow as shares with kWh, and the 
   expect(errors).toEqual([]);
 });
 
-test("Energy settings: Save sends every setting (also the hidden BMS pop-up), the notification switch posts on its own", async ({ page }) => {
+test("Energy settings: Save sends every setting (also the hidden BMS pop-up); each notification has its switch, priority and sound", async ({ page }) => {
   const posts: { url: string; body: any }[] = [];
   const errors = await setUp(page, { theme: "dark", posts });
   await open(page, "#power", "#eViews [data-view=settings]");
@@ -76,10 +76,12 @@ test("Energy settings: Save sends every setting (also the hidden BMS pop-up), th
   const body = posts.find(p => p.url.endsWith("/api/settings"))!.body;
   expect(body.default_ac_limit).toBe(9);
   expect(body.bms_popup_seconds).toBeDefined();
-  await page.locator("label:has(#en-float)").click();
-  await expect.poll(() => posts.find(p => p.url.endsWith("/api/notifications"))?.body).toEqual({ float_notification: false });
-  await page.locator("label:has(#en-shore)").click();
-  await expect.poll(() => posts.filter(p => p.url.endsWith("/api/notifications")).map(p => p.body)).toContainEqual({ shore_notification: false });
+  await expect(page.locator("#enpSave")).toBeDisabled();
+  await page.locator("label:has(#enp-on-float)").click();
+  await page.locator("#enp-snd-shore").selectOption("tugboat");
+  await page.locator("#enpSave").click();
+  await expect.poll(() => posts.find(p => p.url.endsWith("/api/notifications"))?.body).toEqual(
+    { prefs: { float: { on: false, priority: 0, sound: "" }, shore: { on: true, priority: 0, sound: "tugboat" } } });
   expect(errors).toEqual([]);
 });
 

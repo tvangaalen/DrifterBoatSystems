@@ -89,7 +89,8 @@ class SharedKeysTest(unittest.TestCase):
         self.assertEqual(pushover.clean_prefs({"a": {"sound": "bike"}}, d, {"b": {"priority": -1}}),
                          {"a": {"priority": 0, "sound": "bike"}, "b": {"priority": -1, "sound": ""}})
         self.assertEqual(pushover.clean_prefs({"b": {"priority": 2}}, d, emergency=("b",))["b"]["priority"], 2)
-        for bad in ({"a": {"priority": 2}}, {"a": {"priority": 1.5}}, {"a": {"sound": "boom"}}, {"c": {}}, {"a": 1}, []):
+        self.assertIs(pushover.clean_prefs({"a": {"on": False}}, {"a": {"on": True, "priority": 0, "sound": ""}})["a"]["on"], False)
+        for bad in ({"a": {"priority": 2}}, {"a": {"priority": 1.5}}, {"a": {"sound": "boom"}}, {"c": {}}, {"a": 1}, [], {"a": {"on": 1}}):
             with self.assertRaises(ValueError): pushover.clean_prefs(bad, d)
 
 

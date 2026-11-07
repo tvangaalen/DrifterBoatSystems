@@ -137,6 +137,16 @@ def test():
         g2.notify_test("unguarded", "siren", 2); assert note.sent[-1][1] == 2 and note.kw == {"expire": 120}, "emergency test is short"
         try: g2.notify_test("armed", "siren", 5); raise AssertionError("bad test priority accepted")
         except ValueError: pass
+        # a notification switched off is not sent (a test still is); validated and saved
+        assert g2.status()["notify_on"] == {"armed": True, "disarmed": True, "unguarded": True}
+        for bad in ({"notify_on": {"armed": "no"}}, {"notify_on": {"boarded": False}}, {"notify_on": [False]}):
+            try: g2.update_settings(bad, cfgp); raise AssertionError(f"accepted {bad}")
+            except ValueError: pass
+        r = g2.update_settings({"notify_on": {"disarmed": False}}, cfgp)
+        assert r["notify_on"]["disarmed"] is False and json.loads(cfgp.read_text())["notify_on"]["disarmed"] is False
+        n0 = len(note.sent); g2.notify("disarmed", "x"); assert len(note.sent) == n0, "switched off: not sent"
+        g2.notify("armed", "x"); assert len(note.sent) == n0 + 1
+        g2.notify_test("disarmed", "magic"); assert len(note.sent) == n0 + 2, "a test is sent anyway"
         class Broken(Note):
             def send(self, *a, **k): raise RuntimeError("no internet")
         g3 = Guard(CFG, Cam(), stations=lambda c: set(), clock=lambda: t[0] + 1000, state_path=Path(tmp) / "b.json", notifier=Broken())

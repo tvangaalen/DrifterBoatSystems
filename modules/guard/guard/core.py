@@ -57,8 +57,10 @@ class Guard:
                                     "unguarded_sent": self.unguarded_sent})
 
     def notify(self, event: str, message: str, priority: int | None = None, title: str | None = None,
-               sound: str | None = None, **extra) -> None:
+               sound: str | None = None, force: bool = False, **extra) -> None:
         if self.notifier is None: return
+        if not force and self.cfg.get("notify_on", {}).get(event, True) is False:
+            log.info("notification switched off, not sent: %s", EVENTS[event]); return
         if sound is None: sound = self.cfg.get("sounds", {}).get(event, "")
         if priority is None: priority = self.cfg.get("priorities", {}).get(event, DEFAULT_PRIORITY[event])
         try: self.notifier.send(title or EVENTS[event], message, priority=priority, sound=sound or None, **extra)
@@ -169,8 +171,12 @@ class Guard:
 
     def update_settings(self, new: dict, config_path: Path | None = None) -> dict:
         """Validate and apply settings from the app, then write them to config.json (other keys untouched)."""
-        vals, sounds, prios = {}, None, None
+        vals, sounds, prios, ons = {}, None, None, None
         for k, v in new.items():
+            if k == "notify_on":
+                if not isinstance(v, dict) or not set(v) <= set(EVENTS) or any(not isinstance(b, bool) for b in v.values()):
+                    raise ValueError("notify_on must map armed/disarmed/unguarded to true or false")
+                ons = dict(self.cfg.get("notify_on", {}), **v); continue
             if k == "sounds":
                 if not isinstance(v, dict) or not set(v) <= set(EVENTS) or any(s not in SOUNDS for s in v.values()):
                     raise ValueError("sounds must map armed/disarmed/unguarded to a Pushover sound")
@@ -196,14 +202,19 @@ class Guard:
             eff = lambda d: {e: d.get(e, DEFAULT_PRIORITY[e]) for e in EVENTS}  # missing = default
             if prios is not None and eff(prios) != eff(old_prios): changed["priorities"] = prios
             merged["priorities"] = eff(changed.get("priorities", old_prios))
+            old_ons = self.cfg.get("notify_on", {}); on_eff = lambda d: {e: d.get(e, True) for e in EVENTS}
+            if ons is not None and on_eff(ons) != on_eff(old_ons): changed["notify_on"] = on_eff(ons)
+            merged["notify_on"] = on_eff(changed.get("notify_on", old_ons))
             if not changed: return merged
             path = Path(config_path or self.config_path)
             disk = load_json(path, {}); disk.update(changed); save_json(path, disk)
             self.cfg.update(changed)
-            desc = [f"{k} = {v} s" for k, v in changed.items() if k != "sounds"]
+            desc = [f"{k} = {v} s" for k, v in changed.items() if k not in ("sounds", "priorities", "notify_on")]
             desc += [f"sound {e} = {s or 'app default'}" for e, s in changed.get("sounds", {}).items() if old_sounds.get(e, "") != s]
             if "priorities" in changed:
                 desc += [f"priority {e} = {PRIORITIES[p]}" for e, p in eff(changed["priorities"]).items() if eff(old_prios)[e] != p]
+            if "notify_on" in changed:
+                desc += [f"notification {e} {'on' if b else 'off'}" for e, b in changed["notify_on"].items() if on_eff(old_ons)[e] != b]
             log.info("settings changed (app): %s", ", ".join(desc))
             self.wake.set()
         return merged
@@ -217,7 +228,7 @@ class Guard:
         p = DEFAULT_PRIORITY[event] if priority is None else priority
         self.notify(event, f"Test: sound {sound or 'app default'}, priority {PRIORITIES[p]}. "
                     f"This is how the '{EVENTS[event]}' notification will arrive.",
-                    title=f"Test: {EVENTS[event]}", sound=sound, priority=p, **({"expire": 120} if p == 2 else {}))
+                    title=f"Test: {EVENTS[event]}", sound=sound, priority=p, force=True, **({"expire": 120} if p == 2 else {}))
         return True
 
     def camera_status(self, max_age_s: float = 60, pending_age_s: float = 10) -> dict:
@@ -244,6 +255,7 @@ class Guard:
                 "notifications": bool(self.notifier and self.notifier.configured),
                 "sounds": {e: self.cfg.get("sounds", {}).get(e, "") for e in EVENTS}, "sound_options": SOUNDS, "events": EVENTS,
                 "priorities": {e: self.cfg.get("priorities", {}).get(e, DEFAULT_PRIORITY[e]) for e in EVENTS},
+                "notify_on": {e: self.cfg.get("notify_on", {}).get(e, True) is not False for e in EVENTS},
                 "priority_options": PRIORITIES, "emergency": {"retry_s": EMERGENCY_RETRY_S, "expire_s": EMERGENCY_EXPIRE_S}}
 
     def run(self) -> None:

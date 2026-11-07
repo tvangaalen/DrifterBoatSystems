@@ -50,6 +50,10 @@ def main():
         n.set_prefs({"float": {"priority": 1, "sound": "tugboat"}})
         assert n.prefs()["float"] == {"priority": 1, "sound": "tugboat"} and n.prefs()["shore"]["priority"] == 0
         assert n.status()["shore_notification"] is False                     # the switches stay as they were
+        assert n.status()["prefs"]["shore"]["on"] is False and n.status()["prefs"]["float"]["on"] is True
+        n.set_prefs({"shore": {"on": True}})
+        assert n.status()["shore_notification"] is True                      # "on" in the prefs is the switch
+        n.set_prefs({"shore": {"on": False}})
         for bad in ({"float": {"priority": 2}}, {"float": {"sound": "boom"}}, {"other": {}}):
             try:
                 n.set_prefs(bad)

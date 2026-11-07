@@ -29,7 +29,7 @@ class Power:
         self.settings = {"default_ac_limit": 10, "float_protection_enabled": True, "float_cell_trigger_mv": 3550.0, "float_cell_resume_mv": 3375.0,
                          "bms_refresh_interval": 30, "bms_popup_seconds": 5, "bms_connection_retry_seconds": 5, "balancer_refresh_interval": 60,
                          "balancer_connection_retry_seconds": 30, "history_retention_days": 31}   # the v2 settings table
-        self.notif = {"float_notification": True, "shore_notification": True, "prefs": {"float": {"priority": 0, "sound": ""}, "shore": {"priority": 0, "sound": ""}},
+        self.notif = {"float_notification": True, "shore_notification": True, "prefs": {"float": {"on": True, "priority": 0, "sound": ""}, "shore": {"on": True, "priority": 0, "sound": ""}},
                       "events": {"float": "Chargers switched to float", "shore": "Shore power ON / OFF"}, "pushover_configured": True, "shore_connected": False, "last_sent": None, "last_error": None}
         self.active_mode = None; self.report = {"state": "idle", "days": None, "started_at": None, "finished_at": None, "duration_seconds": None, "markdown": None, "error": None}
 

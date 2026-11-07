@@ -417,7 +417,7 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 .mdreport p,.mdreport ul{margin:6px 0}.mdreport code{font:12.5px ui-monospace,Menlo,Consolas,monospace;background:var(--bg2);padding:1px 5px;border-radius:5px}
 .mdtable{overflow-x:auto;margin:8px 0}.mdtable table{border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
 .mdtable th,.mdtable td{border-bottom:1px solid var(--line);padding:5px 9px;text-align:left;white-space:nowrap}.mdtable th{color:var(--muted);font-weight:650}
-.chartcard .hd{padding-bottom:2px}.legend{display:flex;flex-wrap:wrap;gap:0 4px;padding:0 10px 4px;font-size:12px;color:var(--muted)}
+.chartcard .hd{padding-bottom:2px}.legend{display:flex;flex-wrap:wrap;gap:0 4px;padding:4px 10px 0;font-size:12px;color:var(--muted)}
 .legend button{background:none;border:0;color:inherit;font:inherit;padding:0 8px;min-height:40px;border-radius:8px;cursor:pointer}   /* tap: only this one */
 .legend button[aria-pressed="true"]{background:var(--ctl);color:var(--fg)}.legend button.off{opacity:.45}
 .legend i,.charttip i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}

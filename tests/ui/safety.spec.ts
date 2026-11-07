@@ -99,7 +99,8 @@ test("Pushover: the keys are typed hidden and sent once, the page only shows the
   await page.locator("#sasnd-back").selectOption("bike"); await page.locator("#sapri-back").selectOption("-1");
   await page.locator("#sysAlertSave").click();
   await expect.poll(() => posts.length).toBe(2);
-  expect((posts[1].body as any).prefs.back).toEqual({ priority: -1, sound: "bike" });
+  expect((posts[1].body as any).prefs.back).toEqual({ on: true, priority: -1, sound: "bike" });
+  await expect(page.locator("#saon-down")).toBeChecked();                           // every alert has its own switch
   await expect(page.locator("#sapri-back option[value='2']")).toHaveCount(0);     // no emergency for the gateway's alerts
 });
 

@@ -264,7 +264,7 @@ class AnchorWatch:
     def _push_ok(self): return self.notifier is not None and self.notifier.configured and self.settings["push_alerts"]
 
     def _push_alarm(self, aid, detail, now):
-        if not self._push_ok(): return
+        if not self._push_ok() or not self.settings.get(f"push_on_{aid}", True): return
         b = self.boat
         extra = [x for x in (f"Depth {b['depth']:.1f} m" if b.get("depth") is not None else "",
                              f"wind {b['tws']:.0f} kn" if b.get("tws") is not None else "") if x]
@@ -274,7 +274,7 @@ class AnchorWatch:
                             sound=s.get(f"push_sound_{aid}", ""))
 
     def _push_cleared(self, aid, now):
-        if self._push_ok(): self.notifier.cleared(aid, f"Cleared: {self.ALARM_TEXT[aid]}", "The alarm condition has ended.", now,
+        if self._push_ok() and self.settings.get(f"push_on_{aid}", True) and self.settings["push_on_cleared"]: self.notifier.cleared(aid, f"Cleared: {self.ALARM_TEXT[aid]}", "The alarm condition has ended.", now,
                                                   priority=self.settings["push_prio_cleared"], sound=self.settings["push_sound_cleared"])
 
     def _push_cancel(self, aid=None):

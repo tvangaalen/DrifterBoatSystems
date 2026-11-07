@@ -16,11 +16,10 @@ export const SOUNDS = ["", "pushover", "bike", "bugle", "cashregister", "classic
 export const PRIORITY_LABEL = {"-2": "Lowest", "-1": "Quiet", "0": "Normal", "1": "High", "2": "Emergency"};
 export const soundLabel = s => s === "" ? "App default" : s === "none" ? "Silent" : s[0].toUpperCase() + s.slice(1);
 /**
- * Rows with a sound and a priority select per notification. `events`: {key: title or [title, hint]}; `prefs`: {key: {priority, sound}};
+ * Rows with an on/off switch (when the notification has "on"), a sound and a priority select per notification. `events`: {key: title or [title, hint]}; `prefs`: {key: {priority, sound}};
  * `fixed`: {key: priority} for a notification whose priority cannot be changed (shown as text); priorities offered: -2..`max`.
- * @param {string} prefix @param {Record<string, string|string[]>} events @param {Record<string, {priority: number, sound: string}>} prefs
- * @param {{max?: number, fixed?: Record<string, number>}} [opts]
  */
+/** @param {string} prefix @param {Record<string, string|string[]>} events @param {Record<string, {on?: boolean, priority: number, sound: string}>} prefs @param {{max?: number, fixed?: Record<string, number>}} [opts] */
 export function notifyRows(prefix, events, prefs, opts = {}) {
   const max = opts.max ?? 1, fixed = opts.fixed || {};
   return Object.entries(events).map(([e, t]) => {
@@ -28,19 +27,21 @@ export function notifyRows(prefix, events, prefs, opts = {}) {
     const prio = e in fixed ? `<span class="u-flex-1 hint">${esc(PRIORITY_LABEL[fixed[e]])} (fixed)</span>`
       : `<select class="u-flex-1 field" id="${prefix}pri-${e}" aria-label="Priority for ${esc(title)}">${Object.entries(PRIORITY_LABEL).filter(([v]) => +v <= max)
         .map(([v, l]) => `<option value="${v}" ${+v === p.priority ? "selected" : ""}>${l}</option>`).join("")}</select>`;
-    return `<div class="row col"><div class="k"><b>${esc(title)}</b>${hint ? `<small>${esc(hint)}</small>` : ""}</div>
+    return `<div class="row col"><div class="u-d-flex u-jc-between u-gap-10 u-ai-center"><div class="k"><b>${esc(title)}</b>${hint ? `<small>${esc(hint)}</small>` : ""}</div>
+      ${"on" in p ? sw(`${prefix}on-${e}`, p.on !== false, `aria-label="${esc(title)} on or off"`) : ""}</div>
       <div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="${prefix}snd-${e}" aria-label="Sound for ${esc(title)}">${SOUNDS.map(o =>
         `<option value="${esc(o)}" ${o === p.sound ? "selected" : ""}>${esc(soundLabel(o))}</option>`).join("")}</select>${prio}</div></div>`;
   }).join("");
 }
 /** The choices of notifyRows as {key: {priority, sound}} (a fixed priority is left out: the server keeps it). */
 export function readNotify(prefix, events) {
-  /** @type {Record<string, {priority?: number, sound: string}>} */
+  /** @type {Record<string, {on?: boolean, priority?: number, sound: string}>} */
   const out = {};
   for (const e of Object.keys(events)) {
     const s = /** @type {HTMLSelectElement|null} */ (document.getElementById(`${prefix}snd-${e}`)), p = /** @type {HTMLSelectElement|null} */ (document.getElementById(`${prefix}pri-${e}`));
     if (!s) continue;
-    out[e] = p ? {priority: +p.value, sound: s.value} : {sound: s.value};
+    const on = /** @type {HTMLInputElement|null} */ (document.getElementById(`${prefix}on-${e}`));
+    out[e] = {...(on ? {on: on.checked} : {}), ...(p ? {priority: +p.value} : {}), sound: s.value};
   }
   return out;
 }

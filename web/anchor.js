@@ -36,7 +36,7 @@ const cssv = n => getComputedStyle(document.body).getPropertyValue(n).trim();
 // Priority and sound per push alert (settings push_prio_<key> / push_sound_<key>); anchor drag is always an emergency.
 const PUSH_EV = {drag: ["Anchor drag", "Repeats until acknowledged in Pushover"], gps: "GPS position lost", core: "No data from Orca Core", depth: "Shallow water",
   wind: "Wind limit", ais: "AIS target close", cleared: ["Alarm cleared", "When an alarm condition has ended"]};
-const pushPrefs = v => Object.fromEntries(Object.keys(PUSH_EV).map(k => [k, {priority: k === "drag" ? 2 : v[`push_prio_${k}`] ?? 1, sound: v[`push_sound_${k}`] ?? ""}]));
+const pushPrefs = v => Object.fromEntries(Object.keys(PUSH_EV).map(k => [k, {on: v[`push_on_${k}`] !== false, priority: k === "drag" ? 2 : v[`push_prio_${k}`] ?? 1, sound: v[`push_sound_${k}`] ?? ""}]));
 const COLS = [["track", "Track"], ["limit", "Anchor circle"], ["swing", "Max swing"]];   // map colours, per light and dark
 /** A map colour for the theme in use: the user's choice (Settings) in light and dark; Night keeps its own reds.
  * @param {string} name track, limit or swing */
@@ -540,9 +540,12 @@ async function save() {
   for (const k of ["pos_format", "own_mmsi", "chain_formula"]) { const v = $("as-" + k).value.trim(); if (v !== cur[k]) out[k] = v; }
   for (const [k] of COLS) for (const t of ["light", "dark"]) { const id = `col_${k}_${t}`, v = $("as-" + id).value.toLowerCase(); if (v !== cur[id]) out[id] = v; }
   for (const [k, p] of Object.entries(D.readNotify("as-push-", PUSH_EV))) {
+    if (p.on !== undefined && p.on !== (cur[`push_on_${k}`] !== false)) out[`push_on_${k}`] = p.on;
     if (p.sound !== cur[`push_sound_${k}`]) out[`push_sound_${k}`] = p.sound;
     if (p.priority !== undefined && p.priority !== cur[`push_prio_${k}`]) out[`push_prio_${k}`] = p.priority;
   }
+  if (out.push_on_drag === false && !(await D.confirm({title: "Switch off the anchor drag push alert?", text: "A dragging anchor then no longer reaches your phone. The alarm still sounds on this page and on the watch PC.",
+    ok: "Switch it off", cancel: "Keep it on", danger: true}))) return;
   try { await D.run(m, $("aSetSave"), () => D.api("anchor", "/api/command", {action: "settings", settings: out}), "Settings saved"); setDirty = false; setBuilt = false; } catch (e) {}
 }
 

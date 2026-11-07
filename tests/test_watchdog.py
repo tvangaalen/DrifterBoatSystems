@@ -61,9 +61,9 @@ class WatchdogTest(unittest.TestCase):
         self.assertNotIn("c" * 30, json.dumps(self.dog.status()))
 
     def test_priority_and_sound(self):
-        self.assertEqual(self.dog.prefs()["down_high"], {"priority": 1, "sound": ""})
+        self.assertEqual(self.dog.prefs()["down_high"], {"on": True, "priority": 1, "sound": ""})
         self.dog.set_prefs({"back": {"priority": -1, "sound": "bike"}})
-        self.assertEqual(self.dog.prefs()["back"], {"priority": -1, "sound": "bike"}); self.assertEqual(self.dog.prefs()["down"]["priority"], 0)
+        self.assertEqual(self.dog.prefs()["back"], {"on": True, "priority": -1, "sound": "bike"}); self.assertEqual(self.dog.prefs()["down"]["priority"], 0)
         for bad in ({"back": {"priority": 2}}, {"back": {"sound": "boom"}}, {"other": {}}, {"back": {"priority": True}}):
             with self.assertRaises(ValueError): self.dog.set_prefs(bad)
         posted = []
@@ -71,6 +71,11 @@ class WatchdogTest(unittest.TestCase):
         with unittest.mock.patch.object(drifter.pushover, "post", lambda path, fields, agent: posted.append(fields)):
             self.dog._post("t", "m", "back")
         self.assertEqual((posted[0]["priority"], posted[0]["sound"]), (-1, "bike"))
+        self.dog.set_prefs({"back": {"on": False}}); posted.clear()
+        with unittest.mock.patch.object(drifter.pushover, "post", lambda path, fields, agent: posted.append(fields)):
+            self.dog._post("t", "m", "back"); self.assertEqual(posted, [])                 # switched off
+            self.dog.test(); self.assertEqual(len(posted), 1)                              # the test is sent anyway
+        with self.assertRaises(ValueError): self.dog.set_prefs({"back": {"on": "no"}})
 
 
 if __name__ == "__main__":

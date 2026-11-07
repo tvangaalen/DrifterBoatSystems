@@ -71,7 +71,8 @@ const m = {
         </div></form>
       </div>
     </div>
-    <h2 class="sec">Log <span class="r" id="gLogN"></span></h2><div class="card"><div class="log" id="gLog"></div></div>`;
+    <details class="secfold" id="gLogFold"><summary><h2 class="sec">Log<span class="r"><span id="gLogN"></span> ${icon("chev", "i chev")}</span></h2></summary>
+      <div class="card"><div class="log" id="gLog"></div></div></details>`;
     $("gEnabled").addEventListener("change", async e => {
       const want = e.target.checked;
       if (!want && !(await D.confirm({title: "Switch monitoring off?", text: "BoatGuard will not arm the camera when the phone leaves. A camera BoatGuard armed is disarmed.",
@@ -111,7 +112,7 @@ const m = {
     for (const k of ["away_after_s", "poll_s"]) { const el = $("g_" + k), [lo, hi] = s.limits[k]; el.min = lo; el.max = hi; if (!dirty) el.value = s[k]; }
     buildSounds(s);
     for (const e in s.events) {
-      if (!dirty) { $("gsnd-" + e).value = s.sounds[e]; $("gpri-" + e).value = s.priorities[e]; }
+      if (!dirty) { $("gsnd-" + e).value = s.sounds[e]; $("gpri-" + e).value = s.priorities[e]; $("gon-" + e).checked = !s.notify_on || s.notify_on[e] !== false; }
       $("gtry-" + e).disabled = !s.notifications; prioHint(s, e);
     }
     validate();
@@ -131,7 +132,7 @@ function buildSounds(s) {
   const prios = Object.entries(s.priority_options).sort((a, b) => +a[0] - +b[0]);
   for (const [e, title] of Object.entries(s.events)) {
     const row = document.createElement("div"); row.className = "row col";
-    row.innerHTML = `<div class="k"><b>${esc(title)}</b><small id="ghint-${e}"></small></div>
+    row.innerHTML = `<div class="u-d-flex u-jc-between u-gap-10 u-ai-center"><div class="k"><b>${esc(title)}</b><small id="ghint-${e}"></small></div>${D.sw("gon-" + e, s.notify_on ? s.notify_on[e] !== false : true, `aria-label="${esc(title)} on or off"`)}</div>
       <div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="gsnd-${e}" aria-label="Sound for ${esc(title)}">${s.sound_options.map(o => `<option value="${esc(o)}">${esc(label(o))}</option>`).join("")}</select>
       <select class="u-flex-1 field" id="gpri-${e}" aria-label="Priority for ${esc(title)}">${prios.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("")}</select>
       <button class="btn sec" type="button" id="gtry-${e}" aria-label="Send a test notification">▶</button></div>`;
@@ -158,8 +159,8 @@ function validate() {
 }
 async function save(ev) {
   ev.preventDefault(); if (!validate()) return;
-  const s = m.state.data, body = {away_after_s: +$("g_away_after_s").value, poll_s: +$("g_poll_s").value, sounds: {}, priorities: {}};
-  for (const e in s.events) { body.sounds[e] = $("gsnd-" + e).value; body.priorities[e] = +$("gpri-" + e).value; }
+  const s = m.state.data, body = {away_after_s: +$("g_away_after_s").value, poll_s: +$("g_poll_s").value, sounds: {}, priorities: {}, notify_on: {}};
+  for (const e in s.events) { body.sounds[e] = $("gsnd-" + e).value; body.priorities[e] = +$("gpri-" + e).value; body.notify_on[e] = $("gon-" + e).checked; }
   try { await D.run(m, $("gSave"), () => D.api("guard", "/api/settings", body), "Settings saved"); dirty = false; } catch (e) {}
 }
 /** @type {[RegExp, string][]} */

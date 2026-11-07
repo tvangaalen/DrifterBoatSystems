@@ -664,6 +664,10 @@ class PushHooksTest(unittest.TestCase):
         self.w.command({"action": "settings", "settings": {"push_sound_drag": "siren", "push_prio_cleared": -1, "push_sound_cleared": "bike"}})
         self.drag(30); self.s.run(1, lat=LAT, lon=LON)
         self.assertEqual(self.n.kw, [{"priority": 2, "sound": "siren"}, {"priority": -1, "sound": "bike"}])   # drag stays an emergency
+        self.n.kw.clear(); self.n.calls.clear()
+        self.w.command({"action": "settings", "settings": {"push_on_drag": False}})
+        self.drag(30); self.s.run(1, lat=LAT, lon=LON)
+        self.assertEqual([c for c in self.n.calls if c[0] in ("alarm", "cleared")], [])                # switched off: no push
         for bad in ({"push_prio_gps": 2}, {"push_prio_gps": True}, {"push_sound_gps": "boom"}):
             with self.assertRaises(ValueError): self.w.command({"action": "settings", "settings": bad})
 

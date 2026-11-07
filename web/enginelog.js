@@ -6,7 +6,7 @@
 import Drifter from "./core/app.js";
 
 const D = Drifter, {$, esc, num, icon, pad} = D;
-let view = "fuel", edit = null, fuelOpen = false;   // edit: {kind, id (null = new), touched: Set of fields the user changed} while a form is open; fuelOpen: the fuel entry list unfolded
+let view = "fuel", edit = null, fuelOpen = false, alarmsOpen = false;   // edit: {kind, id (null = new), touched: Set of fields the user changed} while a form is open; fuelOpen: the fuel entry list unfolded
 
 const dmy = (/** @type {string} */ iso) => D.dateText(iso) || "–";
 /** A date in the chosen format (System page), typed or picked: the calendar button lies under an invisible native date input,
@@ -57,7 +57,8 @@ const m = {
     el.addEventListener("input", e => { if (edit && e.target.id) edit.touched.add(e.target.id); });
     el.addEventListener("change", e => { const t = e.target; if (t.id && t.id.endsWith("Pick") && t.value) { const f = $(t.id.slice(0, -4)); f.value = D.dateText(t.value); edit && edit.touched.add(f.id); } });
     el.addEventListener("submit", e => { e.preventDefault(); if (e.target.id === "lForm") save(); else if (e.target.id === "lSetForm") saveSettings(); });
-    el.addEventListener("toggle", e => { if (/** @type {HTMLElement} */ (e.target).id === "lFuelFold") fuelOpen = /** @type {HTMLDetailsElement} */ (e.target).open; }, true);
+    el.addEventListener("toggle", e => { const t = /** @type {HTMLDetailsElement} */ (e.target);
+      if (t.id === "lFuelFold") fuelOpen = t.open; else if (t.id === "lAlarmFold") alarmsOpen = t.open; }, true);
   },
   render() {
     $("lDown").innerHTML = m.state.err ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
@@ -132,12 +133,13 @@ function alarmView(d) {
   const live = e.fresh ? `${e.running ? `<span class="good">Running</span>` : `<span class="muted">Ignition on, not running</span>`} · ${num(e.rpm, 0)} rpm · ${num(e.temp_c, 0)} °C · oil ${num(e.oil_bar, 1)} bar · ${num(e.alt_v, 1)} V · ${num(e.hours, 1)} h`
     : e.connected ? `<span class="muted">Engine off</span>${e.last_hours != null ? ` · ${num(e.last_hours, 1)} h at ${esc(clock(e.last_hours_at))}` : ""}`
     : `<span class="warnc">No engine data from the Orca Core</span>${e.error ? `<small>${esc(e.error)}</small>` : ""}`;
-  return `<div class="u-maxw-720 u-mt-12 card pad"><div class="hd u-p-0">${icon("alert")}<h3>Engine alarms</h3><span class="muted">${al.length || ""}</span></div>
+  return `<div class="u-maxw-720 u-mt-12 card pad"><div class="hd u-p-0">${icon("alert")}<h3>Engine</h3>${al.some(a => !a.end) ? '<span class="badge bad">alarm</span>' : ""}</div>
     <p class="u-m-6-0-0 hint" id="lEngine">${live}</p>
+    <details class="lfold" id="lAlarmFold" ${alarmsOpen ? "open" : ""}><summary><b>Alarm log</b><span class="muted">${al.length ? `${al.length} · last ${esc(clock(al[0].start))}` : "none"}</span>${icon("chev", "i chev")}</summary>
     <div class="lrows">${al.map(a => `<div class="lrowx"><div class="lrow"><span class="t"><b class="${a.end ? "" : "badc"}">${esc(a.name)}</b>${a.engine_hours != null ? ` <span class="muted">· ${num(a.engine_hours, 1)} h</span>` : ""}
         <small>${esc(clock(a.start))} – ${a.end ? esc(clock(a.end)) : "now"}${a.detail ? ` · ${esc(a.detail)}` : ""}</small></span></div>
         <button class="btn sec sm maps" type="button" data-delalarm="${esc(a.id)}" aria-label="Delete this alarm">Delete</button></div>`).join("")
-      || `<div class="empty">No engine alarms logged</div>`}</div>
+      || `<div class="empty">No engine alarms logged</div>`}</div></details>
     <p class="u-m-8-0-0 hint">The Orca Core passes on the engine's values, not its own warning lights. Logged: high coolant temperature and low oil pressure while running (limits in Settings), and any status the Core reports for the engine.</p></div>`;
 }
 

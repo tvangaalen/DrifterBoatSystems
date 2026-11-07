@@ -105,8 +105,8 @@ def masked(path: Path | str | None) -> dict:
 # ---------------------------------------------------------------- priority and sound per notification
 
 def clean_prefs(body, defaults: dict, current: dict | None = None, emergency=()) -> dict:
-    """Validates {event: {"priority": p, "sound": s}} against `defaults` (same shape); events in `emergency` may use
-    priority 2. Missing events or fields keep `current` (else the default). Raises ValueError with a readable text."""
+    """Validates {event: {"on": bool, "priority": p, "sound": s}} against `defaults` (same shape); events in `emergency`
+    may use priority 2. Missing events or fields keep `current` (else the default). Raises ValueError with a readable text."""
     out = {e: {**d, **((current or {}).get(e) or {})} for e, d in defaults.items()}
     if body is None: return out
     if not isinstance(body, dict): raise ValueError("notifications must be an object per notification")
@@ -122,4 +122,7 @@ def clean_prefs(body, defaults: dict, current: dict | None = None, emergency=())
         if "sound" in v:
             if v["sound"] not in SOUNDS: raise ValueError(f"{e}: unknown sound {v['sound']!r}")
             out[e]["sound"] = v["sound"]
+        if "on" in v:
+            if not isinstance(v["on"], bool): raise ValueError(f"{e}: on must be true or false")
+            out[e]["on"] = v["on"]
     return out
