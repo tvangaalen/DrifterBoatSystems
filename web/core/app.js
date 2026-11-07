@@ -207,7 +207,7 @@ async function saveKeys(ev) {
   if (!tok && !usr) { toast("Type the API token or the User key first", true); return; }
   if ([tok, usr].some(v => v && !/^[A-Za-z0-9]{30}$/.test(v))) { toast("A Pushover key is 30 letters and digits", true); return; }
   try { await run(null, $("sysPushSave"), () => sysPost("api/alerts/keys", {app_token: tok, user_key: usr}), "Pushover keys saved"); $("sysPushTok").value = $("sysPushUsr").value = ""; } catch (e) {}
-  refreshSystem(true);
+  refreshSystem();          // only the status and the placeholders: a choice in the Alerts card stays
 }
 async function saveAlerts(btn) {
   const a = sysInfo && sysInfo.alerts; if (!a) return;
@@ -275,7 +275,10 @@ async function refreshSystem(rebuild = false) {
   const busy = $("sysBackup") && $("sysBackup").disabled;           // never replace the button while it is copying
   const aw = $("sysAlertsWrap"), al = sup && sysInfo.alerts;      // built once: a poll never wipes a key being typed or a choice
   if (aw && (!al || rebuild || !aw.dataset.built)) { aw.innerHTML = al ? alertsCard(al) : ""; aw.dataset.built = al ? "1" : ""; }
-  else if (aw && al) { $("sysPushSt").innerHTML = alertsStatus(al); if (!$("sysAlertTest").dataset.busy) $("sysAlertTest").disabled = !al.configured; }
+  else if (aw && al) {
+    $("sysPushSt").innerHTML = alertsStatus(al); $("sysAlertTest").disabled = !al.configured;
+    const k = al.shared || {}; $("sysPushTok").placeholder = k.app_token || "30 letters and digits"; $("sysPushUsr").placeholder = k.user_key || "30 letters and digits";
+  }
   if ($("sysBackupWrap") && !busy) $("sysBackupWrap").innerHTML = sup && sysInfo.backup ? backupCard(sysInfo.backup) : "";
   $("sysVer").textContent = `Drifter Boat Systems ${sysInfo ? "v" + sysInfo.version : ""}`;
 }

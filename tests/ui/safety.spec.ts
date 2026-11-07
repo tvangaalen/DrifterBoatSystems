@@ -95,6 +95,7 @@ test("Pushover: the keys are typed hidden and sent once, the page only shows the
   await page.locator("#sysPushTok").fill("a".repeat(30)); await page.locator("#sysPushSave").click();  // privacy: ok
   await expect.poll(() => posts.map(p => p.url)).toEqual(["/api/alerts/keys"]);
   expect(posts[0].body).toEqual({ app_token: "a".repeat(30), user_key: "" });
+  await expect(page.locator("#toast")).toContainText("Pushover keys saved");
   await page.locator("#sasnd-back").selectOption("bike"); await page.locator("#sapri-back").selectOption("-1");
   await page.locator("#sysAlertSave").click();
   await expect.poll(() => posts.length).toBe(2);
