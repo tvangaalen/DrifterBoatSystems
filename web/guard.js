@@ -100,7 +100,7 @@ const m = {
     $("gRouter").innerHTML = s.router_ok == null ? "–" : s.router_ok ? `<span class="good">OK</span><small>checked ${hms(s.last_poll)}, every ${s.poll_s} s</small>`
       : `<span class="badc">${esc(s.router_error || "Not readable")}</span><small>since ${hms(s.router_down_since || s.last_poll)}, last try ${hms(s.last_poll)}</small>`;
     $("gNotif").innerHTML = s.notifications ? '<span class="good">Pushover on</span><small>armed · disarmed · left with monitoring off</small>'
-      : '<span class="warnc">Not set up</span><small>run boatguard.py pushover on the PC</small>';
+      : '<span class="warnc">Not set up</span><small>fill in the Pushover keys on the System page</small>';
     $("gTest").disabled = s.test_running || s.armed_by_us; $("gTest").textContent = s.test_running ? "Running…" : "Test";
     const t = s.last_test, tr = $("gTestRes");
     if (s.test_running) { tr.hidden = false; tr.innerHTML = `<span class="hint">Arming and disarming the camera…</span>`; }

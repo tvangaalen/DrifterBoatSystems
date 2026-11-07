@@ -40,8 +40,10 @@ class Services:
         self.balancers = DalyBalancerService(coordinator=self.coordinator)
         self.history = HistoryService(paths.history_db)
         self.reports = BatteryHealthReports(paths.runtime_base)
-        # live: also the anchor watch's Pushover keys (DRIFTER_DATA/anchor/pushover.json); never in a test or a checkout
-        self.notifier = Notifier(paths.data, paths.runtime.parent / "anchor" / "pushover.json" if paths.runtime else None)
+        # live: the shared Pushover keys (DRIFTER_DATA/pushover.json, the System page), else the anchor watch's older
+        # file (DRIFTER_DATA/anchor/pushover.json); never in a test or a checkout
+        self.notifier = Notifier(paths.data, paths.runtime.parent / "anchor" / "pushover.json" if paths.runtime else None,
+                                 shared=paths.runtime.parent / "pushover.json" if paths.runtime else None)
         self._stop = threading.Event()
         self._recorder_thread: threading.Thread | None = None
         float_protection = self.masterbus.float_protection

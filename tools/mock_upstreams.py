@@ -29,7 +29,8 @@ class Power:
         self.settings = {"default_ac_limit": 10, "float_protection_enabled": True, "float_cell_trigger_mv": 3550.0, "float_cell_resume_mv": 3375.0,
                          "bms_refresh_interval": 30, "bms_popup_seconds": 5, "bms_connection_retry_seconds": 5, "balancer_refresh_interval": 60,
                          "balancer_connection_retry_seconds": 30, "history_retention_days": 31}   # the v2 settings table
-        self.notif = {"float_notification": True, "shore_notification": True, "pushover_configured": True, "shore_connected": False, "last_sent": None, "last_error": None}
+        self.notif = {"float_notification": True, "shore_notification": True, "prefs": {"float": {"priority": 0, "sound": ""}, "shore": {"priority": 0, "sound": ""}},
+                      "events": {"float": "Chargers switched to float", "shore": "Shore power ON / OFF"}, "pushover_configured": True, "shore_connected": False, "last_sent": None, "last_error": None}
         self.active_mode = None; self.report = {"state": "idle", "days": None, "started_at": None, "finished_at": None, "duration_seconds": None, "markdown": None, "error": None}
 
     def energy(self):
@@ -137,7 +138,10 @@ class Power:
                 "records_per_day": 17469.3, "projected_bytes_at_retention": 1748263719}
 
     def post(self, path, body):
-        if path == "/api/notifications": self.notif.update({k: bool(v) for k, v in body.items() if k in ("float_notification", "shore_notification")}); return 200, self.notif
+        if path == "/api/notifications":
+            self.notif.update({k: bool(v) for k, v in body.items() if k in ("float_notification", "shore_notification")})
+            if body.get("prefs"): self.notif["prefs"] = {e: {**self.notif["prefs"][e], **v} for e, v in body["prefs"].items()}
+            return 200, self.notif
         if path == "/api/control/inverter": self.c["inverter"] = 1.0 if body["enabled"] else 0.0
         elif path == "/api/control/charger": self.c["charger"] = 1.0 if body["enabled"] else 0.0
         elif path == "/api/control/ac-support": self.c["support"] = 1.0 if body["enabled"] else 0.0
@@ -178,7 +182,9 @@ class Anchor:
                          "internet_ais": True, "nfl_tracking": False, "nfl_on_anchor": False, "track_hours": 24, "bow_height": 1.2, "chain_formula": "5*(D+B)",
                          "loa": 11.5, "min_ais_dist": 0.0, "pos_format": "dmm", "draught": 1.6, "transducer_depth": 0.4, "nmea_port": 10110,
                          "col_track_light": "#d1009a", "col_track_dark": "#ff3bd4", "col_limit_light": "#1b8a4b", "col_limit_dark": "#47c07a",
-                         "col_swing_light": "#d1009a", "col_swing_dark": "#ff3bd4"}
+                         "col_swing_light": "#d1009a", "col_swing_dark": "#ff3bd4",
+                         "push_sound_drag": "persistent", "push_prio_gps": 1, "push_sound_gps": "", "push_prio_core": 1, "push_sound_core": "", "push_prio_depth": 1, "push_sound_depth": "",
+                         "push_prio_wind": 1, "push_sound_wind": "", "push_prio_ais": 1, "push_sound_ais": "", "push_prio_cleared": 0, "push_sound_cleared": ""}
         self.track = []; self.gen = 1; self.forgotten = set(); self.pending_mock = False
 
     def pos(self):
@@ -303,14 +309,19 @@ class Washer:
 
 
 class EngineLog:
-    """Made-up fills and maintenance (no real position); create, change and delete work in memory."""
+    """Made-up fills, maintenance, engine alarms and engine data (no real position); create, change and delete work in memory."""
     def __init__(self):
         now = datetime.now().astimezone()
         at = lambda d: (now - timedelta(days=d)).replace(second=0, microsecond=0).isoformat(timespec="minutes")
-        self.fuel = [{"id": "a1b2c3d4e5f6", "date": at(1)[:10], "engine_hours": 2315.0, "litres": 182.0, "amount": 301.95, "lat": 10.5, "lon": -20.25, "country": "Testland", "marina": "Mock Marina North"},
-                     {"id": "b2c3d4e5f6a1", "date": at(17)[:10], "engine_hours": 2288.0, "litres": 205.0, "amount": None, "lat": 10.2, "lon": -20.6, "country": "Testland", "marina": "Mock Marina South"},
-                     {"id": "c3d4e5f6a1b2", "date": at(38)[:10], "engine_hours": 2251.0, "litres": 160.0, "amount": 248.0, "lat": 11.0, "lon": -21.0, "country": "Otherland", "marina": "Mock Harbour"}]
-        self.settings = {"tank_capacity_l": 400.0}
+        self.fuel = [{"id": "a1b2c3d4e5f6", "date": at(1)[:10], "engine_hours": 2315.0, "litres": 182.0, "amount": 301.95, "lat": 10.5, "lon": -20.25},
+                     {"id": "b2c3d4e5f6a1", "date": at(17)[:10], "engine_hours": 2288.0, "litres": 205.0, "amount": None, "lat": 10.2, "lon": -20.6},
+                     {"id": "c3d4e5f6a1b2", "date": at(38)[:10], "engine_hours": 2251.0, "litres": 160.0, "amount": 248.0, "lat": None, "lon": None}]
+        self.settings = {"tank_capacity_l": 400.0, "temp_high_c": 95.0, "oil_low_bar": 1.0}
+        self.alarms = [{"id": "f6a1b2c3d4e5", "name": "High coolant temperature", "detail": "97 °C (limit 95 °C)", "engine_hours": 2309.4,
+                        "start": at(3)[:16] + ":05", "end": at(3)[:11] + "23:59:00"}]
+        self.engine = {"connected": True, "error": None, "fresh": True, "running": True, "age_s": 0.4, "source": "3.0", "rpm": 1800, "temp_c": 80.0,
+                       "oil_bar": 3.5, "alt_v": 14.1, "fuel_lph": 3.2, "load": 40, "boost_bar": 0.0, "hours": 2321.37, "last_hours": 2321.37,
+                       "last_hours_at": at(0)[:16] + ":00", "other": {}, "alarms_open": []}
         self.maint = [{"id": "d4e5f6a1b2c3", "date": at(5)[:10], "engine_hours": 2300.0, "text": "Oil and oil filter changed"}, {"id": "e5f6a1b2c3d4", "date": at(22)[:10], "engine_hours": None, "text": "Impeller replaced"}]
 
     def log(self):
@@ -318,11 +329,15 @@ class EngineLog:
         stats = {"last_litres": f[-1]["litres"] if f else None, "last_date": f[-1]["date"] if f else None, "amount_total": sum(e.get("amount") or 0 for e in f), "avg_price": round(sum(e["amount"] for e in f if e.get("amount") is not None) / (sum(e["litres"] for e in f if e.get("amount") is not None) or 1), 3), "last_hours": f[-1]["engine_hours"] if f else None,
                  "avg_l_per_h": round(sum(e["litres"] for e in f[1:]) / span, 2) if span > 0 else None, "fills": len(f), "litres_total": sum(e["litres"] for e in f)}
         return {"fuel": sorted(self.fuel, key=lambda e: e["date"], reverse=True), "maintenance": sorted(self.maint, key=lambda e: e["date"], reverse=True), "stats": stats,
-                "settings": self.settings}
+                "settings": self.settings, "alarms": self.alarms, "engine": self.engine}
 
     def post(self, path, body):
         parts = path.strip("/").split("/")[1:]
-        if parts == ["settings"]: self.settings = {"tank_capacity_l": body.get("tank_capacity_l")}; return 200, self.settings
+        if parts == ["settings"]: self.settings = {**self.settings, **{k: v for k, v in body.items() if k in self.settings}}; return 200, self.settings
+        if parts[0] == "alarms" and len(parts) == 3:
+            a = next((x for x in self.alarms if x["id"] == parts[1]), None)
+            if a is None: return 404, {"detail": "No such entry (deleted?)"}
+            self.alarms.remove(a); return 200, {"ok": True}
         lst = self.fuel if parts[0] == "fuel" else self.maint if parts[0] == "maintenance" else None
         if lst is None: return 404, {"detail": "Unknown entry kind"}
         if len(parts) == 1:
@@ -344,7 +359,6 @@ def make(name, obj):
             path, _, q = self.path.partition("?")
             if name == "enginelog":
                 if path == "/api/log": return self._j(200, obj.log())
-                if path == "/api/lookup": return self._j(200, {"country": "Testland", "marina": "Mock Marina North", "marina_distance_m": 420, "error": None})
             if name == "power":
                 qs = dict(x.split("=", 1) for x in q.split("&") if "=" in x)
                 if path == "/api/history/chart-data": return self._j(200, obj.chart_data(float(qs.get("hours", 24))))

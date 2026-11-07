@@ -84,6 +84,24 @@ test("Alerts: Send test sends one request", async ({ page }) => {
   expect(posts.map(p => p.url)).toEqual(["/api/alerts/test"]);
 });
 
+test("Pushover: the keys are typed hidden and sent once, the page only shows their last 4; alerts keep priority and sound", async ({ page }) => {
+  const posts: Posted[] = [];
+  await setUp(page, { posts });
+  await open(page, "#system", null);
+  await expect(page.locator("#sysPushTok")).toHaveAttribute("type", "password");
+  await expect(page.locator("#sysPushTok")).toHaveAttribute("placeholder", "…ab12");
+  await page.locator("#sysPushTok").fill("short"); await page.locator("#sysPushSave").click();
+  await expect(page.locator("#toast")).toContainText("30 letters"); expect(posts).toEqual([]);
+  await page.locator("#sysPushTok").fill("a".repeat(30)); await page.locator("#sysPushSave").click();  // privacy: ok
+  await expect.poll(() => posts.map(p => p.url)).toEqual(["/api/alerts/keys"]);
+  expect(posts[0].body).toEqual({ app_token: "a".repeat(30), user_key: "" });
+  await page.locator("#sasnd-back").selectOption("bike"); await page.locator("#sapri-back").selectOption("-1");
+  await page.locator("#sysAlertSave").click();
+  await expect.poll(() => posts.length).toBe(2);
+  expect((posts[1].body as any).prefs.back).toEqual({ priority: -1, sound: "bike" });
+  await expect(page.locator("#sapri-back option[value='2']")).toHaveCount(0);     // no emergency for the gateway's alerts
+});
+
 test("Washer: Set program greys out Start now and Schedule until the washer confirms", async ({ page }) => {
   const posts: Posted[] = [];
   await setUp(page, { posts });

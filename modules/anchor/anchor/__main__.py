@@ -5,7 +5,7 @@ import argparse, asyncio, socket, threading, time
 from pathlib import Path
 
 import anchor  # noqa: F401  (first: puts the repository root and this folder on sys.path)
-from common import logs, net
+from common import logs, net, pushover
 from common.service import start
 from orca_reader import AIS_PATH, SENSORS_PATH, Store, devices_loop, stream_loop
 from anchor.ais import InternetAIS
@@ -74,7 +74,8 @@ def main():
 
     store = Store(); watch = AnchorWatch(store, a.state, diag_dir=a.recordings)
     page_url = a.app_url or f"http://{a.web_bind}:{a.port}/"
-    watch.notifier = Pushover(a.pushover, page_url, on_event=lambda text, kind: watch.event(text, kind=kind))
+    watch.notifier = Pushover(a.pushover, page_url, on_event=lambda text, kind: watch.event(text, kind=kind),
+                              shared=pushover.shared_file(Path(a.pushover).parent))   # live only: DRIFTER_DATA\pushover.json
     log.info("Push alerts: %s", "Pushover ready" if watch.notifier.configured else f"off ({Path(a.pushover).name} missing or invalid)")
     watch.alive = StillAlive(a.still_alive, lambda: watch.settings["alive_minutes"], on_event=lambda text, kind: watch.event(text, kind=kind))
     log.info("Still-alive check: %s", "ready" if watch.alive.configured else f"off ({Path(a.still_alive).name} missing or invalid)")

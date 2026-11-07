@@ -23,7 +23,6 @@ from urllib.parse import urlsplit
 
 from common import logs, pushover
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
-from common.pushover import KEY_RE
 from common.web import QuietServer as Server, tls_context, use_tls
 
 VERSION = "1.2.0"
@@ -68,9 +67,10 @@ ROUTES = {
         ("POST", r"/api/(program|temperature|spin|rinses)/\d{1,3}"),
     ],
     "enginelog": [  # Engine log: diesel fuel and maintenance
-        ("GET", r"/api/(log|lookup)"),                 # lookup?lat=..&lon=..: country and nearest marina (OpenStreetMap)
+        ("GET", r"/api/log"),                          # the log, the stats and the live engine data (Orca Core)
         ("POST", r"/api/(fuel|maintenance|settings)"),
         ("POST", r"/api/(fuel|maintenance)/[0-9a-f]{12}(/delete)?"),
+        ("POST", r"/api/alarms/[0-9a-f]{12}/delete"),     # a logged engine alarm
     ],
 }
 COMPILED = {m: [(meth, re.compile(p + r"$")) for meth, p in rs] for m, rs in ROUTES.items()}
@@ -86,7 +86,8 @@ DEFAULT_CONFIG = {
     "certfile": None, "keyfile": None, "ca_file": None,
     "supervise": False,   # the System page talks to drifterd (the service); only the live config turns it on
     "drifterd": "http://127.0.0.1:8099", "drifterd_token": "C:/DrifterData/drifterd.token",
-    "alerts_pushover": None,   # Pushover keys for the watchdog; default <DRIFTER_DATA>\\gateway\\pushover.json (live only)
+    "alerts_pushover": None,   # older Pushover keys for the watchdog; default <DRIFTER_DATA>\\gateway\\pushover.json (live only)
+    "pushover_shared": None,   # the shared Pushover keys (System page); default <DRIFTER_DATA>\\pushover.json (live only)
     "modules": {
         "power": {"name": "Energy", "url": "http://127.0.0.1:8000", "classic": None},
         "anchor": {"name": "Anchor watch", "url": "http://127.0.0.1:8766", "classic": None},
@@ -153,29 +154,60 @@ class Upstreams:
 class Watchdog:
     """A push message (Pushover) when a system has not been running, or not answering its health check, for DOWN_S, and
     one when it is back. It only reads drifterd's status every CHECK_S: it never restarts, stops or commands anything.
-    Quiet while the user switched everything off and for a module on hold. The keys are {"token", "user"} in
-    <DRIFTER_DATA>\\gateway\\pushover.json (`alerts_pushover` in config.json); without them it only logs."""
+    Quiet while the user switched everything off and for a module on hold. The keys: the shared <DRIFTER_DATA>\\pushover.json
+    (the System page fills it in, `shared`), else the older {"token", "user"} in <DRIFTER_DATA>\\gateway\\pushover.json
+    (`alerts_pushover` in config.json); without them it only logs. Priority and sound per message: notifications.json next
+    to that older file (the System page)."""
     DOWN_S, CHECK_S = 300, 60
-    NAMES = {"energy": "Energy", "anchor": "Anchor watch", "guard": "BoatGuard", "washer": "Washer"}
+    NAMES = {"energy": "Energy", "anchor": "Anchor watch", "guard": "BoatGuard", "washer": "Washer", "enginelog": "Engine log"}
     WHY = {"energy": "Float protection and the battery connections are off while it is down.",
            "anchor": "The anchor alarm and its push alerts are off while it is down."}
-    HIGH = {"energy", "anchor"}                          # Pushover priority 1: sounds even in quiet hours
+    HIGH = {"energy", "anchor"}                          # their own message, priority 1 by default: sounds even in quiet hours
+    EVENTS = {"down_high": "Energy or anchor watch down", "down": "Another system down", "back": "System back"}
+    DEFAULTS = {"down_high": {"priority": 1, "sound": ""}, "down": {"priority": 0, "sound": ""}, "back": {"priority": 0, "sound": ""}}
 
-    def __init__(self, sup, key_file, clock=time.time, send=None):
+    def __init__(self, sup, key_file, clock=time.time, send=None, shared=None):
         self.sup, self.key_file, self.clock = sup, Path(key_file), clock
+        self.shared = Path(shared) if shared else None
+        self.prefs_file = self.key_file.parent / "notifications.json"
         self.send = send or self._post
         self.down: dict[str, float] = {}; self.alerted: set[str] = set(); self.error = None
 
     def keys(self) -> dict | None:
-        try: k = json.loads(self.key_file.read_text(encoding="utf-8"))
-        except (OSError, ValueError): return None
-        return k if all(KEY_RE.match(str(k.get(f, ""))) for f in ("token", "user")) else None
+        found = pushover.find_keys(self.shared, self.key_file)
+        return found[0] if found else None
 
-    def _post(self, title: str, message: str, priority: int) -> None:
+    def key_source(self) -> str | None:
+        found = pushover.find_keys(self.shared, self.key_file)
+        return None if not found else "shared" if found[1] == self.shared else "gateway"
+
+    def prefs(self) -> dict:
+        try: cur = json.loads(self.prefs_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError): cur = {}
+        try: return pushover.clean_prefs(cur if isinstance(cur, dict) else {}, self.DEFAULTS)
+        except ValueError: return pushover.clean_prefs(None, self.DEFAULTS)
+
+    def set_prefs(self, body) -> dict:
+        new = pushover.clean_prefs(body, self.DEFAULTS, self.prefs())
+        self.prefs_file.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.prefs_file.with_suffix(".tmp"); tmp.write_text(json.dumps(new), encoding="utf-8"); tmp.replace(self.prefs_file)
+        log.info("alert notifications: %s", ", ".join(f"{e} priority {v['priority']} sound {v['sound'] or 'app default'}" for e, v in new.items()))
+        return new
+
+    def set_keys(self, body) -> dict:
+        if not self.shared: raise ValueError("the shared Pushover keys are only kept on the boat PC")
+        if not isinstance(body, dict): raise ValueError("API token and User key expected")
+        r = pushover.write_keys(self.shared, body.get("app_token"), body.get("user_key"))
+        log.info("shared Pushover keys saved (%s)", "complete" if r["configured"] else "incomplete")   # never the keys
+        return r
+
+    def _post(self, title: str, message: str, event: str) -> None:
         k = self.keys()
         if not k: log.warning("alert not sent (no Pushover keys in %s): %s", self.key_file, message); return
-        try: pushover.post("messages.json", {"token": k["token"], "user": k["user"], "title": title, "message": message,
-                                             "priority": priority}, agent=f"Drifter/{VERSION}"); self.error = None
+        p = self.prefs()[event]
+        fields = {"token": k["token"], "user": k["user"], "title": title, "message": message, "priority": p["priority"]}
+        if p["sound"]: fields["sound"] = p["sound"]
+        try: pushover.post("messages.json", fields, agent=f"Drifter/{VERSION}"); self.error = None
         except (OSError, pushover.PushoverError) as e: self.error = str(e); log.warning("alert not sent: %s", e)
 
     def check(self) -> None:
@@ -191,21 +223,23 @@ class Watchdog:
                     self.alerted.add(name)
                     what = "is not running" if m.get("state") != "running" else "is not answering"
                     self.send(f"Drifter: {title} down", f"{title} {what} since {time.strftime('%H:%M', time.localtime(since))}. "
-                              f"{self.WHY.get(name, '')} Drifter keeps trying to start it.".replace("  ", " "), 1 if name in self.HIGH else 0)
+                              f"{self.WHY.get(name, '')} Drifter keeps trying to start it.".replace("  ", " "), "down_high" if name in self.HIGH else "down")
             else:
                 since = self.down.pop(name, None)
                 if name in self.alerted:
                     self.alerted.discard(name)
-                    self.send(f"Drifter: {title} back", f"{title} is running again (down {round((now - since) / 60)} min).", 0)
+                    self.send(f"Drifter: {title} back", f"{title} is running again (down {round((now - since) / 60)} min).", "back")
 
     def test(self) -> None:
         if not self.keys(): raise ValueError(f"no Pushover keys in {self.key_file}")
-        self._post("Drifter: test", "Alerts from Drifter Boat Systems reach this phone.", 0)
+        self._post("Drifter: test", "Alerts from Drifter Boat Systems reach this phone.", "back")
         if self.error: raise ValueError(self.error)
 
     def status(self) -> dict:
         return {"configured": self.keys() is not None, "file": str(self.key_file), "error": self.error,
-                "down": sorted(self.alerted), "after_min": self.DOWN_S // 60}
+                "down": sorted(self.alerted), "after_min": self.DOWN_S // 60, "source": self.key_source(),
+                "shared": pushover.masked(self.shared) if self.shared else None, "events": self.EVENTS, "prefs": self.prefs(),
+                "sound_options": pushover.SOUNDS, "priority_options": {k: v for k, v in pushover.PRIORITIES.items() if k < 2}}
 
     def start(self) -> None:
         def loop():
@@ -372,6 +406,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
             if path == "/api/supervisor/shutdown": return self._shutdown()
             if path == "/api/backup-keys": return self._backup_keys()
             if path == "/api/alerts/test": return self._alert_test()
+            if path in ("/api/alerts/keys", "/api/alerts/prefs"): return self._alert_set(path.rsplit("/", 1)[1])
             if not (path.startswith("/api/") and path.count("/") >= 2 and path.split("/")[2] in up.mods): return self._json({"error": "not found"}, 404)
             self._proxy("POST", path, query)
 
@@ -388,6 +423,16 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
             try: dog.test()
             except ValueError as e: return self._json({"error": str(e)}, 409)
             return self._json({"ok": True})
+
+        def _alert_set(self, what: str):
+            """The System page's Pushover keys (saved to the shared key file, never answered or logged) and the alerts'
+            priority and sound. Only on the live gateway: a mock or test gateway has no watchdog."""
+            if not dog: return self._json({"error": "alerts run only on the boat PC's live app"}, 409)
+            try: body = json.loads(self._body or b"{}")
+            except ValueError: return self._json({"error": "invalid JSON"}, 400)
+            try: r = dog.set_keys(body) if what == "keys" else dog.set_prefs(body.get("prefs") if isinstance(body, dict) else None)
+            except ValueError as e: return self._json({"error": str(e)}, 400)
+            return self._json({"ok": True, "result": r})
 
         def _backup_keys(self):
             """The System page's "Backup keys and tokens": copies the key files to the back-up folder (tools/backup.py).
@@ -434,8 +479,9 @@ def serve(cfg: dict, supervisor=None) -> Server:
         supervisor = DrifterdClient(cfg["drifterd"], Path(cfg["drifterd_token"]), make_precheck(up))
     dog = None
     if cfg.get("supervise") and supervisor is not None:   # the live gateway only: a mock never sends alerts
-        key = cfg.get("alerts_pushover") or Path(os.environ.get("DRIFTER_DATA") or "C:/DrifterData") / "gateway" / "pushover.json"
-        dog = Watchdog(supervisor, key); dog.start()
+        data = Path(os.environ.get("DRIFTER_DATA") or "C:/DrifterData")
+        key = cfg.get("alerts_pushover") or data / "gateway" / "pushover.json"
+        dog = Watchdog(supervisor, key, shared=cfg.get("pushover_shared") or data / pushover.SHARED_NAME); dog.start()
     srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor, dog))
     scheme = "http"
     if cfg.get("certfile"): use_tls(srv, tls_context(cfg["certfile"], cfg["keyfile"])); scheme = "https"

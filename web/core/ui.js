@@ -7,3 +7,40 @@ export function downCard(m) {
 }
 /** A switch; cls "onoff" gives the big green ON / red OFF style (washer power, BoatGuard monitoring). */
 export const sw = (id, on, attrs = "", cls = "") => `<label class="switch${cls ? " " + cls : ""}"><input type="checkbox" role="switch" id="${id}" ${on ? "checked" : ""} ${attrs}><i></i></label>`;
+
+// Priority and sound per push notification (Pushover), on each system's settings page. The server keeps the choices
+// and checks them (common/pushover.py SOUNDS and PRIORITIES; MasterVolt keeps its own copy).
+export const SOUNDS = ["", "pushover", "bike", "bugle", "cashregister", "classical", "cosmic", "falling", "gamelan", "incoming",
+  "intermission", "magic", "mechanical", "pianobar", "siren", "spacealarm", "tugboat", "alien", "climb",
+  "persistent", "echo", "updown", "vibrate", "none"];
+export const PRIORITY_LABEL = {"-2": "Lowest", "-1": "Quiet", "0": "Normal", "1": "High", "2": "Emergency"};
+export const soundLabel = s => s === "" ? "App default" : s === "none" ? "Silent" : s[0].toUpperCase() + s.slice(1);
+/**
+ * Rows with a sound and a priority select per notification. `events`: {key: title or [title, hint]}; `prefs`: {key: {priority, sound}};
+ * `fixed`: {key: priority} for a notification whose priority cannot be changed (shown as text); priorities offered: -2..`max`.
+ * @param {string} prefix @param {Record<string, string|string[]>} events @param {Record<string, {priority: number, sound: string}>} prefs
+ * @param {{max?: number, fixed?: Record<string, number>}} [opts]
+ */
+export function notifyRows(prefix, events, prefs, opts = {}) {
+  const max = opts.max ?? 1, fixed = opts.fixed || {};
+  return Object.entries(events).map(([e, t]) => {
+    const [title, hint] = Array.isArray(t) ? t : [t, ""], p = prefs[e] || {priority: 0, sound: ""};
+    const prio = e in fixed ? `<span class="u-flex-1 hint">${esc(PRIORITY_LABEL[fixed[e]])} (fixed)</span>`
+      : `<select class="u-flex-1 field" id="${prefix}pri-${e}" aria-label="Priority for ${esc(title)}">${Object.entries(PRIORITY_LABEL).filter(([v]) => +v <= max)
+        .map(([v, l]) => `<option value="${v}" ${+v === p.priority ? "selected" : ""}>${l}</option>`).join("")}</select>`;
+    return `<div class="row col"><div class="k"><b>${esc(title)}</b>${hint ? `<small>${esc(hint)}</small>` : ""}</div>
+      <div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="${prefix}snd-${e}" aria-label="Sound for ${esc(title)}">${SOUNDS.map(o =>
+        `<option value="${esc(o)}" ${o === p.sound ? "selected" : ""}>${esc(soundLabel(o))}</option>`).join("")}</select>${prio}</div></div>`;
+  }).join("");
+}
+/** The choices of notifyRows as {key: {priority, sound}} (a fixed priority is left out: the server keeps it). */
+export function readNotify(prefix, events) {
+  /** @type {Record<string, {priority?: number, sound: string}>} */
+  const out = {};
+  for (const e of Object.keys(events)) {
+    const s = /** @type {HTMLSelectElement|null} */ (document.getElementById(`${prefix}snd-${e}`)), p = /** @type {HTMLSelectElement|null} */ (document.getElementById(`${prefix}pri-${e}`));
+    if (!s) continue;
+    out[e] = p ? {priority: +p.value, sound: s.value} : {sound: s.value};
+  }
+  return out;
+}

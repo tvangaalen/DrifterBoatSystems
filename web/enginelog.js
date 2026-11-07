@@ -1,11 +1,12 @@
-// Engine log module: diesel fuel fills and engine maintenance. The log lives on the engine log server (data/log.json on
-// the boat PC); this page shows it and sends new, changed and deleted entries. A new fill takes today's date, the boat's
-// position from the anchor watch, and the country and nearest marina from the server's OpenStreetMap lookup: every
-// automatic value can be changed before saving. Deleting always asks first (Keep is the default).
+// Engine log module: diesel fuel fills, engine maintenance and the engine alarms. The log lives on the engine log server
+// (data/log.json on the boat PC); this page shows it and sends new, changed and deleted entries. A new fill takes today's
+// date, the engine hours (live from the Orca Core, or its last reading) and the boat's position from the anchor watch; a
+// new maintenance entry the date and the engine hours: every automatic value can be changed before saving. The engine
+// alarms are logged by the server (enginelog/engine.py). Deleting always asks first (Keep is the default).
 import Drifter from "./core/app.js";
 
 const D = Drifter, {$, esc, num, icon, pad} = D;
-let view = "fuel", edit = null;     // edit: {kind, id (null = new), touched: Set of fields the user changed} while a form is open
+let view = "fuel", edit = null, fuelOpen = false;   // edit: {kind, id (null = new), touched: Set of fields the user changed} while a form is open; fuelOpen: the fuel entry list unfolded
 
 const dmy = (/** @type {string} */ iso) => D.dateText(iso) || "–";
 /** A date in the chosen format (System page), typed or picked: the calendar button lies under an invisible native date input,
@@ -24,6 +25,16 @@ const posText = (/** @type {any} */ p) => p && p.lat != null ? `${dm(p.lat, "N",
 /** Time since a moment, short: minutes, hours, then days. @param {number} t ms */
 const since = t => { const d = Math.round((dayMs(today()) - t) / 864e5); return d <= 0 ? "today" : d === 1 ? "1 day" : `${d} days`; };
 const auto = (/** @type {string} */ t) => `<span class="autochip">${t}</span>`;
+/** Google Maps at a position, in its own browser window. @param {{lat: number, lon: number}} p */
+const openMaps = p => window.open(`https://www.google.com/maps/search/?api=1&query=${p.lat.toFixed(6)},${p.lon.toFixed(6)}`, "drifter-maps", "popup,noopener,noreferrer");
+const mapsBtn = (/** @type {any} */ p, cls = "") => p && p.lat != null ? `<button class="btn sec sm${cls}" type="button" data-maps="${p.lat},${p.lon}" aria-label="Open in Google Maps">Maps ${icon("ext")}</button>` : "";
+/** The engine hours for a new entry: live from the Orca Core, else its last reading. @param {any} d */
+function engineHours(d) {
+  const e = d.engine || {};
+  if (e.fresh && e.hours != null) return {h: Math.round(e.hours * 10) / 10, note: "live from the engine"};
+  if (e.last_hours != null) return {h: Math.round(e.last_hours * 10) / 10, note: `engine's last reading${e.last_hours_at ? ", " + D.dayTime(Date.parse(e.last_hours_at)) : ""}`};
+  return null;
+}
 
 const m = {
   id: "enginelog", title: "Engine log", short: "Engine", icon: "fuel", every: 30000, background: 120000,
@@ -33,7 +44,7 @@ const m = {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const f = d.fuel[0], mt = d.maintenance[0], s = d.stats;
     return `<div class="u-fs-22 big">${f ? `${num(f.litres, 0)} L` : "No fills yet"}</div>
-      <div class="line">${f ? `${esc(dmy(f.date))}${f.marina || f.country ? ` · ${esc(f.marina || f.country)}` : ""}` : "Log the next fill on the Engine log page"}</div>
+      <div class="line">${f ? esc(dmy(f.date)) : "Log the next fill on the Engine log page"}${d.engine && d.engine.running ? ` · engine running, ${num(d.engine.rpm, 0)} rpm` : ""}</div>
       <div class="minis"><div class="mini"><div class="l">Engine hours</div><div class="n">${f ? num(f.engine_hours, 0) + " h" : "–"}</div></div>
       <div class="mini"><div class="l">Avg use</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) + " L/h" : "–"}</div></div>
       <div class="mini"><div class="l">Maintenance</div><div class="n">${mt ? esc(dmy(mt.date)) : "–"}</div></div></div>`;
@@ -46,6 +57,7 @@ const m = {
     el.addEventListener("input", e => { if (edit && e.target.id) edit.touched.add(e.target.id); });
     el.addEventListener("change", e => { const t = e.target; if (t.id && t.id.endsWith("Pick") && t.value) { const f = $(t.id.slice(0, -4)); f.value = D.dateText(t.value); edit && edit.touched.add(f.id); } });
     el.addEventListener("submit", e => { e.preventDefault(); if (e.target.id === "lForm") save(); else if (e.target.id === "lSetForm") saveSettings(); });
+    el.addEventListener("toggle", e => { if (/** @type {HTMLElement} */ (e.target).id === "lFuelFold") fuelOpen = /** @type {HTMLDetailsElement} */ (e.target).open; }, true);
   },
   render() {
     $("lDown").innerHTML = m.state.err ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
@@ -71,9 +83,10 @@ function fuelView(d) {
       <div class="mini"><div class="l">Total cost</div><div class="n">${s.amount_total ? `€ ${num(s.amount_total, 0)}` : "–"}</div></div></div>
     <div class="fuelchart" id="lChart">${fuelChart(d.fuel, s.avg_l_per_h)}</div>
     <button class="u-mt-12 btn wide" type="button" data-new="fuel">${icon("fuel")} New fuel entry</button>
-    <div class="lrows">${d.fuel.map(f => `<button class="lrow" type="button" data-edit="fuel:${esc(f.id)}"><span class="t"><b>${num(f.litres, 0)} L</b> <span class="muted">· ${num(f.engine_hours, 0)} h${f.amount != null ? ` · ${euro(f.amount)} (${euro(f.amount / f.litres)}/L)` : ""}</span>
-        <small>${esc(dmy(f.date))}${f.marina ? ` · ${esc(f.marina)}` : ""}${f.country ? `, ${esc(f.country)}` : ""}</small></span>${icon("chev", "i chev")}</button>`).join("")
-      || `<div class="empty">No fills logged yet</div>`}</div>
+    <details class="lfold" id="lFuelFold" ${fuelOpen ? "open" : ""}><summary><b>Fuel entries</b><span class="muted">${d.fuel.length}</span>${icon("chev", "i chev")}</summary>
+    <div class="lrows">${d.fuel.map(f => `<div class="lrowx"><button class="lrow" type="button" data-edit="fuel:${esc(f.id)}"><span class="t"><b>${num(f.litres, 0)} L</b> <span class="muted">· ${num(f.engine_hours, 0)} h${f.amount != null ? ` · ${euro(f.amount)} (${euro(f.amount / f.litres)}/L)` : ""}</span>
+        <small>${esc(dmy(f.date))}${f.lat != null ? ` · ${esc(posText(f))}` : ""}</small></span>${icon("chev", "i chev")}</button>${mapsBtn(f, " maps")}</div>`).join("")
+      || `<div class="empty">No fills logged yet</div>`}</div></details>
     ${s.fills ? `<p class="u-m-8-0-0 hint">${s.fills} fill${s.fills === 1 ? "" : "s"} · ${num(s.litres_total, 0)} L in total. Average use: the litres of every fill after the first over the engine hours since the first.${s.amount_total ? ` Paid: ${euro(s.amount_total)}${s.avg_price != null ? `, on average ${euro(s.avg_price)} per litre` : ""}.` : ""}</p>` : ""}</div>`;
 }
 // ---- the fills over time: litres per fill as columns (left), the use since the fill before in L per engine hour as a
@@ -109,19 +122,39 @@ window.addEventListener("resize", () => { if (D.visibleIs("enginelog") && view =
 function maintView(d) {
   return `<div class="u-maxw-720 card pad"><button class="btn wide" type="button" data-new="maintenance">${icon("wrench")} New maintenance entry</button>
     <div class="lrows">${d.maintenance.map(x => `<button class="lrow" type="button" data-edit="maintenance:${esc(x.id)}"><span class="t"><b>${esc(dmy(x.date))}</b>${x.engine_hours != null ? ` <span class="muted">· ${num(x.engine_hours, 0)} h</span>` : ""}
-        <small class="pre">${esc(x.text)}</small></span>${icon("chev", "i chev")}</button>`).join("") || `<div class="empty">No maintenance logged yet</div>`}</div></div>`;
+        <small class="pre">${esc(x.text)}</small></span>${icon("chev", "i chev")}</button>`).join("") || `<div class="empty">No maintenance logged yet</div>`}</div></div>
+    ${alarmView(d)}`;
+}
+// ---- the engine and its alarms (logged by the server from the Orca Core's engine data)
+const clock = (/** @type {string} */ iso) => iso ? D.dayTime(Date.parse(iso)) : "–";
+function alarmView(d) {
+  const e = d.engine || {}, al = d.alarms || [];
+  const live = e.fresh ? `${e.running ? `<span class="good">Running</span>` : `<span class="muted">Ignition on, not running</span>`} · ${num(e.rpm, 0)} rpm · ${num(e.temp_c, 0)} °C · oil ${num(e.oil_bar, 1)} bar · ${num(e.alt_v, 1)} V · ${num(e.hours, 1)} h`
+    : e.connected ? `<span class="muted">Engine off</span>${e.last_hours != null ? ` · ${num(e.last_hours, 1)} h at ${esc(clock(e.last_hours_at))}` : ""}`
+    : `<span class="warnc">No engine data from the Orca Core</span>${e.error ? `<small>${esc(e.error)}</small>` : ""}`;
+  return `<div class="u-maxw-720 u-mt-12 card pad"><div class="hd u-p-0">${icon("alert")}<h3>Engine alarms</h3><span class="muted">${al.length || ""}</span></div>
+    <p class="u-m-6-0-0 hint" id="lEngine">${live}</p>
+    <div class="lrows">${al.map(a => `<div class="lrowx"><div class="lrow"><span class="t"><b class="${a.end ? "" : "badc"}">${esc(a.name)}</b>${a.engine_hours != null ? ` <span class="muted">· ${num(a.engine_hours, 1)} h</span>` : ""}
+        <small>${esc(clock(a.start))} – ${a.end ? esc(clock(a.end)) : "now"}${a.detail ? ` · ${esc(a.detail)}` : ""}</small></span></div>
+        <button class="btn sec sm maps" type="button" data-delalarm="${esc(a.id)}" aria-label="Delete this alarm">Delete</button></div>`).join("")
+      || `<div class="empty">No engine alarms logged</div>`}</div>
+    <p class="u-m-8-0-0 hint">The Orca Core passes on the engine's values, not its own warning lights. Logged: high coolant temperature and low oil pressure while running (limits in Settings), and any status the Core reports for the engine.</p></div>`;
 }
 
 function setView(d) {
-  const cap = (d.settings || {}).tank_capacity_l;
+  const st = d.settings || {}, cap = st.tank_capacity_l;
   return `<form class="u-maxw-720 card lform" id="lSetForm" novalidate><div class="hd">${icon("gear")}<h3>Settings</h3></div><div class="rows">
     <div class="row"><div class="k"><b>Fuel tank capacity</b><small>Litres; empty = not set</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lTank" min="1" max="10000" step="1" value="${cap ?? ""}"><span class="u">L</span></label></div>
+    <div class="row"><div class="k"><b>High coolant temperature</b><small>Engine alarm at or above this, 60–130 °C</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lTemp" min="60" max="130" step="1" value="${st.temp_high_c ?? 95}"><span class="u">°C</span></label></div>
+    <div class="row"><div class="k"><b>Low oil pressure</b><small>Engine alarm below this while running, 0.1–5 bar</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lOil" min="0.1" max="5" step="0.1" value="${st.oil_low_bar ?? 1}"><span class="u">bar</span></label></div>
     </div><div class="u-d-flex u-gap-8 u-mt-12"><button class="btn" type="submit" id="lSetSave">Save</button></div><p class="err" id="lSetErr" hidden></p></form>`;
 }
 async function saveSettings() {
-  const v = $("lTank").value.trim(), err = $("lSetErr"); err.hidden = true;
-  if (v !== "" && !(+v >= 1 && +v <= 10000)) { err.textContent = "Fuel tank capacity: 1–10000 L"; err.hidden = false; return; }
-  try { await D.run(m, $("lSetSave"), () => D.api("enginelog", "/api/settings", {tank_capacity_l: v === "" ? null : +v}), "Settings saved"); } catch (e) { err.textContent = e.message; err.hidden = false; }
+  const v = $("lTank").value.trim(), t = $("lTemp").value.trim(), o = $("lOil").value.trim(), err = $("lSetErr"); err.hidden = true;
+  const bad = v !== "" && !(+v >= 1 && +v <= 10000) ? "Fuel tank capacity: 1–10000 L" : !(t !== "" && +t >= 60 && +t <= 130) ? "High coolant temperature: 60–130 °C"
+    : !(o !== "" && +o >= 0.1 && +o <= 5) ? "Low oil pressure: 0.1–5 bar" : "";
+  if (bad) { err.textContent = bad; err.hidden = false; return; }
+  try { await D.run(m, $("lSetSave"), () => D.api("enginelog", "/api/settings", {tank_capacity_l: v === "" ? null : +v, temp_high_c: +t, oil_low_bar: +o}), "Settings saved"); } catch (e) { err.textContent = e.message; err.hidden = false; }
 }
 
 // ------------------------------------------------------------------ forms
@@ -129,38 +162,26 @@ function openForm(kind, id) {
   const d = m.state.data, e = id ? d[kind].find(x => x.id === id) : null;
   if (id && !e) { D.toast("That entry was deleted", true); return; }
   edit = {kind, id, touched: new Set(), pos: e ? (e.lat != null ? {lat: e.lat, lon: e.lon} : null) : boatPos()};
+  const eh = id ? null : engineHours(d), hoursNote = eh ? `<small>${esc(eh.note)}; change it if the meter says otherwise</small>` : "";
   const btns = `<div class="u-d-flex u-gap-8 u-fw-wrap u-mt-12"><button class="btn" type="submit" id="lSave">Save</button><button class="btn sec" type="button" data-cancel>Cancel</button>
     ${id ? `<span class="u-flex-1"></span><button class="btn sec danger" type="button" data-delete>Delete</button>` : ""}</div><p class="err" id="lErr" hidden></p>`;
   if (kind === "fuel") {
     $("lBody").innerHTML = `<form class="u-maxw-720 card lform" id="lForm" novalidate><div class="hd">${icon("fuel")}<h3>${id ? "Fuel entry" : "New fuel entry"}</h3></div><div class="rows">
       <div class="row"><div class="k"><b>Date</b>${id ? "" : auto("today")}</div>${dateField("lDate", e ? e.date : today())}</div>
-      <div class="row"><div class="k"><b>Engine hours</b></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lHours" min="0" max="100000" step="0.1" value="${e ? e.engine_hours : ""}"><span class="u">h</span></label></div>
+      <div class="row"><div class="k"><b>Engine hours</b>${eh ? auto("engine") : ""}${hoursNote}</div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lHours" min="0" max="100000" step="0.1" value="${e ? e.engine_hours : eh ? eh.h : ""}"><span class="u">h</span></label></div>
       <div class="row"><div class="k"><b>Litres</b></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lLitres" min="0.1" max="5000" step="0.1" value="${e ? e.litres : ""}"><span class="u">L</span></label></div>
       <div class="row"><div class="k"><b>Amount</b><small>Paid; empty = not noted</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lAmount" min="0" max="100000" step="0.01" value="${e && e.amount != null ? e.amount : ""}"><span class="u">€</span></label></div>
-      <div class="row"><div class="k"><b>Position</b>${id ? "" : auto("GPS")}<small id="lPos">${esc(posText(edit.pos))}</small></div>${edit.pos ? `<button class="btn sec sm" type="button" data-nopos>Remove</button>` : ""}</div>
-      <div class="row stackrow"><div class="k"><b>Country</b>${id ? "" : auto("auto")}</div><input class="field lf-text" id="lCountry" maxlength="60" value="${esc(e ? e.country : "")}" autocomplete="off"></div>
-      <div class="row stackrow"><div class="k"><b>Nearest marina</b>${id ? "" : auto("auto")}<small id="lLook"></small></div><input class="field lf-text" id="lMarina" maxlength="100" value="${esc(e ? e.marina : "")}" autocomplete="off"></div>
+      <div class="row"><div class="k"><b>Position</b>${id || !edit.pos ? "" : auto("GPS")}<small id="lPos">${esc(posText(edit.pos))}</small></div>
+        ${edit.pos ? `<span class="u-d-flex u-gap-6" id="lPosBtns">${mapsBtn(edit.pos)}<button class="btn sec sm" type="button" data-nopos>Remove</button></span>` : ""}</div>
       </div>${btns}</form>`;
-    if (!id) { if (edit.pos) look(edit.pos); else $("lLook").textContent = "No position from the anchor watch: type them in"; }
   } else {
     $("lBody").innerHTML = `<form class="u-maxw-720 card lform" id="lForm" novalidate><div class="hd">${icon("wrench")}<h3>${id ? "Maintenance entry" : "New maintenance entry"}</h3></div><div class="rows">
       <div class="row"><div class="k"><b>Date</b>${id ? "" : auto("today")}</div>${dateField("lDate", e ? e.date : today())}</div>
-      <div class="row"><div class="k"><b>Engine hours</b><small>The meter's total; empty = not noted</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lHours" min="0" max="100000" step="0.1" value="${e && e.engine_hours != null ? e.engine_hours : ""}"><span class="u">h</span></label></div>
+      <div class="row"><div class="k"><b>Engine hours</b>${eh ? auto("engine") : ""}${eh ? hoursNote : "<small>The meter's total; empty = not noted</small>"}</div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lHours" min="0" max="100000" step="0.1" value="${e && e.engine_hours != null ? e.engine_hours : eh ? eh.h : ""}"><span class="u">h</span></label></div>
       <div class="row col"><div class="k"><b>What was done</b></div><textarea class="field" id="lText" maxlength="2000" rows="5" placeholder="Oil and oil filter changed…">${esc(e ? e.text : "")}</textarea></div>
       </div>${btns}</form>`;
   }
   m.render();
-}
-/** Country and nearest marina from the server; fields the user already typed in are left alone. @param {{lat: number, lon: number}} pos */
-async function look(pos) {
-  $("lLook").textContent = "Looking up…";
-  try {
-    const r = await D.api("enginelog", `/api/lookup?lat=${pos.lat.toFixed(5)}&lon=${pos.lon.toFixed(5)}`);
-    if (!edit || !$("lMarina")) return;
-    if (!edit.touched.has("lCountry") && r.country) $("lCountry").value = r.country;
-    if (!edit.touched.has("lMarina") && r.marina) $("lMarina").value = r.marina;
-    $("lLook").textContent = r.marina ? `${num(r.marina_distance_m / 1000, 1)} km away (OpenStreetMap)` : r.error ? "Not found (no internet?): type it in" : "No marina within 15 km";
-  } catch (e) { if ($("lLook")) $("lLook").textContent = "Not found (no internet?): type it in"; }
 }
 function fail(msg) { const el = $("lErr"); el.textContent = msg; el.hidden = false; return null; }
 function body() {
@@ -176,8 +197,7 @@ function body() {
   if (hours === "" || !(+hours >= 0 && +hours <= 100000)) return fail("Engine hours: 0–100000");
   if (litres === "" || !(+litres >= 0.1 && +litres <= 5000)) return fail("Litres: 0.1–5000");
   if (amount !== "" && !(+amount >= 0 && +amount <= 100000)) return fail("Amount: 0–100000");
-  return {date, engine_hours: +hours, litres: +litres, amount: amount === "" ? null : +amount, lat: edit.pos ? edit.pos.lat : null, lon: edit.pos ? edit.pos.lon : null,
-    country: $("lCountry").value.trim(), marina: $("lMarina").value.trim()};
+  return {date, engine_hours: +hours, litres: +litres, amount: amount === "" ? null : +amount, lat: edit.pos ? edit.pos.lat : null, lon: edit.pos ? edit.pos.lon : null};
 }
 async function save() {
   const b = body(); if (!b) return;
@@ -198,7 +218,12 @@ async function onClick(e) {
   if (b.dataset.edit) { const [kind, id] = b.dataset.edit.split(":"); return openForm(kind, id); }
   if (b.hasAttribute("data-cancel")) return close();
   if (b.hasAttribute("data-delete")) return remove();
-  if (b.hasAttribute("data-nopos")) { edit.pos = null; $("lPos").textContent = posText(null); b.remove(); }
+  if (b.hasAttribute("data-nopos")) { edit.pos = null; $("lPos").textContent = posText(null); $("lPosBtns").remove(); return; }
+  if (b.dataset.maps) { const [lat, lon] = b.dataset.maps.split(",").map(Number); openMaps({lat, lon}); return; }
+  if (b.dataset.delalarm) {
+    if (!(await D.confirm({title: "Delete this engine alarm?", text: "It is removed from the engine log. This cannot be undone.", ok: "Delete", cancel: "Keep it", danger: true}))) return;
+    try { await D.run(m, b, () => D.api("enginelog", `/api/alarms/${b.dataset.delalarm}/delete`, {}), "Deleted"); D.poll(m, true); } catch (x) {}
+  }
 }
 
 D.register(m);

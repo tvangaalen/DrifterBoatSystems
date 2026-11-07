@@ -1,5 +1,6 @@
-// Engine log: every entry can be created, read, changed and deleted; a new fill takes the time, the boat's position and
-// the looked-up country and marina, all of which can be changed; deleting asks first with Keep as the default.
+// Engine log: every entry can be created, read, changed and deleted; a new fill takes the date, the engine hours (Orca
+// Core) and the boat's position, all of which can be changed; deleting asks first with Keep as the default. The fuel
+// entry list is folded by default; a position opens Google Maps in its own window; the engine alarms are listed.
 import { test, expect, setUp, open, type Posted } from "./support";
 
 test("Engine log: a new fuel entry is filled in automatically and saves what the form shows", async ({ page }) => {
@@ -8,11 +9,12 @@ test("Engine log: a new fuel entry is filled in automatically and saves what the
   await open(page, "#anchor", null);                          // the anchor watch knows the boat's position
   await open(page, "#enginelog", null);
   await expect(page.locator("#lBody .lrow")).toHaveCount(3);
+  await expect(page.locator("#lFuelFold")).not.toHaveAttribute("open", "");    // the fuel entries are folded by default
   await page.locator("[data-new=fuel]").click();
-  await expect(page.locator("#lMarina")).toHaveValue("Mock Marina North");
-  await expect(page.locator("#lCountry")).toHaveValue("Testland");
+  await expect(page.locator("#lHours")).toHaveValue("2321.4");        // live from the engine
+  await expect(page.locator("#lMarina")).toHaveCount(0); await expect(page.locator("#lCountry")).toHaveCount(0);
   await expect(page.locator("#lPos")).toContainText("N");
-  await page.locator("#lCountry").fill("Otherland");          // a changed value is what is saved
+  await expect(page.locator("#lPosBtns [data-maps]")).toHaveCount(1);
   await page.locator("#lHours").fill("2330.5"); await page.locator("#lLitres").fill("95");
   await page.locator("#lAmount").fill("-3"); await page.locator("#lSave").click();
   await expect(page.locator("#lErr")).toContainText("Amount");
@@ -20,7 +22,7 @@ test("Engine log: a new fuel entry is filled in automatically and saves what the
   await expect.poll(() => posts.length).toBe(1);
   const b = posts[0].body as any;
   expect(posts[0].url).toBe("/api/enginelog/api/fuel");
-  expect([b.engine_hours, b.litres, b.country, b.marina]).toEqual([2330.5, 95, "Otherland", "Mock Marina North"]);
+  expect([b.engine_hours, b.litres, b.country, b.marina]).toEqual([2330.5, 95, undefined, undefined]);
   expect(b.amount).toBe(152.5); expect(b.date).toMatch(/^\d{4}-\d\d-\d\d$/); expect(b.time).toBeUndefined(); expect(typeof b.lat).toBe("number");
   await expect(page.locator("#lForm")).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -30,6 +32,7 @@ test("Engine log: change and delete a fill (Keep is the default), and add, chang
   const posts: Posted[] = [];
   const errors = await setUp(page, { theme: "dark", posts });
   await open(page, "#enginelog", null);
+  await page.locator("#lFuelFold summary").click();
   await page.locator("[data-edit='fuel:a1b2c3d4e5f6']").click();
   await expect(page.locator("#lLitres")).toHaveValue("182");
   await page.locator("#lLitres").fill("185"); await page.locator("#lSave").click();
@@ -43,8 +46,9 @@ test("Engine log: change and delete a fill (Keep is the default), and add, chang
   await page.locator("#dlgSheet [data-value]:not([data-default])").click();
   await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/fuel/a1b2c3d4e5f6/delete");
   await page.locator("#lViews [data-lview=maintenance]").click();
-  await expect(page.locator("#lBody .lrow")).toHaveCount(2);
+  await expect(page.locator("#lBody .lrow[data-edit^=maintenance]")).toHaveCount(2);
   await page.locator("[data-new=maintenance]").click();
+  await expect(page.locator("#lHours")).toHaveValue("2321.4");        // the engine hours, filled in
   await page.locator("#lSave").click();
   await expect(page.locator("#lErr")).toContainText("what was done");
   await page.locator("#lText").fill("Fuel filters\nprimary and secondary"); await page.locator("#lHours").fill("2320"); await page.locator("#lSave").click();
@@ -75,8 +79,10 @@ test("Engine log: dates as dd/mm/yyyy (or as chosen on System), typed or picked;
   await expect.poll(() => (posts.at(-1)?.body as any)?.date).toBe("2026-09-01");
   await page.locator("#lViews [data-lview=settings]").click();
   await expect(page.locator("#lTank")).toHaveValue("400");
+  await expect(page.locator("#lTemp")).toHaveValue("95"); await expect(page.locator("#lOil")).toHaveValue("1");
+  await page.locator("#lOil").fill("0.8");
   await page.locator("#lTank").fill("380"); await page.locator("#lSetSave").click();
-  await expect.poll(() => posts.at(-1)?.body).toEqual({ tank_capacity_l: 380 });
+  await expect.poll(() => posts.at(-1)?.body).toEqual({ tank_capacity_l: 380, temp_high_c: 95, oil_low_bar: 0.8 });
   await open(page, "#system", null);
   await page.locator("[data-datefmt='yyyy-mm-dd']").click();
   await page.waitForLoadState();
@@ -96,5 +102,27 @@ test("Engine log: the fills over time, litres per fill and the use per engine ho
   const tiles = page.locator("#lBody .minis.m4 .mini");
   await expect(tiles).toHaveCount(4);
   await expect(tiles.nth(0)).toContainText("6.0"); await expect(tiles.nth(2)).toContainText("€ 1.61"); await expect(tiles.nth(3)).toContainText("€ 550");
+  expect(errors).toEqual([]);
+});
+
+test("Engine log: a position opens Google Maps in its own window; the engine alarms are listed and can be deleted (Keep first)", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { theme: "dark", posts });
+  await page.addInitScript(() => { (window as any).__opened = []; window.open = ((...a: any[]) => { (window as any).__opened.push(a); return null; }) as any; });
+  await open(page, "#enginelog", null);
+  await page.locator("#lFuelFold summary").click();
+  await expect(page.locator("#lFuelFold .maps[data-maps]")).toHaveCount(2);         // the fill without a position has none
+  await page.locator("#lFuelFold .maps[data-maps]").first().click();
+  const opened = await page.evaluate(() => (window as any).__opened);
+  expect(opened[0][0]).toBe("https://www.google.com/maps/search/?api=1&query=10.500000,-20.250000");   // privacy: ok - made-up position of the mock
+  expect(opened[0][2]).toContain("popup");
+  await page.locator("#lViews [data-lview=maintenance]").click();
+  await expect(page.locator("#lEngine")).toContainText("1800 rpm");
+  await expect(page.locator("[data-delalarm]")).toHaveCount(1);
+  await expect(page.locator("#lBody")).toContainText("High coolant temperature");
+  await page.locator("[data-delalarm]").click(); await page.keyboard.press("Escape");
+  expect(posts.length).toBe(0);
+  await page.locator("[data-delalarm]").click(); await page.locator("#dlgSheet [data-value]:not([data-default])").click();
+  await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/alarms/f6a1b2c3d4e5/delete");
   expect(errors).toEqual([]);
 });

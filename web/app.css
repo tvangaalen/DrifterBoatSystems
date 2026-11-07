@@ -552,6 +552,10 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
   background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}.lrow .t{flex:1;min-width:0}.lrow small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
 .lrow small.pre{white-space:pre-line;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}.lrow .chev{color:var(--faint);flex:none}
 .lrows .empty{border-top:1px solid var(--line)}
+.lrowx{display:flex;align-items:center;border-top:1px solid var(--line)}.lrowx .lrow{border-top:0;cursor:pointer}.lrowx div.lrow{cursor:default}.lrowx .maps{flex:none;margin-right:16px}
+details.lfold{margin-top:14px}details.lfold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:40px}
+details.lfold>summary::-webkit-details-marker{display:none}details.lfold>summary .chev{margin-left:auto;color:var(--faint);transition:transform .2s}details.lfold[open]>summary .chev{transform:rotate(90deg)}
+details.lfold .lrows{margin-top:4px}
 .autochip{font-size:10.5px;font-weight:600;color:var(--ok);background:var(--okbg);border-radius:10px;padding:1px 7px;margin-left:6px;vertical-align:1px}
 .lform{padding-bottom:14px}.lform>.u-d-flex,.lform>.err{padding:0 16px}.lf-time{width:84px;text-align:center}.lf-text{flex:1;width:auto;max-width:240px;margin-left:12px}
 .lform textarea.field{width:100%;min-height:120px;padding:10px 12px;resize:vertical;font:inherit;font-size:16px}

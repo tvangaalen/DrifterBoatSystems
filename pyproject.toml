@@ -18,8 +18,8 @@ anchor = ["websockets==13.1", "fastapi==0.141.1", "starlette==1.6.0", "uvicorn==
 guard = ["pyezviz==0.2.2.3", "fastapi==0.141.1", "starlette==1.6.0", "uvicorn==0.52.4", "httpx==0.28.1"]
 # the washer on FastAPI since 4.0 (Flask until 3.8)
 washer = ["fastapi==0.141.1", "starlette==1.6.0", "uvicorn==0.52.4", "httpx==0.28.1", "python-miio==0.5.12", "micloud==0.6"]
-# the engine log (diesel fuel and maintenance), on FastAPI from the start
-enginelog = ["fastapi==0.141.1", "starlette==1.6.0", "uvicorn==0.52.4", "httpx==0.28.1"]
+# the engine log (diesel fuel and maintenance), on FastAPI from the start; websockets for the engine data from the Orca Core (as the anchor watch)
+enginelog = ["websockets==13.1", "fastapi==0.141.1", "starlette==1.6.0", "uvicorn==0.52.4", "httpx==0.28.1"]
 dev = ["ruff==0.14.14", "black==26.5.1"]   # black: MasterVolt's formatter
 
 [tool.uv]
@@ -28,6 +28,7 @@ default-groups = []
 # each module has its own environment, so their versions may differ (uvicorn[standard] brings websockets 17)
 conflicts = [
     [{ group = "energy" }, { group = "anchor" }],
+    [{ group = "energy" }, { group = "enginelog" }],
 ]
 # python-miio 0.5.12 asks for netifaces, which needs a C compiler on Windows for Python 3.12; the washer controller does
 # not use it (modules/washer/README.md). This marker is never true, so it is never installed.

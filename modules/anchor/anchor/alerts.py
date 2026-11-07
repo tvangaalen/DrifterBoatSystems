@@ -11,7 +11,9 @@ from anchor.settings import VERSION, log
 class Pushover:
     """Sends alarms to the phone through Pushover (https://pushover.net/api).
 
-    Keys come from a local JSON file that is never committed: {"app_token": "...", "user_key": "..."}.
+    Keys: the shared <DRIFTER_DATA>\\pushover.json (the System page, `shared`), else the module's own older file; both
+    {"app_token": "...", "user_key": "..."}, local and never committed. Priority and sound come with each alarm (settings);
+    anchor drag is always an emergency.
     Messages go out from one worker thread, in order, with retries, so a slow or absent internet link never delays the
     alarm checks. An emergency message (priority 2) repeats on the phone until it is acknowledged; its receipt is kept
     so it can be cancelled when the alarm clears, is silenced in the app, or the anchor is raised.
@@ -24,8 +26,9 @@ class Pushover:
     KEY_RE = pushover.KEY_RE
     BACKOFF_S = (5, 15, 45)
 
-    def __init__(self, cfg_file, page_url=None, on_event=None, start=True):
+    def __init__(self, cfg_file, page_url=None, on_event=None, start=True, shared=None):
         self.cfg_file, self.page_url = Path(cfg_file), page_url
+        self.shared = Path(shared) if shared else None
         self.on_event = on_event or (lambda text, kind: None)
         self.cfg, self.receipts, self.q = None, {}, queue.Queue()
         self.last_error = None; self.last_sent = None
@@ -33,7 +36,9 @@ class Pushover:
         if start: threading.Thread(target=self._worker, daemon=True).start()
 
     def reload(self):
-        """(Re)reads the key file; returns an error text, or None when it is usable."""
+        """(Re)reads the key file (the shared one first); returns an error text, or None when it is usable."""
+        k = pushover.read_keys(self.shared)
+        if k: self.cfg = {"app_token": k["token"], "user_key": k["user"]}; return None
         try: d = json.loads(self.cfg_file.read_text(encoding="utf-8"))
         except FileNotFoundError: self.cfg = None; return f"{self.cfg_file.name} not found"
         except Exception as e: self.cfg = None; return f"{self.cfg_file.name}: {type(e).__name__}: {e}"
@@ -49,12 +54,13 @@ class Pushover:
     @property
     def configured(self): return self.cfg is not None
 
-    def alarm(self, key, title, message, when):
-        self.q.put(("send", key, {"title": title, "message": message, "priority": self.PRIORITY.get(key, 1), "timestamp": int(when)}))
+    def alarm(self, key, title, message, when, priority=None, sound=None):
+        p = 2 if key == "drag" else min(1, self.PRIORITY.get(key, 1) if priority is None else int(priority))   # only drag is an emergency
+        self.q.put(("send", key, {"title": title, "message": message, "priority": p, "timestamp": int(when), **({"sound": sound} if sound else {})}))
 
-    def cleared(self, key, title, message, when):
+    def cleared(self, key, title, message, when, priority=0, sound=None):
         self.q.put(("cancel", key, None))
-        self.q.put(("send", None, {"title": title, "message": message, "priority": 0, "timestamp": int(when)}))
+        self.q.put(("send", None, {"title": title, "message": message, "priority": min(1, int(priority)), "timestamp": int(when), **({"sound": sound} if sound else {})}))
 
     def cancel(self, key=None):
         """Stops the repeating emergency for one alarm, or (no key) for all of them."""
@@ -85,8 +91,8 @@ class Pushover:
         if self.page_url: fields.update(url=self.page_url, url_title="Open Anchor Watch")
         if msg["priority"] == 2:
             fields.setdefault("retry", self.RETRY_S); fields.setdefault("expire", self.EXPIRE_S)
-            fields["sound"] = self.cfg.get("emergency_sound", "persistent")
-        elif self.cfg.get("sound"): fields["sound"] = self.cfg["sound"]
+            fields.setdefault("sound", self.cfg.get("emergency_sound", "persistent"))
+        elif self.cfg.get("sound"): fields.setdefault("sound", self.cfg["sound"])
         r = self._post("messages.json", fields)
         if key and r.get("receipt"): self.receipts[key] = r["receipt"]
         self.last_sent = time.time()

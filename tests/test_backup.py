@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT), str(ROOT / "tools")]
 import backup as B  # noqa: E402
 
-KEYS = ["anchor/pushover.json", "anchor/nfl.json", "guard/pushover.json", "guard/ezviz_token.json", "washer/viomi_config.json",
+KEYS = ["pushover.json", "anchor/pushover.json", "anchor/nfl.json", "guard/pushover.json", "guard/ezviz_token.json", "washer/viomi_config.json",
         "gateway/pushover.json"]
 
 

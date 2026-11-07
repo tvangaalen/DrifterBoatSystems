@@ -1,8 +1,12 @@
-"""The engine log in one JSON file: {"fuel": [...], "maintenance": [...]}, newest first.
+"""The engine log in one JSON file: {"fuel": [...], "maintenance": [...], "alarms": [...], "engine": {...}, "settings": {...}},
+newest first.
 
-A fuel fill: date (YYYY-MM-DD), engine hours, litres, amount paid (optional), the position (lat/lon, optional), country and
-marina (text, optional); fills of 1.0.0 had a time, which is read as its date. A maintenance entry: date (YYYY-MM-DD), engine hours (optional) and text. Every entry has a 12-hex id. The file is written to a temporary
-file and renamed, so a power cut never leaves half a log; positions stay on the boat PC (never in the repository).
+A fuel fill: date (YYYY-MM-DD), engine hours, litres, amount paid (optional) and the position (lat/lon, optional); fills
+of 1.0.0 had a time, which is read as its date, and country and marina, which are dropped (the user's choice of
+2026-11-07). A maintenance entry: date (YYYY-MM-DD), engine hours (optional) and text. An engine alarm (engine.py): name,
+start and end (local ISO times; end None while it lasts), engine hours and the worst value. "engine" keeps the last
+engine hours read from the Orca Core. Every entry has a 12-hex id. The file is written to a temporary file and renamed,
+so a power cut never leaves half a log; positions stay on the boat PC (never in the repository).
 """
 from __future__ import annotations
 
@@ -12,7 +16,10 @@ from pathlib import Path
 
 ID_RE = re.compile(r"^[0-9a-f]{12}$")
 KINDS = ("fuel", "maintenance")
-SETTINGS = {"tank_capacity_l": None}     # the fuel tank's capacity in litres (None: not set)
+# the fuel tank's capacity in litres (None: not set); the engine alarm limits (engine.py)
+SETTINGS = {"tank_capacity_l": None, "temp_high_c": 95.0, "oil_low_bar": 1.0}
+SETTING_LIMITS = {"tank_capacity_l": ("Fuel tank capacity", 1, 10000, False), "temp_high_c": ("High coolant temperature", 60, 130, True),
+                  "oil_low_bar": ("Low oil pressure", 0.1, 5, True)}
 
 
 def _num(value, name: str, lo: float, hi: float, required: bool = True) -> float | None:
@@ -39,8 +46,7 @@ def clean_fuel(d: dict) -> dict:
     lat, lon = _num(d.get("lat"), "Latitude", -90, 90, False), _num(d.get("lon"), "Longitude", -180, 180, False)
     if (lat is None) != (lon is None): raise ValueError("A position needs both latitude and longitude")
     return {"date": day.isoformat(), "engine_hours": _num(d.get("engine_hours"), "Engine hours", 0, 100000),
-            "litres": _num(d.get("litres"), "Litres", 0.1, 5000), "amount": _num(d.get("amount"), "Amount", 0, 100000, False), "lat": lat, "lon": lon,
-            "country": _text(d.get("country"), "Country", 60), "marina": _text(d.get("marina"), "Marina", 100)}
+            "litres": _num(d.get("litres"), "Litres", 0.1, 5000), "amount": _num(d.get("amount"), "Amount", 0, 100000, False), "lat": lat, "lon": lon}
 
 
 def clean_maintenance(d: dict) -> dict:
@@ -63,9 +69,11 @@ class Store:
         try: d = json.loads(self.path.read_text(encoding="utf-8"))
         except FileNotFoundError: d = {}
         out = {k: list(d.get(k) or []) for k in KINDS}
-        for e in out["fuel"]:     # 1.0.0 kept a time: only the date matters
+        for e in out["fuel"]:     # 1.0.0 kept a time: only the date matters; country and marina are no longer kept
             if "time" in e: e["date"] = e.pop("time")[:10]
-            e.setdefault("amount", None)
+            e.setdefault("amount", None); e.pop("country", None); e.pop("marina", None)
+        out["alarms"] = list(d.get("alarms") or [])
+        out["engine"] = d.get("engine") if isinstance(d.get("engine"), dict) else {}
         out["settings"] = {**SETTINGS, **{k: v for k, v in (d.get("settings") or {}).items() if k in SETTINGS}}
         return out
 
@@ -79,16 +87,50 @@ class Store:
         self.data[kind].sort(key=lambda e: ORDER[kind](e), reverse=True)
 
     def all(self) -> dict:
-        with self.lock: return {k: [dict(e) for e in self.data[k]] for k in KINDS}
+        with self.lock: return {**{k: [dict(e) for e in self.data[k]] for k in KINDS}, "alarms": [dict(a) for a in self.data["alarms"]]}
 
     def settings(self) -> dict:
         with self.lock: return dict(self.data["settings"])
 
     def set_settings(self, body: dict) -> dict:
-        cap = _num(body.get("tank_capacity_l"), "Fuel tank capacity", 1, 10000, False)
+        """The keys in `body` (the page sends them all); a limit left out keeps its value."""
+        if not isinstance(body, dict): raise ValueError("Settings must be an object")
+        new = {}
+        for k, (name, lo, hi, required) in SETTING_LIMITS.items():
+            if k in body: new[k] = _num(body[k], name, lo, hi, required)
         with self.lock:
-            self.data["settings"]["tank_capacity_l"] = cap; self._save()
+            self.data["settings"].update(new); self._save()
             return dict(self.data["settings"])
+
+    # ---- the engine (engine.py) ----------------------------------------------------------------------------------
+    def engine(self) -> dict:
+        with self.lock: return dict(self.data["engine"])
+
+    def set_engine(self, hours: float, t: str) -> None:
+        with self.lock: self.data["engine"] = {"hours": hours, "t": t}; self._save()
+
+    def open_alarm(self, name: str, detail: str, hours, start: str) -> dict:
+        a = {"id": secrets.token_hex(6), "name": name, "detail": detail, "engine_hours": hours, "start": start, "end": None}
+        with self.lock: self.data["alarms"].insert(0, a); self._save()
+        return dict(a)
+
+    def update_alarm(self, alarm_id: str, **fields) -> None:
+        with self.lock:
+            for a in self.data["alarms"]:
+                if a["id"] == alarm_id: a.update({k: v for k, v in fields.items() if k in ("detail", "end")}); self._save(); return
+
+    def close_open_alarms(self, end: str, note: str) -> None:
+        """At a start: an alarm that was still open when the server stopped cannot be followed any more."""
+        with self.lock:
+            changed = [a for a in self.data["alarms"] if a.get("end") is None]
+            for a in changed: a["end"] = end; a["detail"] = f"{a.get('detail', '')} ({note})".strip()
+            if changed: self._save()
+
+    def delete_alarm(self, alarm_id: str) -> None:
+        with self.lock:
+            for i, a in enumerate(self.data["alarms"]):
+                if a["id"] == alarm_id: del self.data["alarms"][i]; self._save(); return
+        raise KeyError(alarm_id)
 
     def _check_hours(self, entry: dict, skip: str | None = None) -> None:
         """The engine hours are the meter's running total: never fewer than at an earlier fill, never more than at a later one."""

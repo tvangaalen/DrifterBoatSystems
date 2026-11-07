@@ -82,7 +82,7 @@ class GatewayTest(unittest.TestCase):
         code, _ = self.req("POST", "/api/backup-keys", {}); self.assertEqual(code, 403)            # the app's header is required
         code, data = self.post("/api/backup-keys")                                              # supervise is off here: never copies
         self.assertEqual(code, 409); self.assertIn(b"live app", data)
-        j = json.loads(self.req("GET", "/api/systems")[1]); self.assertEqual(j["backup"]["count"], 6)
+        j = json.loads(self.req("GET", "/api/systems")[1]); self.assertEqual(j["backup"]["count"], 7)
 
     def test_post_needs_json(self):
         code, _ = self.req("POST", "/api/guard/api/test", None, {"X-Drifter-Request": "1", "Content-Type": "text/plain"}); self.assertEqual(code, 415)
@@ -146,6 +146,15 @@ class GatewayTest(unittest.TestCase):
         self.assertTrue(drifter.host_allowed("192.168.1.166:8100", [])); self.assertTrue(drifter.host_allowed("localhost:8100", []))
         self.assertTrue(drifter.host_allowed("[::1]:8100", [])); self.assertTrue(drifter.host_allowed("boat.lan", ["boat.lan"]))
         self.assertFalse(drifter.host_allowed("boat.lan", [])); self.assertFalse(drifter.host_allowed("", []))
+
+
+class EngineLogRoutesTest(unittest.TestCase):
+    def test_engine_log_routes(self):
+        ok = drifter.route_allowed
+        self.assertTrue(ok("enginelog", "GET", "/api/log")); self.assertFalse(ok("enginelog", "GET", "/api/lookup"))   # the lookup is gone
+        self.assertTrue(ok("enginelog", "POST", "/api/alarms/0123456789ab/delete"))
+        self.assertFalse(ok("enginelog", "POST", "/api/alarms/0123456789ab")); self.assertFalse(ok("enginelog", "POST", "/api/alarms"))
+        self.assertFalse(ok("enginelog", "POST", "/api/alarms/../x/delete"))
 
 
 if __name__ == "__main__":

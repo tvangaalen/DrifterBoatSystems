@@ -25,7 +25,7 @@ const SETTINGS = [   // [key, label, hint, min, max, step, unit] — the server'
   ["balancer_connection_retry_seconds", "Balancer reconnect after", "", 5, 300, 1, "s"],
   ["history_retention_days", "Keep history", "Lowering this deletes older history", 1, 365, 1, "days"],
 ];
-let notif = null, alarmData = null, view = "now", bms = null, bal = null, settings = null, setDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
+let notif = null, alarmData = null, view = "now", bms = null, bal = null, settings = null, setDirty = false, notifDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
 const busy = new Set();
 const zoom = [0, 1000];     // History: the part of the period shown, in thousandths (two-handled slider; all charts)
 let zoomRaf = 0;
@@ -649,7 +649,7 @@ function renderHistory() {
 function renderSettings() {
   const box = $("eSet");
   if (!settings) { box.innerHTML = `<div class="empty">Loading settings…</div>`; return; }
-  if (box.dataset.built && setDirty) return;
+  if (box.dataset.built && (setDirty || notifDirty)) return;      // never wipe an unsaved change on a poll
   box.dataset.built = "1";
   box.innerHTML = `<form class="u-maxw-720 card" id="eSetForm" novalidate><div class="rows">
     ${SETTINGS.map(([k, l, h, lo, hi, step, u]) => lo === undefined
@@ -660,7 +660,9 @@ function renderSettings() {
       <div class="row"><div class="k"><b>Float protection notification</b><small>A Pushover message "Chargers switched to float" when Float protection starts</small></div>
         ${D.sw("en-float", notif ? notif.float_notification : false, notif ? "" : "disabled")}</div>
       <div class="row"><div class="k"><b>Shore power notification</b><small>"Shore power ON" or "Shore power OFF" when shore power has been connected or disconnected for 30 s</small></div>
-        ${D.sw("en-shore", notif ? notif.shore_notification : false, notif ? "" : "disabled")}</div></div></div>`;
+        ${D.sw("en-shore", notif ? notif.shore_notification : false, notif ? "" : "disabled")}</div>
+      ${notif && notif.prefs ? `${D.notifyRows("enp-", notif.events, notif.prefs)}
+      <div class="row"><span class="hint" id="enpMsg">${notifDirty ? "Unsaved changes" : "Priority and sound of each notification"}</span><button class="btn" type="button" id="enpSave" ${notifDirty ? "" : "disabled"}>Save</button></div>` : ""}</div></div>`;
   validateSettings();
 }
 function readSettings() {
@@ -695,7 +697,9 @@ async function control(id, fn, okMsg) {
   finally { busy.delete(id); await D.poll(m, true); }
 }
 async function onChange(e) {
-  const el = e.target; if (!el.matches('input[type="checkbox"]') || el.closest("#eSetForm")) return;
+  const el = e.target;
+  if (el.id && el.id.startsWith("enp-")) { notifDirty = true; $("enpSave").disabled = false; $("enpMsg").textContent = "Unsaved changes"; return; }
+  if (!el.matches('input[type="checkbox"]') || el.closest("#eSetForm")) return;
   const want = el.checked; el.checked = !want;                 // keep showing the real state until the server reads it back
   const id = el.id, d = m.state.data;
   if (id === "en-shore") return control(id, async () => { notif = await D.api("power", "/api/notifications", {shore_notification: want}); $("eSet").dataset.built = ""; },
@@ -729,6 +733,10 @@ async function onChange(e) {
 }
 async function onClick(e) {
   const b = e.target.closest("button"); if (!b) return;
+  if (b.id === "enpSave") {
+    try { notif = await D.run(m, b, () => D.api("power", "/api/notifications", {prefs: D.readNotify("enp-", notif.events)}), "Notifications saved"); notifDirty = false; $("eSet").dataset.built = ""; renderSettings(); } catch (e) {}
+    return;
+  }
   if (b.dataset.view) { const was = view; view = b.dataset.view; m.render(); if (was !== view) window.scrollTo(0, 0); D.poll(m, true); return; }
   if (b.dataset.solo) { const id = b.dataset.solo; solo[id] = solo[id] === b.dataset.label ? null : b.dataset.label; renderCharts(); return; }
   if (b.dataset.mode) {

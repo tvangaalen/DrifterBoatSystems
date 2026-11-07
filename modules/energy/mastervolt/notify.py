@@ -1,10 +1,13 @@
-"""Phone notifications through Pushover (https://pushover.net/api), priority normal: "Chargers switched to float" when Float
-protection starts, and "Shore power ON" / "Shore power OFF" when shore power has been connected or disconnected for 30 s
-(a flicker is ignored; the state found after a start is the baseline, not a change).
+"""Phone notifications through Pushover (https://pushover.net/api): "Chargers switched to float" when Float protection
+starts, and "Shore power ON" / "Shore power OFF" when shore power has been connected or disconnected for 30 s (a flicker
+is ignored; the state found after a start is the baseline, not a change). Priority (normal by default, never emergency)
+and sound per notification are the user's choice on the Energy settings page.
 
-The on/off switches are kept in its own small file (data/notifications.json), not in the settings table, so the settings
-API stays as it was. The Pushover keys are this module's own data/pushover.json, or else the anchor watch's file
-(DRIFTER_DATA/anchor/pushover.json), both {"app_token": "...", "user_key": "..."}; the keys are never logged or returned.
+The on/off switches and the priority and sound are kept in its own small file (data/notifications.json), not in the
+settings table, so the settings API stays as it was. The Pushover keys: the shared DRIFTER_DATA/pushover.json (the System
+page fills it in), else this module's own data/pushover.json, else the anchor watch's older file
+(DRIFTER_DATA/anchor/pushover.json), all {"app_token": "...", "user_key": "..."}; the keys are never logged or returned.
+MasterVolt does not import common/, so the sound list here is a copy of common/pushover.py SOUNDS.
 Sending runs in its own thread: a slow or absent internet link never delays the 3 s Float loop.
 """
 
@@ -28,12 +31,42 @@ KEY_RE = re.compile(r"^[A-Za-z0-9]{30}$")
 FLOAT_MESSAGE = "Chargers switched to float"
 SHORE_STABLE_SECONDS = 30
 SWITCHES = ("float_notification", "shore_notification")
+SWITCH_EVENT = {"float_notification": "float", "shore_notification": "shore"}
+EVENTS = {"float": "Chargers switched to float", "shore": "Shore power ON / OFF"}
+PREF_DEFAULTS = {"float": {"priority": 0, "sound": ""}, "shore": {"priority": 0, "sound": ""}}
+PRIORITIES = (-2, -1, 0, 1)      # Lowest, Quiet, Normal, High: never emergency
+SOUNDS = ["", "pushover", "bike", "bugle", "cashregister", "classical", "cosmic", "falling", "gamelan", "incoming",
+          "intermission", "magic", "mechanical", "pianobar", "siren", "spacealarm", "tugboat", "alien", "climb",
+          "persistent", "echo", "updown", "vibrate", "none"]
+
+
+def clean_prefs(body, current: dict | None = None) -> dict:
+    """{event: {"priority", "sound"}} checked against PREF_DEFAULTS; missing parts keep `current`. ValueError when wrong."""
+    out = {e: {**d, **((current or {}).get(e) or {})} for e, d in PREF_DEFAULTS.items()}
+    if body is None:
+        return out
+    if not isinstance(body, dict):
+        raise ValueError("prefs must be an object per notification")
+    for e, v in body.items():
+        if e not in PREF_DEFAULTS or not isinstance(v, dict):
+            raise ValueError(f"unknown notification {e}")
+        if "priority" in v:
+            pr = v["priority"]
+            if isinstance(pr, bool) or not isinstance(pr, (int, float)) or pr != int(pr) or int(pr) not in PRIORITIES:
+                raise ValueError(f"{e}: priority must be -2, -1, 0 or 1")
+            out[e]["priority"] = int(pr)
+        if "sound" in v:
+            if v["sound"] not in SOUNDS:
+                raise ValueError(f"{e}: unknown sound")
+            out[e]["sound"] = v["sound"]
+    return out
 
 
 class Notifier:
-    def __init__(self, data_dir: Path, extra_keys: Path | None = None, post=None):
+    def __init__(self, data_dir: Path, extra_keys: Path | None = None, post=None, shared: Path | None = None):
         self.data_dir = Path(data_dir)
         self.extra_keys = extra_keys
+        self.shared = shared
         self.settings_file = self.data_dir / "notifications.json"
         self._post = post or self._http_post        # tests pass their own
         self.last_sent: float | None = None
@@ -43,12 +76,34 @@ class Notifier:
         self._shore_seen: tuple[bool, float] | None = None  # a new state and since when
 
     # ---- the switch --------------------------------------------------------------------------------------------
-    def _switches(self) -> dict:
+    def _saved(self) -> dict:
         try:
             saved = json.loads(self.settings_file.read_text(encoding="utf-8"))
         except Exception:
             saved = {}
+        return saved if isinstance(saved, dict) else {}
+
+    def _switches(self) -> dict:
+        saved = self._saved()
         return {key: saved.get(key, True) is not False for key in SWITCHES}  # on unless switched off
+
+    def prefs(self) -> dict:
+        try:
+            return clean_prefs(self._saved().get("prefs") or {})
+        except ValueError:
+            return clean_prefs(None)
+
+    def _write(self, values: dict) -> None:
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        tmp = self.settings_file.with_suffix(".tmp")
+        tmp.write_text(json.dumps(values), encoding="utf-8")
+        tmp.replace(self.settings_file)
+
+    def set_prefs(self, body) -> dict:
+        with self._lock:
+            new = clean_prefs(body, self.prefs())
+            self._write({**self._switches(), "prefs": new})
+        return new
 
     def enabled(self, key: str) -> bool:
         return self._switches()[key]
@@ -58,18 +113,14 @@ class Notifier:
 
     def set_enabled(self, key: str, enabled: bool) -> None:
         with self._lock:
-            values = {**self._switches(), key: bool(enabled)}
-            self.data_dir.mkdir(parents=True, exist_ok=True)
-            tmp = self.settings_file.with_suffix(".tmp")
-            tmp.write_text(json.dumps(values), encoding="utf-8")
-            tmp.replace(self.settings_file)
+            self._write({**self._switches(), key: bool(enabled), "prefs": self.prefs()})
 
     def set_float_enabled(self, enabled: bool) -> None:
         self.set_enabled("float_notification", enabled)
 
     # ---- the keys ----------------------------------------------------------------------------------------------
     def _key_files(self) -> list[Path]:
-        return [self.data_dir / "pushover.json", *([self.extra_keys] if self.extra_keys else [])]
+        return [*([self.shared] if self.shared else []), self.data_dir / "pushover.json", *([self.extra_keys] if self.extra_keys else [])]
 
     def keys(self) -> tuple[str, str] | None:
         for path in self._key_files():
@@ -83,7 +134,7 @@ class Notifier:
         return None
 
     def status(self) -> dict:
-        return {**self._switches(), "pushover_configured": self.keys() is not None, "shore_connected": self._shore_state,
+        return {**self._switches(), "prefs": self.prefs(), "events": EVENTS, "pushover_configured": self.keys() is not None, "shore_connected": self._shore_state,
                 "last_sent": self.last_sent, "last_error": self.last_error}
 
     # ---- sending -----------------------------------------------------------------------------------------------
@@ -115,13 +166,16 @@ class Notifier:
         if keys is None:
             self.last_error = "Pushover is not set up (no pushover.json)"
             return
-        t = threading.Thread(target=self._send, args=(keys, "Drifter energy", message), daemon=True, name="energy-push")
+        t = threading.Thread(target=self._send, args=(keys, "Drifter energy", message, self.prefs()[SWITCH_EVENT[key]]), daemon=True, name="energy-push")
         t.start()
         if wait:
             t.join()
 
-    def _send(self, keys, title: str, message: str) -> None:
-        fields = {"token": keys[0], "user": keys[1], "title": title, "message": message, "priority": 0, "timestamp": int(time.time())}
+    def _send(self, keys, title: str, message: str, pref: dict | None = None) -> None:
+        pref = pref or {"priority": 0, "sound": ""}
+        fields = {"token": keys[0], "user": keys[1], "title": title, "message": message, "priority": pref["priority"], "timestamp": int(time.time())}
+        if pref["sound"]:
+            fields["sound"] = pref["sound"]
         for delay in (0, 5, 15, 45):
             time.sleep(delay)
             try:

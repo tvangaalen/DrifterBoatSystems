@@ -45,6 +45,23 @@ def main():
         for t in (200, 240):
             n.shore_seen(False, now=t, wait=True)
         assert len(sent) == 1 and n.status()["shore_connected"] is False and n.status()["float_notification"] is True
+        # priority and sound per notification (never emergency), kept next to the switches; the shared keys win
+        assert n.prefs()["float"] == {"priority": 0, "sound": ""}
+        n.set_prefs({"float": {"priority": 1, "sound": "tugboat"}})
+        assert n.prefs()["float"] == {"priority": 1, "sound": "tugboat"} and n.prefs()["shore"]["priority"] == 0
+        assert n.status()["shore_notification"] is False                     # the switches stay as they were
+        for bad in ({"float": {"priority": 2}}, {"float": {"sound": "boom"}}, {"other": {}}):
+            try:
+                n.set_prefs(bad)
+                raise AssertionError(bad)
+            except ValueError:
+                pass
+        shared = Path(tmp) / "pushover.json"
+        shared.write_text(json.dumps({"app_token": "s" * 30, "user_key": "u" * 30}), encoding="utf-8")
+        n2 = Notifier(data, Path(tmp) / "anchor" / "pushover.json", post=sent.append, shared=shared)
+        sent.clear()
+        n2.float_started(wait=True)
+        assert sent[0]["token"] == "s" * 30 and sent[0]["priority"] == 1 and sent[0]["sound"] == "tugboat", sent
     print("Float protection and shore power notifications (on by default, priority normal, switches kept, shore after 30 s): OK")
 
 

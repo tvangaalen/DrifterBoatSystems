@@ -6,25 +6,29 @@ import logging, threading, time
 from pathlib import Path
 
 from common import pushover
-from guard.camera import load_json
 
 EMERGENCY_RETRY_S, EMERGENCY_EXPIRE_S = 60, 3600
 log = logging.getLogger("boatguard")
 
 
 class Pushover:
-    def __init__(self, path: Path):
-        self.path = Path(path)                           # {"token": app token, "user": user key}; never logged
+    """Keys: the shared <DRIFTER_DATA>\\pushover.json (the System page, `shared`), else BoatGuard's own older
+    pushover.json ({"token": app token, "user": user key}); never logged."""
+    def __init__(self, path: Path, shared: Path | None = None):
+        self.path, self.shared = Path(path), Path(shared) if shared else None
+
+    def keys(self) -> dict | None:
+        found = pushover.find_keys(self.shared, self.path)
+        return found[0] if found else None
 
     @property
     def configured(self) -> bool:
-        k = load_json(self.path, None) or {}
-        return bool(k.get("token") and k.get("user"))
+        return self.keys() is not None
 
     def send(self, title: str, message: str, priority: int = 0, url: str | None = None, wait: bool = False,
              sound: str | None = None, expire: int | None = None) -> bool | None:
-        k = load_json(self.path, None) or {}
-        if not (k.get("token") and k.get("user")): return None
+        k = self.keys()
+        if not k: return None
         data = {"token": k["token"], "user": k["user"], "title": title, "message": message, "priority": priority,
                 "timestamp": int(time.time())}            # shows when it happened, even if delivery was delayed
         if url: data.update(url=url, url_title="Open BoatGuard")

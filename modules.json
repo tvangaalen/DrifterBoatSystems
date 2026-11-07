@@ -3,7 +3,7 @@
   "live": "C:\\Drifter",
   "data": "C:\\DrifterData",
   "backup": {"dest": "C:\\DrifterBackups",
-             "files": ["anchor\\pushover.json", "anchor\\nfl.json", "guard\\pushover.json", "guard\\ezviz_token.json", "washer\\viomi_config.json", "gateway\\pushover.json"],
+             "files": ["pushover.json", "anchor\\pushover.json", "anchor\\nfl.json", "guard\\pushover.json", "guard\\ezviz_token.json", "washer\\viomi_config.json", "gateway\\pushover.json"],
              "_comment": "tools/backup.py: the System page's button Backup keys and tokens copies these files (relative to data) to dest; nothing runs on a schedule"},
   "modules": {
     "gateway": {

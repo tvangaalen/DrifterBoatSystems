@@ -4,7 +4,7 @@
 import {$, esc, pad, hm, hms, day, dm, dayTime, dateText, parseDate, dateFmt, DATE_FORMATS, dur, ago, num, W, icon} from "./format.js";
 import {api} from "./api.js";
 import {sheet, closeSheet, confirm, toast} from "./dialogs.js";
-import {downCard, sw} from "./ui.js";
+import {downCard, sw, notifyRows, readNotify, soundLabel} from "./ui.js";
 
 // ---------------------------------------------------------------- modules & polling
 const mods = [], byId = {};
@@ -178,13 +178,41 @@ function supState(s) {
     down: `<span class="badge bad">not running</span>`, failed: `<span class="badge bad">failed · next try in ${dur(s.next_try_in)}</span>`,
     held: `<span class="badge warn">on hold</span>`}[s.state] || `<span class="badge">${esc(s.state)}</span>`;
 }
-// Alerts: the gateway pushes a message (Pushover) when a system is down for a few minutes, and when it is back.
+// Pushover: the shared keys of every system (the Pushover application "Drifter boat systems"), kept by the gateway in
+// <DRIFTER_DATA>\pushover.json on the boat PC, never in the repository; the page only ever sees their last 4 characters.
+// Plus the gateway's own alerts (a system down for a few minutes, and back) with their priority and sound.
+function alertsStatus(a) {
+  const k = a.shared || {}, src = a.source === "shared" ? `<span class="good">Every system uses these keys</span>`
+    : a.source === "gateway" ? `<span class="warnc">Not complete: the systems still use their older key files</span>` : `<span class="warnc">Not set up: no push messages are sent</span>`;
+  return `${src}${k.app_token || k.user_key ? ` · API token ${esc(k.app_token || "not set")}, User key ${esc(k.user_key || "not set")}` : ""}`
+    + (a.error ? ` · <span class="badc">Last alert failed: ${esc(a.error)}</span>` : a.down.length ? ` · <span class="badc">Down now: ${esc(a.down.join(", "))}</span>` : "");
+}
 function alertsCard(a) {
-  const st = !a.configured ? `Not set up: put the Pushover keys ({"token": "…", "user": "…"}) in ${esc(a.file)}, then restart Drifter.`
-    : a.error ? `<span class="badc">Last alert failed: ${esc(a.error)}</span>`
-    : a.down.length ? `<span class="badc">Down now: ${esc(a.down.join(", "))}</span>` : `<span class="good">Ready</span>`;
-  return `<h2 class="sec">Alerts</h2><div class="card pad"><p class="u-m-0-2-10 hint">A push message when a system has been down for ${esc(a.after_min)} minutes, and when it is back. ${st}</p>
-    <button class="btn sec" type="button" id="sysAlertTest" ${a.configured ? "" : "disabled"}>Send test</button></div>`;
+  return `<h2 class="sec">Pushover</h2><div class="card pad"><p class="u-m-0-2-10 hint">One Pushover application for every system. The keys stay on the boat PC; type a new one to replace it.</p>
+    <form id="sysPush" autocomplete="off"><div class="rows">
+      <label class="row col"><span class="k"><b>API token</b><small>Of the application, on pushover.net → Your Applications</small></span>
+        <input class="field" id="sysPushTok" type="password" maxlength="30" spellcheck="false" autocapitalize="off" placeholder="${esc((a.shared || {}).app_token || "30 letters and digits")}"></label>
+      <label class="row col"><span class="k"><b>User key</b><small>Yours, at the top of pushover.net after logging in</small></span>
+        <input class="field" id="sysPushUsr" type="password" maxlength="30" spellcheck="false" autocapitalize="off" placeholder="${esc((a.shared || {}).user_key || "30 letters and digits")}"></label></div>
+      <p class="u-m-10-2-0 hint" id="sysPushSt">${alertsStatus(a)}</p>
+      <div class="u-d-flex u-gap-8 u-mt-12"><button class="btn" type="submit" id="sysPushSave">Save keys</button>
+        <button class="btn sec" type="button" id="sysAlertTest" ${a.configured ? "" : "disabled"}>Send test</button></div></form></div>
+    <h2 class="sec">Alerts</h2><div class="card"><div class="rows" id="sysAlertRows"><div class="row"><span class="hint">A push message when a system has been down for ${esc(a.after_min)} minutes, and when it is back.</span></div>
+      ${notifyRows("sa", a.events, a.prefs)}
+      <div class="row"><span></span><button class="btn sec" type="button" id="sysAlertSave">Save alerts</button></div></div></div>`;
+}
+async function saveKeys(ev) {
+  ev.preventDefault();
+  const tok = $("sysPushTok").value.trim(), usr = $("sysPushUsr").value.trim();
+  if (!tok && !usr) { toast("Type the API token or the User key first", true); return; }
+  if ([tok, usr].some(v => v && !/^[A-Za-z0-9]{30}$/.test(v))) { toast("A Pushover key is 30 letters and digits", true); return; }
+  try { await run(null, $("sysPushSave"), () => sysPost("api/alerts/keys", {app_token: tok, user_key: usr}), "Pushover keys saved"); $("sysPushTok").value = $("sysPushUsr").value = ""; } catch (e) {}
+  refreshSystem(true);
+}
+async function saveAlerts(btn) {
+  const a = sysInfo && sysInfo.alerts; if (!a) return;
+  try { await run(null, btn, () => sysPost("api/alerts/prefs", {prefs: readNotify("sa", a.events)}), "Alerts saved"); } catch (e) {}
+  refreshSystem(true);
 }
 
 // "Backup keys and tokens": the gateway copies the key files to the back-up folder on the boat PC (tools/backup.py), only
@@ -215,11 +243,13 @@ async function renderSystem(el) {
     if (e.target.closest("#sysOff")) switchAllOff(e.target.closest("#sysOff"));
     if (e.target.closest("#sysBackup")) backupKeys(e.target.closest("#sysBackup"));
     if (e.target.closest("#sysAlertTest")) alertTest(e.target.closest("#sysAlertTest"));
+    if (e.target.closest("#sysAlertSave")) saveAlerts(e.target.closest("#sysAlertSave"));
   };
+  el.onsubmit = e => { if (/** @type {HTMLElement} */ (e.target).id === "sysPush") saveKeys(e); };
   await refreshSystem();
   clearInterval(sysTimer); sysTimer = setInterval(() => { if (current === "system" && !document.hidden) refreshSystem(); else if (current !== "system") clearInterval(sysTimer); }, 5000);
 }
-async function refreshSystem() {
+async function refreshSystem(rebuild = false) {
   if (switchedOff) return;
   try { sysInfo = await (await fetch("api/systems", {cache: "no-store"})).json(); } catch (e) { sysInfo = null; }
   if (!$("sysRows")) return;
@@ -243,7 +273,9 @@ async function refreshSystem() {
   $("sysOffWrap").hidden = !sup; $("sysOff").disabled = !!(sup && sup.shutdown && sup.shutdown.state === "running");
   if (sup) $("sysEvents").innerHTML = sup.events.slice().reverse().slice(0, 30).map(e => `<div class="${e.kind === "bad" ? "bad" : e.kind === "warn" ? "warn" : ""}"><time>${esc(dayTime(e.t))}</time><span class="msg"><b>${esc(e.module)}</b> ${esc(e.text)}</span></div>`).join("");
   const busy = $("sysBackup") && $("sysBackup").disabled;           // never replace the button while it is copying
-  if ($("sysAlertsWrap") && !($("sysAlertTest") && $("sysAlertTest").disabled)) $("sysAlertsWrap").innerHTML = sup && sysInfo.alerts ? alertsCard(sysInfo.alerts) : "";
+  const aw = $("sysAlertsWrap"), al = sup && sysInfo.alerts;      // built once: a poll never wipes a key being typed or a choice
+  if (aw && (!al || rebuild || !aw.dataset.built)) { aw.innerHTML = al ? alertsCard(al) : ""; aw.dataset.built = al ? "1" : ""; }
+  else if (aw && al) { $("sysPushSt").innerHTML = alertsStatus(al); if (!$("sysAlertTest").dataset.busy) $("sysAlertTest").disabled = !al.configured; }
   if ($("sysBackupWrap") && !busy) $("sysBackupWrap").innerHTML = sup && sysInfo.backup ? backupCard(sysInfo.backup) : "";
   $("sysVer").textContent = `Drifter Boat Systems ${sysInfo ? "v" + sysInfo.version : ""}`;
 }
@@ -322,5 +354,5 @@ function start() {
 
 
 // The API the page modules use (energy.js, anchor.js, guard.js, washer.js): `import Drifter from "./core/app.js"`.
-const Drifter = {register, start, api, poll, run, confirm, sheet, closeSheet, toast, page, setSubtitle, downCard, sw, visibleIs, byId, $, esc, pad, hm, hms, day, dm, dayTime, dateText, parseDate, dateFmt, dur, ago, num, W, icon, getTheme};
+const Drifter = {register, start, api, poll, run, confirm, sheet, closeSheet, toast, page, setSubtitle, downCard, sw, notifyRows, readNotify, soundLabel, visibleIs, byId, $, esc, pad, hm, hms, day, dm, dayTime, dateText, parseDate, dateFmt, dur, ago, num, W, icon, getTheme};
 export default Drifter;

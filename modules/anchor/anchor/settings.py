@@ -45,7 +45,12 @@ DEFAULTS = {
     "gps_sources": DEFAULT_GPS,  # GNSS sources in order of preference; 254 = the Orca Core's own GPS
     "own_mmsi": "",           # "My MMSI": this boat's AIS, never shown as a target; empty = hide any target within 10 m of our GPS
     "pc_sound": True,         # beep on this PC while an alarm sounds
-    "push_alerts": True,      # send alarms to the phone through Pushover (needs pushover.json)
+    "push_alerts": True,      # send alarms to the phone through Pushover (the shared keys, else pushover.json)
+    # sound (a Pushover sound, "" = the app's default) and priority (-2..1) per push alert; anchor drag is always emergency
+    "push_sound_drag": "persistent",
+    "push_prio_gps": 1, "push_sound_gps": "", "push_prio_core": 1, "push_sound_core": "",
+    "push_prio_depth": 1, "push_sound_depth": "", "push_prio_wind": 1, "push_sound_wind": "",
+    "push_prio_ais": 1, "push_sound_ais": "", "push_prio_cleared": 0, "push_sound_cleared": "",
     "alive_minutes": 60.0,    # still-alive check: alert from outside after this long without a sign of life, 0 = off
     "internet_ais": True,     # add AIS targets from aisstream.io (needs aisstream.json); the local receiver always wins
     "nfl_tracking": True,     # send the track to noforeignland.com (needs nfl.json)

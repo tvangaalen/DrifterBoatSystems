@@ -10,7 +10,7 @@
 import sys, threading
 
 from guard import VERSION, config       # first: it puts the repository root (common/) on sys.path
-from common import logs
+from common import logs, pushover
 from common.service import run
 from guard import router
 from guard.api import create_app
@@ -62,7 +62,7 @@ def main(argv: list[str]) -> int:
         print(f"{len(seen)} Wi-Fi clients; phone {'ON BOARD' if seen & {m.lower() for m in cfg['phone_macs']} else 'NOT on Wi-Fi'}")
     elif cmd in ("arm", "disarm"): Camera(cfg, TOKEN).set_armed(cmd == "arm"); log.info("manual %s done", cmd)
     elif cmd == "run":
-        g = Guard(cfg, Camera(cfg, TOKEN), STATE, CONFIG, notifier=Pushover(PUSHOVER))
+        g = Guard(cfg, Camera(cfg, TOKEN), STATE, CONFIG, notifier=Pushover(PUSHOVER, shared=pushover.shared_file(DATA)))   # live: DRIFTER_DATA\pushover.json
         threading.Thread(target=g.run, daemon=True, name="guard").start()
         log.info("BoatGuard %s: API on port 8095 for the Drifter gateway", VERSION)
         run(create_app(g, LOG), 8095, "GUARD_BIND")

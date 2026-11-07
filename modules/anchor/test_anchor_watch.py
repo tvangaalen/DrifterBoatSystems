@@ -618,9 +618,9 @@ class FakeNotifier:
     configured = True
     last_error = last_sent = None
 
-    def __init__(self): self.calls = []
-    def alarm(self, key, title, message, when): self.calls.append(("alarm", key, title, message))
-    def cleared(self, key, title, message, when): self.calls.append(("cleared", key))
+    def __init__(self): self.calls = []; self.kw = []
+    def alarm(self, key, title, message, when, **kw): self.calls.append(("alarm", key, title, message)); self.kw.append(kw)
+    def cleared(self, key, title, message, when, **kw): self.calls.append(("cleared", key)); self.kw.append(kw)
     def cancel(self, key=None): self.calls.append(("cancel", key))
     def reload(self): return None
     def test(self): self.calls.append(("test",))
@@ -659,6 +659,13 @@ class PushHooksTest(unittest.TestCase):
 
     def test_push_test_command(self):
         self.w.command({"action": "push_test"}); self.assertEqual(self.n.calls[-1], ("test",))
+
+    def test_priority_and_sound_from_the_settings(self):
+        self.w.command({"action": "settings", "settings": {"push_sound_drag": "siren", "push_prio_cleared": -1, "push_sound_cleared": "bike"}})
+        self.drag(30); self.s.run(1, lat=LAT, lon=LON)
+        self.assertEqual(self.n.kw, [{"priority": 2, "sound": "siren"}, {"priority": -1, "sound": "bike"}])   # drag stays an emergency
+        for bad in ({"push_prio_gps": 2}, {"push_prio_gps": True}, {"push_sound_gps": "boom"}):
+            with self.assertRaises(ValueError): self.w.command({"action": "settings", "settings": bad})
 
 
 class PushoverTest(unittest.TestCase):
@@ -704,6 +711,15 @@ class PushoverTest(unittest.TestCase):
         f = self.posts[0][1]
         self.assertEqual((f["priority"], f["retry"], f["expire"]), (2, 30, 600)); self.assertIn("TEST", f["title"])
         self.assertEqual(self.posts[1][0], "receipts/RT/cancel.json")
+
+    def test_shared_keys_win_and_only_drag_is_an_emergency(self):
+        shared = Path(self.dir.name, "shared.json"); shared.write_text(json.dumps({"app_token": "s" * 30, "user_key": "t" * 30}), encoding="utf-8")
+        p = Pushover(self.f, None, start=False, shared=shared); p.BACKOFF_S = (0, 0, 0); self.p = p
+        p.alarm("gps", "GPS", "lost", 1000, priority=2, sound="bike"); p.alarm("drag", "Drag", "x", 1000, priority=-2, sound="siren")
+        self.run_queue([{"status": 1}, {"status": 1, "receipt": "R"}])
+        a, b = self.posts[0][1], self.posts[1][1]
+        self.assertEqual((a["token"], a["user"], a["priority"], a["sound"]), ("s" * 30, "t" * 30, 1, "bike"))
+        self.assertEqual((b["priority"], b["sound"]), (2, "siren"))
 
     def test_gps_lost_is_high_priority_not_emergency(self):
         self.p.alarm("gps", "GPS", "lost", 1000); self.run_queue([{"status": 1}])

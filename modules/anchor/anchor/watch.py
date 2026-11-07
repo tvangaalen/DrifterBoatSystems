@@ -4,6 +4,7 @@ from datetime import datetime
 from collections import deque
 from pathlib import Path
 from orca_reader import CORE_SOURCE
+from common import pushover
 
 from anchor.ais import read_ais
 from anchor.chain import ChainFormula, chain_advice
@@ -268,10 +269,13 @@ class AnchorWatch:
         extra = [x for x in (f"Depth {b['depth']:.1f} m" if b.get("depth") is not None else "",
                              f"wind {b['tws']:.0f} kn" if b.get("tws") is not None else "") if x]
         msg = (detail or self.ALARM_TEXT[aid]) + "." + (" " + ", ".join(extra) + "." if extra else "")
-        self.notifier.alarm(aid, f"\u2693 {self.ALARM_TEXT[aid]}", msg, now)
+        s = self.settings
+        self.notifier.alarm(aid, f"\u2693 {self.ALARM_TEXT[aid]}", msg, now, priority=2 if aid == "drag" else s.get(f"push_prio_{aid}", 1),
+                            sound=s.get(f"push_sound_{aid}", ""))
 
     def _push_cleared(self, aid, now):
-        if self._push_ok(): self.notifier.cleared(aid, f"Cleared: {self.ALARM_TEXT[aid]}", "The alarm condition has ended.", now)
+        if self._push_ok(): self.notifier.cleared(aid, f"Cleared: {self.ALARM_TEXT[aid]}", "The alarm condition has ended.", now,
+                                                  priority=self.settings["push_prio_cleared"], sound=self.settings["push_sound_cleared"])
 
     def _push_cancel(self, aid=None):
         if self.notifier is not None: self.notifier.cancel(aid)
@@ -420,6 +424,13 @@ class AnchorWatch:
                     elif k == "own_mmsi":
                         v = str(v).strip()
                         if v and not (v.isdigit() and len(v) == 9): raise ValueError("My MMSI must be 9 digits (or empty)")
+                    elif k.startswith("push_sound_"):
+                        v = str(v)
+                        if v not in pushover.SOUNDS: raise ValueError(f"Unknown Pushover sound {v!r}")
+                    elif k.startswith("push_prio_"):
+                        if isinstance(v, bool) or not isinstance(v, (int, float)) or v != int(v) or not -2 <= v <= 1:
+                            raise ValueError("A push alert's priority must be -2, -1, 0 or 1 (only anchor drag is an emergency)")
+                        v = int(v)
                     elif k.startswith("col_"):
                         v = str(v).strip().lower()
                         if not re.fullmatch(r"#[0-9a-f]{6}", v): raise ValueError("A map colour must be #rrggbb")

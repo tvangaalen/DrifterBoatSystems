@@ -1,11 +1,11 @@
 """The HTTP API (behind the gateway's allowlist, `enginelog` in drifter.py ROUTES):
 
-    GET  /api/log                          {"fuel": [...], "maintenance": [...], "stats": {...}}
-    GET  /api/lookup?lat=..&lon=..         {"country", "marina", "marina_distance_m", "error"}
+    GET  /api/log                          {"fuel", "maintenance", "alarms", "stats", "settings", "engine"}
     POST /api/fuel | /api/maintenance      create an entry; answers the entry
     POST /api/<kind>/<id>                  change it
     POST /api/<kind>/<id>/delete           delete it (the page asks first)
-    POST /api/settings                     {"tank_capacity_l": litres or null}
+    POST /api/alarms/<id>/delete           delete a logged engine alarm (the page asks first)
+    POST /api/settings                     {"tank_capacity_l": litres or null, "temp_high_c", "oil_low_bar"}
 
 Wrong input answers 400 with a readable message; an unknown id 404.
 """
@@ -15,14 +15,14 @@ from fastapi import Body, FastAPI, HTTPException
 
 from common.service import contract
 from enginelog import VERSION
-from enginelog.lookup import Lookup
 from enginelog.store import KINDS, Store, fuel_stats
 
 JSON_BODY = Body(...)      # the entry as a JSON object (validated by store.py)
 
 
-def create_app(store: Store, lookup: Lookup | None = None, token: str | None = None) -> FastAPI:
-    app, lookup = FastAPI(title="Engine log", version=VERSION, docs_url=None, redoc_url=None, openapi_url=None), lookup or Lookup()
+def create_app(store: Store, engine=None, token: str | None = None) -> FastAPI:
+    """`engine`: the live engine reader (engine.py), None in tests that do not need it."""
+    app = FastAPI(title="Engine log", version=VERSION, docs_url=None, redoc_url=None, openapi_url=None)
     contract(app, "enginelog", VERSION, token)
 
     def kind_of(kind: str) -> str:
@@ -37,16 +37,18 @@ def create_app(store: Store, lookup: Lookup | None = None, token: str | None = N
     @app.get("/api/log")
     def log():
         d = store.all()
-        return {**d, "stats": fuel_stats(d["fuel"]), "settings": store.settings()}
+        e = engine.snapshot() if engine else {"connected": False, "error": "not started", "fresh": False, "running": False,
+                                              "last_hours": store.engine().get("hours"), "last_hours_at": store.engine().get("t")}
+        return {**d, "stats": fuel_stats(d["fuel"]), "settings": store.settings(), "engine": e}
 
     @app.post("/api/settings")
     def settings(body: dict = JSON_BODY):
         return guarded(lambda: store.set_settings(body))
 
-    @app.get("/api/lookup")
-    def place(lat: float, lon: float):
-        if not (-90 <= lat <= 90 and -180 <= lon <= 180): raise HTTPException(400, "lat/lon out of range")
-        return lookup.place(lat, lon)
+    @app.post("/api/alarms/{alarm_id}/delete")
+    def delete_alarm(alarm_id: str):
+        guarded(lambda: store.delete_alarm(alarm_id))
+        return {"ok": True}
 
     @app.post("/api/{kind}")
     def create(kind: str, body: dict = JSON_BODY):

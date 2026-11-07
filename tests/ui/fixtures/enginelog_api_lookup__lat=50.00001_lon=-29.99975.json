@@ -1,1 +1,0 @@
-{"note": "privacy: ok - made-up data from tools/mock_upstreams.py", "status": 200, "type": "application/json", "body": "{\"country\": \"Testland\", \"marina\": \"Mock Marina North\", \"marina_distance_m\": 420, \"error\": null}"}

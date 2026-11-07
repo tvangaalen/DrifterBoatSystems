@@ -64,6 +64,35 @@ class PushoverTest(unittest.TestCase):
         self.assertTrue(pushover.KEY_RE.match("a" * 30)); self.assertFalse(pushover.KEY_RE.match("a" * 29))
 
 
+class SharedKeysTest(unittest.TestCase):
+    """The shared Pushover keys (System page) and the priority/sound choices; files in a temporary folder only."""
+    def test_shared_file_only_inside_drifter_data(self):
+        with tempfile.TemporaryDirectory() as d:
+            with mock.patch.dict("os.environ", {"DRIFTER_DATA": d}):
+                self.assertEqual(pushover.shared_file(Path(d) / "anchor"), Path(d) / "pushover.json")
+                self.assertIsNone(pushover.shared_file(Path(d) / "x" / "anchor"))          # a scratch folder: never the real keys
+            with mock.patch.dict("os.environ", {"DRIFTER_DATA": ""}): self.assertIsNone(pushover.shared_file(Path(d) / "anchor"))
+
+    def test_keys_in_both_layouts_and_masked(self):
+        with tempfile.TemporaryDirectory() as d:
+            a, b = Path(d, "a.json"), Path(d, "b.json")
+            b.write_text('{"token": "%s", "user": "%s"}' % ("t" * 30, "u" * 30))  # privacy: ok
+            self.assertEqual(pushover.find_keys(a, b), ({"token": "t" * 30, "user": "u" * 30}, b))
+            with self.assertRaises(ValueError): pushover.write_keys(a, "short", None)
+            r = pushover.write_keys(a, "x" * 30, "")  # privacy: ok
+            self.assertEqual((r["app_token"], r["configured"]), ("…xxxx", False)); self.assertIsNone(pushover.read_keys(a))
+            pushover.write_keys(a, None, "y" * 30)  # privacy: ok
+            self.assertEqual(pushover.find_keys(a, b)[1], a); self.assertNotIn("x" * 30, str(pushover.masked(a)))
+
+    def test_clean_prefs(self):
+        d = {"a": {"priority": 0, "sound": ""}, "b": {"priority": 1, "sound": ""}}
+        self.assertEqual(pushover.clean_prefs({"a": {"sound": "bike"}}, d, {"b": {"priority": -1}}),
+                         {"a": {"priority": 0, "sound": "bike"}, "b": {"priority": -1, "sound": ""}})
+        self.assertEqual(pushover.clean_prefs({"b": {"priority": 2}}, d, emergency=("b",))["b"]["priority"], 2)
+        for bad in ({"a": {"priority": 2}}, {"a": {"priority": 1.5}}, {"a": {"sound": "boom"}}, {"c": {}}, {"a": 1}, []):
+            with self.assertRaises(ValueError): pushover.clean_prefs(bad, d)
+
+
 class CertScriptTest(unittest.TestCase):
     def test_refuses_without_the_ca_and_creates_nothing(self):
         with tempfile.TemporaryDirectory() as d:
