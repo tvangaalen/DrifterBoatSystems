@@ -55,6 +55,8 @@
 - Energy History: the History database card folds (folded by default)
 - Engine log: four tiles above the fuel chart (Avg L/h, litres, average price, total cost); Fills next to Last fill and
   Since
+- Shared Pushover keys on the System page, priority and sound per notification; Engine log: engine hours and engine
+  alarms from the Orca Core, Maps button, foldable fuel list, country and marina removed
 
 ## 1.2
 

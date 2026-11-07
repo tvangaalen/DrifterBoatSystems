@@ -16,7 +16,7 @@ The rules for Claude Code (and for anyone): [../CLAUDE.md](../CLAUDE.md).
    │     ├── anchor  (FastAPI)              :8766  Orca Core 2 (read-only), NMEA :10110 on the LAN
    │     ├── guard   (BoatGuard, FastAPI)   :8095  UniFi router, EZVIZ camera, Pushover
    │     ├── washer  (FastAPI)              :8080  VIOMI W1 (miio)
-   │     └── enginelog (FastAPI)            :8097  the engine log (data/log.json); OpenStreetMap lookups
+   │     └── enginelog (FastAPI)            :8097  the engine log (data/log.json); engine data from the Orca Core
    │  supervisor.py (start, restart on request, health); the gateway's watchdog pushes alerts
    └────────────────────────────────────────────────────────────────┘
 ```
