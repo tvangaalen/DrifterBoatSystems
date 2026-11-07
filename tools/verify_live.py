@@ -1,6 +1,6 @@
 """After a deploy or restart: is everything live really back? Read-only GETs only, one line per check, in seconds.
 
-    py -3.12 tools/verify_live.py [module ...] [--wait 240] [--config C:\\Drifter\\config.json]
+    py -3.12 tools/verify_live.py [module ...] [--wait 240] [--pending-ok] [--config C:\\Drifter\\config.json]
 
 Modules: gateway, energy, anchor, guard, washer, enginelog (default: all). Per module: /health on 127.0.0.1 (version, uptime), a
 403 without the token (the module contract), the supervisor's state and health check, the gateway's upstream state, and
@@ -145,6 +145,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("modules", nargs="*", metavar="module", help=", ".join(NAMES) + " (default: all)")
     ap.add_argument("--wait", type=float, default=240, help="seconds to keep retrying checks that can still come right (default 240)")
+    ap.add_argument("--pending-ok", action="store_true",
+                    help="checks that can still come right and have not yet when --wait runs out are reported, not failed (tools/ship.py)")
     ap.add_argument("--config", default=r"C:\Drifter\config.json", help="the live gateway config (bind, port, ca_file)")
     a = ap.parse_args(argv)
     names = a.modules or list(NAMES)
@@ -160,12 +162,15 @@ def main(argv=None) -> int:
         hard = [t for r in results.values() for ok, t in r if not ok and not retryable(t)]
         if not pending or hard or time.time() >= deadline: break
         time.sleep(10)
-    failed = 0
+    failed = waiting = 0
     for n, r in results.items():
         for ok, text in r:
-            failed += not ok
-            print(f"{'ok  ' if ok else 'FAIL'} {n:8} {text}")
-    print(f"\n{'all ' + str(sum(len(r) for r in results.values())) + ' checks ok' if not failed else str(failed) + ' failed'} ({time.time() - t0:.0f} s)")
+            wait = not ok and a.pending_ok and retryable(text)
+            failed += not ok and not wait; waiting += wait
+            print(f"{'ok  ' if ok else 'WAIT' if wait else 'FAIL'} {n:8} {text}")
+    total = sum(len(r) for r in results.values())
+    print(f"\n{'all ' + str(total) + ' checks ok' if not (failed or waiting) else f'{failed} failed' if failed else f'{total - waiting} of {total} checks ok'}"
+          + (f"; {waiting} still coming up (normal after a restart; check again: py -3.12 tools\\verify_live.py)" if waiting else "") + f" ({time.time() - t0:.0f} s)")
     return failed
 
 

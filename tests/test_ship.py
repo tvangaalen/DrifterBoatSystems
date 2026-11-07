@@ -25,6 +25,19 @@ class Tests(unittest.TestCase):
         self.assertEqual(ship.test_plan(["modules/energy/mastervolt/soc.py"])["ruff"], ["modules/energy"])
         self.assertEqual(ship.test_plan(["uv.lock"])["suites"], sorted(ship.ALL))
 
+    def test_runs_that_passed_with_the_same_files_are_not_run_again(self):
+        files, prints = ["drifter.py", "web/enginelog.js"], {"drifter.py": "1", "web/enginelog.js": "2"}
+        need = ship.units_needed(files, prints, {}, "H")
+        self.assertEqual(need, {"backup", "gateway", "watchdog", "browser", "typecheck", "ruff:."})
+        green = {u: {"head": "H", "files": {f: prints[f] for f in files if u in ship.units(ship.test_plan([f]))}} for u in need}
+        self.assertEqual(ship.units_needed(files, prints, green, "H"), set())                                  # all passed: nothing
+        self.assertEqual(ship.units_needed(files, {**prints, "web/enginelog.js": "3"}, green, "H"), {"browser", "typecheck"})   # only the page changed
+        self.assertEqual(ship.units_needed(["web/enginelog.js"], prints, green, "H"), set())     # drifter.py back as committed: the page's runs never covered it
+        two = {"web/enginelog.js": "2", "web/energy.js": "5"}
+        g2 = {u: {"head": "H", "files": two} for u in ("browser", "typecheck")}
+        self.assertEqual(ship.units_needed(["web/enginelog.js"], two, g2, "H"), {"browser", "typecheck"})   # energy.js back as committed: run again
+        self.assertEqual(ship.units_needed(files, prints, green, "other"), need)                               # another commit: all again
+
     def test_docs_only_runs_nothing_heavy(self):
         p = ship.test_plan(["README.md", "docs/RUNBOOK.md"])
         self.assertEqual((p["suites"], p["ui"], p["typecheck"]), ([], None, False))

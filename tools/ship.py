@@ -9,7 +9,9 @@ C:\\Drifter, restart only what needs it, verify.
 
 Tests: only the suites and browser tests the changed files can affect (tests/run_all.py <suite ...>, `npx playwright test
 -g ...` for a page module, everything for the shared parts); GitHub CI still runs everything after the push. MasterVolt
-runs `quick`. Restarts: none for web/ (the gateway reads the files per request and sw.js carries a fingerprint of them),
+runs `quick`; the suites run side by side (tests/run_all.py). Each test run that passed is remembered with the content
+of the changed files it covered (.git/ship-green.json, local only, never committed) and is not run again while that is
+unchanged, so after a failure only the failed part and what the fix touches run again. Restarts: none for web/ (the gateway reads the files per request and sw.js carries a fingerprint of them),
 the gateway for drifter.py, a module for its own code; a change that needs the service restarted (drifterd, supervisor,
 common/proc.py) or new environments (pyproject.toml, uv.lock) is never done here: it is printed as the step left to do.
 The privacy hook runs on every commit; nothing here passes --no-verify. Small changes collect under "## Unreleased" in
@@ -17,7 +19,7 @@ CHANGELOG.md; `release` turns them into a version.
 """
 from __future__ import annotations
 
-import argparse, datetime, json, re, shutil, ssl, subprocess, sys, textwrap, time, urllib.request
+import argparse, datetime, hashlib, json, re, shutil, ssl, subprocess, sys, textwrap, time, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -36,6 +38,8 @@ SUITE_RULES = [   # (path or prefix, suites of tests/run_all.py)
 PAGES = {"energy": "overview|energy-|Engine ECU", "anchor": "overview|anchor at", "guard": "overview|guard at", "washer": "overview|washer at", "enginelog": "overview|enginelog|Engine log"}
 UI_ALL = ("tests/ui/", "tools/mock_upstreams.py", "tools/config.mock.json", "playwright.config.ts", "package.json", "package-lock.json")
 ORDER = ("energy", "anchor", "guard", "washer", "enginelog", "gateway")          # the gateway last: it answers the restart requests
+GREEN = ROOT / ".git" / "ship-green.json"     # the files of the last green test run and their content (local only)
+VERIFY_WAIT = 45                               # s the live checks wait for what is still starting after a restart
 
 
 # ------------------------------------------------------------------------------------------------- plans (pure, tested)
@@ -56,6 +60,23 @@ def test_plan(files: list[str]) -> dict:
     pattern = "all" if ui_all else "|".join(sorted(ui)) or None
     typecheck = pattern is not None and any(f.startswith("web/") and f.endswith((".js", ".ts", ".json")) or f.startswith(UI_ALL) for f in files)
     return {"suites": sorted(suites & ALL), "ui": pattern, "typecheck": typecheck, "ruff": sorted(ruff)}
+
+
+def units(plan: dict) -> set[str]:
+    """The separate test runs of a plan: each suite, "browser", "typecheck", "ruff:<folder>"."""
+    return set(plan["suites"]) | {f"ruff:{d}" for d in plan["ruff"]} | ({"typecheck"} if plan["typecheck"] else set()) | ({"browser"} if plan["ui"] else set())
+
+
+def units_needed(files: list[str], prints: dict, green: dict, head: str) -> set[str]:
+    """The test runs the changed files still need. A run is skipped when it passed before on the same commit with exactly
+    the same content of every changed file it covers (and no other): fixing one file after a run only reruns that
+    file's part. A file back to its committed version counts as a change of the files that run covered."""
+    per_file = {f: units(test_plan([f])) for f in files}
+    need = set()
+    for u in units(test_plan(files)):
+        covered = {f: prints.get(f) for f in files if u in per_file[f]}
+        if green.get(u) != {"head": head, "files": covered}: need.add(u)
+    return need
 
 
 def restart_plan(files: list[str]) -> tuple[list[str], list[str]]:
@@ -124,13 +145,16 @@ def changed() -> list[str]:
     return out
 
 
-def step(title: str, cmd, cwd=ROOT, hint: str = "") -> None:
+def step(title: str, cmd, cwd=ROOT, hint: str = "", keep_going: bool = False) -> str:
+    """Runs one step and prints its tail; a failure stops ship.py (keep_going: the caller decides). Returns the output."""
     t0 = time.monotonic(); print(f"- {title}")
     r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     lines = (r.stdout + r.stderr).strip().splitlines()
     tail = "\n".join(lines[-12:] if r.returncode else [ln for ln in lines if re.search(r"\d+ (passed|failed|flaky)", ln)] or lines[-2:])
+    if keep_going: tail = "\n".join(lines[-40:])
     print(textwrap.indent(tail, "    ") + f"\n    ({time.monotonic() - t0:.0f} s)")
-    if r.returncode: raise SystemExit(f"{title}: failed" + (f"\n{hint}" if hint else ""))
+    if r.returncode and not keep_going: raise SystemExit(f"{title}: failed" + (f"\n{hint}" if hint else ""))
+    return r.stdout + r.stderr
 
 
 def py() -> str:
@@ -138,17 +162,43 @@ def py() -> str:
     return str(v) if v.exists() else sys.executable
 
 
+def fingerprints(files: list[str]) -> dict:
+    out = {}
+    for f in files:
+        p = ROOT / f
+        out[f] = hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else "deleted"
+    return out
+
+
 def check(files: list[str], dry: bool) -> None:
-    p = test_plan(files)
+    prints, head = fingerprints(files), git("rev-parse", "HEAD")
+    try: green = json.loads(GREEN.read_text(encoding="utf-8"))
+    except (OSError, ValueError): green = {}
+    need = units_needed(files, prints, green, head); full = test_plan(files)
+    skip = sorted(units(full) - need)
+    p = {"suites": [x for x in full["suites"] if x in need], "ruff": [d for d in full["ruff"] if f"ruff:{d}" in need],
+         "typecheck": "typecheck" in need, "ui": full["ui"] if "browser" in need else None}
     print(f"tests for {len(files)} changed file(s): suites {', '.join(p['suites']) or '-'}; browser {p['ui'] or '-'}"
-          f"; type check {'yes' if p['typecheck'] else 'no'}; ruff {', '.join(p['ruff']) or '-'}")
+          f"; type check {'yes' if p['typecheck'] else 'no'}; ruff {', '.join(p['ruff']) or '-'}"
+          + (f"\n  passed before with exactly these files, not run again: {', '.join(skip)}" if skip else ""))
     if dry: return
-    for d in p["ruff"]: step(f"ruff {d}", ["py", "-3.12", "-m", "ruff", "check", "--no-cache", d])   # the cache once hid an error CI found
-    if p["typecheck"]: step("type check", [shutil.which("npm") or "npm", "run", "typecheck"])
-    if p["suites"]: step("python tests", [py(), "tests/run_all.py", "quick", *p["suites"]])
+    per_file = {f: units(test_plan([f])) for f in files}
+
+    def passed(*done: str) -> None:              # remembered at once, so a later failure keeps what passed
+        for u in done: green[u] = {"head": head, "files": {f: prints.get(f) for f in files if u in per_file[f]}}
+        GREEN.write_text(json.dumps(green), encoding="utf-8")
+
+    for d in p["ruff"]: step(f"ruff {d}", ["py", "-3.12", "-m", "ruff", "check", "--no-cache", d]); passed(f"ruff:{d}")   # the cache once hid an error CI found
+    if p["typecheck"]: step("type check", [shutil.which("npm") or "npm", "run", "typecheck"]); passed("typecheck")
+    if p["suites"]:
+        out = step("python tests", [py(), "tests/run_all.py", "quick", *p["suites"]], keep_going=True)
+        ok = [m.group(1) for m in re.finditer(r"^ok\s+(\S+)", out, re.M) if m.group(1) in p["suites"]]
+        passed(*ok)
+        if len(ok) < len(p["suites"]): raise SystemExit("python tests: failed")
     if p["ui"]:
         step("browser tests", [shutil.which("npx") or "npx", "playwright", "test", *([] if p["ui"] == "all" else ["-g", p["ui"]])],
              hint="a snapshot that changed on purpose: npx playwright test -g <test> --update-snapshots, read the diff, run again")
+        passed("browser")
 
 
 def message(summary: str, body: str | None, claude: bool) -> str:
@@ -234,7 +284,9 @@ def deploy(a, dry: bool = False, extra: list[str] | None = None) -> None:
     cfg = json.loads((LIVE / "config.json").read_text(encoding="utf-8")); call = gateway(cfg)
     if a.no_restart and mods: todo.append(f"restart {', '.join(mods)} (--no-restart)"); mods = []
     for m in mods: print(f"  restart {m}: {call('/api/supervisor/restart', {'module': m})}")
-    step("verify live", [py(), "tools/verify_live.py", "--wait", "240"])
+    # A short wait: what still starts (the BMS units take ~2 minutes after an energy restart, a washer that is off) is
+    # reported as still coming up, not waited for; only a real failure stops here.
+    step("verify live", [py(), "tools/verify_live.py", "--wait", str(VERIFY_WAIT if mods else 0), "--pending-ok"])
     sys.path.insert(0, str(LIVE)); import drifter        # the live code's own fingerprint of its web/ files
     live = call("/api/systems")
     want = drifter.web_build(LIVE / "web")
