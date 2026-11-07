@@ -58,6 +58,8 @@
 - Shared Pushover keys on the System page, priority and sound per notification; Engine log: engine hours and engine
   alarms from the Orca Core, Maps button, foldable fuel list, country and marina removed
 - System page: saving the Pushover keys no longer rebuilds the Alerts card
+- Faster shipping: test suites side by side at low priority, passed test runs are not repeated, the live check no longer
+  waits minutes for what is still starting
 
 ## 1.2
 
