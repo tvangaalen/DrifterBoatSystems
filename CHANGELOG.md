@@ -62,6 +62,8 @@
   waits minutes for what is still starting
 - Every log foldable and folded by default (supervisor events, BoatGuard log, engine alarm log); an on/off switch for
   every notification; History legends under the charts
+- Engine alarm log from the YDEN-02 (YD RAW over UDP 1456, listen only): the engine's own warning lights (PGN 127489)
+  are logged; live data and engine hours stay on the Orca Core
 
 ## 1.2
 
