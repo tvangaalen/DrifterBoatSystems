@@ -68,6 +68,8 @@
   white in Night); Energy opens on Batteries with house, start and bow tiles and House bank details, no House bank tile
   on Control; History's Energy in this period follows the zoom; the battery health report folds and its resistance
   tables are filled again; BoatGuard split into Monitoring and Settings
+- Battery health report: SOC jumps also counted at the ~60 s BMS read interval; the report code is linted again (its
+  folder no longer falls under the reports/ ignore rule)
 
 ## 1.2
 
