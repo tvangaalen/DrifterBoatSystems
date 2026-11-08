@@ -64,6 +64,10 @@
   every notification; History legends under the charts
 - Engine alarm log from the YDEN-02 (YD RAW over UDP 1456, listen only): the engine's own warning lights (PGN 127489)
   are logged; live data and engine hours stay on the Orca Core
+- A Test button per notification (System, Energy, Anchor watch, BoatGuard); map zoom and scale follow the theme (no
+  white in Night); Energy opens on Batteries with house, start and bow tiles and House bank details, no House bank tile
+  on Control; History's Energy in this period follows the zoom; the battery health report folds and its resistance
+  tables are filled again; BoatGuard split into Monitoring and Settings
 
 ## 1.2
 
