@@ -17,9 +17,10 @@ export const PRIORITY_LABEL = {"-2": "Lowest", "-1": "Quiet", "0": "Normal", "1"
 export const soundLabel = s => s === "" ? "App default" : s === "none" ? "Silent" : s[0].toUpperCase() + s.slice(1);
 /**
  * Rows with an on/off switch (when the notification has "on"), a sound and a priority select per notification. `events`: {key: title or [title, hint]}; `prefs`: {key: {priority, sound}};
- * `fixed`: {key: priority} for a notification whose priority cannot be changed (shown as text); priorities offered: -2..`max`.
+ * `fixed`: {key: priority} for a notification whose priority cannot be changed (shown as text); priorities offered: -2..`max`;
+ * `test`: a Test button per notification (`data-ntest` = its key), which the page sends with the sound and priority shown.
  */
-/** @param {string} prefix @param {Record<string, string|string[]>} events @param {Record<string, {on?: boolean, priority: number, sound: string}>} prefs @param {{max?: number, fixed?: Record<string, number>}} [opts] */
+/** @param {string} prefix @param {Record<string, string|string[]>} events @param {Record<string, {on?: boolean, priority: number, sound: string}>} prefs @param {{max?: number, fixed?: Record<string, number>, test?: boolean}} [opts] */
 export function notifyRows(prefix, events, prefs, opts = {}) {
   const max = opts.max ?? 1, fixed = opts.fixed || {};
   return Object.entries(events).map(([e, t]) => {
@@ -30,8 +31,14 @@ export function notifyRows(prefix, events, prefs, opts = {}) {
     return `<div class="row col"><div class="u-d-flex u-jc-between u-gap-10 u-ai-center"><div class="k"><b>${esc(title)}</b>${hint ? `<small>${esc(hint)}</small>` : ""}</div>
       ${"on" in p ? sw(`${prefix}on-${e}`, p.on !== false, `aria-label="${esc(title)} on or off"`) : ""}</div>
       <div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="${prefix}snd-${e}" aria-label="Sound for ${esc(title)}">${SOUNDS.map(o =>
-        `<option value="${esc(o)}" ${o === p.sound ? "selected" : ""}>${esc(soundLabel(o))}</option>`).join("")}</select>${prio}</div></div>`;
+        `<option value="${esc(o)}" ${o === p.sound ? "selected" : ""}>${esc(soundLabel(o))}</option>`).join("")}</select>${prio}${opts.test
+        ? `<button class="btn sec" type="button" data-ntest="${esc(e)}" aria-label="Send a test of ${esc(title)}">Test</button>` : ""}</div></div>`;
   }).join("");
+}
+/** The sound and priority shown for one notification (for its Test button). @param {string} prefix @param {string} e */
+export function notifyChoice(prefix, e) {
+  const {sound, priority} = readNotify(prefix, {[e]: ""})[e] || {sound: ""};
+  return priority === undefined ? {sound} : {sound, priority};
 }
 /** The choices of notifyRows as {key: {priority, sound}} (a fixed priority is left out: the server keeps it). */
 export function readNotify(prefix, events) {

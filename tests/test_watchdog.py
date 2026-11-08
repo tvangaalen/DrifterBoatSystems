@@ -75,6 +75,11 @@ class WatchdogTest(unittest.TestCase):
         with unittest.mock.patch.object(drifter.pushover, "post", lambda path, fields, agent: posted.append(fields)):
             self.dog._post("t", "m", "back"); self.assertEqual(posted, [])                 # switched off
             self.dog.test(); self.assertEqual(len(posted), 1)                              # the test is sent anyway
+            self.dog.test("down_high", "siren", -1)                                        # one alert, with the choices on the page
+            self.assertEqual((posted[-1]["priority"], posted[-1]["sound"]), (-1, "siren")); self.assertIn("Energy or anchor watch down", posted[-1]["title"])
+            self.dog.test("back"); self.assertEqual(posted[-1]["priority"], -1)            # its saved priority (set above)
+        for bad in (("nope", None, None), ("down", "boom", None), ("down", None, 2)):
+            with self.assertRaises(ValueError): self.dog.test(*bad)
         with self.assertRaises(ValueError): self.dog.set_prefs({"back": {"on": "no"}})
 
 

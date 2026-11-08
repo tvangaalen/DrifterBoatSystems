@@ -62,12 +62,13 @@ export async function setUp(page: Page, opts: { theme?: string; posts?: Posted[]
 // The pages and views the app has: [name, hash, view button inside the page or null].
 export const SCREENS: [string, string, string | null][] = [
   ["overview", "#overview", null],
-  ["energy-now", "#power", null],
-  ["energy-batteries", "#power", "#eViews [data-view=batt]"],
+  ["energy-now", "#power", "#eViews [data-view=now]"],
+  ["energy-batteries", "#power", null],
   ["energy-history", "#power", "#eViews [data-view=history]"],
   ["energy-settings", "#power", "#eViews [data-view=settings]"],
   ["anchor", "#anchor", null],
   ["guard", "#guard", null],
+  ["guard-settings", "#guard", "#gViews [data-gview=set]"],
   ["washer", "#washer", null],
   ["enginelog", "#enginelog", null],
   ["enginelog-maintenance", "#enginelog", "#lViews [data-lview=maintenance]"],

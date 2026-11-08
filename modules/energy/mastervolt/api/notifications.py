@@ -18,6 +18,21 @@ class NotificationsReq(BaseModel):
     prefs: dict | None = None        # {"float"|"shore": {"priority": -2..1, "sound": a Pushover sound}}
 
 
+class NotificationTestReq(BaseModel):
+    event: str
+    sound: str | None = None
+    priority: int | None = None
+
+
+@router.post("/api/notifications/test")
+def test_notification(req: NotificationTestReq, svc: Services = Depends(services)):
+    """A test of one notification with the sound and priority chosen on the page (sent even when it is switched off)."""
+    try:
+        return svc.notifier.test(req.event, req.sound, req.priority)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from None
+
+
 @router.get("/api/notifications")
 def get_notifications(svc: Services = Depends(services)):
     return svc.notifier.status()

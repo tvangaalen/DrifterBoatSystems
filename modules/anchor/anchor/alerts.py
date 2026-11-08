@@ -66,16 +66,18 @@ class Pushover:
         """Stops the repeating emergency for one alarm, or (no key) for all of them."""
         self.q.put(("cancel", key or "*", None))
 
-    def test_alarm(self):
+    def test_alarm(self, sound=None):
         """A real emergency message (repeats, Critical Alert), so the phone set-up can be checked without a drag."""
-        self.q.put(("send", "test", {"title": "\u2693 TEST anchor alarm", "priority": 2, "timestamp": int(time.time()),
+        self.q.put(("send", "test", {"title": "\u2693 TEST anchor alarm", "priority": 2, "timestamp": int(time.time()), **({"sound": sound} if sound else {}),
                                      "expire": self.TEST_EXPIRE_S,
                                      "message": "Test of the anchor-drag alarm. It repeats every 30 s until you tap Acknowledge "
                                                 "in Pushover (or press Stop test alarm), at most 10 minutes."}))
 
-    def test(self):
-        self.q.put(("send", None, {"title": "Anchor Watch test", "priority": 0, "timestamp": int(time.time()),
-                                   "message": "Push alerts work. Anchor drag alarms arrive as emergency alerts that repeat until acknowledged."}))
+    def test(self, title=None, priority=0, sound=None):
+        """A test message; with a title, one alert's test with its priority (never emergency) and sound."""
+        self.q.put(("send", None, {"title": title or "Anchor Watch test", "priority": min(1, int(priority)), "timestamp": int(time.time()), **({"sound": sound} if sound else {}),
+                                   "message": "This is how this alert arrives." if title else
+                                   "Push alerts work. Anchor drag alarms arrive as emergency alerts that repeat until acknowledged."}))
 
     def _post(self, path, fields): return pushover.post(path, fields, f"OrcaCore2-AnchorWatch/{VERSION}")
 

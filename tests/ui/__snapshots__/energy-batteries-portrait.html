@@ -9,52 +9,15 @@
 </div>
 <section data-page="power"><div id="eDown"></div>
 <div class="u-m-4-0-14 u-maxw-460 seg" role="tablist" id="eViews">
-<button type="button" data-view="now" aria-pressed="false">Control</button><button type="button" data-view="batt" aria-pressed="true">Batteries</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
-<div id="eNow" hidden="">
-<div class="u-mb-12 card pad"><div class="btns eq"><button class="btn sec" type="button" data-mode="motor" aria-pressed="false">Motor</button><button class="btn sec" type="button" data-mode="anchor" aria-pressed="false">Anchor</button><button class="btn sec" type="button" data-mode="generator" aria-pressed="false">Generator</button><button class="btn sec" type="button" data-mode="marina" aria-pressed="false">Marina</button><button class="btn sec" type="button" data-mode="sail" aria-pressed="false">Sail</button></div>
-<p class="u-m-8-2-0 hint">Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
-<div class="grid g2l">
-<div class="stack">
-<div class="card tile bank"><div class="th"><span class="ic"><svg class="i"><use href="#i-batt"></use></svg></span><h3>House bank</h3><span class="badge tag ok" title="Bulk allowed · Float when a cell reaches 3550 mV (now 3341 mV)">Bulk · now 3341 / 3550 mV</span></div><div class="meter-row"><div><div class="big">+145 W</div>
-<div class="line">13.17 V · 11.0 A · 21.5 °C</div>
-<div class="line">MLI · 960 Ah · charging</div></div><div class="meter" role="img" aria-label="House bank 73 %"><svg viewBox="0 0 124 76" aria-hidden="true">
-<defs><linearGradient id="ePBand" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
-<linearGradient id="ePSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
-<path class="track" d="M 14 64 A 48 48 0 0 1 110 64"></path><path class="band glow" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#ePBand)"></path><path class="band" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#ePBand)"></path>
-<path class="sheen" d="M 18 64 A 44 44 0 0 1 106 64" stroke="url(#ePSheen)"></path><path class="rim" d="M 3 64 A 59 59 0 0 1 121 64"></path><g class="needle"><polygon points="83.6,45.6 100.6,20.7 98.8,19.1 76.8,39.8"></polygon></g></svg>
-<span class="pill">73<small>%</small></span></div></div>
-<div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">0 W</div></div>
-<div class="mini"><div class="l">Alternator</div><div class="n">0 W</div></div>
-<div class="mini"><div class="l">Solar</div><div class="n">261 W</div></div>
-<div class="mini"><div class="l">DC load</div><div class="n">−116 W</div></div></div>
-</div>
-<div class="card"><div class="hd"><svg class="i"><use href="#i-sun"></use></svg><h3>Energy providers</h3><span class="muted num">Total DC in 261 W</span></div><div class="rows">
-<div class="flow"><span class="ic shore "><svg class="i"><use href="#i-plug"></use></svg></span><div class="nm"><b>Shore Power</b><small>Not connected</small></div>
-<div class="w">0 W<small>0.0 V · 0.0 A</small></div><span class="sw-gap"></span></div><div class="flow"><span class="ic shore "><svg class="i"><use href="#i-plug"></use></svg></span><div class="nm"><b>Charger House</b><small>Off</small></div>
-<div class="w">0 W<small>13.2 V · 0.0 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger" checked="" aria-label="Charger House"><i></i></label></div><div class="flow"><span class="ic alt "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>Stop Charge</small></div>
-<div class="w">0 W<small>13.9 V · 0.0 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-alternator" aria-label="Alternator"><i></i></label></div><div class="flow"><span class="ic solar on"><svg class="i"><use href="#i-sun"></use></svg></span><div class="nm"><b>Solar</b><small>Bulk · panel 38.4 V</small></div>
-<div class="w">261 W<small>13.2 V · 19.8 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-solar" checked="" aria-label="Solar"><i></i></label></div></div></div>
-<div class="card"><div class="hd"><svg class="i"><use href="#i-load"></use></svg><h3>Energy consumers</h3><span class="muted num">Total DC out −116 W</span></div><div class="rows">
-<div class="flow"><span class="ic load on"><svg class="i"><use href="#i-load"></use></svg></span><div class="nm"><b>AC Loads</b><small>AC</small></div>
-<div class="w">−92 W<small>230.0 V · 0.4 A</small></div><span class="sw-gap"></span></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-power"></use></svg></span><div class="nm"><b>Inverter</b><small>Not inverting</small></div>
-<div class="w">0 W<small>13.2 V · 0.0 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-inverter" aria-label="Inverter"><i></i></label></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Charger Start</b><small>Float</small></div>
-<div class="w">−6 W<small>13.2 V · 0.5 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_start" checked="" aria-label="Charger Start"><i></i></label></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-batt"></use></svg></span><div class="nm"><b>Charger Bow</b><small>Off</small></div>
-<div class="w">0 W<small>13.2 V · 0.0 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-charger_bow" aria-label="Charger Bowthruster"><i></i></label></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Engine ECU power</b><small>DC</small></div>
-<div class="w">−4 W<small>13.2 V · 0.3 A</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-engine_ecu" checked="" aria-label="Engine ECU"><i></i></label></div><div class="flow"><span class="ic load "><svg class="i"><use href="#i-engine"></use></svg></span><div class="nm"><b>Alternator</b><small>DC</small></div>
-<div class="w">0 W<small>13.2 V · 0.0 A</small></div><span class="sw-gap"></span></div><div class="flow"><span class="ic load on"><svg class="i"><use href="#i-load"></use></svg></span><div class="nm"><b>Other DC Loads</b><small>DC</small></div>
-<div class="w">−106 W<small>13.2 V · 8.0 A</small></div><span class="sw-gap"></span></div></div></div>
-</div>
-<div class="stack">
-<div class="card"><div class="hd"><svg class="i"><use href="#i-power"></use></svg><h3>CombiMaster</h3></div><div class="rows">
-<div class="row"><div class="k"><b>AC IN support</b><small>Inverter helps when shore power is limited</small></div><label class="switch"><input type="checkbox" role="switch" id="ec-support"><i></i></label></div>
-<div class="row"><div class="k"><b>AC input limit</b><small>Now 10 A · 3–15 A</small></div>
-<div class="u-d-flex u-gap-6 u-ai-center"><div class="stepper no-swipe"><button type="button" data-limit="-1" aria-label="Lower">−</button><output class="num">10 A</output><button type="button" data-limit="1" aria-label="Higher">+</button></div>
-<button class="btn sm" type="button" id="ec-limit" disabled="">Set</button></div></div>
-</div></div>
-<p class="u-m-0-4 hint">History charts and reports are under History; Bluetooth diagnostics and SOC calibration under Batteries.</p>
-</div>
-</div></div><div id="eBatt">
-<div class="others"><div class="card other"><div class="meter sm" role="img" aria-label="Start Battery unknown"><svg viewBox="0 0 124 76" aria-hidden="true">
+<button type="button" data-view="batt" aria-pressed="true">Batteries</button><button type="button" data-view="now" aria-pressed="false">Control</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
+<div id="eBatt">
+<div class="others"><div class="card other"><div class="meter sm" role="img" aria-label="House battery 73 %"><svg viewBox="0 0 124 76" aria-hidden="true">
+<defs><linearGradient id="eBhouseBand" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
+<linearGradient id="eBhouseSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
+<path class="track" d="M 14 64 A 48 48 0 0 1 110 64"></path><path class="band glow" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBhouseBand)"></path><path class="band" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBhouseBand)"></path>
+<path class="sheen" d="M 18 64 A 44 44 0 0 1 106 64" stroke="url(#eBhouseSheen)"></path><path class="rim" d="M 3 64 A 59 59 0 0 1 121 64"></path><g class="needle"><polygon points="90.8,37.3 100.6,20.7 98.8,19.1 83.9,31.4"></polygon></g></svg>
+<span class="pill">73<small>%</small></span></div><div class="k"><b>House battery</b><small>MLI · 960 Ah</small></div>
+<div class="v"><b>+145 W</b><small>13.17 V · 11.0 A</small></div></div><div class="card other"><div class="meter sm" role="img" aria-label="Start Battery unknown"><svg viewBox="0 0 124 76" aria-hidden="true">
 <defs><linearGradient id="eBstartBand" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
 <linearGradient id="eBstartSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
 <path class="track" d="M 14 64 A 48 48 0 0 1 110 64"></path><path class="band glow" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBstartBand)"></path><path class="band" d="M 14 64 A 48 48 0 0 1 110 64" stroke="url(#eBstartBand)"></path>
@@ -67,7 +30,7 @@
 <path class="sheen" d="M 18 64 A 44 44 0 0 1 106 64" stroke="url(#eBbowSheen)"></path><path class="rim" d="M 3 64 A 59 59 0 0 1 121 64"></path></svg>
 <span class="pill">–<small>%</small></span></div><div class="k"><b>Bow Battery</b><small>AGM · 70 Ah</small></div>
 <div class="v"><b>0 W</b><small>12.90 V · 0.0 A</small></div></div></div>
-<div class="card bankbox"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>House bank</h3><span class="muted num">MLI · 960 Ah</span><b class="num">+145 W</b></div>
+<div class="card bankbox"><div class="hd"><svg class="i"><use href="#i-batt"></use></svg><h3>House bank details</h3><span class="muted num">MLI · 960 Ah</span><b class="num">+145 W</b></div>
 <div class="packs"><div class="card pack"><b>Battery 1</b><div class="meter sm" role="img" aria-label="BATTERY 1 74 %"><svg viewBox="0 0 124 76" aria-hidden="true">
 <defs><linearGradient id="eK1Band" x1="0" x2="1"><stop offset="0" class="s0"></stop><stop offset=".5" class="s1"></stop><stop offset="1" class="s2"></stop></linearGradient>
 <linearGradient id="eK1Sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"></stop><stop offset=".55" class="g1"></stop></linearGradient></defs>
@@ -140,4 +103,4 @@
 <span class="v">4.9 s<small>connect avg · radio wait p95 4.6 s</small></span></div></div></div></details>
 <details class="secfold" id="eBleEvFold"><summary><h2 class="sec">Bluetooth events<span class="r">last 16:26 · <span class="warnc">1 failed</span>
 <svg class="i chev"><use href="#i-chev"></use></svg></span></h2></summary>
-<div class="card"><div class="log"><div class=""><time>16:26</time><span class="msg"><b>DL-BAL1</b> slow connect · connected after 8.6 s</span></div><div class="warn"><time>16:23</time><span class="msg"><b>DL-BAL2</b> connect failed · RuntimeError: DL-BAL2 not found; retrying automatically</span></div></div></div></details></div><div id="eHist" hidden=""></div><div id="eSet" hidden=""></div></section>
+<div class="card"><div class="log"><div class=""><time>16:26</time><span class="msg"><b>DL-BAL1</b> slow connect · connected after 8.6 s</span></div><div class="warn"><time>16:23</time><span class="msg"><b>DL-BAL2</b> connect failed · RuntimeError: DL-BAL2 not found; retrying automatically</span></div></div></div></details></div><div id="eNow" hidden=""></div><div id="eHist" hidden=""></div><div id="eSet" hidden=""></div></section>

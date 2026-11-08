@@ -623,7 +623,8 @@ class FakeNotifier:
     def cleared(self, key, title, message, when, **kw): self.calls.append(("cleared", key)); self.kw.append(kw)
     def cancel(self, key=None): self.calls.append(("cancel", key))
     def reload(self): return None
-    def test(self): self.calls.append(("test",))
+    def test(self, title=None, priority=0, sound=None): self.calls.append(("test",) if title is None else ("test", title, priority, sound))
+    def test_alarm(self, sound=None): self.calls.append(("test_alarm", sound))
 
 
 class PushHooksTest(unittest.TestCase):
@@ -659,6 +660,11 @@ class PushHooksTest(unittest.TestCase):
 
     def test_push_test_command(self):
         self.w.command({"action": "push_test"}); self.assertEqual(self.n.calls[-1], ("test",))
+        self.w.command({"action": "push_test", "key": "depth", "sound": "siren", "priority": -1})
+        self.assertEqual(self.n.calls[-1], ("test", "\u2693 Test: Shallow water", -1, "siren"))
+        self.w.command({"action": "push_alarm_test", "sound": "echo"}); self.assertEqual(self.n.calls[-1], ("test_alarm", "echo"))
+        for bad in ({"key": "drag"}, {"key": "nope"}, {"key": "gps", "sound": "boom"}, {"key": "gps", "priority": 2}):
+            with self.assertRaises(ValueError): self.w.command({"action": "push_test", **bad})
 
     def test_priority_and_sound_from_the_settings(self):
         self.w.command({"action": "settings", "settings": {"push_sound_drag": "siren", "push_prio_cleared": -1, "push_sound_cleared": "bike"}})

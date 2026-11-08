@@ -147,6 +147,32 @@ class Notifier:
                 "last_sent": self.last_sent, "last_error": self.last_error}
 
     # ---- sending -----------------------------------------------------------------------------------------------
+    def test(self, event: str, sound: str | None = None, priority=None) -> dict:
+        """A test of one notification with the sound and priority given (else its saved ones), sent once and waited for,
+        even when the notification is switched off. ValueError when the choice is wrong or the keys are missing."""
+        if event not in EVENTS:
+            raise ValueError(f"unknown notification {event}")
+        cur = self.prefs()[event]
+        pref = clean_prefs({event: {"priority": cur["priority"] if priority is None else priority, "sound": cur["sound"] if sound is None else sound}}, self.prefs())[event]
+        keys = self.keys()
+        if keys is None:
+            raise ValueError("Pushover is not set up (no keys)")
+        fields = {"token": keys[0], "user": keys[1], "title": f'Drifter energy: test of "{EVENTS[event]}"', "message": "This is how this notification arrives.",
+                  "priority": pref["priority"], "timestamp": int(time.time())}
+        if pref["sound"]:
+            fields["sound"] = pref["sound"]
+        try:
+            self._post(fields)
+        except urllib.error.HTTPError as exc:
+            self.last_error = f"Pushover refused: HTTP {exc.code}"
+            raise ValueError(self.last_error) from None
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            raise ValueError(self.last_error) from None
+        self.last_sent, self.last_error = time.time(), None
+        log.info("Pushover test: %s", EVENTS[event])
+        return {"sent": True}
+
     def float_started(self, wait: bool = False) -> None:
         """Float protection just latched. Sends the notification when it is switched on and the keys are there."""
         self._notify("float_notification", FLOAT_MESSAGE, wait)

@@ -66,6 +66,17 @@ def main():
         sent.clear()
         n2.float_started(wait=True)
         assert sent[0]["token"] == "s" * 30 and sent[0]["priority"] == 1 and sent[0]["sound"] == "tugboat", sent
+        # a test of one notification: the choices of the page, sent at once, also when the notification is off
+        n2.set_prefs({"shore": {"on": False}}); sent.clear()
+        assert n2.test("shore", "siren", -1) == {"sent": True}
+        assert len(sent) == 1 and sent[0]["priority"] == -1 and sent[0]["sound"] == "siren" and "Shore power" in sent[0]["title"], sent
+        n2.test("float"); assert sent[-1]["priority"] == 1 and sent[-1]["sound"] == "tugboat"          # the saved choices
+        for bad in (("nope", None, None), ("float", "boom", None), ("float", None, 2)):
+            try:
+                n2.test(*bad)
+                raise AssertionError(bad)
+            except ValueError:
+                pass
     print("Float protection and shore power notifications (on by default, priority normal, switches kept, shore after 30 s): OK")
 
 

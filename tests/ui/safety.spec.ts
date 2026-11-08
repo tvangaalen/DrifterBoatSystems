@@ -7,7 +7,7 @@ const dialog = (page: import("@playwright/test").Page) => page.locator("#dlgShee
 test("Engine ECU off: default is Keep ECU ON, and declining sends nothing @iphone", async ({ page }) => {
   const posts: Posted[] = [];
   await setUp(page, { posts });
-  await open(page, "#power", null);
+  await open(page, "#power", "#eViews [data-view=now]");      // the controls are on Control
   const ecu = page.locator("#ec-engine_ecu");
   test.skip(!(await ecu.count()), "the mock has no Engine ECU switch");
   test.skip(!(await ecu.isChecked()), "the mock's Engine ECU is off");
@@ -102,6 +102,37 @@ test("Pushover: the keys are typed hidden and sent once, the page only shows the
   expect((posts[1].body as any).prefs.back).toEqual({ on: true, priority: -1, sound: "bike" });
   await expect(page.locator("#saon-down")).toBeChecked();                           // every alert has its own switch
   await expect(page.locator("#sapri-back option[value='2']")).toHaveCount(0);     // no emergency for the gateway's alerts
+  await page.locator("#sysAlertRows [data-ntest=down]").click();                   // each alert has its own Test
+  await expect.poll(() => posts.at(-1)?.url).toBe("/api/alerts/test");
+  expect(posts.at(-1)!.body).toEqual({ event: "down", sound: "", priority: 0 });
+});
+
+test("BoatGuard: Monitoring and Settings; the camera test and the log are on Settings, with a Test per notification", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { posts });
+  await open(page, "#guard", null);
+  await expect(page.locator("#gViews [data-gview=mon]")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#gHero")).toBeVisible();
+  await expect(page.locator("#gTest")).toBeHidden(); await expect(page.locator("#gLogFold")).toBeHidden();
+  await page.locator("#gViews [data-gview=set]").click();
+  await expect(page.locator("#gTest")).toBeVisible(); await expect(page.locator("#gSet")).toBeVisible();
+  await expect(page.locator("#gLogFold")).toBeVisible(); await expect(page.locator("#gLogFold")).not.toHaveAttribute("open", "");
+  await expect(page.locator("#gHero")).toBeHidden();
+  await expect(page.locator("#gSounds button", { hasText: "Test" })).toHaveCount(3);
+  expect(errors).toEqual([]);
+});
+
+test("Anchor watch: a Test per push alert; anchor drag's is the emergency test alarm and asks first (Cancel)", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { posts });
+  await open(page, "#anchor", "#aViews [data-aview=settings]");
+  await page.locator("[data-ntest=depth]").click();
+  await expect.poll(() => posts.at(-1)?.body).toMatchObject({ action: "push_test", key: "depth" });
+  const n = posts.length;
+  await page.locator("[data-ntest=drag]").click();
+  await expect(dialog(page)).toContainText("Send a real test alarm?"); await page.keyboard.press("Escape");
+  await page.waitForTimeout(300); expect(posts.length).toBe(n);                      // declined: nothing sent
+  expect(errors).toEqual([]);
 });
 
 test("Washer: Set program greys out Start now and Schedule until the washer confirms", async ({ page }) => {

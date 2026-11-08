@@ -16,7 +16,7 @@ test("History: a legend tap shows one series on its own, a second tap all of the
   expect(errors).toEqual([]);
 });
 
-test("Energy opens on Control from the Overview, and History's Update reads the charts again", async ({ page }) => {
+test("Energy opens on Batteries from the Overview, and History's Update reads the charts again", async ({ page }) => {
   const errors = await setUp(page, { theme: "dark" });
   await open(page, "#power", "#eViews [data-view=history]");
   await expect(page.locator("#eChSrc")).toBeVisible();
@@ -27,8 +27,32 @@ test("Energy opens on Control from the Overview, and History's Update reads the 
   await expect(page.locator("#eHistUpd")).toBeEnabled();
   await page.goto("/#overview");
   await page.locator("#ovTiles a[href='#power']").click();
-  await expect(page.locator("#eViews [data-view=now]")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#eViews button").first()).toHaveAttribute("data-view", "batt");       // Batteries is the first button
+  await expect(page.locator("#eViews [data-view=batt]")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#eBatt")).toBeVisible();
+  await expect(page.locator("#eBatt .others .other")).toHaveCount(3);                               // house, start, bow: the same tile
+  await expect(page.locator("#eBatt .others .other").first()).toContainText("House battery");
+  await expect(page.locator("#eBatt .bankbox h3")).toHaveText("House bank details");
+  await page.locator("#eViews [data-view=now]").click();
   await expect(page.locator("#eNow")).toBeVisible();
+  await expect(page.locator("#eNow .tile.bank")).toHaveCount(0);                                    // no House bank tile on Control
+  expect(errors).toEqual([]);
+});
+
+test("History: Energy in this period follows the zoom; the battery health report folds", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#power", "#eViews [data-view=history]");
+  await expect(page.locator("#eContrib .sankey")).toBeVisible();
+  const asked: string[] = [];
+  page.on("request", r => { if (r.url().includes("/api/history/contributions")) asked.push(decodeURIComponent(r.url())); });
+  await page.locator("#eZA").fill("500");
+  await page.locator("#eZA").dispatchEvent("input");
+  await expect.poll(() => asked.length).toBe(1);                       // once the handle rests, the totals of the part shown
+  const from = await page.locator("#eZFrom").textContent(), q = new URL(asked[0]).searchParams;
+  expect(Date.parse(q.get("end")!) - Date.parse(q.get("start")!)).toBeLessThan(24 * 3600e3 * 0.51);   // half the 24 h period
+  expect(from).toBeTruthy();
+  const rep = page.locator("#eRepFold");
+  if (await rep.isVisible()) await expect(rep).not.toHaveAttribute("open", "");                     // a report is folded by default
   expect(errors).toEqual([]);
 });
 
@@ -82,6 +106,9 @@ test("Energy settings: Save sends every setting (also the hidden BMS pop-up); ea
   await page.locator("#enpSave").click();
   await expect.poll(() => posts.find(p => p.url.endsWith("/api/notifications"))?.body).toEqual(
     { prefs: { float: { on: false, priority: 0, sound: "" }, shore: { on: true, priority: 0, sound: "tugboat" } } });
+  await page.locator("#enp-pri-float").selectOption("-1");
+  await page.locator("#eSet [data-ntest=float]").click();                         // a test with what the row shows
+  await expect.poll(() => posts.find(p => p.url.endsWith("/api/notifications/test"))?.body).toEqual({ event: "float", sound: "", priority: -1 });
   expect(errors).toEqual([]);
 });
 

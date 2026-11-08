@@ -138,6 +138,11 @@ def main():
         for n in ("BATTERY 2", "BATTERY 3"):
             assert before["metrics"][n]["excess"]["worst_mohm"] < 1.0, before["metrics"][n]["excess"]
         assert after["metrics"]["BATTERY 1"]["excess"]["worst_mohm"] < 1.0
+        # the BMS read every ~63 s (as on the boat since 2026-11): the load steps must still count
+        t0 = T0.timestamp()
+        slow = [dict(r, t=t0 + (r["t"] - t0) * 63 / 30) for r in bh.good(bh.window(data["bms"]["BATTERY 1"], None, split))]
+        ex63 = bh.excess_resistance(slow)
+        assert ex63 and ex63["worst"] == 2 and 5.0 <= ex63["worst_mohm"] <= 7.0, ex63
         print(
             f"Bad-connection detection: cell {ex['worst']} {ex['worst_mohm']:+.1f} mOhm before, "
             f"{after['metrics']['BATTERY 1']['excess']['worst_mohm']:+.1f} after: OK"

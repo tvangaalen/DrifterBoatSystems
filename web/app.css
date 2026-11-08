@@ -342,7 +342,10 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .map.leaflet-container{background:var(--card2);font:inherit}
 .map .leaflet-control-attribution{background:color-mix(in srgb,var(--card) 80%,transparent);color:var(--muted);font-size:10px}
 .map .leaflet-control-attribution a{color:var(--muted)}
-.map .leaflet-bar a{background:var(--card);color:var(--fg);border-color:var(--line)}
+/* Leaflet's own hover, focus and disabled colours (white) and its scale bar follow the theme too (night: no white) */
+.map .leaflet-bar a,.map .leaflet-bar a:hover,.map .leaflet-bar a:focus,.map .leaflet-bar a.leaflet-disabled{background:var(--card);color:var(--fg);border-color:var(--line)}
+.map .leaflet-bar a.leaflet-disabled{color:var(--muted)}
+.map .leaflet-control-scale-line{background:color-mix(in srgb,var(--card) 80%,transparent);color:var(--fg);border-color:var(--fg)}
 .mapbtns{position:absolute;z-index:500;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
 .mapbtns .btn{min-height:40px;padding:0 12px;background:var(--card);color:var(--fg);box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .mapbtns .btn[aria-pressed="true"]{background:var(--accent);color:var(--onaccent)}
@@ -380,7 +383,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .ptab-note{padding:6px 16px 12px}
 @media (max-width:520px){.ptab .wide{display:none}.ptab{font-size:12.5px}.ptab tbody th,.ptab thead th:first-child{width:70px}}
 .allbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.allbtns .btn{padding:0 8px}   /* equal buttons */
-@media (min-width:480px){.allbtns{grid-template-columns:repeat(3,minmax(0,1fr))}}@media (min-width:1000px){.allbtns{grid-template-columns:repeat(6,minmax(0,1fr))}}@media (min-width:700px){.others{grid-template-columns:1fr 1fr}}
+@media (min-width:480px){.allbtns{grid-template-columns:repeat(3,minmax(0,1fr))}}@media (min-width:1000px){.allbtns{grid-template-columns:repeat(6,minmax(0,1fr))}}@media (min-width:700px){.others{grid-template-columns:1fr 1fr}.others .other:first-child{grid-column:1/-1}}@media (min-width:1000px){.others{grid-template-columns:repeat(3,minmax(0,1fr))}.others .other:first-child{grid-column:auto}}   /* house, start, bow */
 .card.other{display:flex;align-items:center;gap:14px;padding:10px 16px}.card.other .k{flex:1;min-width:0}
 .card.other .k b,.card.other .v b{display:block;font-weight:650}.card.other small{color:var(--muted);font-size:12.5px}.card.other .v{text-align:right;font-variant-numeric:tabular-nums}
 details.secfold>summary{list-style:none;cursor:pointer}details.secfold h2.sec{white-space:nowrap}details.secfold h2.sec .r{min-width:0;overflow:hidden;text-overflow:ellipsis}details.secfold>summary::-webkit-details-marker{display:none}
@@ -556,6 +559,7 @@ details.scope{margin-top:10px}details.scope summary{cursor:pointer;color:var(--a
 details.lfold{margin-top:14px}details.lfold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:40px}
 details.lfold>summary::-webkit-details-marker{display:none}details.lfold>summary .chev{margin-left:auto;color:var(--faint);transition:transform .2s}details.lfold[open]>summary .chev{transform:rotate(90deg)}
 details.lfold .lrows{margin-top:4px}
+details.repfold{margin:4px 16px 12px}details.repfold .mdreport{padding:0 0 4px}   /* the battery health report, folded */
 .autochip{font-size:10.5px;font-weight:600;color:var(--ok);background:var(--okbg);border-radius:10px;padding:1px 7px;margin-left:6px;vertical-align:1px}
 .lform{padding-bottom:14px}.lform>.u-d-flex,.lform>.err{padding:0 16px}.lf-time{width:84px;text-align:center}.lf-text{flex:1;width:auto;max-width:240px;margin-left:12px}
 .lform textarea.field{width:100%;min-height:120px;padding:10px 12px;resize:vertical;font:inherit;font-size:16px}

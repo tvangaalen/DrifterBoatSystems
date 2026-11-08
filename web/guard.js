@@ -5,13 +5,13 @@ const D = Drifter, {$, esc, hms, dur, icon} = D;
 const PRIO_HINT = {"-2": "No alert: only listed in the Pushover app", "-1": "No sound or vibration", "0": "Sound per your iPhone settings",
   "1": "Sounds even during Pushover quiet hours"};
 const label = s => s === "" ? "App default" : s === "none" ? "Silent" : s === "vibrate" ? "Vibrate only" : s[0].toUpperCase() + s.slice(1);
-let dirty = false, built = false, logLines = [], logT = 0, tickT = null;
+let dirty = false, built = false, logLines = [], logT = 0, tickT = null, view = "mon";     // view: "mon" Monitoring, "set" Settings
 
 const m = {
   id: "guard", title: "BoatGuard", short: "Guard", icon: "guard", every: 4000, background: 8000,
   async load() {
     m.state.data = await D.api("guard", "/api/status");
-    if (D.visibleIs("guard") && Date.now() - logT > 8000) {
+    if (D.visibleIs("guard") && view === "set" && Date.now() - logT > 8000) {     // the log is on Settings
       logT = Date.now();
       try { logLines = (await D.api("guard", "/api/log?n=300")).lines || []; } catch (e) {}
     }
@@ -34,6 +34,7 @@ const m = {
     if (s.router_ok === false) r = {cls: "warn", title: r.title, sub: `${s.router_error || "Router not readable"}: nothing will be changed`};
     return r;
   },
+  enter() { view = "mon"; },     // from the Overview or the navigation: always Monitoring
   tile() {
     const s = m.state.data; if (!s) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const h = m.hero(s), cam = s.camera || {};
@@ -45,7 +46,8 @@ const m = {
   },
   mount(el) {
     el.innerHTML = `<div id="gDown"></div>
-    <div class="grid g2l">
+    <div class="u-m-4-0-14 u-maxw-460 seg" role="tablist" id="gViews"><button type="button" data-gview="mon" aria-pressed="true">Monitoring</button><button type="button" data-gview="set" aria-pressed="false">Settings</button></div>
+    <div class="grid g2l" id="gMon">
       <div class="stack">
         <div class="hero" id="gHero"><div class="lamp"></div><div class="grow"><b id="gHeroT">Loading…</b><span id="gHeroS"></span></div></div>
         <div class="card"><div class="rows"><div class="row"><div class="k"><b>Monitoring</b><small id="gEnSub"></small></div>${D.sw("gEnabled", false, 'aria-label="Monitoring on/off"', "onoff")}</div></div></div>
@@ -56,11 +58,10 @@ const m = {
           <div class="row"><span class="k">Router</span><span class="v" id="gRouter">–</span></div>
           <div class="row"><span class="k">Notifications</span><span class="v" id="gNotif">–</span></div>
         </div></div>
-        <div class="card"><div class="rows"><div class="row"><div class="k"><b>Test camera</b><small>Arm, confirm, disarm, confirm (about 15 s)</small></div><button class="btn" id="gTest" type="button">Test</button></div>
-          <div class="row" id="gTestRes" hidden></div></div></div>
       </div>
+    </div>
+    <div class="grid g2l" id="gSetView" hidden>
       <div class="stack">
-        <h2 class="u-mt-0 sec">Settings</h2>
         <form class="card" id="gSet" novalidate><div class="rows">
           <div class="row"><div class="k"><b>Arming delay</b><small>Phone away this long before the camera is armed</small></div>
             <label class="numf"><input class="field" type="number" inputmode="numeric" id="g_away_after_s" required step="1"><span class="u">s</span></label></div>
@@ -70,9 +71,15 @@ const m = {
           <div class="row"><span class="hint" id="gSetMsg"></span><button class="btn" id="gSave" type="submit" disabled>Save</button></div>
         </div></form>
       </div>
-    </div>
-    <details class="secfold" id="gLogFold"><summary><h2 class="sec">Log<span class="r"><span id="gLogN"></span> ${icon("chev", "i chev")}</span></h2></summary>
-      <div class="card"><div class="log" id="gLog"></div></div></details>`;
+      <div class="stack">
+        <div class="card"><div class="rows"><div class="row"><div class="k"><b>Test camera</b><small>Arm, confirm, disarm, confirm (about 15 s)</small></div><button class="btn" id="gTest" type="button">Test</button></div>
+          <div class="row" id="gTestRes" hidden></div></div></div>
+        <details class="secfold" id="gLogFold"><summary><h2 class="sec">Log<span class="r"><span id="gLogN"></span> ${icon("chev", "i chev")}</span></h2></summary>
+          <div class="card"><div class="log" id="gLog"></div></div></details>
+      </div>
+    </div>`;
+    $("gViews").addEventListener("click", e => { const b = e.target.closest("[data-gview]"); if (!b) return;
+      const was = view; view = b.dataset.gview; m.render(); if (was !== view) { window.scrollTo(0, 0); logT = 0; D.poll(m, true); } });
     $("gEnabled").addEventListener("change", async e => {
       const want = e.target.checked;
       if (!want && !(await D.confirm({title: "Switch monitoring off?", text: "BoatGuard will not arm the camera when the phone leaves. A camera BoatGuard armed is disarmed.",
@@ -86,6 +93,8 @@ const m = {
   },
   render() {
     const s = m.state.data; $("gDown").innerHTML = D.downCard(m) ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
+    document.querySelectorAll("#gViews button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.gview === view)));
+    $("gMon").hidden = view !== "mon"; $("gSetView").hidden = view !== "set";
     if (!s) return;
     const now = Date.now() / 1000, cam = s.camera || {}, h = m.hero(s);
     $("gHero").className = "hero " + h.cls; $("gHeroT").textContent = h.title; $("gHeroS").textContent = h.sub;
@@ -135,7 +144,7 @@ function buildSounds(s) {
     row.innerHTML = `<div class="u-d-flex u-jc-between u-gap-10 u-ai-center"><div class="k"><b>${esc(title)}</b><small id="ghint-${e}"></small></div>${D.sw("gon-" + e, s.notify_on ? s.notify_on[e] !== false : true, `aria-label="${esc(title)} on or off"`)}</div>
       <div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="gsnd-${e}" aria-label="Sound for ${esc(title)}">${s.sound_options.map(o => `<option value="${esc(o)}">${esc(label(o))}</option>`).join("")}</select>
       <select class="u-flex-1 field" id="gpri-${e}" aria-label="Priority for ${esc(title)}">${prios.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("")}</select>
-      <button class="btn sec" type="button" id="gtry-${e}" aria-label="Send a test notification">▶</button></div>`;
+      <button class="btn sec" type="button" id="gtry-${e}" aria-label="Send a test of ${esc(title)}">Test</button></div>`;
     box.appendChild(row);
     $("gpri-" + e).addEventListener("change", () => prioHint(m.state.data, e));
     $("gtry-" + e).addEventListener("click", async ev => {

@@ -41,6 +41,7 @@ ROUTES = {
         ("POST", r"/api/reports/battery-health"),      # runs in a separate low-priority process on the server
         ("POST", r"/api/settings"),
         ("POST", r"/api/notifications"),               # the Float protection notification switch
+        ("POST", r"/api/notifications/test"),          # a test of one notification
         ("POST", r"/api/(bms|balancers)/refresh"),
         ("POST", r"/api/bms/[123]/(refresh|charge|discharge)"),
         ("POST", r"/api/balancers/[123]/refresh"),
@@ -201,11 +202,11 @@ class Watchdog:
         log.info("shared Pushover keys saved (%s)", "complete" if r["configured"] else "incomplete")   # never the keys
         return r
 
-    def _post(self, title: str, message: str, event: str, force: bool = False) -> None:
+    def _post(self, title: str, message: str, event: str, force: bool = False, pref: dict | None = None) -> None:
         if not force and not self.prefs()[event]["on"]: log.info("alert switched off, not sent: %s", message); return
         k = self.keys()
         if not k: log.warning("alert not sent (no Pushover keys in %s): %s", self.key_file, message); return
-        p = self.prefs()[event]
+        p = pref or self.prefs()[event]
         fields = {"token": k["token"], "user": k["user"], "title": title, "message": message, "priority": p["priority"]}
         if p["sound"]: fields["sound"] = p["sound"]
         try: pushover.post("messages.json", fields, agent=f"Drifter/{VERSION}"); self.error = None
@@ -231,9 +232,18 @@ class Watchdog:
                     self.alerted.discard(name)
                     self.send(f"Drifter: {title} back", f"{title} is running again (down {round((now - since) / 60)} min).", "back")
 
-    def test(self) -> None:
+    def test(self, event: str | None = None, sound: str | None = None, priority=None) -> None:
+        """A test message; with `event`, as that alert would come, with the sound and priority given (else its saved ones).
+        Sent even when the alert is switched off."""
         if not self.keys(): raise ValueError(f"no Pushover keys in {self.key_file}")
-        self._post("Drifter: test", "Alerts from Drifter Boat Systems reach this phone.", "back", force=True)
+        if event is None:
+            self._post("Drifter: test", "Alerts from Drifter Boat Systems reach this phone.", "back", force=True)
+        else:
+            if event not in self.EVENTS: raise ValueError(f"unknown alert {event}")
+            cur = self.prefs()[event]
+            p = pushover.clean_prefs({event: {"priority": cur["priority"] if priority is None else priority, "sound": cur["sound"] if sound is None else sound}},
+                                     self.DEFAULTS, self.prefs())[event]
+            self._post(f"Drifter: test of \"{self.EVENTS[event]}\"", "This is how this alert arrives.", event, force=True, pref=p)
         if self.error: raise ValueError(self.error)
 
     def status(self) -> dict:
@@ -421,7 +431,10 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
 
         def _alert_test(self):
             if not dog: return self._json({"error": "alerts run only on the boat PC's live app"}, 409)
-            try: dog.test()
+            try: body = json.loads(self._body or b"{}")
+            except ValueError: return self._json({"error": "invalid JSON"}, 400)
+            if not isinstance(body, dict): return self._json({"error": "invalid JSON"}, 400)
+            try: dog.test(body.get("event"), body.get("sound"), body.get("priority"))
             except ValueError as e: return self._json({"error": str(e)}, 409)
             return self._json({"ok": True})
 

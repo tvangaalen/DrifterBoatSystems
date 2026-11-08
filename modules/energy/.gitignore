@@ -20,8 +20,9 @@ logs/
 # Hardware captures
 captures/*.pcap
 
-# Generated battery health reports (contain data about the installation)
-reports/
+# Generated battery health reports (contain data about the installation); only the module folder's own
+# reports/, not mastervolt/reports (the report code)
+/reports/
 
 # Local user configuration
 user_settings.json

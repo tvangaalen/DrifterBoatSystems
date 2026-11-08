@@ -26,10 +26,11 @@ const SETTINGS = [   // [key, label, hint, min, max, step, unit] — the server'
   ["history_retention_days", "Keep history", "Lowering this deletes older history", 1, 365, 1, "days"],
 ];
 const NOTIF_EV = {float: ["Chargers switched to float", "When Float protection starts"], shore: ["Shore power ON / OFF", "When shore power has been connected or disconnected for 30 s"]};
-let notif = null, alarmData = null, view = "now", bms = null, bal = null, settings = null, setDirty = false, notifDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
+let notif = null, alarmData = null, view = "batt", bms = null, bal = null, settings = null, setDirty = false, notifDirty = false, limitDraft = null, coord = null, bleEv = null, hstat = null, report = null, reportT = null, hours = 24, chart = null, contrib = null, chartT = 0, chartFor = null;
 const busy = new Set();
-const zoom = [0, 1000];     // History: the part of the period shown, in thousandths (two-handled slider; all charts)
-let zoomRaf = 0;
+const zoom = [0, 1000];     // History: the part of the period shown, in thousandths (two-handled slider; all charts and the totals)
+let zoomRaf = 0, contribT = 0, contribFor = "";     // contribFor: the zoomed part the totals are for ("" = the whole period)
+const zoomed = () => zoom[0] > 0 || zoom[1] < 1000;
 const solo = {};     // History: per chart the one series a legend tap shows on its own (absent: all of them)
 const on = v => v != null && +v >= .5;
 const flowW = v => v == null || !isFinite(+v) ? "–" : Math.round(+v) > 0 ? "+" + W(+v) : outW(-v);   // into a battery +, out of it −
@@ -49,7 +50,7 @@ const m = {
         chartT = Date.now(); chartFor = hours;
         const end = new Date(), start = new Date(+end - hours * 3600e3);
         jobs.push(D.api("power", `/api/history/chart-data?hours=${hours}`, undefined, {timeout: 45000}).then(d => chart = d).catch(e => D.toast(e.message, true)),
-                  D.api("power", `/api/history/contributions?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, undefined, {timeout: 45000}).then(d => contrib = d).catch(() => {}),
+                  ...(zoomed() ? [] : [D.api("power", `/api/history/contributions?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, undefined, {timeout: 45000}).then(d => { contrib = d; contribFor = ""; }).catch(() => {})]),
                   D.api("power", `/api/history/alarms?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, undefined, {timeout: 45000}).then(d => alarmData = d).catch(() => {}));
       }
     }
@@ -69,13 +70,13 @@ const m = {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
     return bankBody(d, "eT", true);
   },
-  enter() { view = "now"; },     // from the Overview or the navigation: always the Control view
+  enter() { view = "batt"; },    // from the Overview or the navigation: always the Batteries view
   tag() { const d = m.state.data; return d ? floatTag(d.high_soc_float_policy) : ""; },     // the Float status in the tile's header
   mount(el) {
     el.innerHTML = `<div id="eDown"></div>
       <div class="u-m-4-0-14 u-maxw-460 seg" role="tablist" id="eViews">
-        <button type="button" data-view="now" aria-pressed="true">Control</button><button type="button" data-view="batt" aria-pressed="false">Batteries</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
-      <div id="eNow"></div><div id="eBatt" hidden></div><div id="eHist" hidden></div><div id="eSet" hidden></div>`;
+        <button type="button" data-view="batt" aria-pressed="true">Batteries</button><button type="button" data-view="now" aria-pressed="false">Control</button><button type="button" data-view="history" aria-pressed="false">History</button><button type="button" data-view="settings" aria-pressed="false">Settings</button></div>
+      <div id="eBatt"></div><div id="eNow" hidden></div><div id="eHist" hidden></div><div id="eSet" hidden></div>`;
     el.addEventListener("click", onClick); el.addEventListener("change", onChange);
     el.addEventListener("input", e => { if (e.target.closest("#eSetForm")) { setDirty = true; validateSettings(); }
       else if (e.target.closest(".dual")) zoomInput(e.target); });
@@ -89,7 +90,7 @@ const m = {
     // History keeps the view tabs, periods and zoom slider at the top: the tabs move into its fixed head while it is shown
     const tabs = $("eViews"), head = $("eHistHead");
     if (view === "history" && head) { if (tabs.parentElement !== head) head.prepend(tabs); head.style.top = $("top").offsetHeight + "px"; }
-    else if (tabs.parentElement !== m.el) m.el.insertBefore(tabs, $("eNow"));
+    else if (tabs.parentElement !== m.el) m.el.insertBefore(tabs, $("eBatt"));
   },
 };
 
@@ -122,7 +123,7 @@ function flowRow(x, ic, kind, sub, live, ctl = undefined, out = false) {
     <div class="w">${out ? outW(w) : W(w)}<small>${num(x.voltage, 1)} V · ${num(x.current, 1)} A</small></div>${ctl ?? ""}</div>`;
 }
 const NOSW = `<span class="sw-gap"></span>`;   // in place of a switch: keeps the values in line
-/** The House bank tile: the same on the Overview and the Control view (that one with its own header, without the title).
+/** The House bank tile on the Overview.
  * @param {any} d @param {string} id the meter's id @param {boolean} title */
 function bankBody(d, id, title) {
   const h = d.storage.house, s = d.sources, t = d.totals;
@@ -153,7 +154,7 @@ function floatText(f) {
 function renderNow() {
   const d = m.state.data, box = $("eNow");
   if (!d) { box.innerHTML = m.state.err ? "" : `<div class="empty">Loading…</div>`; return; }
-  const h = d.storage.house, s = d.sources, c = d.consumers, t = d.totals, cm = d.combimaster || {}, ctl = d.controls || {}, f = d.high_soc_float_policy;
+  const s = d.sources, c = d.consumers, t = d.totals, cm = d.combimaster || {}, ctl = d.controls || {};
   const srcSub = {shore: s.shore.connected ? `${num(s.shore.input_frequency, 1)} Hz` : "Not connected", charger_house: s.charger_house.charge_state || "–",
     alternator: `${s.alternator.state || "–"}${s.alternator.estimated ? " · estimated" : ""}`, solar: `${s.solar.state || "–"} · panel ${num(s.solar.panel_voltage, 1)} V`};
   const sw = (id, val, extra = "") => D.sw(id, val, (busy.has(id) ? "disabled " : "") + extra);
@@ -172,7 +173,6 @@ function renderNow() {
       <p class="u-m-8-2-0 hint">${d.active_mode ? `${esc(d.active_mode[0].toUpperCase() + d.active_mode.slice(1))} mode is active (until a single control changes). ` : ""}Modes switch several devices at once. Engine ECU is never switched off by a mode.</p></div>
     <div class="grid g2l">
       <div class="stack">
-        <div class="card tile bank"><div class="th"><span class="ic">${icon("batt")}</span><h3>House bank</h3>${floatTag(f)}</div>${bankBody(d, "eP", false)}</div>
         <div class="card"><div class="hd">${icon("sun")}<h3>Energy providers</h3><span class="muted num">Total DC in ${W(t.dc_input_power)}</span></div><div class="rows">
           ${Object.entries(s).map(([k, x]) => flowRow(x, SRC_IC[k][0], SRC_IC[k][1], esc(srcSub[k]), k === "shore" ? x.connected : k === "alternator" ? x.running : undefined, srcCtl[k] ?? NOSW)).join("")}</div></div>
         <div class="card"><div class="hd">${icon("load")}<h3>Energy consumers</h3><span class="muted num">Total DC out ${outW(t.consumer_power)}</span></div><div class="rows">
@@ -251,13 +251,13 @@ function renderBatt() {
       ${fet("c", b.charge_mosfet_on, "C", "charge")}${fet("d", b.discharge_mosfet_on, "D", "discharge")}
       <button class="btn sec sm" type="button" data-soc="${n}" ${cs.busy || !live ? "disabled" : ""}>Set SOC</button></div>`;
   };
-  const d = m.state.data, other = d ? ["start", "bow"].map(k => { const b = d.storage[k];
-    return `<div class="card other">${meter(b.soc, "eB" + k, b.label, "sm")}<div class="k"><b>${esc(b.label)}</b><small>${esc(b.battery_type || b.chemistry || "")}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small></div>
+  const d = m.state.data, other = d ? ["house", "start", "bow"].map(k => { const b = d.storage[k], lab = k === "house" ? "House battery" : b.label;
+    return `<div class="card other">${meter(b.soc, "eB" + k, lab, "sm")}<div class="k"><b>${esc(lab)}</b><small>${esc(b.battery_type || b.chemistry || (k === "house" ? "LiFePO4" : ""))}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small></div>
       <div class="v"><b>${flowW(b.power)}</b><small>${num(b.voltage, 2)} V · ${num(b.current, 1)} A</small></div></div>`; }).join("") : "";
   const hb = d && d.storage.house;
   box.innerHTML = `
     <div class="others">${other}</div>
-    <div class="card bankbox"><div class="hd">${icon("batt")}<h3>House bank</h3>${hb ? `<span class="muted num">${esc(hb.battery_type || hb.chemistry || "LiFePO4")}${hb.capacity ? ` · ${num(hb.capacity)} ${esc(hb.capacity_unit || "Ah")}` : ""}</span><b class="num">${flowW(hb.power)}</b>` : ""}</div>
+    <div class="card bankbox"><div class="hd">${icon("batt")}<h3>House bank details</h3>${hb ? `<span class="muted num">${esc(hb.battery_type || hb.chemistry || "LiFePO4")}${hb.capacity ? ` · ${num(hb.capacity)} ${esc(hb.capacity_unit || "Ah")}` : ""}</span><b class="num">${flowW(hb.power)}</b>` : ""}</div>
       <div class="packs">${names.map(pack).join("")}</div></div>
     <div class="u-mb-12 card pad"><div class="allbtns">
       <button class="btn sec sm" type="button" id="bms-all-refresh">${icon("refresh")} Read all</button>
@@ -554,6 +554,7 @@ function renderCharts() {
     drawChart($(id), {...o, unit, t0, t1, series: one ? o.series.filter(s => s.label === one).map(s => ({...s, part: 1})) : o.series});
   }
   renderAlarms(t0, t1);
+  zoomTotals(t0, t1);
   const c = contrib;
   // shore power is not in the DC balance: it reaches the bank through the Charger House, so it is shown on its own
   const src = c ? c.sources.map(x => { const i = SRC_META.findIndex(m => m[0] === x.key); return {label: (SRC_META[i] || [, x.key])[1], color: (SRC_META[i] || [, , "#888"])[2], i, wh: x.wh}; }) : [];
@@ -562,6 +563,18 @@ function renderCharts() {
     <div class="ebars"><h4>Energy flow</h4>${sankey(src, load)}${flowFoot(src, load, c.shore)}</div>
     <div class="ebars"><h4>Batteries</h4>${battFlow(c.batteries || [])}</div>
     <p class="u-m-6-0-0 hint">${D.dayTime(Date.parse(c.start))} – ${D.dayTime(Date.parse(c.end))} · from the full-resolution history on the server${c.sources_covered_seconds != null && c.span_seconds ? ` · data for ${Math.round(c.sources_covered_seconds / c.span_seconds * 100)} % of the time` : ""}</p>`;
+}
+/** Energy in this period follows the zoom: the server's totals over the part shown, asked for once the handles rest
+ * (0.4 s); the whole period comes with the normal poll. @param {number} t0 @param {number} t1 */
+function zoomTotals(t0, t1) {
+  const key = zoomed() ? `${Math.round(t0 / 1000)}-${Math.round(t1 / 1000)}` : "";
+  if (key === contribFor) return;
+  clearTimeout(contribT);
+  if (!key) { contribFor = ""; chartT = 0; D.poll(m, true); return; }     // back to the whole period
+  contribT = setTimeout(async () => {
+    try { const d = await D.api("power", `/api/history/contributions?start=${encodeURIComponent(new Date(t0).toISOString())}&end=${encodeURIComponent(new Date(t1).toISOString())}`, undefined, {timeout: 45000});
+      contribFor = key; contrib = d; if (view === "history") renderCharts(); } catch (e) {}
+  }, 400);
 }
 window.addEventListener("resize", () => { if (view === "history" && D.visibleIs("power")) renderCharts(); });
 window.addEventListener("drifter-theme", () => { if (view === "history") renderCharts(); });
@@ -625,7 +638,8 @@ function renderHistory() {
           <div class="row"><span class="k">Days to analyse</span><div class="u-d-flex u-gap-8 u-ai-center"><label class="numf"><input class="field" type="number" id="eRepDays" min="1" max="365" step="1" value="7" inputmode="numeric"><span class="u">days</span></label>
             <button class="btn sm" type="button" id="eRepRun">Run report</button></div></div>
           <div class="row" id="eRepStatus"></div></div>
-          <div class="mdreport" id="eRepOut" hidden></div></div></div>
+          <details class="lfold repfold" id="eRepFold" hidden><summary><b>Report</b><span class="muted" id="eRepSum"></span>${icon("chev", "i chev")}</summary>
+          <div class="mdreport" id="eRepOut"></div></details></div></div>
       <div class="stack"><details class="card fold" id="eHStatFold"><summary class="hd"><h3>History database</h3><span class="muted num" id="eHStatSum"></span>${icon("chev", "i chev")}</summary>
         <div class="rows" id="eHStat"></div></details></div></div>`;     // folded by default; built once, so it stays as the user left it
   }
@@ -635,7 +649,8 @@ function renderHistory() {
     : r.error ? `<span class="badc">Report failed: ${esc(r.error)}</span>` : r.markdown ? `<span class="hint">Report of ${esc(r.days)} days, finished ${D.dayTime(Date.parse(r.finished_at))}${r.duration_seconds != null ? ` in ${num(r.duration_seconds, 0)} s` : ""}</span>` : `<span class="hint">No report yet</span>`;
   const out = $("eRepOut");
   if (r.markdown && out.dataset.src !== r.finished_at) { out.innerHTML = md(r.markdown); out.dataset.src = r.finished_at; }
-  out.hidden = !r.markdown;
+  $("eRepFold").hidden = !r.markdown;      // folded by default; it stays as the user left it
+  $("eRepSum").textContent = r.markdown ? `${r.days} days · ${D.dayTime(Date.parse(r.finished_at))}` : "";
   $("eHStatSum").textContent = hstat ? `${num(h.span_days, 0)} days · ${MB(h.size_bytes)}` : "";
   $("eHStat").innerHTML = hstat ? `
     <div class="row"><span class="k">Records</span><span class="v">${(h.records || 0).toLocaleString("en-GB")}<small>${num(h.records_per_day, 0)} per day</small></span></div>
@@ -658,7 +673,7 @@ function renderSettings() {
       : `<div class="row"><div class="k"><b>${l}</b>${h ? `<small>${h}</small>` : ""}</div><label class="numf"><input class="field" type="number" inputmode="decimal" id="es-${k}" min="${lo}" max="${hi}" step="${step}" value="${settings[k] ?? ""}" required><span class="u">${u}</span></label></div>`).join("")}
     <div class="row"><span class="hint" id="eSetMsg"></span><button class="btn" type="submit" id="eSetSave" disabled>Save</button></div></div></form>
     <div class="u-maxw-720 u-mt-12 card"><div class="hd"><h3>Notifications</h3>${notif && !notif.pushover_configured ? '<span class="warnc">Pushover is not set up on the boat PC</span>' : ""}</div><div class="rows">
-      ${notif && notif.prefs ? `${D.notifyRows("enp-", NOTIF_EV, notif.prefs)}
+      ${notif && notif.prefs ? `${D.notifyRows("enp-", NOTIF_EV, notif.prefs, {test: true})}
       <div class="row"><span class="hint" id="enpMsg">${notifDirty ? "Unsaved changes" : "Priority and sound of each notification"}</span><button class="btn" type="button" id="enpSave" ${notifDirty ? "" : "disabled"}>Save</button></div>` : ""}</div></div>`;
   validateSettings();
 }
@@ -734,6 +749,10 @@ async function onClick(e) {
     try { notif = await D.run(m, b, () => D.api("power", "/api/notifications", {prefs: D.readNotify("enp-", NOTIF_EV)}), "Notifications saved"); notifDirty = false; $("eSet").dataset.built = ""; renderSettings(); } catch (e) {}
     return;
   }
+  if (b.dataset.ntest) {     // a test of one notification, with the sound and priority shown (also when it is off)
+    const ev = b.dataset.ntest, ch = D.notifyChoice("enp-", ev);
+    return D.run(null, b, () => D.api("power", "/api/notifications/test", {event: ev, ...ch}), "Test sent: check your phone").catch(() => {});
+  }
   if (b.dataset.view) { const was = view; view = b.dataset.view; m.render(); if (was !== view) window.scrollTo(0, 0); D.poll(m, true); return; }
   if (b.dataset.solo) { const id = b.dataset.solo; solo[id] = solo[id] === b.dataset.label ? null : b.dataset.label; renderCharts(); return; }
   if (b.dataset.mode) {
@@ -753,7 +772,7 @@ async function onClick(e) {
   if (b.id === "eHistUpd") {     // the latest history now, instead of at the next minute
     b.disabled = true; b.lastChild.textContent = " Updating…"; chartT = 0;
     D.poll(m, true).finally(() => { b.disabled = false; b.lastChild.textContent = " Update"; }); return; }
-  if (b.dataset.hours) { hours = +b.dataset.hours; zoom[0] = 0; zoom[1] = 1000; chartT = 0; chart = null; alarmData = null; contrib = null; renderCharts(); D.poll(m, true); return; }
+  if (b.dataset.hours) { hours = +b.dataset.hours; zoom[0] = 0; zoom[1] = 1000; chartT = 0; chart = null; alarmData = null; contrib = null; contribFor = ""; clearTimeout(contribT); renderCharts(); D.poll(m, true); return; }
   if (b.id === "eRepRun") {
     const days = +$("eRepDays").value;
     if (!Number.isInteger(days) || days < 1 || days > 365) return D.toast("Days: a whole number from 1 to 365", true);

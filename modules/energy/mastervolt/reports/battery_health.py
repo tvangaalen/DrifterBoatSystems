@@ -33,6 +33,8 @@ CELL_HIGH_MV = 3650          # LiFePO4 absolute charge limit per cell
 CELL_LOW_MV = 3000
 MIN_STEP_A = 2.0             # smallest load step (between consecutive samples) used for resistance
 MIN_STEPS = 15               # load steps needed before a resistance figure is reported
+STEP_MAX_S = 150             # consecutive samples further apart are no load step (the BMS is read every ~60 s since
+                             # 2026-11: a 60 s limit then dropped nearly every step and left the resistance tables empty)
 PLATEAU_SOC = (30, 90)       # flat part of the LiFePO4 curve; excludes the end-of-charge knee
 REST_A = 0.5
 R_ATTENTION_MOHM = 1.0       # excess resistance of the worst cell vs the other cells (healthy pack: 0.3-0.5)
@@ -166,7 +168,7 @@ def excess_resistance(rs):
     # offsets) and slow drift, so only the dynamic, resistive response remains.
     steps = []
     for a, b in zip(rs, rs[1:]):
-        if b["t"] - a["t"] > 60 or a["alarms"] or b["alarms"]:
+        if b["t"] - a["t"] > STEP_MAX_S or a["alarms"] or b["alarms"]:
             continue
         if (a["chg"], a["dis"]) != (b["chg"], b["dis"]):
             continue                                   # a MOSFET switched: not a plain load step

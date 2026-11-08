@@ -4,7 +4,7 @@
 import {$, esc, pad, hm, hms, day, dm, dayTime, dateText, parseDate, dateFmt, DATE_FORMATS, dur, ago, num, W, icon} from "./format.js";
 import {api} from "./api.js";
 import {sheet, closeSheet, confirm, toast} from "./dialogs.js";
-import {downCard, sw, notifyRows, readNotify, soundLabel} from "./ui.js";
+import {downCard, sw, notifyRows, readNotify, notifyChoice, soundLabel} from "./ui.js";
 
 // ---------------------------------------------------------------- modules & polling
 const mods = [], byId = {};
@@ -198,7 +198,7 @@ function alertsCard(a) {
       <div class="u-d-flex u-gap-8 u-mt-12"><button class="btn" type="submit" id="sysPushSave">Save keys</button>
         <button class="btn sec" type="button" id="sysAlertTest" ${a.configured ? "" : "disabled"}>Send test</button></div></form></div>
     <h2 class="sec">Alerts</h2><div class="card"><div class="rows" id="sysAlertRows"><div class="row"><span class="hint">A push message when a system has been down for ${esc(a.after_min)} minutes, and when it is back.</span></div>
-      ${notifyRows("sa", a.events, a.prefs)}
+      ${notifyRows("sa", a.events, a.prefs, {test: true})}
       <div class="row"><span></span><button class="btn sec" type="button" id="sysAlertSave">Save alerts</button></div></div></div>`;
 }
 async function saveKeys(ev) {
@@ -244,6 +244,7 @@ async function renderSystem(el) {
     if (e.target.closest("#sysOff")) switchAllOff(e.target.closest("#sysOff"));
     if (e.target.closest("#sysBackup")) backupKeys(e.target.closest("#sysBackup"));
     if (e.target.closest("#sysAlertTest")) alertTest(e.target.closest("#sysAlertTest"));
+    const nt = e.target.closest("#sysAlertRows [data-ntest]"); if (nt) alertTest(nt, nt.dataset.ntest);
     if (e.target.closest("#sysAlertSave")) saveAlerts(e.target.closest("#sysAlertSave"));
   };
   el.onsubmit = e => { if (/** @type {HTMLElement} */ (e.target).id === "sysPush") saveKeys(e); };
@@ -293,8 +294,10 @@ async function restartModule(name, btn) {
   refreshSystem();
 }
 
-async function alertTest(btn) {
-  try { await run(null, btn, () => sysPost("api/alerts/test", {}), "Test alert sent: check your phone"); } catch (e) {}
+/** A test message; with `event`, that alert with the sound and priority shown on the page (also when it is off). */
+async function alertTest(btn, event = null) {
+  const body = event ? {event, ...notifyChoice("sa", event)} : {};
+  try { await run(null, btn, () => sysPost("api/alerts/test", body), "Test alert sent: check your phone"); } catch (e) {}
   refreshSystem();
 }
 
@@ -359,5 +362,5 @@ function start() {
 
 
 // The API the page modules use (energy.js, anchor.js, guard.js, washer.js): `import Drifter from "./core/app.js"`.
-const Drifter = {register, start, api, poll, run, confirm, sheet, closeSheet, toast, page, setSubtitle, downCard, sw, notifyRows, readNotify, soundLabel, visibleIs, byId, $, esc, pad, hm, hms, day, dm, dayTime, dateText, parseDate, dateFmt, dur, ago, num, W, icon, getTheme};
+const Drifter = {register, start, api, poll, run, confirm, sheet, closeSheet, toast, page, setSubtitle, downCard, sw, notifyRows, readNotify, notifyChoice, soundLabel, visibleIs, byId, $, esc, pad, hm, hms, day, dm, dayTime, dateText, parseDate, dateFmt, dur, ago, num, W, icon, getTheme};
 export default Drifter;

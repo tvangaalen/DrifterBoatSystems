@@ -507,7 +507,7 @@ function renderSettings(s) {
   const group = g => SET.filter(x => x[7] === g).map(field).join("");
   box.innerHTML = `<form id="aSetForm" novalidate><div class="grid g2">
     <div class="stack"><div class="card"><div class="hd"><h3>Alarms</h3></div><div class="rows">${group("Alarms")}</div></div>
-      <div class="card"><div class="hd"><h3>Push alerts</h3></div><div class="rows">${D.notifyRows("as-push-", PUSH_EV, pushPrefs(v), {fixed: {drag: 2}})}</div></div>
+      <div class="card"><div class="hd"><h3>Push alerts</h3></div><div class="rows">${D.notifyRows("as-push-", PUSH_EV, pushPrefs(v), {fixed: {drag: 2}, test: true})}</div></div>
       <div class="card"><div class="hd"><h3>Boat</h3></div><div class="rows">
         <div class="row"><div class="k"><b>My MMSI</b><small>Never shown as an AIS target; 9 digits or empty</small></div><input class="u-w-130 field" id="as-own_mmsi" inputmode="numeric" maxlength="9" value="${esc(v.own_mmsi)}"></div>
         <div id="aMmsiSug">${sug}</div>${group("Boat")}</div></div></div>
@@ -581,6 +581,13 @@ async function onClick(e) {
   if (b.id === "aRaise") { if (await D.confirm({title: "Anchor up?", text: "This stops the watch.", ok: "Anchor up – stop watch", cancel: "Keep watching", danger: true})) { $("aCtl").dataset.mode = ""; setMove(false); cmd({action: "raise"}, "Anchor up — watch stopped", b); } return; }
   if (b.id === "aAlarmTest") { if (await D.confirm({title: "Send a real test alarm?", text: "Your phone rings every 30 s until you tap Acknowledge in Pushover or press Stop test alarm (at most 10 minutes).", ok: "Send test alarm", cancel: "Cancel"}))
     cmd({action: "push_alarm_test"}, "Test alarm sent", b); return; }
+  if (b.dataset.ntest) {      // one alert's test, with the sound and priority shown; anchor drag = the real emergency test alarm
+    const k = b.dataset.ntest, ch = D.notifyChoice("as-push-", k);
+    if (k !== "drag") return cmd({action: "push_test", key: k, ...ch}, "Test push sent", b);
+    if (await D.confirm({title: "Send a real test alarm?", text: "Your phone rings every 30 s until you tap Acknowledge in Pushover or press Stop test alarm (at most 10 minutes).", ok: "Send test alarm", cancel: "Cancel"}))
+      cmd({action: "push_alarm_test", sound: ch.sound}, "Test alarm sent", b);
+    return;
+  }
   if (b.dataset.act) return cmd({action: b.dataset.act}, {push_test: "Test push sent", push_alarm_stop: "Test alarm stopped", alive_check: "Ping sent", net_ais_check: "Reconnecting internet AIS", nfl_send: "Upload requested"}[b.dataset.act] || "Sent", b);
   if (b.dataset.mmsi) { const mm = b.dataset.mmsi; await cmd({action: "settings", settings: {own_mmsi: mm}}, "My MMSI saved", b); if ($("as-own_mmsi")) $("as-own_mmsi").value = mm; return; }
   if (b.id === "aGpsDefault") return saveOrder(m.state.data.gps_default);
