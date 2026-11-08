@@ -9,7 +9,7 @@ import subprocess
 import sys
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 MAX_DAYS = 365
@@ -17,7 +17,7 @@ PACKAGE_ROOT = Path(__file__).resolve().parents[2]  # the folder that contains t
 
 
 def _now():
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 class BatteryHealthReports:

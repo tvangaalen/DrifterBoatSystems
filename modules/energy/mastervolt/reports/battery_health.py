@@ -23,7 +23,8 @@ import sqlite3
 import statistics as st
 import sys
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from itertools import pairwise
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]  # mastervolt/reports/battery_health.py -> the project folder
@@ -88,9 +89,12 @@ def open_ro(db_path):
 
 def load_history(db_path, since_ts=None):
     con = open_ro(db_path)
-    since = datetime.fromtimestamp(since_ts, timezone.utc).isoformat() if since_ts else ""
+    since = datetime.fromtimestamp(since_ts, UTC).isoformat() if since_ts else ""
     data = {"bms": defaultdict(list), "bal": defaultdict(list), "dash": []}
-    ts = lambda s: datetime.fromisoformat(s).timestamp()
+
+    def ts(s):
+        return datetime.fromisoformat(s).timestamp()
+
     q = "select device, captured_at, payload from measurements where source=? and captured_at>=? order by captured_at"
     for dev, cap, payload in con.execute(q, ("bms", since)):
         d = json.loads(payload)
@@ -167,7 +171,7 @@ def excess_resistance(rs):
     # change in current. Differences cancel static offsets (a cell the balancer keeps bleeding, sensor
     # offsets) and slow drift, so only the dynamic, resistive response remains.
     steps = []
-    for a, b in zip(rs, rs[1:]):
+    for a, b in pairwise(rs):
         if b["t"] - a["t"] > STEP_MAX_S or a["alarms"] or b["alarms"]:
             continue
         if (a["chg"], a["dis"]) != (b["chg"], b["dis"]):
@@ -239,7 +243,7 @@ def own_gaps(name, rows_by):
     t = [r["t"] for r in good(rows_by[name])]
     others = sorted(r["t"] for n, rs in rows_by.items() if n != name for r in good(rs))
     gaps = []
-    for a, b in zip(t, t[1:]):
+    for a, b in pairwise(t):
         if b - a > GAP_SECONDS:
             j = bisect.bisect_right(others, a)
             if j < len(others) and others[j] < b:
@@ -426,9 +430,9 @@ def report(data, backups, args):
         g = good(full["rows_by"][n])
         if len(g) < 2:
             continue
-        dts = [b["t"] - a["t"] for a, b in zip(g, g[1:]) if b["t"] - a["t"] <= GAP_SECONDS]
+        dts = [b["t"] - a["t"] for a, b in pairwise(g) if b["t"] - a["t"] <= GAP_SECONDS]
         gaps = own_gaps(n, full["rows_by"])
-        jumps = [(b["t"], a["soc"], b["soc"]) for a, b in zip(g, g[1:]) if b["t"] - a["t"] <= 60 and isinstance(a["soc"], (int, float)) and isinstance(b["soc"], (int, float)) and abs(b["soc"] - a["soc"]) > 3]
+        jumps = [(b["t"], a["soc"], b["soc"]) for a, b in pairwise(g) if b["t"] - a["t"] <= STEP_MAX_S and isinstance(a["soc"], (int, float)) and isinstance(b["soc"], (int, float)) and abs(b["soc"] - a["soc"]) > 3]
         cy = [r["cycles"] for r in g if isinstance(r["cycles"], int)]
         bk = [b for b in backups if b["bat"] == n and isinstance(b["cycles"], int)]
         firsts = ([(bk[0]["t"], bk[0]["cycles"])] if bk else []) + ([(g[0]["t"], cy[0])] if cy else [])
@@ -498,7 +502,7 @@ def report(data, backups, args):
             caps.append(median(r))
     if len(h) > 2:
         ah_in = ah_out = cov = 0.0
-        for a, b in zip(h, h[1:]):
+        for a, b in pairwise(h):
             dt = b["t"] - a["t"]
             if dt <= 120:
                 x = (a["h_i"] + b["h_i"]) / 2 * dt / 3600
