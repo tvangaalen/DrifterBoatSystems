@@ -12,6 +12,8 @@
   button reads Anchor up – stop watch
 - Browser test: Energy notifications wait for the saved answer before choosing again (the answer rebuilds the rows; it
   failed CI now and then)
+- Engine and fuel, Current data: the meters in the House bank meter's style (a band that runs smoothly through the
+  zones, glow, sheen, needle tip and the value in a pill, coloured in a warn or bad zone)
 
 ## 1.3
 
