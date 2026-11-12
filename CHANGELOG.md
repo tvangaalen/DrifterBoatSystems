@@ -14,6 +14,8 @@
   failed CI now and then)
 - Engine and fuel, Current data: the meters in the House bank meter's style (a band that runs smoothly through the
   zones, glow, sheen, needle tip and the value in a pill, coloured in a warn or bad zone)
+- Overview: the Inverter control is a button at the bottom of the Energy tile, styled like Anchor up – stop watch
+  (Switch Inverter ON / OFF; off still asks first)
 
 ## 1.3
 
