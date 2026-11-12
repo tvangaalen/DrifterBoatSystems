@@ -591,6 +591,16 @@ details.repfold{margin:4px 16px 12px}details.repfold .mdreport{padding:0 0 4px} 
 @media (max-width:560px){.lform .row.stackrow{flex-direction:column;align-items:stretch;gap:8px}.lform .row.stackrow .lf-text{width:100%;max-width:none;margin:0}
   .lform .row.stackrow .k{display:flex;align-items:center;flex-wrap:wrap;gap:2px 0}.lform .row.stackrow .k small{flex-basis:100%}}
 /* Engine log, the fills over time: columns of litres (left scale), the use in L/h as a line (right scale), the average dashed */
+/* Engine and fuel, Maintenance: the schedule (enginelog.js schedView), the items ticked in an entry (itemsField) */
+.srows{display:flex;flex-direction:column;margin-top:8px}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.srow:first-child{border-top:0}.srow .k{min-width:0}.srow .k b{font-size:14px}.srow .k small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.srow .v{display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:right}.srow .v small{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.srow .badge.dealer{font-size:10.5px;padding:1px 6px;vertical-align:1px}
+.ssys{margin:14px 0 0;font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.itags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}.itags span{font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--accentbg);color:var(--accent)}
+.ticks{display:flex;flex-direction:column}.ticks .ssys{margin-top:10px}
+.tick{display:flex;align-items:center;gap:10px;min-height:40px;font-size:14px;cursor:pointer}.tick input{width:20px;height:20px;flex:none;accent-color:var(--accent)}
 .tile .line b.est{color:var(--fg)}   /* Engine and fuel tile: the estimated fuel left */
 .estim{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:var(--accentbg)}
 .estim .k{display:flex;flex-direction:column;min-width:0}.estim .k small{color:var(--muted);font-size:12px}

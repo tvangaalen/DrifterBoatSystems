@@ -48,11 +48,11 @@ test("Engine log: change and delete a fill (Keep is the default), and add, chang
   await page.locator("#dlgSheet [data-value]:not([data-default])").click();
   await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/fuel/a1b2c3d4e5f6/delete");
   await page.locator("#lViews [data-lview=maintenance]").click();
-  await expect(page.locator("#lBody .lrow[data-edit^=maintenance]")).toHaveCount(2);
+  await expect(page.locator("#lBody .lrow[data-edit^=maintenance]")).toHaveCount(3);
   await page.locator("[data-new=maintenance]").click();
   await expect(page.locator("#lHours")).toHaveValue("2321.4");        // the engine hours, filled in
   await page.locator("#lSave").click();
-  await expect(page.locator("#lErr")).toContainText("what was done");
+  await expect(page.locator("#lErr")).toContainText("what was done");       // nothing ticked and no text
   await page.locator("#lText").fill("Fuel filters\nprimary and secondary"); await page.locator("#lHours").fill("2320"); await page.locator("#lSave").click();
   await expect.poll(() => posts.at(-1)?.url).toBe("/api/enginelog/api/maintenance");
   expect((posts.at(-1)!.body as any).text).toBe("Fuel filters\nprimary and secondary");
@@ -104,6 +104,28 @@ test("Engine log: the fills over time, litres per fill and the use per engine ho
   const tiles = page.locator("#lBody .minis.m4 .mini");
   await expect(tiles).toHaveCount(4);
   await expect(tiles.nth(0)).toContainText("6.0"); await expect(tiles.nth(2)).toContainText("€ 1.61"); await expect(tiles.nth(3)).toContainText("€ 550");
+  expect(errors).toEqual([]);
+});
+
+test("Maintenance schedule: what is due on top, all items folded; Log opens a new entry with the item ticked", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { theme: "dark", posts });
+  await open(page, "#enginelog", "#lViews [data-lview=maintenance]");
+  const card = page.locator("#lBody .sched");
+  await expect(card.locator("h3")).toHaveText("Maintenance schedule");
+  await expect(card.locator(".hd .badge.bad")).toHaveText("2 due");                                 // the mock: fuel filter and coolant
+  await expect(card.locator(":scope > .srows .srow")).toHaveCount(2);
+  await expect(card.locator(":scope > .srows")).toContainText("Replace the fuel filter element");
+  await expect(page.locator("#lSchedFold")).not.toHaveAttribute("open", "");                        // all items: folded
+  await page.locator("#lSchedFold summary").click();
+  await expect(page.locator("#lSchedFold .srow")).toHaveCount(23);
+  await expect(page.locator("#lSchedFold")).toContainText("Replace the marine gear oil (KM4A)");
+  await expect(page.locator(".lrow").first().locator(".itags span")).toHaveCount(4);                 // an entry shows the items it did
+  await card.locator(':scope > .srows [data-log="fuel_filter"]').click();
+  await expect(page.locator('#lForm input[name="lItem"]:checked')).toHaveCount(1);
+  await expect(page.locator('#lForm input[value="fuel_filter"]')).toBeChecked();
+  await page.locator("#lSave").click();                                                             // no text needed with an item ticked
+  await expect.poll(() => posts.find(p => p.url.endsWith("/api/maintenance"))?.body).toMatchObject({ text: "", items: ["fuel_filter"] });
   expect(errors).toEqual([]);
 });
 

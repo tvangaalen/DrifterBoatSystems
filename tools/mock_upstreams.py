@@ -11,6 +11,11 @@ import json, math, os, random, sys, threading, time
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import importlib.util as _ilu
+
+# the engine log's maintenance schedule (stdlib only): the mock works out what is due the way the server does
+_spec = _ilu.spec_from_file_location("enginelog_schedule", Path(__file__).resolve().parent.parent / "modules" / "enginelog" / "enginelog" / "schedule.py")
+SCHEDULE = _ilu.module_from_spec(_spec); _spec.loader.exec_module(SCHEDULE)
 
 ROOT = Path(__file__).resolve().parent.parent
 LAT0, LON0 = 50.0, -30.0          # mid-Atlantic: obviously not a real anchorage
@@ -322,14 +327,17 @@ class EngineLog:
         self.engine = {"connected": True, "error": None, "fresh": True, "running": True, "age_s": 0.4, "source": "3.0", "rpm": 1800, "temp_c": 80.0,
                        "oil_bar": 3.5, "alt_v": 14.1, "fuel_lph": 3.2, "load": 40, "boost_bar": 0.0, "hours": 2321.37, "last_hours": 2321.37,
                        "last_hours_at": at(0)[:16] + ":00", "other": {}, "alarms_open": [], "alarm_source": {"device": "YDEN-02", "host": "192.0.2.10", "listening": True, "error": None, "fresh": True, "age_s": 0.3, "source": "3.0", "status": []}}
-        self.maint = [{"id": "d4e5f6a1b2c3", "date": at(5)[:10], "engine_hours": 2300.0, "text": "Oil and oil filter changed"}, {"id": "e5f6a1b2c3d4", "date": at(22)[:10], "engine_hours": None, "text": "Impeller replaced"}]
+        self.maint = [{"id": "d4e5f6a1b2c3", "date": at(5)[:10], "engine_hours": 2300.0, "text": "Oil and oil filter changed", "items": ["fuel_separator", "engine_oil", "oil_filter", "gear_oil"]},
+                      {"id": "e5f6a1b2c3d4", "date": at(22)[:10], "engine_hours": None, "text": "Impeller replaced", "items": ["impeller_check", "impeller"]},
+                      {"id": "f1a2b3c4d5e6", "date": at(400)[:10], "engine_hours": 2050.0, "text": "", "items": ["fuel_filter", "coolant"]}]
 
     def log(self):
         f = sorted(self.fuel, key=lambda e: e["date"]); span = f[-1]["engine_hours"] - f[0]["engine_hours"] if f else 0
         stats = {"last_litres": f[-1]["litres"] if f else None, "last_date": f[-1]["date"] if f else None, "amount_total": sum(e.get("amount") or 0 for e in f), "avg_price": round(sum(e["amount"] for e in f if e.get("amount") is not None) / (sum(e["litres"] for e in f if e.get("amount") is not None) or 1), 3), "last_hours": f[-1]["engine_hours"] if f else None,
                  "avg_l_per_h": round(sum(e["litres"] for e in f[1:]) / span, 2) if span > 0 else None, "fills": len(f), "litres_total": sum(e["litres"] for e in f)}
         return {"fuel": sorted(self.fuel, key=lambda e: e["date"], reverse=True), "maintenance": sorted(self.maint, key=lambda e: e["date"], reverse=True), "stats": stats,
-                "settings": self.settings, "alarms": self.alarms, "engine": self.engine}
+                "settings": self.settings, "alarms": self.alarms, "engine": self.engine,
+                "schedule": SCHEDULE.status(self.maint, self.engine["hours"], datetime.now().date())}
 
     def post(self, path, body):
         parts = path.strip("/").split("/")[1:]

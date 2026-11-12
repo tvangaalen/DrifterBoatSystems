@@ -9,11 +9,92 @@
 </div>
 <section data-page="enginelog"><div id="lDown"></div>
 <div class="u-m-4-0-14 u-maxw-460 seg" id="lViews"><button type="button" data-lview="fuel" aria-pressed="false">Diesel fuel</button><button type="button" data-lview="maintenance" aria-pressed="true">Maintenance</button><button type="button" data-lview="data" aria-pressed="false">Current data</button><button type="button" data-lview="settings" aria-pressed="false">Settings</button></div>
-<div id="lBody"><div class="u-maxw-720 card pad"><button class="btn wide" type="button" data-new="maintenance"><svg class="i"><use href="#i-wrench"></use></svg> New maintenance entry</button>
+<div id="lBody"><div class="u-maxw-720 card pad sched"><div class="hd u-p-0"><svg class="i"><use href="#i-wrench"></use></svg><h3>Maintenance schedule</h3><span class="badge bad">2 due</span></div>
+<p class="u-m-6-0-0 hint">Yanmar 4JH80 with KM4A marine gear, from Yanmar's periodic maintenance schedule (whichever comes first). Tick the items in a maintenance entry, or use Log.</p>
+<div class="srows"><div class="srow"><div class="k"><b>Replace the fuel filter element</b>
+<small>every 250 h or year<br>last 28/09/2025 at 2050 h</small></div>
+<div class="v"><span class="badge bad">Due</span><small>21 h over<br>35 days over</small></div>
+<button class="btn sec sm" type="button" data-log="fuel_filter" aria-label="Log Replace the fuel filter element">Log</button></div><div class="srow"><div class="k"><b>Replace the coolant</b>
+<small>every year · Long Life coolant: every 2 years<br>last 28/09/2025 at 2050 h</small></div>
+<div class="v"><span class="badge bad">Due</span><small>35 days over</small></div>
+<button class="btn sec sm" type="button" data-log="coolant" aria-label="Log Replace the coolant">Log</button></div></div>
+<details class="lfold" id="lSchedFold"><summary><b>All items</b><span class="muted">23 · 15 not logged</span><svg class="i chev"><use href="#i-chev"></use></svg></summary>
+<h4 class="ssys">Fuel</h4><div class="srows"><div class="srow"><div class="k"><b>Drain the fuel/water separator</b>
+<small>every 50 h or 1 month<br>last 28/10/2026 at 2300 h</small></div>
+<div class="v"><span class="badge ok">OK</span><small>in 29 h<br>in 26 days</small></div>
+<button class="btn sec sm" type="button" data-log="fuel_separator" aria-label="Log Drain the fuel/water separator">Log</button></div><div class="srow"><div class="k"><b>Drain water and sediment from the fuel tank</b>
+<small>every 250 h or year<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="fuel_tank" aria-label="Log Drain water and sediment from the fuel tank">Log</button></div><div class="srow"><div class="k"><b>Replace the fuel filter element</b>
+<small>every 250 h or year<br>last 28/09/2025 at 2050 h</small></div>
+<div class="v"><span class="badge bad">Due</span><small>21 h over<br>35 days over</small></div>
+<button class="btn sec sm" type="button" data-log="fuel_filter" aria-label="Log Replace the fuel filter element">Log</button></div></div><h4 class="ssys">Lubrication</h4><div class="srows"><div class="srow"><div class="k"><b>Replace the engine oil</b>
+<small>every 250 h or year<br>last 28/10/2026 at 2300 h</small></div>
+<div class="v"><span class="badge ok">OK</span><small>in 229 h<br>in 12 months</small></div>
+<button class="btn sec sm" type="button" data-log="engine_oil" aria-label="Log Replace the engine oil">Log</button></div><div class="srow"><div class="k"><b>Replace the engine oil filter</b>
+<small>every 250 h or year<br>last 28/10/2026 at 2300 h</small></div>
+<div class="v"><span class="badge ok">OK</span><small>in 229 h<br>in 12 months</small></div>
+<button class="btn sec sm" type="button" data-log="oil_filter" aria-label="Log Replace the engine oil filter">Log</button></div><div class="srow"><div class="k"><b>Replace the marine gear oil (KM4A)</b>
+<small>every 250 h or year · API CD or higher, SAE 20 or 30; the KM4A has no oil filter<br>last 28/10/2026 at 2300 h</small></div>
+<div class="v"><span class="badge ok">OK</span><small>in 229 h<br>in 12 months</small></div>
+<button class="btn sec sm" type="button" data-log="gear_oil" aria-label="Log Replace the marine gear oil (KM4A)">Log</button></div></div><h4 class="ssys">Cooling</h4><div class="srows"><div class="srow"><div class="k"><b>Check the seawater pump impeller</b>
+<small>every 250 h or year<br>last 11/10/2026</small></div>
+<div class="v"><span class="badge ok">OK</span><small>in 11 months</small></div>
+<button class="btn sec sm" type="button" data-log="impeller_check" aria-label="Log Check the seawater pump impeller">Log</button></div><div class="srow"><div class="k"><b>Replace the seawater pump impeller</b>
+<small>every 1000 h or 4 years<br>last 11/10/2026</small></div>
+<div class="v"><span class="badge ok">OK</span><small>in 47 months</small></div>
+<button class="btn sec sm" type="button" data-log="impeller" aria-label="Log Replace the seawater pump impeller">Log</button></div><div class="srow"><div class="k"><b>Replace the coolant</b>
+<small>every year · Long Life coolant: every 2 years<br>last 28/09/2025 at 2050 h</small></div>
+<div class="v"><span class="badge bad">Due</span><small>35 days over</small></div>
+<button class="btn sec sm" type="button" data-log="coolant" aria-label="Log Replace the coolant">Log</button></div><div class="srow"><div class="k"><b>Clean and check the seawater passages <span class="badge plain dealer">dealer</span></b>
+<small>every 1000 h or 4 years<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="seawater_passages" aria-label="Log Clean and check the seawater passages">Log</button></div></div><h4 class="ssys">Air intake and exhaust</h4><div class="srows"><div class="srow"><div class="k"><b>Clean the intake silencer (air cleaner) element</b>
+<small>every 250 h or year<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="air_filter" aria-label="Log Clean the intake silencer (air cleaner) element">Log</button></div><div class="srow"><div class="k"><b>Clean the exhaust/water mixing elbow</b>
+<small>every 250 h or year<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="elbow_clean" aria-label="Log Clean the exhaust/water mixing elbow">Log</button></div><div class="srow"><div class="k"><b>Replace the exhaust/water mixing elbow</b>
+<small>every 500 h or 2 years<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="elbow" aria-label="Log Replace the exhaust/water mixing elbow">Log</button></div><div class="srow"><div class="k"><b>Wash the turbocharger blower <span class="badge plain dealer">dealer</span></b>
+<small>every 250 h or year<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="turbo" aria-label="Log Wash the turbocharger blower">Log</button></div></div><h4 class="ssys">Electrical</h4><div class="srows"><div class="srow"><div class="k"><b>Check the battery electrolyte level</b>
+<small>every 50 h or 1 month · serviceable batteries only<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="battery" aria-label="Log Check the battery electrolyte level">Log</button></div><div class="srow"><div class="k"><b>Check the alternator V-ribbed belt tension</b>
+<small>every 250 h or year<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="belt_check" aria-label="Log Check the alternator V-ribbed belt tension">Log</button></div><div class="srow"><div class="k"><b>Replace the alternator V-ribbed belt</b>
+<small>every 1000 h or 4 years<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="belt" aria-label="Log Replace the alternator V-ribbed belt">Log</button></div><div class="srow"><div class="k"><b>Check the wiring connectors</b>
+<small>every 250 h or year<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="wiring" aria-label="Log Check the wiring connectors">Log</button></div></div><h4 class="ssys">Cylinder head and block</h4><div class="srows"><div class="srow"><div class="k"><b>Tighten all major nuts and bolts <span class="badge plain dealer">dealer</span></b>
+<small>every 250 h or year<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="bolts" aria-label="Log Tighten all major nuts and bolts">Log</button></div><div class="srow"><div class="k"><b>Adjust the intake/exhaust valve clearance <span class="badge plain dealer">dealer</span></b>
+<small>every 1000 h or 4 years<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="valves" aria-label="Log Adjust the intake/exhaust valve clearance">Log</button></div></div><h4 class="ssys">Other</h4><div class="srows"><div class="srow"><div class="k"><b>Check the remote control cables <span class="badge plain dealer">dealer</span></b>
+<small>every 1000 h or 4 years<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="remote" aria-label="Log Check the remote control cables">Log</button></div><div class="srow"><div class="k"><b>Adjust the propeller shaft alignment <span class="badge plain dealer">dealer</span></b>
+<small>every 1000 h or 4 years<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="shaft" aria-label="Log Adjust the propeller shaft alignment">Log</button></div><div class="srow"><div class="k"><b>Replace the rubber hoses (fuel and water)</b>
+<small>every 2 years<br>never logged</small></div>
+<div class="v"><span class="badge ">Not logged</span><small>not logged</small></div>
+<button class="btn sec sm" type="button" data-log="hoses" aria-label="Log Replace the rubber hoses (fuel and water)">Log</button></div></div></details></div><div class="u-maxw-720 u-mt-12 card pad"><button class="btn wide" type="button" data-new="maintenance"><svg class="i"><use href="#i-wrench"></use></svg> New maintenance entry</button>
 <div class="lrows"><button class="lrow" type="button" data-edit="maintenance:d4e5f6a1b2c3"><span class="t"><b>28/10/2026</b>
 <span class="muted">· 2300 h</span>
-<small class="pre">Oil and oil filter changed, 2 300 h</small></span><svg class="i chev"><use href="#i-chev"></use></svg></button><button class="lrow" type="button" data-edit="maintenance:e5f6a1b2c3d4"><span class="t"><b>11/10/2026</b>
-<small class="pre">Impeller replaced</small></span><svg class="i chev"><use href="#i-chev"></use></svg></button></div></div>
+<small class="itags"><span>Drain the fuel/water separator</span><span>Replace the engine oil</span><span>Replace the engine oil filter</span><span>Replace the marine gear oil (KM4A)</span></small><small class="pre">Oil and oil filter changed, 2 300 h</small></span><svg class="i chev"><use href="#i-chev"></use></svg></button><button class="lrow" type="button" data-edit="maintenance:e5f6a1b2c3d4"><span class="t"><b>11/10/2026</b>
+<small class="itags"><span>Check the seawater pump impeller</span><span>Replace the seawater pump impeller</span></small><small class="pre">Impeller replaced</small></span><svg class="i chev"><use href="#i-chev"></use></svg></button><button class="lrow" type="button" data-edit="maintenance:f1a2b3c4d5e6"><span class="t"><b>28/09/2025</b>
+<span class="muted">· 2050 h</span>
+<small class="itags"><span>Replace the fuel filter element</span><span>Replace the coolant</span></small></span><svg class="i chev"><use href="#i-chev"></use></svg></button></div></div>
 <div class="u-maxw-720 u-mt-12 card pad"><div class="hd u-p-0"><svg class="i"><use href="#i-alert"></use></svg><h3>Engine</h3></div>
 <p class="u-m-6-0-0 hint" id="lEngine"><span class="good">Running</span> · 1800 rpm · 80 °C · oil 3.5 bar · 14.1 V · 2321.4 h</p>
 <p class="u-m-6-0-0 hint" id="lAlarmSrc"><span class="good">Alarm watch on</span> · the YDEN-02 passes the engine's data</p>

@@ -6,7 +6,7 @@
 import Drifter from "./core/app.js";
 
 const D = Drifter, {$, esc, num, icon, pad} = D;
-let view = "fuel", edit = null, fuelOpen = false, alarmsOpen = false;   // edit: {kind, id (null = new), touched: Set of fields the user changed} while a form is open; fuelOpen: the fuel entry list unfolded
+let view = "fuel", edit = null, fuelOpen = false, alarmsOpen = false, schedOpen = false;   // edit: {kind, id (null = new), touched: Set of fields the user changed} while a form is open; fuelOpen: the fuel entry list unfolded
 
 const dmy = (/** @type {string} */ iso) => D.dateText(iso) || "–";
 /** A date in the chosen format (System page), typed or picked: the calendar button lies under an invisible native date input,
@@ -75,7 +75,7 @@ const m = {
     el.addEventListener("change", e => { const t = e.target; if (t.id && t.id.endsWith("Pick") && t.value) { const f = $(t.id.slice(0, -4)); f.value = D.dateText(t.value); edit && edit.touched.add(f.id); } });
     el.addEventListener("submit", e => { e.preventDefault(); if (e.target.id === "lForm") save(); else if (e.target.id === "lSetForm") saveSettings(); });
     el.addEventListener("toggle", e => { const t = /** @type {HTMLDetailsElement} */ (e.target);
-      if (t.id === "lFuelFold") fuelOpen = t.open; else if (t.id === "lAlarmFold") alarmsOpen = t.open; }, true);
+      if (t.id === "lFuelFold") fuelOpen = t.open; else if (t.id === "lAlarmFold") alarmsOpen = t.open; else if (t.id === "lSchedFold") schedOpen = t.open; }, true);
   },
   render() {
     $("lDown").innerHTML = m.state.err ? D.downCard(m) + '<div class="u-h-12"></div>' : "";
@@ -140,10 +140,41 @@ function fuelChart(fuel, avg) {
 }
 window.addEventListener("resize", () => { if (D.visibleIs("enginelog") && view === "fuel" && !edit && m.state.data && $("lChart")) $("lChart").innerHTML = fuelChart(m.state.data.fuel, m.state.data.stats.avg_l_per_h); });
 function maintView(d) {
-  return `<div class="u-maxw-720 card pad"><button class="btn wide" type="button" data-new="maintenance">${icon("wrench")} New maintenance entry</button>
+  const names = /** @type {Record<string, string>} */ (Object.fromEntries((d.schedule || []).map((/** @type {any} */ x) => [x.id, x.name])));
+  return `${schedView(d)}<div class="u-maxw-720 u-mt-12 card pad"><button class="btn wide" type="button" data-new="maintenance">${icon("wrench")} New maintenance entry</button>
     <div class="lrows">${d.maintenance.map(x => `<button class="lrow" type="button" data-edit="maintenance:${esc(x.id)}"><span class="t"><b>${esc(dmy(x.date))}</b>${x.engine_hours != null ? ` <span class="muted">· ${num(x.engine_hours, 0)} h</span>` : ""}
-        <small class="pre">${esc(x.text)}</small></span>${icon("chev", "i chev")}</button>`).join("") || `<div class="empty">No maintenance logged yet</div>`}</div></div>
+        ${(x.items || []).length ? `<small class="itags">${x.items.map((/** @type {string} */ i) => `<span>${esc(names[i] || i)}</span>`).join("")}</small>` : ""}${x.text ? `<small class="pre">${esc(x.text)}</small>` : ""}</span>${icon("chev", "i chev")}</button>`).join("") || `<div class="empty">No maintenance logged yet</div>`}</div></div>
     ${alarmView(d)}`;
+}
+// ---- the maintenance schedule (the Yanmar 4JH80 and its KM4A marine gear; the server's schedule.py works out what is due)
+const STATE = /** @type {Record<string, [string, string]>} */ ({due: ["bad", "Due"], soon: ["warn", "Soon"], ok: ["ok", "OK"], never: ["", "Not logged"]});
+/** "every 250 h or year" @param {any} x */
+const every = x => "every " + [x.hours ? `${num(x.hours, 0)} h` : "", x.months ? x.months % 12 ? `${x.months} month${x.months === 1 ? "" : "s"}` : x.months === 12 ? "year" : `${x.months / 12} years` : ""].filter(Boolean).join(" or ");
+/** How far off, in hours and/or time. @param {any} x */
+function left(x) {
+  if (x.state === "never") return "not logged";
+  const t = [];
+  if (x.left_hours != null) t.push(x.left_hours <= 0 ? `${num(-x.left_hours, 0)} h over` : `in ${num(x.left_hours, 0)} h`);
+  if (x.left_days != null) { const d = x.left_days, a = Math.abs(d), w = a < 62 ? `${a} day${a === 1 ? "" : "s"}` : `${Math.round(a / 30.4)} months`;
+    t.push(d <= 0 ? `${w} over` : `in ${w}`); }
+  return t.map(esc).join("<br>");      // hours and time each on a line: the item's name keeps the room
+}
+/** One schedule item: its name, interval and last time; how far off; a button that logs it. @param {any} x */
+const schedRow = x => { const [c, label] = STATE[x.state] || ["", x.state];
+  return `<div class="srow"><div class="k"><b>${esc(x.name)}${x.dealer ? ` <span class="badge plain dealer">dealer</span>` : ""}</b>
+    <small>${esc(every(x))}${x.note ? ` · ${esc(x.note)}` : ""}<br>${x.last_date ? `last ${esc(dmy(x.last_date))}${x.last_hours != null ? ` at ${num(x.last_hours, 0)} h` : ""}` : "never logged"}</small></div>
+    <div class="v"><span class="badge ${c}">${label}</span><small>${left(x)}</small></div>
+    <button class="btn sec sm" type="button" data-log="${esc(x.id)}" aria-label="Log ${esc(x.name)}">Log</button></div>`; };
+function schedView(d) {
+  const S = /** @type {any[]} */ (d.schedule || []); if (!S.length) return "";
+  const n = (/** @type {string} */ k) => S.filter(x => x.state === k).length;
+  const now = S.filter(x => x.state === "due" || x.state === "soon").sort((a, b) => (a.state === "due" ? 0 : 1) - (b.state === "due" ? 0 : 1));
+  const systems = [...new Set(S.map(x => x.system))];
+  return `<div class="u-maxw-720 card pad sched"><div class="hd u-p-0">${icon("wrench")}<h3>Maintenance schedule</h3>${n("due") ? `<span class="badge bad">${n("due")} due</span>` : ""}${n("soon") ? `<span class="badge warn">${n("soon")} soon</span>` : ""}</div>
+    <p class="u-m-6-0-0 hint">Yanmar 4JH80 with KM4A marine gear, from Yanmar's periodic maintenance schedule (whichever comes first). Tick the items in a maintenance entry, or use Log.</p>
+    ${now.length ? `<div class="srows">${now.map(schedRow).join("")}</div>` : `<p class="u-m-8-0-0 hint">${n("never") === S.length ? "Nothing logged against the schedule yet." : "Nothing due or due soon."}</p>`}
+    <details class="lfold" id="lSchedFold" ${schedOpen ? "open" : ""}><summary><b>All items</b><span class="muted">${S.length}${n("never") ? ` · ${n("never")} not logged` : ""}</span>${icon("chev", "i chev")}</summary>
+    ${systems.map(sy => `<h4 class="ssys">${esc(sy)}</h4><div class="srows">${S.filter(x => x.system === sy).map(schedRow).join("")}</div>`).join("")}</details></div>`;
 }
 // ---- the engine (live from the Orca Core) and its alarms (logged by the server from the YDEN-02's NMEA 2000 data)
 const clock = (/** @type {string} */ iso) => iso ? D.dayTime(Date.parse(iso)) : "–";
@@ -285,7 +316,15 @@ async function saveSettings() {
 }
 
 // ------------------------------------------------------------------ forms
-function openForm(kind, id) {
+/** The schedule items an entry did, as ticks per system. @param {any} d @param {string[]} on */
+function itemsField(d, on) {
+  const S = /** @type {any[]} */ (d.schedule || []); if (!S.length) return "";
+  return `<div class="row col"><div class="k"><b>Schedule items done</b><small>Resets them in the maintenance schedule</small></div><div class="ticks">
+    ${[...new Set(S.map(x => x.system))].map(sy => `<h4 class="ssys">${esc(sy)}</h4>${S.filter(x => x.system === sy).map(x =>
+      `<label class="tick"><input type="checkbox" name="lItem" value="${esc(x.id)}" ${on.includes(x.id) ? "checked" : ""}><span>${esc(x.name)}</span></label>`).join("")}`).join("")}</div></div>`;
+}
+/** @param {string} kind @param {string | null} id @param {string[]} [pre] schedule items ticked for a new entry */
+function openForm(kind, id, pre = []) {
   const d = m.state.data, e = id ? d[kind].find(x => x.id === id) : null;
   if (id && !e) { D.toast("That entry was deleted", true); return; }
   edit = {kind, id, touched: new Set(), pos: e ? (e.lat != null ? {lat: e.lat, lon: e.lon} : null) : boatPos()};
@@ -305,7 +344,8 @@ function openForm(kind, id) {
     $("lBody").innerHTML = `<form class="u-maxw-720 card lform" id="lForm" novalidate><div class="hd">${icon("wrench")}<h3>${id ? "Maintenance entry" : "New maintenance entry"}</h3></div><div class="rows">
       <div class="row"><div class="k"><b>Date</b>${id ? "" : auto("today")}</div>${dateField("lDate", e ? e.date : today())}</div>
       <div class="row"><div class="k"><b>Engine hours</b>${eh ? auto("engine") : ""}${eh ? hoursNote : "<small>The meter's total; empty = not noted</small>"}</div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lHours" min="0" max="100000" step="0.1" value="${e && e.engine_hours != null ? e.engine_hours : eh ? eh.h : ""}"><span class="u">h</span></label></div>
-      <div class="row col"><div class="k"><b>What was done</b></div><textarea class="field" id="lText" maxlength="2000" rows="5" placeholder="Oil and oil filter changed…">${esc(e ? e.text : "")}</textarea></div>
+      ${itemsField(d, e ? e.items || [] : pre)}
+      <div class="row col"><div class="k"><b>What was done</b><small>Optional when items are ticked</small></div><textarea class="field" id="lText" maxlength="2000" rows="4" placeholder="Oil and oil filter changed…">${esc(e ? e.text : "")}</textarea></div>
       </div>${btns}</form>`;
   }
   m.render();
@@ -316,9 +356,11 @@ function body() {
   const date = D.parseDate($("lDate").value);
   if (!date) return fail(`Date as ${D.dateFmt()}`);
   if (edit.kind === "maintenance") {
-    const text = $("lText").value.trim(), hours = $("lHours").value; if (!text) return fail("Say what was done");
+    const text = $("lText").value.trim(), hours = $("lHours").value;
+    const items = [...document.querySelectorAll('#lForm input[name="lItem"]:checked')].map(i => /** @type {HTMLInputElement} */ (i).value);
+    if (!text && !items.length) return fail("Tick a schedule item or say what was done");
     if (hours !== "" && !(+hours >= 0 && +hours <= 100000)) return fail("Engine hours: 0–100000");
-    return {date, engine_hours: hours === "" ? null : +hours, text};
+    return {date, engine_hours: hours === "" ? null : +hours, text, items};
   }
   const hours = $("lHours").value, litres = $("lLitres").value, amount = $("lAmount").value;
   if (hours === "" || !(+hours >= 0 && +hours <= 100000)) return fail("Engine hours: 0–100000");
@@ -342,6 +384,7 @@ async function onClick(e) {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.lview) { view = b.dataset.lview; edit = null; $("lBody").innerHTML = ""; m.render(); D.poll(m, true); return; }   // poll: at the new view's rate
   if (b.dataset.new) return openForm(b.dataset.new, null);
+  if (b.dataset.log) return openForm("maintenance", null, [b.dataset.log]);      // Log on a schedule item: a new entry with it ticked
   if (b.dataset.edit) { const [kind, id] = b.dataset.edit.split(":"); return openForm(kind, id); }
   if (b.hasAttribute("data-cancel")) return close();
   if (b.hasAttribute("data-delete")) return remove();

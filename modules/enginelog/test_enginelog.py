@@ -54,6 +54,32 @@ class EngineLogTest(unittest.TestCase):
         self.assertEqual(self.post(f"/api/maintenance/{a['id']}/delete").status_code, 200)
         self.assertEqual(len(self.c.get("/api/log", headers=TOKEN).json()["maintenance"]), 1)
 
+    def test_maintenance_ticks_schedule_items(self):     # the Yanmar 4JH80 / KM4A schedule (schedule.py)
+        r = self.post("/api/maintenance", {"date": "2026-10-01", "engine_hours": 300, "text": "", "items": ["oil_filter", "engine_oil", "engine_oil"]})
+        self.assertEqual(r.status_code, 200, r.text); self.assertEqual(r.json()["items"], ["engine_oil", "oil_filter"])   # once each, in the schedule's order
+        self.assertEqual(self.post("/api/maintenance", {"date": "2026-10-01", "text": ""}).status_code, 400)            # no items: say what was done
+        bad = self.post("/api/maintenance", {"date": "2026-10-01", "text": "x", "items": ["teleport"]})
+        self.assertEqual(bad.status_code, 400); self.assertIn("Unknown schedule item", bad.json()["detail"])
+        sch = {s["id"]: s for s in self.c.get("/api/log", headers=TOKEN).json()["schedule"]}
+        self.assertEqual((sch["engine_oil"]["last_date"], sch["engine_oil"]["due_hours"], sch["engine_oil"]["due_date"]), ("2026-10-01", 550.0, "2027-10-01"))
+        self.assertEqual(sch["fuel_filter"]["state"], "never")
+        self.assertEqual(sch["gear_oil"]["hours"], 250); self.assertTrue(sch["valves"]["dealer"])
+
+    def test_schedule_states(self):
+        from datetime import date
+        from enginelog.schedule import add_months, status
+        m = [{"date": "2026-01-10", "engine_hours": 100, "items": ["engine_oil", "fuel_separator", "coolant"]},
+             {"date": "2026-06-01", "engine_hours": 230, "items": ["engine_oil"]}]
+        s = {r["id"]: r for r in status(m, 470.0, date(2026, 11, 12))}
+        self.assertEqual((s["engine_oil"]["last_hours"], s["engine_oil"]["left_hours"], s["engine_oil"]["state"]), (230, 10.0, "soon"))   # 480 h due, 10 h to go
+        self.assertEqual(s["fuel_separator"]["state"], "due")              # every 50 h or month: long past
+        self.assertEqual((s["coolant"]["due_date"], s["coolant"]["state"]), ("2027-01-10", "ok"))   # months only
+        self.assertEqual(status(m, 481.0, date(2026, 11, 12))[3]["state"], "due")   # engine_oil past its hours
+        self.assertEqual(s["impeller"]["state"], "never")
+        self.assertEqual(add_months(date(2026, 1, 31), 1), date(2026, 2, 28))
+        hours_only = status([{"date": "2026-11-01", "engine_hours": None, "items": ["impeller"]}], 470.0, date(2026, 11, 12))
+        self.assertEqual({r["id"]: r for r in hours_only}["impeller"]["due_hours"], None)   # hours not noted: only the date counts
+
     def test_validation(self):
         for bad, why in (({**FILL, "litres": 0}, "Litres"), ({**FILL, "engine_hours": "x"}, "Engine hours"), ({**FILL, "date": "06-11-2026"}, "Date"), ({**FILL, "amount": -1}, "Amount"),
                          ({**FILL, "lat": None}, "both")):

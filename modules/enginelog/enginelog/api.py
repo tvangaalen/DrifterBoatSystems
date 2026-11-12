@@ -1,6 +1,6 @@
 """The HTTP API (behind the gateway's allowlist, `enginelog` in drifter.py ROUTES):
 
-    GET  /api/log                          {"fuel", "maintenance", "alarms", "stats", "settings", "engine"}
+    GET  /api/log                          {"fuel", "maintenance", "alarms", "stats", "settings", "engine", "schedule"}
     POST /api/fuel | /api/maintenance      create an entry; answers the entry
     POST /api/<kind>/<id>                  change it
     POST /api/<kind>/<id>/delete           delete it (the page asks first)
@@ -11,10 +11,13 @@ Wrong input answers 400 with a readable message; an unknown id 404.
 """
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import Body, FastAPI, HTTPException
 
 from common.service import contract
 from enginelog import VERSION
+from enginelog.schedule import status as schedule_status
 from enginelog.store import KINDS, Store, fuel_stats
 
 JSON_BODY = Body(...)      # the entry as a JSON object (validated by store.py)
@@ -39,7 +42,9 @@ def create_app(store: Store, engine=None, token: str | None = None) -> FastAPI:
         d = store.all()
         e = engine.snapshot() if engine else {"connected": False, "error": "not started", "fresh": False, "running": False,
                                               "last_hours": store.engine().get("hours"), "last_hours_at": store.engine().get("t")}
-        return {**d, "stats": fuel_stats(d["fuel"]), "settings": store.settings(), "engine": e}
+        hours = e.get("hours") if e.get("fresh") and e.get("hours") is not None else e.get("last_hours")     # the meter now, else its last reading
+        return {**d, "stats": fuel_stats(d["fuel"]), "settings": store.settings(), "engine": e,
+                "schedule": schedule_status(d["maintenance"], hours, date.today())}
 
     @app.post("/api/settings")
     def settings(body: dict = JSON_BODY):

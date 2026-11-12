@@ -3,7 +3,7 @@ newest first.
 
 A fuel fill: date (YYYY-MM-DD), engine hours, litres, amount paid (optional) and the position (lat/lon, optional); fills
 of 1.0.0 had a time, which is read as its date, and country and marina, which are dropped (the user's choice of
-2026-11-07). A maintenance entry: date (YYYY-MM-DD), engine hours (optional) and text. An engine alarm (engine.py): name,
+2026-11-07). A maintenance entry: date (YYYY-MM-DD), engine hours (optional), text and the schedule items it did (schedule.py). An engine alarm (engine.py): name,
 start and end (local ISO times; end None while it lasts), engine hours and the worst value. "engine" keeps the last
 engine hours read from the Orca Core. Every entry has a 12-hex id. The file is written to a temporary file and renamed,
 so a power cut never leaves half a log; positions stay on the boat PC (never in the repository).
@@ -13,6 +13,8 @@ from __future__ import annotations
 import json, math, re, secrets, threading
 from datetime import date, datetime
 from pathlib import Path
+
+from enginelog.schedule import clean_items
 
 ID_RE = re.compile(r"^[0-9a-f]{12}$")
 KINDS = ("fuel", "maintenance")
@@ -50,10 +52,12 @@ def clean_fuel(d: dict) -> dict:
 
 
 def clean_maintenance(d: dict) -> dict:
+    """A maintenance entry; `items` are the schedule items it did (schedule.py), and with items the text may be empty."""
     try: day = date.fromisoformat(str(d.get("date") or ""))
     except ValueError: raise ValueError("Date must be like 2026-11-06") from None
+    items = clean_items(d.get("items"))
     return {"date": day.isoformat(), "engine_hours": _num(d.get("engine_hours"), "Engine hours", 0, 100000, False),
-            "text": _text(d.get("text"), "Text", 2000, True)}
+            "text": _text(d.get("text"), "Text", 2000, not items), "items": items}
 
 
 CLEAN = {"fuel": clean_fuel, "maintenance": clean_maintenance}
