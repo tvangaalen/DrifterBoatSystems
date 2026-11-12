@@ -112,6 +112,7 @@ test("Energy settings: Save sends every setting (also the hidden BMS pop-up); ea
   await page.locator("#enpSave").click();
   await expect.poll(() => posts.find(p => p.url.endsWith("/api/notifications"))?.body).toEqual(
     { prefs: { float: { on: false, priority: 0, sound: "" }, shore: { on: true, priority: 0, sound: "tugboat" } } });
+  await expect(page.locator("#toast")).toContainText("Notifications saved");      // the answer rebuilds the rows: choose after it
   await page.locator("#enp-pri-float").selectOption("-1");
   await page.locator("#eSet [data-ntest=float]").click();                         // a test with what the row shows
   await expect.poll(() => posts.find(p => p.url.endsWith("/api/notifications/test"))?.body).toEqual({ event: "float", sound: "", priority: -1 });
