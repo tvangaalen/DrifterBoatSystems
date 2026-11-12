@@ -105,6 +105,20 @@ test("Engine log: the fills over time, litres per fill and the use per engine ho
   expect(errors).toEqual([]);
 });
 
+test("Engine and fuel: the fuel left, estimated from a full tank at the last fill, on the page and the Overview", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  // the mock: a 400 L tank, 6.05 L/h on average, 6.37 engine hours since the last fill -> 361 L, 60 h
+  await open(page, "#enginelog", null);
+  await expect(page.locator("#lBody .estim")).toContainText("Estimated remaining");
+  await expect(page.locator("#lBody .estim .v")).toHaveText(/361\s*L\s*60\s*h/);
+  await open(page, "#overview", null);
+  const tile = page.locator("#ovTiles .tile").filter({ has: page.locator("a[href='#enginelog']") });
+  await expect(tile.locator("h3")).toHaveText("Engine and fuel");
+  await expect(tile).toContainText("Estimated remaining 361 L · 60 h");
+  await expect(page.locator("#ovTiles .tile").filter({ has: page.locator("a[href='#power']") }).locator(".mini").nth(1)).toContainText("31 °C");   // the alternator's temperature
+  expect(errors).toEqual([]);
+});
+
 test("Engine log: a position opens Google Maps in its own window; the engine alarms are listed and can be deleted (Keep first)", async ({ page }) => {
   const posts: Posted[] = [];
   const errors = await setUp(page, { theme: "dark", posts });

@@ -1,8 +1,12 @@
 // The confirmations that guard the boat: the safe answer is the default button, and Escape, tapping outside and the
 // safe button send nothing. Commands are captured by the fixtures, never sent.
 import { test, expect, setUp, open, type Posted } from "./support";
+import fs from "node:fs";
+import path from "node:path";
 
 const dialog = (page: import("@playwright/test").Page) => page.locator("#dlgSheet");
+/** A recorded answer's body, to answer with a changed copy. */
+const fixture = (name: string) => JSON.parse(JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", name), "utf8")).body);
 
 test("Engine ECU off: default is Keep ECU ON, and declining sends nothing @iphone", async ({ page }) => {
   const posts: Posted[] = [];
@@ -41,6 +45,55 @@ test("Battery discharge MOSFET off: default is Keep ON, and declining sends noth
     await expect(fet).toBeChecked();
   }
   expect(posts).toEqual([]);
+});
+
+test("Overview: the Inverter switch; off asks first (Keep Inverter ON the default), on is sent at once", async ({ page }) => {
+  const posts: Posted[] = [];
+  await setUp(page, { posts });
+  await open(page, "#overview", null);
+  const inv = page.locator("#ov-inverter");
+  await expect(inv).not.toBeChecked();                                     // the mock's inverter is off
+  await inv.click({ force: true });
+  await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/power/api/control/inverter", { enabled: true }]]);
+  await page.route(/\/api\/power\/api\/energy$/, async r => {                // now it reads back on
+    const b = fixture("power_api_energy.json"); b.combimaster.inverter_enabled = 1;
+    await r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(b) });
+  });
+  await expect(inv).toBeChecked({ timeout: 10_000 });
+  posts.length = 0;
+  await inv.click({ force: true });
+  await expect(dialog(page)).toContainText("Switch off the Inverter?");
+  await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Keep Inverter ON");
+  await expect(page.locator("#dlgSheet [data-default]")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#dialog")).not.toHaveClass(/open/);
+  expect(posts).toEqual([]);
+});
+
+test("Overview: Raise anchor asks first, Cancel the default; confirming raises it", async ({ page }) => {
+  const posts: Posted[] = [];
+  await setUp(page, { posts });
+  await page.route(/\/api\/anchor\/api\/state/, async r => {               // the anchor down (made-up position near the boat)
+    const s = fixture("anchor_api_state.json"), p = (s.boat || {}).pos || { lat: 10.5, lon: -20.25 };
+    s.anchor = { lat: p.lat - 0.0001, lon: p.lon, radius: 40, set_at: Date.now() / 1000 - 600, depth: 6.4 };
+    await r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(s) });
+  });
+  await open(page, "#overview", null);
+  const raise = page.locator("#ovRaise");
+  await expect(raise).toBeVisible();
+  for (const decline of ["button", "Escape"]) {
+    await raise.click();
+    await expect(dialog(page)).toContainText("Raise anchor?");
+    await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Cancel");
+    await expect(page.locator("#dlgSheet [data-default]")).toBeFocused();
+    if (decline === "button") await page.locator("#dlgSheet [data-default]").click(); else await page.keyboard.press("Escape");
+    await expect(page.locator("#dialog")).not.toHaveClass(/open/);
+  }
+  expect(posts).toEqual([]);
+  await expect(page).toHaveURL(/#overview$/);                               // the button does not open the page under it
+  await raise.click();
+  await page.locator("#dlgSheet button:not([data-default])").filter({ hasText: "Raise anchor" }).click();
+  await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/anchor/api/command", { action: "raise" }]]);
 });
 
 test("Switch all systems off: default is Leave on, and declining sends nothing", async ({ page }) => {

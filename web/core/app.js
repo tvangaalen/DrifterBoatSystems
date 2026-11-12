@@ -148,9 +148,10 @@ function renderOverview() {
     try { if (m.tile && (m.state.data || m.state.err)) body = m.tile(); } catch (e) { body = `<div class="err">${esc(e.message)}</div>`; }
     const b = m.badge ? m.badge() : null;
     let tag = ""; try { if (m.tag && !m.state.err) tag = m.tag(); } catch { tag = ""; }     // optional short status in the header
-    return `<a class="card tile" href="#${m.id}"><div class="th"><span class="ic">${icon(m.icon)}</span><h3>${esc(m.title)}</h3>${tag}
+    // the whole tile opens the page through a link laid over it; a control in the tile (class "tctl") sits above that link
+    return `<div class="card tile"><a class="tlink" href="#${m.id}" aria-label="${esc(m.title)}"></a><div class="th"><span class="ic">${icon(m.icon)}</span><h3>${esc(m.title)}</h3>${tag}
       ${m.state.err ? '<span class="badge warn">offline</span>' : b === "bad" ? '<span class="badge bad">alarm</span>' : b === "warn" ? '<span class="badge warn">check</span>' : ""}
-      ${icon("chev", "i chev")}</div>${body}</a>`;
+      ${icon("chev", "i chev")}</div>${body}</div>`;
   }).join("");
   setSubtitle(new Intl.DateTimeFormat("en-GB", {weekday: "long", day: "numeric", month: "long"}).format(new Date()));
 }

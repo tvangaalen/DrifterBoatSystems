@@ -215,6 +215,12 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .tile .big small{font-size:15px;color:var(--muted);font-weight:600}
 .tile .line{color:var(--muted);font-size:13.5px;margin-top:4px}
 .tile .chev{color:var(--faint)}
+.tile .tlink{position:absolute;inset:0;border-radius:inherit;z-index:1}   /* the whole tile opens its page */
+.tile .tctl{position:relative;z-index:2}                                  /* a control in a tile stays usable above that link */
+.tile .tsw{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:6px 10px;border-radius:10px;background:var(--card2)}
+.tile .tsw .k{display:flex;flex-direction:column;min-width:0}.tile .tsw .k small{color:var(--muted);font-size:12px}
+.tile .tbtn{margin-top:12px;align-self:stretch}
+.mini .s{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
 .minis.m4{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .minis.m4 .mini{padding:8px;display:flex;flex-direction:column;justify-content:space-between;gap:2px}
@@ -370,8 +376,23 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .bankbox{margin:8px 0 12px}.bankbox .pack{background:var(--card2);border-color:transparent}
 .pack{padding:10px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;min-width:0}
 .pack>b{align-self:stretch;font-size:14px}.pack .fet{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--muted)}.pack .btn{margin-top:4px}.pack small{color:var(--muted);font-size:12px}.pack .badge{font-size:11px;padding:2px 7px}
-.cellbars{display:flex;gap:3px;align-items:flex-end;height:22px;margin-top:2px}.cellbars i{width:7px;border-radius:2px;background:var(--off)}
-.cellbars i.hi{background:var(--warn)}.cellbars i.lo{background:var(--accent)}
+/* a pack's state of charge as a filling battery (energy.js battSoc), the percentage beside it */
+.battsoc{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 0}
+.battsoc svg{display:block;width:30px;height:56px;overflow:visible}
+.battsoc .glass{fill:var(--bg2);stroke:var(--line);stroke-width:1.5}.battsoc .cap{fill:var(--line)}
+.battsoc .seg{stroke:var(--card2);stroke-width:1.2;opacity:.8}.battsoc .shine{stroke:var(--meter-sheen);stroke-width:2.5;stroke-linecap:round;fill:none}
+.battsoc .lvl.l5{fill:var(--ok)}.battsoc .lvl.l4{fill:color-mix(in srgb,var(--ok),var(--warn))}.battsoc .lvl.l3{fill:var(--warn)}
+.battsoc .lvl.l2{fill:color-mix(in srgb,var(--warn),var(--bad))}.battsoc .lvl.l1{fill:var(--bad)}
+.battsoc>b{font-size:20px;font-weight:750;letter-spacing:-.02em}.battsoc>b small{font-size:12px;color:var(--muted);font-weight:650;margin-left:1px}
+/* a pack's cells around their average (energy.js cellDev): the average left, the difference right */
+/* narrow tile (iPhone): the chart over the full width, Avg left and Δ right under it; wider: beside it */
+.pack{container-type:inline-size}
+.celldev{display:grid;grid-template-columns:auto auto;grid-template-areas:"c c" "a d";justify-content:space-between;align-items:center;gap:2px 6px;align-self:stretch;margin-top:2px;padding:0 4px}
+.celldev small:first-child{grid-area:a;text-align:left}.celldev small:last-child{grid-area:d;text-align:right}
+.celldev svg{grid-area:c;display:block;height:34px;width:100%;max-width:110px;justify-self:center}
+@container (min-width:150px){.celldev{grid-template-columns:auto minmax(0,110px) auto;grid-template-areas:"a c d";justify-content:center;gap:2px 10px}}.celldev .zero{stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.celldev rect{fill:var(--off)}.celldev rect.hi{fill:var(--warn)}.celldev rect.lo{fill:var(--accent)}
+.pack .celldev small{display:flex;flex-direction:column;line-height:1.2;font-size:10.5px;flex:none}.celldev small b{color:var(--fg);font-weight:650}
 .others{display:grid;gap:8px}
 .ptab-card{margin-bottom:12px}.ptab-wrap{padding:0 10px}   /* Batteries tab: Pack details as one table */
 .ptab{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums;table-layout:fixed}
@@ -571,6 +592,10 @@ details.repfold{margin:4px 16px 12px}details.repfold .mdreport{padding:0 0 4px} 
 @media (max-width:560px){.lform .row.stackrow{flex-direction:column;align-items:stretch;gap:8px}.lform .row.stackrow .lf-text{width:100%;max-width:none;margin:0}
   .lform .row.stackrow .k{display:flex;align-items:center;flex-wrap:wrap;gap:2px 0}.lform .row.stackrow .k small{flex-basis:100%}}
 /* Engine log, the fills over time: columns of litres (left scale), the use in L/h as a line (right scale), the average dashed */
+.tile .line b.est{color:var(--fg)}   /* Engine and fuel tile: the estimated fuel left */
+.estim{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:var(--accentbg)}
+.estim .k{display:flex;flex-direction:column;min-width:0}.estim .k small{color:var(--muted);font-size:12px}
+.estim .v{display:flex;gap:14px;flex:none}.estim .v b{font-size:22px;font-weight:750}.estim .v small{font-size:13px;color:var(--muted);font-weight:600}
 .fuelchart{margin-top:14px}.fsvg{display:block;max-width:100%}.fsvg .gl{stroke:var(--line)}.fsvg .ax{fill:var(--muted);font-size:10.5px}.fsvg .ax.use{fill:var(--accent)}
 .fsvg .fbar{fill:var(--warn)}.fsvg .useline{fill:none;stroke:var(--accent);stroke-width:2.2}.fsvg .usedot{fill:var(--accent)}
 .fsvg .avg{stroke:var(--muted);stroke-dasharray:4 4}

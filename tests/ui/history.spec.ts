@@ -31,8 +31,14 @@ test("Energy opens on Batteries from the Overview, and History's Update reads th
   await expect(page.locator("#eViews [data-view=batt]")).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator("#eBatt")).toBeVisible();
   await expect(page.locator("#eBatt .others .other")).toHaveCount(3);                               // house, start, bow: the same tile
-  await expect(page.locator("#eBatt .others .other").first()).toContainText("House battery");
+  await expect(page.locator("#eBatt .others .other").first()).toContainText("House bank");
   await expect(page.locator("#eBatt .bankbox h3")).toHaveText("House bank details");
+  const pack = page.locator("#eBatt .pack").first();                                                   // a battery with the %, cells around their average
+  await expect(pack.locator(".battsoc")).toHaveCount(1);
+  await expect(pack.locator(".meter")).toHaveCount(0);
+  await expect(pack.locator(".celldev")).toContainText("Avg");
+  await expect(pack).not.toContainText("Read ");                                                       // when it was read: in Pack details
+  await expect(page.locator("#ePackFold tbody tr").first()).toContainText("Read");
   await page.locator("#eViews [data-view=now]").click();
   await expect(page.locator("#eNow")).toBeVisible();
   await expect(page.locator("#eNow .tile.bank")).toHaveCount(0);                                    // no House bank tile on Control

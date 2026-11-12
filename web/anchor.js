@@ -105,7 +105,8 @@ const m = {
       : `<div class="u-fs-22 big ${h.cls === "bad" ? "badc" : ""}">${esc(h.title)}</div><div class="line">${esc(h.sub)}</div>`}</div>${radar(s, h)}</div>
       <div class="minis"><div class="mini"><div class="l">Depth</div><div class="n">${b.depth != null ? f1(b.depth) + " m" : "–"}</div></div>
       <div class="mini"><div class="l">Wind</div><div class="n">${b.tws != null ? f0(b.tws) + " kn" : "–"}</div></div>
-      <div class="mini"><div class="l">GPS</div><div class="n ${s.gps_age == null || s.gps_age > 10 ? "warnc" : ""}">${s.gps_age == null ? "none" : s.gps_age < 5 ? "live" : ago(s.gps_age)}</div></div></div>`;
+      <div class="mini"><div class="l">GPS</div><div class="n ${s.gps_age == null || s.gps_age > 10 ? "warnc" : ""}">${s.gps_age == null ? "none" : s.gps_age < 5 ? "live" : ago(s.gps_age)}</div></div></div>
+      ${a ? `<button class="tctl tbtn btn sec" type="button" id="ovRaise">${icon("anchor")} Raise anchor</button>` : ""}`;
   },
   mount(el) {
     el.innerHTML = `<div id="aDown"></div>
@@ -597,4 +598,13 @@ async function onClick(e) {
     if (r && await D.confirm({title: `Remove ${r.name}?`, text: "It comes back if it is seen again.", ok: "Remove", cancel: "Keep"})) cmd({action: "gps_forget", source: r.source}, `${r.name} removed`, b); return; }
 }
 const saveOrder = order => cmd({action: "settings", settings: {gps_sources: order}}, "GPS order saved");
+// Raise anchor on the Overview tile: it stops the watch, so it asks first (Cancel the default).
+document.addEventListener("click", async e => {
+  const b = /** @type {HTMLButtonElement | null} */ (/** @type {Element} */ (e.target).closest("#ovRaise")); if (!b) return;
+  if (!(await D.confirm({title: "Raise anchor?", text: "This stops the anchor watch.", ok: "Raise anchor – stop watch", cancel: "Cancel", danger: true}))) return;
+  if ($("aCtl")) $("aCtl").dataset.mode = "";
+  if (draft) setMove(false);
+  cmd({action: "raise"}, "Anchor up — watch stopped", b);
+});
+
 D.register(m);

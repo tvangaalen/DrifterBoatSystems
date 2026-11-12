@@ -128,11 +128,14 @@ const NOSW = `<span class="sw-gap"></span>`;   // in place of a switch: keeps th
 function bankBody(d, id, title) {
   const h = d.storage.house, s = d.sources, t = d.totals;
   const state = h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : "idle";
+  const alt = s.alternator || {}, cm = d.combimaster || {}, inv = "ov-inverter";
+  const invSub = on(cm.inverting) ? "Inverting" : on(cm.supporting) ? "Supporting" : on(cm.inverter_enabled) ? "On, not inverting" : "Off";
   return `<div class="meter-row"><div>${title ? `<div class="u-fs-22 big">House bank</div>` : ""}<div class="big">${flowW(h.power)}</div>
       <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A${h.temperature != null ? ` · ${num(h.temperature, 1)} °C` : ""}</div>
       <div class="line">${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""} · ${state}</div></div>${meter(h.soc, id)}</div>
+    ${title ? `<div class="tctl tsw"><span class="k"><b>Inverter</b><small>${invSub}</small></span>${D.sw(inv, on(cm.inverter_enabled), 'aria-label="Inverter"' + (busy.has(inv) ? " disabled" : ""))}</div>` : ""}
     <div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
-      <div class="mini"><div class="l">Alternator</div><div class="n">${W((s.alternator || {}).power)}</div></div>
+      <div class="mini"><div class="l">Alternator</div><div class="n">${W(alt.power)}</div>${alt.temperature != null ? `<div class="s">${num(alt.temperature, 0)} °C</div>` : ""}</div>
       <div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
       <div class="mini"><div class="l">DC load</div><div class="n">${outW(t.consumer_power)}</div></div></div>
     ${h.soc == null ? `<div class="u-mt-8"><span class="badge warn wrap">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span></div>` : ""}`;
@@ -164,7 +167,7 @@ function renderNow() {
     alternator: sw("ec-alternator", !!s.alternator.control_on, 'aria-label="Alternator"'), solar: dev("solar", "Solar")};
   const loadCtl = {inverter: sw("ec-inverter", on(cm.inverter_enabled), 'aria-label="Inverter"'), charger_start: dev("charger_start", "Charger Start"),
     charger_bow: dev("charger_bow", "Charger Bowthruster"), engine_ecu: dev("engine_ecu", "Engine ECU")};
-  srcSub.alternator += s.alternator.shaft_running ? " · shaft turning" : "";
+  srcSub.alternator += (s.alternator.temperature != null ? ` · ${num(s.alternator.temperature, 0)} °C` : "") + (s.alternator.shaft_running ? " · shaft turning" : "");
   const loadSub = (k, x) => k === "inverter" ? (on(cm.inverting) ? "Inverting" : on(cm.supporting) ? "Supporting" : "Not inverting")
     : x.charge_state || (x.estimated ? "estimated" : x.kind || "");
   const lim = limitDraft ?? (cm.ac_input_limit != null ? Math.round(cm.ac_input_limit) : null);
@@ -237,21 +240,18 @@ function renderBatt() {
   // MOSFET switches and Set SOC). Every line is always there, so a read in progress never changes a tile's height.
   const pack = name => {
     const b = bms.batteries[name], n = name.replace(/\D/g, ""), cells = b.cells_mv || [], dv = balOf(n), v = (dv && dv.status) || {};
-    const age = b.captured_at ? (Date.now() - Date.parse(b.captured_at)) / 1000 : null;
-    const live = b.state === "connected" || b.state === "reading";
-    const st = !live ? [b.error ? "badc" : "warnc", b.state.replace(/_/g, " ")] : [age != null && age > 120 ? "warnc" : "", age != null ? `Read ${D.dur(age)} ago` : "Read –"];
+    const live = b.state === "connected" || b.state === "reading";     // when it was read: the Read row of Pack details
     const bl = !dv ? ["", "no balancer"] : dv.stale ? ["warn", "bal stale"] : dv.error ? ["bad", "bal error"] : v.balance_active ? ["warn", `balancing${v.balance_position != null ? " " + v.balance_position : ""}`] : ["", "bal idle"];
     const fet = (k, on, l, what) => `<div class="fet"><span>${l}</span>${D.sw(`bms-${k}-${n}`, on, `aria-label="${esc(name)} ${what} MOSFET"` + (busy.has(`bms-${k}-${n}`) || cs.busy || on == null ? " disabled" : ""), "onoff sm")}</div>`;
     const avg = cells.length ? cells.reduce((x, y) => x + y, 0) / cells.length / 1000 : null;
     const t = (b.temperatures_c || []).length ? Math.max(...b.temperatures_c) : null;
-    return `<div class="card pack"><b>${esc(name[0] + name.slice(1).toLowerCase())}</b>${meter(b.state_of_charge_percent, "eK" + n, name, "sm")}
+    return `<div class="card pack"><b>${esc(name[0] + name.slice(1).toLowerCase())}</b>${battSoc(b.state_of_charge_percent, name)}
       <b class="num">${num(b.pack_voltage_v, 2)} V</b><small>${num(b.current_a, 1)} A${t != null ? ` · ${num(t, 0)} °C` : ""}</small>
-      ${cellBars(cells)}<small>Avg ${avg != null ? avg.toFixed(3) : "–"} V</small><small class="${b.cell_spread_mv > 50 ? "warnc" : ""}">Δ ${num(b.cell_spread_mv)} mV</small>
-      <small class="${st[0]}">${esc(st[1])}</small><span class="badge ${bl[0]}">${esc(bl[1])}</span>
+      ${cellDev(cells, avg, b.cell_spread_mv)}<span class="badge ${bl[0]}">${esc(bl[1])}</span>
       ${fet("c", b.charge_mosfet_on, "C", "charge")}${fet("d", b.discharge_mosfet_on, "D", "discharge")}
       <button class="btn sec sm" type="button" data-soc="${n}" ${cs.busy || !live ? "disabled" : ""}>Set SOC</button></div>`;
   };
-  const d = m.state.data, other = d ? ["house", "start", "bow"].map(k => { const b = d.storage[k], lab = k === "house" ? "House battery" : b.label;
+  const d = m.state.data, other = d ? ["house", "start", "bow"].map(k => { const b = d.storage[k], lab = k === "house" ? "House bank" : b.label;
     return `<div class="card other">${meter(b.soc, "eB" + k, lab, "sm")}<div class="k"><b>${esc(lab)}</b><small>${esc(b.battery_type || b.chemistry || (k === "house" ? "LiFePO4" : ""))}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small></div>
       <div class="v"><b>${flowW(b.power)}</b><small>${num(b.voltage, 2)} V · ${num(b.current, 1)} A</small></div></div>`; }).join("") : "";
   const hb = d && d.storage.house;
@@ -269,11 +269,30 @@ function renderBatt() {
     ${bleCard()}`;
 }
 
-/** A pack's cells as small bars: the highest one warn, the lowest one accent; a 40 mV window above the lowest cell. */
-function cellBars(cells) {
-  if (!cells.length) return "";
-  const hi = Math.max(...cells), lo = Math.min(...cells);
-  return `<div class="cellbars" aria-hidden="true">${cells.map(c => `<i class="${c === hi && hi !== lo ? "hi" : c === lo && hi !== lo ? "lo" : ""}" style="height:${Math.round(6 + Math.min(1, (c - lo) / 40) * 16)}px"></i>`).join("")}</div>`;
+/** A pack's state of charge as a battery that fills up, coloured red (empty) → orange → yellow → green, with the
+ * percentage beside it. @param {number | null | undefined} soc @param {string} name */
+function battSoc(soc, name) {
+  const s = soc == null || !isFinite(+soc) ? null : Math.min(100, Math.max(0, +soc));
+  const lvl = s == null ? "" : s >= 60 ? "l5" : s >= 40 ? "l4" : s >= 25 ? "l3" : s >= 12 ? "l2" : "l1";
+  const top = 7, bot = 47, h = s == null ? 0 : (bot - top) * s / 100;      // the inside of the glass, y 7 to 47
+  const marks = [1, 2, 3, 4].map(i => { const y = (bot - (bot - top) * i / 5).toFixed(1); return `<path class="seg" d="M6 ${y}h16"/>`; }).join("");
+  return `<div class="battsoc" role="img" aria-label="${esc(name)} ${s == null ? "unknown" : num(s) + " %"}"><svg viewBox="0 0 28 52" aria-hidden="true">
+    <rect class="cap" x="9.5" y="1" width="9" height="4" rx="1.2"/><rect class="glass" x="3.5" y="4.5" width="21" height="45.5" rx="4"/>
+    ${s == null ? "" : `<rect class="lvl ${lvl}" x="5.5" y="${(bot - h).toFixed(1)}" width="17" height="${h.toFixed(1)}" rx="1.5"/>`}${marks}
+    <path class="shine" d="M8 9v35"/></svg><b class="num">${num(s)}<small>%</small></b></div>`;
+}
+
+/** A pack's cells around their average: a bar up (above the average) or down (below) per cell, the largest deviation
+ * (at least 10 mV) filling half the height; the highest one warn, the lowest one accent. The average on the left, the
+ * difference (highest − lowest) on the right. @param {number[]} cells mV @param {number | null} avg V @param {number | null | undefined} spread mV */
+function cellDev(cells, avg, spread) {
+  const n = cells.length, a = avg != null ? avg * 1000 : 0, hi = n ? Math.max(...cells) : 0, lo = n ? Math.min(...cells) : 0;
+  const w = Math.max(30, n * 10), mid = 17, half = 15, bw = 6, full = Math.max(10, ...cells.map(c => Math.abs(c - a)));
+  const bars = cells.map((c, i) => { const dv = c - a, hh = Math.max(1, Math.abs(dv) / full * half), x = i * w / n + (w / n - bw) / 2;
+    return `<rect class="${c === hi && hi !== lo ? "hi" : c === lo && hi !== lo ? "lo" : ""}" x="${x.toFixed(1)}" y="${(dv >= 0 ? mid - hh : mid).toFixed(1)}" width="${bw}" height="${hh.toFixed(1)}" rx="1.5"><title>${(c / 1000).toFixed(3)} V (${dv >= 0 ? "+" : "−"}${num(Math.abs(dv))} mV)</title></rect>`; }).join("");
+  return `<div class="celldev"><small>Avg<b class="num">${avg != null ? avg.toFixed(3) : "–"}</b></small>
+    <svg viewBox="0 0 ${w} 34" preserveAspectRatio="none" aria-hidden="true"><path class="zero" d="M0 ${mid}H${w}"/>${bars}</svg>
+    <small class="${spread != null && spread > 50 ? "warnc" : ""}">Δ<b class="num">${num(spread)} mV</b></small></div>`;
 }
 
 // Bluetooth diagnostics: the coordinator (who has the radio, who waits) and per device the counters and timings.
@@ -811,4 +830,15 @@ document.addEventListener("click", e => {          // the manual SOC field lives
   if (raw === "" || !isFinite(val) || val < 0 || val > 100) { $("socErr").textContent = "Enter a percentage between 0 and 100"; $("socErr").hidden = false; return; }
   D.closeSheet("manual:" + val);
 });
+// The Inverter switch on the Overview tile. Off cuts the AC power, so it asks first (Keep it ON the default).
+document.addEventListener("change", async e => {
+  const el = /** @type {HTMLInputElement} */ (e.target); if (el.id !== "ov-inverter") return;
+  const want = el.checked; el.checked = !want;               // keep showing the real state until the server reads it back
+  if (!want && !(await D.confirm({title: "Switch off the Inverter?", text: "The 230 V sockets lose power when there is no shore power.",
+    ok: "Switch OFF", cancel: "Keep Inverter ON", danger: true}))) return;
+  busy.add(el.id); el.disabled = true;                       // the Energy page may not be built yet: no m.render() here
+  try { await D.run(null, null, () => D.api("power", "/api/control/inverter", {enabled: want}), `Inverter ${want ? "ON" : "OFF"}`); } catch (x) {}
+  finally { busy.delete(el.id); await D.poll(m, true); }
+});
+
 D.register(m);

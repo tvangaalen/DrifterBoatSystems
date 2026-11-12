@@ -45,7 +45,7 @@ class Power:
         return {
             "sources": {"shore": {"label": "Shore Power", "kind": "AC", "voltage": 0.0, "current": 0.0, "power": 0.0, "input_frequency": None, "connected": False},
                         "charger_house": dc("Charger House", 0.0, charge_state="Off"),
-                        "alternator": {**dc("Alternator", 0.0, 13.9), "running": False, "shaft_running": False, "estimated": False, "state": "Stop Charge", "control_on": self.c["alt"]},
+                        "alternator": {**dc("Alternator", 0.0, 13.9), "running": False, "shaft_running": False, "estimated": False, "temperature": 31.0, "state": "Stop Charge", "control_on": self.c["alt"]},
                         "solar": {**dc("Solar", solar, hv), "panel_voltage": 38.4, "state": "Bulk"}},
             "storage": {"house": {"label": "House Battery", "soc": round(soc, 1), "voltage": hv, "current": batt_w / hv, "power": batt_w, "temperature": 21.5,
                                   "battery_type": "MLI", "capacity": 960.0, "capacity_unit": "Ah", "soc_source": "daly_bms_average", "soc_age_seconds": 12, "max_cell_mv": 3341, "max_cell_battery": "BATTERY 1",

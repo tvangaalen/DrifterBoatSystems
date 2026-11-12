@@ -35,16 +35,32 @@ function engineHours(d) {
   if (e.last_hours != null) return {h: Math.round(e.last_hours * 10) / 10, note: `engine's last reading${e.last_hours_at ? ", " + D.dayTime(Date.parse(e.last_hours_at)) : ""}`};
   return null;
 }
+/** The fuel left, estimated: the tank was full at the last fill (always assumed), since then the average use per engine
+ * hour over the engine hours run (live, else the last reading). Null without a tank capacity or an average use.
+ * @param {any} d @returns {{l: number, h: number, ran: number, cap: number} | null} */
+function estimate(d) {
+  const s = d.stats || {}, cap = (d.settings || {}).tank_capacity_l, e = d.engine || {}, avg = s.avg_l_per_h;
+  if (!cap || !avg || s.last_hours == null) return null;
+  const now = e.fresh && e.hours != null ? e.hours : e.last_hours != null ? e.last_hours : s.last_hours;
+  const ran = Math.max(0, now - s.last_hours), l = Math.max(0, Math.min(cap, cap - ran * avg));
+  return {l, h: l / avg, ran, cap};
+}
+const estText = (/** @type {any} */ x) => `${num(x.l, 0)} L · ${num(x.h, 0)} h`;
+/** The estimate as a line in the Overview tile. @param {any} d */
+const estWhy = (/** @type {any} */ d) => !(d.settings || {}).tank_capacity_l ? "set the tank capacity in Settings" : "after two fills";
+const estLine = (/** @type {any} */ d) => { const x = estimate(d);
+  return `<div class="line">Estimated remaining ${x ? `<b class="est num">${estText(x)}</b>` : `– (${estWhy(d)})`}</div>`; };
 
 const m = {
-  id: "enginelog", title: "Engine log", short: "Engine", icon: "fuel", every: 30000, background: 120000,
+  id: "enginelog", title: "Engine and fuel", short: "Engine", icon: "enginefuel", every: 30000, background: 120000,
   async load() { m.state.data = await D.api("enginelog", "/api/log"); },
   enter() { view = "fuel"; },      // from the Overview or the navigation: always Diesel fuel
   tile() {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const f = d.fuel[0], mt = d.maintenance[0], s = d.stats;
     return `<div class="u-fs-22 big">${f ? `${num(f.litres, 0)} L` : "No fills yet"}</div>
-      <div class="line">${f ? esc(dmy(f.date)) : "Log the next fill on the Engine log page"}${d.engine && d.engine.running ? ` · engine running, ${num(d.engine.rpm, 0)} rpm` : ""}</div>
+      ${estLine(d)}
+      <div class="line">${f ? esc(dmy(f.date)) : "Log the next fill on the Engine and fuel page"}${d.engine && d.engine.running ? ` · engine running, ${num(d.engine.rpm, 0)} rpm` : ""}</div>
       <div class="minis"><div class="mini"><div class="l">Engine hours</div><div class="n">${f ? num(f.engine_hours, 0) + " h" : "–"}</div></div>
       <div class="mini"><div class="l">Avg use</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) + " L/h" : "–"}</div></div>
       <div class="mini"><div class="l">Maintenance</div><div class="n">${mt ? esc(dmy(mt.date)) : "–"}</div></div></div>`;
@@ -73,9 +89,11 @@ const m = {
 
 // ------------------------------------------------------------------ lists
 function fuelView(d) {
-  const s = d.stats;
+  const s = d.stats, x = estimate(d);
   return `<div class="u-maxw-720 card pad">
-    <div class="minis u-mt-0"><div class="mini"><div class="l">Last fill</div><div class="n">${s.last_litres != null ? num(s.last_litres, 0) + " L" : "–"}</div></div>
+    <div class="estim"><div class="k"><b>Estimated remaining</b><small>${x ? `Tank full (${num(x.cap, 0)} L) at the last fill, ${num(x.ran, 1)} engine hours since, at ${num(s.avg_l_per_h, 1)} L/h` : esc(estWhy(d)[0].toUpperCase() + estWhy(d).slice(1))}</small></div>
+      ${x ? `<div class="v num"><b>${num(x.l, 0)}<small> L</small></b><b>${num(x.h, 0)}<small> h</small></b></div>` : ""}</div>
+    <div class="minis u-mt-12"><div class="mini"><div class="l">Last fill</div><div class="n">${s.last_litres != null ? num(s.last_litres, 0) + " L" : "–"}</div></div>
       <div class="mini"><div class="l">Since</div><div class="n">${s.last_date ? since(dayMs(s.last_date)) : "–"}</div></div>
       <div class="mini"><div class="l">Fills</div><div class="n">${s.fills}</div></div></div>
     <div class="minis m4 u-mt-12"><div class="mini"><div class="l">Avg L/h</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) : "–"}</div></div>
