@@ -7,6 +7,9 @@
   (full tank at the last fill) on the tile and Diesel fuel; Energy: House bank, the packs as a filling battery with the
   SOC and the cells as a plus/minus chart around their average, Read moved to Pack details; Control shows the
   alternator's temperature
+- Engine and fuel: Current data tab (left of Settings) with the live engine values as a cockpit: a big rev counter, half
+  arcs for coolant, oil pressure, alternator, fuel rate, load and boost, and the warning lights; Overview: the anchor
+  button reads Anchor up – stop watch
 
 ## 1.3
 
