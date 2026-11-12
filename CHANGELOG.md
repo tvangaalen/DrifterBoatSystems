@@ -19,6 +19,8 @@
 - drifterd: stopping a server waits until every process in its job is gone, not only the venv launcher (the real
   python could still hold the console log; it failed the drifterd test's clean-up on CI now and then); needs a service
   restart
+- Overview: the alternator's temperature as a small badge on the Alternator box's corner (all values in line); Engine
+  and fuel, Current data: the warning lights as tiles with an icon, lit in their colour when on
 
 ## 1.3
 
