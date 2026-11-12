@@ -129,16 +129,16 @@ function bankBody(d, id, title) {
   const h = d.storage.house, s = d.sources, t = d.totals;
   const state = h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : "idle";
   const alt = s.alternator || {}, cm = d.combimaster || {}, inv = "ov-inverter";
-  const invSub = on(cm.inverting) ? "Inverting" : on(cm.supporting) ? "Supporting" : on(cm.inverter_enabled) ? "On, not inverting" : "Off";
+  const invOn = on(cm.inverter_enabled);
   return `<div class="meter-row"><div>${title ? `<div class="u-fs-22 big">House bank</div>` : ""}<div class="big">${flowW(h.power)}</div>
       <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A${h.temperature != null ? ` · ${num(h.temperature, 1)} °C` : ""}</div>
       <div class="line">${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""} · ${state}</div></div>${meter(h.soc, id)}</div>
-    ${title ? `<div class="tctl tsw"><span class="k"><b>Inverter</b><small>${invSub}</small></span>${D.sw(inv, on(cm.inverter_enabled), 'aria-label="Inverter"' + (busy.has(inv) ? " disabled" : ""))}</div>` : ""}
     <div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
       <div class="mini"><div class="l">Alternator</div><div class="n">${W(alt.power)}</div>${alt.temperature != null ? `<div class="s">${num(alt.temperature, 0)} °C</div>` : ""}</div>
       <div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
       <div class="mini"><div class="l">DC load</div><div class="n">${outW(t.consumer_power)}</div></div></div>
-    ${h.soc == null ? `<div class="u-mt-8"><span class="badge warn wrap">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span></div>` : ""}`;
+    ${h.soc == null ? `<div class="u-mt-8"><span class="badge warn wrap">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span></div>` : ""}
+    ${title ? `<button class="tctl tbtn btn sec" type="button" id="${inv}" aria-pressed="${invOn}" data-on="${invOn ? 1 : 0}" ${busy.has(inv) ? "disabled" : ""}>${icon("power")} Switch Inverter ${invOn ? "OFF" : "ON"}</button>` : ""}`;
 }
 /** The Float status, short, for a tile header; the full text is its title. @param {any} f */
 function floatTag(f) {
@@ -830,10 +830,10 @@ document.addEventListener("click", e => {          // the manual SOC field lives
   if (raw === "" || !isFinite(val) || val < 0 || val > 100) { $("socErr").textContent = "Enter a percentage between 0 and 100"; $("socErr").hidden = false; return; }
   D.closeSheet("manual:" + val);
 });
-// The Inverter switch on the Overview tile. Off cuts the AC power, so it asks first (Keep it ON the default).
-document.addEventListener("change", async e => {
-  const el = /** @type {HTMLInputElement} */ (e.target); if (el.id !== "ov-inverter") return;
-  const want = el.checked; el.checked = !want;               // keep showing the real state until the server reads it back
+// The Inverter button at the bottom of the Overview tile. Off cuts the AC power, so it asks first (Keep it ON the default).
+document.addEventListener("click", async e => {
+  const el = /** @type {HTMLButtonElement | null} */ (/** @type {Element} */ (e.target).closest("#ov-inverter")); if (!el) return;
+  const want = el.dataset.on !== "1";
   if (!want && !(await D.confirm({title: "Switch off the Inverter?", text: "The 230 V sockets lose power when there is no shore power.",
     ok: "Switch OFF", cancel: "Keep Inverter ON", danger: true}))) return;
   busy.add(el.id); el.disabled = true;                       // the Energy page may not be built yet: no m.render() here

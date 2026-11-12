@@ -47,21 +47,23 @@ test("Battery discharge MOSFET off: default is Keep ON, and declining sends noth
   expect(posts).toEqual([]);
 });
 
-test("Overview: the Inverter switch; off asks first (Keep Inverter ON the default), on is sent at once", async ({ page }) => {
+test("Overview: the Inverter button at the bottom of the tile; off asks first (Keep Inverter ON the default), on is sent at once", async ({ page }) => {
   const posts: Posted[] = [];
   await setUp(page, { posts });
   await open(page, "#overview", null);
   const inv = page.locator("#ov-inverter");
-  await expect(inv).not.toBeChecked();                                     // the mock's inverter is off
-  await inv.click({ force: true });
+  await expect(inv).toHaveText("Switch Inverter ON");                      // the mock's inverter is off
+  await expect(inv).toHaveAttribute("aria-pressed", "false");
+  await inv.click();
   await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/power/api/control/inverter", { enabled: true }]]);
   await page.route(/\/api\/power\/api\/energy$/, async r => {                // now it reads back on
     const b = fixture("power_api_energy.json"); b.combimaster.inverter_enabled = 1;
     await r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(b) });
   });
-  await expect(inv).toBeChecked({ timeout: 10_000 });
+  await expect(inv).toHaveText("Switch Inverter OFF", { timeout: 10_000 });
+  await expect(inv).toHaveAttribute("aria-pressed", "true");
   posts.length = 0;
-  await inv.click({ force: true });
+  await inv.click();
   await expect(dialog(page)).toContainText("Switch off the Inverter?");
   await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Keep Inverter ON");
   await expect(page.locator("#dlgSheet [data-default]")).toBeFocused();

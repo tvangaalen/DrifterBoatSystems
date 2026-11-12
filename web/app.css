@@ -217,8 +217,6 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .tile .chev{color:var(--faint)}
 .tile .tlink{position:absolute;inset:0;border-radius:inherit;z-index:1}   /* the whole tile opens its page */
 .tile .tctl{position:relative;z-index:2}                                  /* a control in a tile stays usable above that link */
-.tile .tsw{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:6px 10px;border-radius:10px;background:var(--card2)}
-.tile .tsw .k{display:flex;flex-direction:column;min-width:0}.tile .tsw .k small{color:var(--muted);font-size:12px}
 .tile .tbtn{margin-top:12px;align-self:stretch}
 .mini .s{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
