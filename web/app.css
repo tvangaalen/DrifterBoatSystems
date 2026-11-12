@@ -596,6 +596,25 @@ details.repfold{margin:4px 16px 12px}details.repfold .mdreport{padding:0 0 4px} 
 .estim{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:var(--accentbg)}
 .estim .k{display:flex;flex-direction:column;min-width:0}.estim .k small{color:var(--muted);font-size:12px}
 .estim .v{display:flex;gap:14px;flex:none}.estim .v b{font-size:22px;font-weight:750}.estim .v small{font-size:13px;color:var(--muted);font-weight:600}
+/* Engine and fuel, Current data (enginelog.js dataView): a big rev counter with half arcs around it, the warning lights */
+.cockpit{display:grid;gap:10px;margin-top:12px}
+@media (min-width:640px){.cockpit{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:center}}
+.tacho{background:var(--card2);border-radius:14px;padding:10px}.tacho svg{display:block;width:100%;max-width:300px;margin:0 auto}
+.gas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:900px){.gas{grid-template-columns:repeat(3,minmax(0,1fr))}.cockpit{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}}
+.ga{background:var(--card2);border-radius:12px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.ga svg{display:block;width:100%;max-width:120px}.ga b{font-size:19px;font-weight:750;line-height:1.1}.ga b small{font-size:12px;color:var(--muted);font-weight:600}
+.ga span{font-size:12px;color:var(--muted);font-weight:600}.ga.off svg{opacity:.4}
+.tacho .rim{fill:none;stroke:var(--line);stroke-width:1.5}.tacho .tk{stroke:var(--muted);stroke-width:1.2}.tacho .tk.big{stroke:var(--fg);stroke-width:2}
+.tacho .tl{fill:var(--muted);font-size:13px;font-weight:650;text-anchor:middle}
+.tacho .tv{fill:var(--fg);font-size:30px;font-weight:750;text-anchor:middle;font-variant-numeric:tabular-nums}.tacho .tu{fill:var(--muted);font-size:12px;text-anchor:middle}
+.tacho .z,.ga .z{fill:none;stroke-width:6}.ga .z{stroke-width:10}.ga .trk{fill:none;stroke:var(--bg2);stroke-width:10}
+.cockpit .z.ok{stroke:var(--ok)}.cockpit .z.warn{stroke:var(--warn)}.cockpit .z.bad{stroke:var(--bad)}
+.cockpit .ndl{stroke:var(--fg);stroke-width:3;stroke-linecap:round}.tacho .ndl{stroke:var(--bad);stroke-width:3.5}.cockpit .hub{fill:var(--fg)}
+.tacho .tv.warn,.ga b.warn{fill:var(--warn);color:var(--warn)}.tacho .tv.bad,.ga b.bad{fill:var(--bad);color:var(--bad)}
+.lamps{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.lamp{font-size:12px;font-weight:650;padding:4px 10px;border-radius:999px;background:var(--card2);color:var(--faint)}
+.lamp.warn{background:var(--warnbg);color:var(--warn)}.lamp.bad{background:var(--badbg);color:var(--bad)}
 .fuelchart{margin-top:14px}.fsvg{display:block;max-width:100%}.fsvg .gl{stroke:var(--line)}.fsvg .ax{fill:var(--muted);font-size:10.5px}.fsvg .ax.use{fill:var(--accent)}
 .fsvg .fbar{fill:var(--warn)}.fsvg .useline{fill:none;stroke:var(--accent);stroke-width:2.2}.fsvg .usedot{fill:var(--accent)}
 .fsvg .avg{stroke:var(--muted);stroke-dasharray:4 4}

@@ -52,7 +52,8 @@ const estLine = (/** @type {any} */ d) => { const x = estimate(d);
   return `<div class="line">Estimated remaining ${x ? `<b class="est num">${estText(x)}</b>` : `– (${estWhy(d)})`}</div>`; };
 
 const m = {
-  id: "enginelog", title: "Engine and fuel", short: "Engine", icon: "enginefuel", every: 30000, background: 120000,
+  id: "enginelog", title: "Engine and fuel", short: "Engine", icon: "enginefuel", background: 120000,
+  get every() { return view === "data" ? 2000 : 30000; },      // Current data: live; the lists: slowly
   async load() { m.state.data = await D.api("enginelog", "/api/log"); },
   enter() { view = "fuel"; },      // from the Overview or the navigation: always Diesel fuel
   tile() {
@@ -67,7 +68,7 @@ const m = {
   },
   mount(el) {
     el.innerHTML = `<div id="lDown"></div>
-      <div class="u-m-4-0-14 u-maxw-460 seg" id="lViews"><button type="button" data-lview="fuel">Diesel fuel</button><button type="button" data-lview="maintenance">Maintenance</button><button type="button" data-lview="settings">Settings</button></div>
+      <div class="u-m-4-0-14 u-maxw-460 seg" id="lViews"><button type="button" data-lview="fuel">Diesel fuel</button><button type="button" data-lview="maintenance">Maintenance</button><button type="button" data-lview="data">Current data</button><button type="button" data-lview="settings">Settings</button></div>
       <div id="lBody"></div>`;
     el.addEventListener("click", onClick);
     el.addEventListener("input", e => { if (edit && e.target.id) edit.touched.add(e.target.id); });
@@ -82,7 +83,7 @@ const m = {
     if (edit) return;                                    // never rebuild an open form under the user's hands
     const d = m.state.data; if (!d) { $("lBody").innerHTML = m.state.err ? "" : `<div class="empty">Loading…</div>`; return; }
     if (view === "settings") { if (!$("lSetForm")) $("lBody").innerHTML = setView(d); return; }    // a form: built once, kept while open
-    $("lBody").innerHTML = view === "fuel" ? fuelView(d) : maintView(d);
+    $("lBody").innerHTML = view === "fuel" ? fuelView(d) : view === "data" ? dataView(d) : maintView(d);
     if (view === "fuel" && $("lChart")) $("lChart").innerHTML = fuelChart(d.fuel, d.stats.avg_l_per_h);     // again at the box's real width
   },
 };
@@ -166,6 +167,73 @@ function alarmView(d) {
     <p class="u-m-8-0-0 hint">The alarms come from the YDEN-02, which passes the engine's own warning lights (the Orca Core does not). Logged: every warning light the engine sets (oil pressure, system voltage and charge only while running), and high coolant temperature and low oil pressure while running (limits in Settings). While the YDEN-02 is off, no alarms are logged.</p></div>`;
 }
 
+// ---- Current data: the engine's live values (Orca Core) as a cockpit: a big rev counter, the rest as half arcs around
+// it, and the engine's warning lights (YDEN-02). Zones: coolant and oil pressure from the alarm limits in Settings.
+const pt = (/** @type {number} */ cx, /** @type {number} */ cy, /** @type {number} */ r, /** @type {number} */ a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+const f1 = (/** @type {number} */ v) => v.toFixed(1);
+/** @param {number} cx @param {number} cy @param {number} r @param {number} a0 @param {number} a1 @param {string} cls */
+const arcPath = (cx, cy, r, a0, a1, cls) => { const [x0, y0] = pt(cx, cy, r, a0), [x1, y1] = pt(cx, cy, r, a1);
+  return `<path class="${cls}" d="M${f1(x0)} ${f1(y0)}A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${f1(x1)} ${f1(y1)}"/>`; };
+/** @typedef {{k: string, u: string, v: number | null | undefined, min: number, max: number, z: [number, number, string][], d: number}} Gauge */
+/** @param {Gauge} g @param {number} v */
+const frac = (g, v) => Math.min(1, Math.max(0, (v - g.min) / (g.max - g.min)));
+/** The zones as coloured arc pieces. @param {Gauge} g @param {number} cx @param {number} cy @param {number} r @param {number} a0 @param {number} a1 */
+const zones = (g, cx, cy, r, a0, a1) => g.z.map(([lo, hi, c]) => arcPath(cx, cy, r, a0 + (a1 - a0) * frac(g, lo), a0 + (a1 - a0) * frac(g, hi), "z " + c)).join("");
+const has = (/** @type {Gauge} */ g) => g.v != null && isFinite(+g.v);
+/** The zone a value is in ("" outside every zone). @param {Gauge} g */
+const zoneOf = g => has(g) ? ((g.z.find(([lo, hi]) => +g.v >= lo && +g.v <= hi) || [])[2] || "") : "";
+/** The rev counter: a 270° dial with ticks per 500 rpm and the needle. @param {Gauge} g */
+function tacho(g) {
+  const cx = 110, cy = 110, a0 = .75 * Math.PI, a1 = 2.25 * Math.PI;
+  let ticks = "";
+  for (let v = g.min; v <= g.max; v += 500) {
+    const a = a0 + (a1 - a0) * frac(g, v), big = v % 1000 === 0, [x0, y0] = pt(cx, cy, 88, a), [x1, y1] = pt(cx, cy, big ? 74 : 80, a);
+    ticks += `<line class="tk${big ? " big" : ""}" x1="${f1(x0)}" y1="${f1(y0)}" x2="${f1(x1)}" y2="${f1(y1)}"/>`;
+    if (big) { const [tx, ty] = pt(cx, cy, 62, a); ticks += `<text class="tl" x="${f1(tx)}" y="${f1(ty + 4)}">${v / 1000}</text>`; }
+  }
+  let needle = "";
+  if (has(g)) { const [x, y] = pt(cx, cy, 80, a0 + (a1 - a0) * frac(g, +g.v)); needle = `<line class="ndl" x1="${cx}" y1="${cy}" x2="${f1(x)}" y2="${f1(y)}"/>`; }
+  return `<div class="tacho" role="img" aria-label="${esc(g.k)} ${has(g) ? num(g.v, 0) + " " + g.u : "unknown"}"><svg viewBox="0 0 220 214" aria-hidden="true">
+    <circle class="rim" cx="${cx}" cy="${cy}" r="100"/>${zones(g, cx, cy, 92, a0, a1)}${ticks}${needle}<circle class="hub" cx="${cx}" cy="${cy}" r="7"/>
+    <text class="tv ${zoneOf(g)}" x="${cx}" y="${cy + 62}">${has(g) ? num(g.v, 0) : "–"}</text><text class="tu" x="${cx}" y="${cy + 80}">rpm</text></svg></div>`;
+}
+/** A small half arc with the zones, a needle and the value. @param {Gauge} g */
+function halfArc(g) {
+  let needle = "";
+  if (has(g)) { const [x, y] = pt(60, 58, 46, Math.PI + Math.PI * frac(g, +g.v)); needle = `<line class="ndl" x1="60" y1="58" x2="${f1(x)}" y2="${f1(y)}"/><circle class="hub" cx="60" cy="58" r="4"/>`; }
+  return `<div class="ga${has(g) ? "" : " off"}" role="img" aria-label="${esc(g.k)} ${has(g) ? num(g.v, g.d) + " " + g.u : "unknown"}"><svg viewBox="0 0 120 66" aria-hidden="true">
+    ${arcPath(60, 58, 44, Math.PI, 2 * Math.PI, "trk")}${zones(g, 60, 58, 44, Math.PI, 2 * Math.PI)}${needle}</svg>
+    <b class="num ${zoneOf(g)}">${has(g) ? num(g.v, g.d) : "–"}<small> ${g.u}</small></b><span>${esc(g.k)}</span></div>`;
+}
+// the warning lights always shown (off unless the engine sets them); any other light the engine sets is added
+const LIGHTS = ["Check engine", "Over temperature", "Low oil pressure", "Charge indicator", "Low system voltage", "Water in fuel", "Preheat indicator"];
+function dataView(d) {
+  const e = d.engine || {}, st = d.settings || {}, y = e.alarm_source || {}, th = st.temp_high_c ?? 95, ol = st.oil_low_bar ?? 1;
+  /** @type {Gauge[]} */
+  const G = [
+    {k: "Coolant", u: "°C", v: e.temp_c, min: 40, max: 120, z: [[40, th, "ok"], [th, Math.min(120, th + 10), "warn"], [Math.min(120, th + 10), 120, "bad"]], d: 0},
+    {k: "Oil pressure", u: "bar", v: e.oil_bar, min: 0, max: 6, z: [[0, ol, "bad"], [ol, ol + .5, "warn"], [ol + .5, 6, "ok"]], d: 1},
+    {k: "Alternator", u: "V", v: e.alt_v, min: 10, max: 16, z: [[10, 12, "bad"], [12, 12.8, "warn"], [12.8, 14.8, "ok"], [14.8, 16, "warn"]], d: 1},
+    {k: "Fuel rate", u: "L/h", v: e.fuel_lph, min: 0, max: 15, z: [[0, 15, "ok"]], d: 1},
+    {k: "Load", u: "%", v: e.load, min: 0, max: 100, z: [[0, 85, "ok"], [85, 100, "warn"]], d: 0},
+    {k: "Boost", u: "bar", v: e.boost_bar, min: 0, max: 2, z: [[0, 2, "ok"]], d: 1}];
+  const rpm = {k: "Engine speed", u: "rpm", v: e.rpm, min: 0, max: 4000, z: /** @type {[number, number, string][]} */ ([[0, 3200, "ok"], [3200, 3600, "warn"], [3600, 4000, "bad"]]), d: 0};
+  const on = new Set(y.fresh ? y.status || [] : []), names = [...LIGHTS, ...[...on].filter(n => !LIGHTS.includes(n))];
+  const lights = names.map(n => `<span class="lamp${on.has(n) ? n === "Preheat indicator" ? " warn" : " bad" : ""}">${esc(n)}</span>`).join("");
+  const hours = e.fresh && e.hours != null ? e.hours : e.last_hours;
+  const state = e.fresh ? (e.running ? `<span class="good">Running</span>` : `<span class="muted">Ignition on, not running</span>`) + (e.age_s != null ? ` · read ${D.dur(e.age_s)} ago` : "")
+    : e.connected ? `<span class="muted">Engine off: no live values</span>` : `<span class="warnc">No engine data from the Orca Core</span>${e.error ? ` · ${esc(e.error)}` : ""}`;
+  const other = Object.entries(e.other || {}).filter(([, v]) => v != null && typeof v !== "object");
+  return `<div class="u-maxw-720 card pad"><div class="hd u-p-0">${icon("engine")}<h3>Engine</h3><span class="muted num">${hours != null ? num(hours, 1) + " h" : "–"}</span></div>
+    <p class="u-m-6-0-0 hint" id="lLive">${state}</p>
+    <div class="cockpit">${tacho(rpm)}<div class="gas">${G.map(halfArc).join("")}</div></div>
+    <div class="lamps" id="lLamps">${lights}</div>
+    <p class="u-m-8-0-0 hint">${y.fresh ? "Warning lights from the YDEN-02, live." : "Warning lights: no data from the YDEN-02 (off, or the engine's gateway is), so none are shown as on."}
+      Values from the Orca Core. Coolant and oil pressure zones follow the alarm limits in Settings.</p>
+    ${other.length ? `<details class="lfold"><summary><b>Other values</b><span class="muted">${other.length}</span>${icon("chev", "i chev")}</summary><div class="rows">${other.map(([k, v]) =>
+      `<div class="row"><span class="k">${esc(k)}</span><span class="v num">${typeof v === "number" ? num(v, Math.abs(v) < 10 ? 2 : 0) : esc(String(v))}</span></div>`).join("")}</div></details>` : ""}</div>`;
+}
+
 function setView(d) {
   const st = d.settings || {}, cap = st.tank_capacity_l;
   return `<form class="u-maxw-720 card lform" id="lSetForm" novalidate><div class="hd">${icon("gear")}<h3>Settings</h3></div><div class="rows">
@@ -238,7 +306,7 @@ function close() { edit = null; m.render(); }
 
 async function onClick(e) {
   const b = e.target.closest("button"); if (!b) return;
-  if (b.dataset.lview) { view = b.dataset.lview; edit = null; $("lBody").innerHTML = ""; m.render(); return; }
+  if (b.dataset.lview) { view = b.dataset.lview; edit = null; $("lBody").innerHTML = ""; m.render(); D.poll(m, true); return; }   // poll: at the new view's rate
   if (b.dataset.new) return openForm(b.dataset.new, null);
   if (b.dataset.edit) { const [kind, id] = b.dataset.edit.split(":"); return openForm(kind, id); }
   if (b.hasAttribute("data-cancel")) return close();

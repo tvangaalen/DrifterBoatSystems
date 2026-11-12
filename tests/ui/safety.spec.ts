@@ -70,7 +70,7 @@ test("Overview: the Inverter switch; off asks first (Keep Inverter ON the defaul
   expect(posts).toEqual([]);
 });
 
-test("Overview: Raise anchor asks first, Cancel the default; confirming raises it", async ({ page }) => {
+test("Overview: Anchor up asks first, Cancel the default; confirming raises it", async ({ page }) => {
   const posts: Posted[] = [];
   await setUp(page, { posts });
   await page.route(/\/api\/anchor\/api\/state/, async r => {               // the anchor down (made-up position near the boat)
@@ -83,7 +83,7 @@ test("Overview: Raise anchor asks first, Cancel the default; confirming raises i
   await expect(raise).toBeVisible();
   for (const decline of ["button", "Escape"]) {
     await raise.click();
-    await expect(dialog(page)).toContainText("Raise anchor?");
+    await expect(dialog(page)).toContainText("Anchor up?");
     await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Cancel");
     await expect(page.locator("#dlgSheet [data-default]")).toBeFocused();
     if (decline === "button") await page.locator("#dlgSheet [data-default]").click(); else await page.keyboard.press("Escape");
@@ -92,7 +92,7 @@ test("Overview: Raise anchor asks first, Cancel the default; confirming raises i
   expect(posts).toEqual([]);
   await expect(page).toHaveURL(/#overview$/);                               // the button does not open the page under it
   await raise.click();
-  await page.locator("#dlgSheet button:not([data-default])").filter({ hasText: "Raise anchor" }).click();
+  await page.locator("#dlgSheet button:not([data-default])").filter({ hasText: "Anchor up – stop watch" }).click();
   await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/anchor/api/command", { action: "raise" }]]);
 });
 

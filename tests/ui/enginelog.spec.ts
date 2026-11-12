@@ -105,6 +105,22 @@ test("Engine log: the fills over time, litres per fill and the use per engine ho
   expect(errors).toEqual([]);
 });
 
+test("Engine and fuel: Current data shows the engine as a cockpit, with the warning lights", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#enginelog", "#lViews [data-lview=data]");
+  const views = page.locator("#lViews button");
+  await expect(views.nth(2)).toHaveText("Current data"); await expect(views.nth(3)).toHaveText("Settings");   // left of Settings
+  await expect(page.locator("#lBody .tacho")).toHaveAttribute("aria-label", "Engine speed 1800 rpm");
+  const arcs = page.locator("#lBody .ga");
+  await expect(arcs).toHaveCount(6);
+  await expect(arcs.nth(0)).toHaveAttribute("aria-label", "Coolant 80 °C");
+  await expect(arcs.nth(1)).toHaveAttribute("aria-label", "Oil pressure 3.5 bar");
+  await expect(page.locator("#lLive")).toContainText("Running");
+  await expect(page.locator("#lLamps .lamp")).toHaveCount(7);
+  await expect(page.locator("#lLamps .lamp.bad, #lLamps .lamp.warn")).toHaveCount(0);           // the mock's engine sets no lights
+  expect(errors).toEqual([]);
+});
+
 test("Engine and fuel: the fuel left, estimated from a full tank at the last fill, on the page and the Overview", async ({ page }) => {
   const errors = await setUp(page, { theme: "dark" });
   // the mock: a 400 L tank, 6.05 L/h on average, 6.37 engine hours since the last fill -> 361 L, 60 h

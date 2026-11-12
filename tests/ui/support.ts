@@ -72,6 +72,7 @@ export const SCREENS: [string, string, string | null][] = [
   ["washer", "#washer", null],
   ["enginelog", "#enginelog", null],
   ["enginelog-maintenance", "#enginelog", "#lViews [data-lview=maintenance]"],
+  ["enginelog-data", "#enginelog", "#lViews [data-lview=data]"],
   ["system", "#system", null],
 ];
 
