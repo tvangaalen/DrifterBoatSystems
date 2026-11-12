@@ -56,9 +56,28 @@ def start_in_job(job, cmd, **kw) -> subprocess.Popen:
     return p
 
 
-def end_job(job) -> None:
-    """Ends every process in the job, then closes it."""
-    k = _k(); k.TerminateJobObject(wintypes.HANDLE(job), 1); k.CloseHandle(wintypes.HANDLE(job))
+def job_pids(job) -> list[int]:
+    """The process ids in the job (JobObjectBasicProcessIdList)."""
+    class _List(ctypes.Structure):
+        _fields_ = [("Assigned", wintypes.DWORD), ("InList", wintypes.DWORD), ("Ids", ctypes.c_size_t * 256)]
+    lst = _List()
+    if not _k().QueryInformationJobObject(wintypes.HANDLE(job), 3, ctypes.byref(lst), ctypes.sizeof(lst), None): return []
+    return [int(lst.Ids[i]) for i in range(lst.InList)]
+
+
+def end_job(job, wait: float = 10) -> None:
+    """Ends every process in the job, waits (up to `wait` s) until each is gone, then closes the job. Waiting on the
+    direct child is not enough: the venv launcher's real python can still hold the console log for a moment."""
+    k = _k(); handles = []
+    for pid in job_pids(job):
+        h = k.OpenProcess(0x00100000, False, pid)        # SYNCHRONIZE
+        if h: handles.append(h)
+    try:
+        k.TerminateJobObject(wintypes.HANDLE(job), 1)
+        for h in handles: k.WaitForSingleObject(wintypes.HANDLE(h), int(wait * 1000))
+    finally:
+        for h in handles: k.CloseHandle(wintypes.HANDLE(h))
+        k.CloseHandle(wintypes.HANDLE(job))
 
 
 def rotate(log: Path, limit: int = 5_000_000) -> None:
