@@ -10,6 +10,8 @@
 - Engine and fuel: Current data tab (left of Settings) with the live engine values as a cockpit: a big rev counter, half
   arcs for coolant, oil pressure, alternator, fuel rate, load and boost, and the warning lights; Overview: the anchor
   button reads Anchor up – stop watch
+- Browser test: Energy notifications wait for the saved answer before choosing again (the answer rebuilds the rows; it
+  failed CI now and then)
 
 ## 1.3
 
