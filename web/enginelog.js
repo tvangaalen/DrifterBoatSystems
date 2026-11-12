@@ -236,6 +236,9 @@ function halfArc(g, i) {
 }
 // the warning lights always shown (off unless the engine sets them); any other light the engine sets is added
 const LIGHTS = ["Check engine", "Over temperature", "Low oil pressure", "Charge indicator", "Low system voltage", "Water in fuel", "Preheat indicator"];
+/** @type {Record<string, string>} the icon per light (others: alert) */
+const LIGHT_IC = {"Check engine": "engine", "Over temperature": "temp", "Low oil pressure": "drop", "Low oil level": "drop", "Charge indicator": "batt",
+  "Low system voltage": "power", "Water in fuel": "fuel", "Preheat indicator": "flame", "Low coolant level": "temp", "Low fuel pressure": "fuel"};
 function dataView(d) {
   const e = d.engine || {}, st = d.settings || {}, y = e.alarm_source || {}, th = st.temp_high_c ?? 95, ol = st.oil_low_bar ?? 1;
   /** @type {Gauge[]} */
@@ -248,7 +251,9 @@ function dataView(d) {
     {k: "Boost", u: "bar", v: e.boost_bar, min: 0, max: 2, z: [[0, 2, "ok"]], d: 1}];
   const rpm = {k: "Engine speed", u: "rpm", v: e.rpm, min: 0, max: 4000, z: /** @type {[number, number, string][]} */ ([[0, 3200, "ok"], [3200, 3600, "warn"], [3600, 4000, "bad"]]), d: 0};
   const on = new Set(y.fresh ? y.status || [] : []), names = [...LIGHTS, ...[...on].filter(n => !LIGHTS.includes(n))];
-  const lights = names.map(n => `<span class="lamp${on.has(n) ? n === "Preheat indicator" ? " warn" : " bad" : ""}">${esc(n)}</span>`).join("");
+  // a tile per light: lit in its colour when on (Preheat is a notice, the rest alarms), grey when off
+  const lights = names.map(n => { const c = on.has(n) ? n === "Preheat indicator" ? "warn" : "bad" : "";
+    return `<div class="wlamp${c ? " " + c : ""}">${icon(LIGHT_IC[n] || "alert")}<span>${esc(n === "Preheat indicator" ? "Preheat" : n)}</span>${c ? `<b>on</b>` : ""}</div>`; }).join("");
   const hours = e.fresh && e.hours != null ? e.hours : e.last_hours;
   const state = e.fresh ? (e.running ? `<span class="good">Running</span>` : `<span class="muted">Ignition on, not running</span>`) + (e.age_s != null ? ` · read ${D.dur(e.age_s)} ago` : "")
     : e.connected ? `<span class="muted">Engine off: no live values</span>` : `<span class="warnc">No engine data from the Orca Core</span>${e.error ? ` · ${esc(e.error)}` : ""}`;

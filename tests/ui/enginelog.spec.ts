@@ -2,6 +2,8 @@
 // Core) and the boat's position, all of which can be changed; deleting asks first with Keep as the default. The fuel
 // entry list is folded by default; a position opens Google Maps in its own window; the engine alarms are listed.
 import { test, expect, setUp, open, type Posted } from "./support";
+import fs from "node:fs";
+import path from "node:path";
 
 test("Engine log: a new fuel entry is filled in automatically and saves what the form shows", async ({ page }) => {
   const posts: Posted[] = [];
@@ -116,8 +118,17 @@ test("Engine and fuel: Current data shows the engine as a cockpit, with the warn
   await expect(arcs.nth(0)).toHaveAttribute("aria-label", "Coolant 80 °C");
   await expect(arcs.nth(1)).toHaveAttribute("aria-label", "Oil pressure 3.5 bar");
   await expect(page.locator("#lLive")).toContainText("Running");
-  await expect(page.locator("#lLamps .lamp")).toHaveCount(7);
-  await expect(page.locator("#lLamps .lamp.bad, #lLamps .lamp.warn")).toHaveCount(0);           // the mock's engine sets no lights
+  await expect(page.locator("#lLamps .wlamp")).toHaveCount(7);
+  await expect(page.locator("#lLamps .wlamp.bad, #lLamps .wlamp.warn")).toHaveCount(0);           // the mock's engine sets no lights
+  await page.route(/\/api\/enginelog\/api\/log/, async r => {                                      // now the engine sets two lights and one more
+    const f = JSON.parse(JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "enginelog_api_log.json"), "utf8")).body);
+    f.engine.alarm_source.status = ["Over temperature", "Preheat indicator", "Rev limit exceeded"];
+    await r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(f) });
+  });
+  await expect(page.locator("#lLamps .wlamp.bad")).toHaveCount(2, { timeout: 10_000 });
+  await expect(page.locator("#lLamps .wlamp.bad").first()).toContainText("Over temperature");
+  await expect(page.locator("#lLamps .wlamp.warn")).toHaveText(/Preheat\s*on/);                     // a notice, not an alarm
+  await expect(page.locator("#lLamps .wlamp")).toHaveCount(8);                                     // a light outside the usual set is added
   expect(errors).toEqual([]);
 });
 

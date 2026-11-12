@@ -134,7 +134,7 @@ function bankBody(d, id, title) {
       <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A${h.temperature != null ? ` · ${num(h.temperature, 1)} °C` : ""}</div>
       <div class="line">${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""} · ${state}</div></div>${meter(h.soc, id)}</div>
     <div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
-      <div class="mini"><div class="l">Alternator</div><div class="n">${W(alt.power)}</div>${alt.temperature != null ? `<div class="s">${num(alt.temperature, 0)} °C</div>` : ""}</div>
+      <div class="mini"><div class="l">Alternator</div>${alt.temperature != null ? `<span class="badge plain tmp">${num(alt.temperature, 0)} °C</span>` : ""}<div class="n">${W(alt.power)}</div></div>
       <div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
       <div class="mini"><div class="l">DC load</div><div class="n">${outW(t.consumer_power)}</div></div></div>
     ${h.soc == null ? `<div class="u-mt-8"><span class="badge warn wrap">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span></div>` : ""}
