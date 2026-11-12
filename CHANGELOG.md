@@ -21,6 +21,9 @@
   restart
 - Overview: the alternator's temperature as a small badge on the Alternator box's corner (all values in line); Engine
   and fuel, Current data: the warning lights as tiles with an icon, lit in their colour when on
+- Engine and fuel, Maintenance: a maintenance schedule for the Yanmar 4JH80 and its KM4A marine gear (Yanmar's periodic
+  maintenance schedule), with what is due or due soon on top and all items folded; a maintenance entry ticks the items
+  it did, and Log on an item opens one with it ticked
 
 ## 1.3
 
