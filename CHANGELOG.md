@@ -16,6 +16,9 @@
   zones, glow, sheen, needle tip and the value in a pill, coloured in a warn or bad zone)
 - Overview: the Inverter control is a button at the bottom of the Energy tile, styled like Anchor up – stop watch
   (Switch Inverter ON / OFF; off still asks first)
+- drifterd: stopping a server waits until every process in its job is gone, not only the venv launcher (the real
+  python could still hold the console log; it failed the drifterd test's clean-up on CI now and then); needs a service
+  restart
 
 ## 1.3
 
