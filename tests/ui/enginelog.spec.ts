@@ -110,8 +110,8 @@ test("Engine and fuel: Current data shows the engine as a cockpit, with the warn
   await open(page, "#enginelog", "#lViews [data-lview=data]");
   const views = page.locator("#lViews button");
   await expect(views.nth(2)).toHaveText("Current data"); await expect(views.nth(3)).toHaveText("Settings");   // left of Settings
-  await expect(page.locator("#lBody .tacho")).toHaveAttribute("aria-label", "Engine speed 1800 rpm");
-  const arcs = page.locator("#lBody .ga");
+  await expect(page.locator("#lBody .cockpit > .meter.big")).toHaveAttribute("aria-label", "Engine speed 1800 rpm");
+  const arcs = page.locator("#lBody .ga .meter");
   await expect(arcs).toHaveCount(6);
   await expect(arcs.nth(0)).toHaveAttribute("aria-label", "Coolant 80 °C");
   await expect(arcs.nth(1)).toHaveAttribute("aria-label", "Oil pressure 3.5 bar");

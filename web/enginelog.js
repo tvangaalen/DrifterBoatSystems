@@ -171,39 +171,68 @@ function alarmView(d) {
 // it, and the engine's warning lights (YDEN-02). Zones: coolant and oil pressure from the alarm limits in Settings.
 const pt = (/** @type {number} */ cx, /** @type {number} */ cy, /** @type {number} */ r, /** @type {number} */ a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
 const f1 = (/** @type {number} */ v) => v.toFixed(1);
-/** @param {number} cx @param {number} cy @param {number} r @param {number} a0 @param {number} a1 @param {string} cls */
-const arcPath = (cx, cy, r, a0, a1, cls) => { const [x0, y0] = pt(cx, cy, r, a0), [x1, y1] = pt(cx, cy, r, a1);
-  return `<path class="${cls}" d="M${f1(x0)} ${f1(y0)}A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${f1(x1)} ${f1(y1)}"/>`; };
 /** @typedef {{k: string, u: string, v: number | null | undefined, min: number, max: number, z: [number, number, string][], d: number}} Gauge */
 /** @param {Gauge} g @param {number} v */
 const frac = (g, v) => Math.min(1, Math.max(0, (v - g.min) / (g.max - g.min)));
-/** The zones as coloured arc pieces. @param {Gauge} g @param {number} cx @param {number} cy @param {number} r @param {number} a0 @param {number} a1 */
-const zones = (g, cx, cy, r, a0, a1) => g.z.map(([lo, hi, c]) => arcPath(cx, cy, r, a0 + (a1 - a0) * frac(g, lo), a0 + (a1 - a0) * frac(g, hi), "z " + c)).join("");
 const has = (/** @type {Gauge} */ g) => g.v != null && isFinite(+g.v);
 /** The zone a value is in ("" outside every zone). @param {Gauge} g */
 const zoneOf = g => has(g) ? ((g.z.find(([lo, hi]) => +g.v >= lo && +g.v <= hi) || [])[2] || "") : "";
-/** The rev counter: a 270° dial with ticks per 500 rpm and the needle. @param {Gauge} g */
+// The meters look like the House bank meter (energy.js meter(), its .meter styles): a band whose colour runs smoothly
+// through the zones, its glow and sheen, a rim, the needle's tip and the value in a pill.
+const ZC = /** @type {Record<string, string>} */ ({ok: "var(--ok)", warn: "var(--warn)", bad: "var(--bad)"});
+/** @param {string} a @param {string} b @param {number} t 0 = a, 1 = b */
+const mix = (a, b, t) => `color-mix(in srgb, ${ZC[a]} ${Math.round((1 - t) * 100)}%, ${ZC[b]})`;
+/** The band's colour at a value: its zone's, blended into the next zone near a boundary. @param {Gauge} g @param {number} v */
+function colorAt(g, v) {
+  const z = g.z, B = (g.max - g.min) * .07;
+  let i = z.findIndex(([lo, hi]) => v >= lo && v <= hi); if (i < 0) i = v < z[0][0] ? 0 : z.length - 1;
+  const [lo, hi, c] = z[i];
+  if (i < z.length - 1 && hi - v < B) return mix(c, z[i + 1][2], .5 * (1 - (hi - v) / B));
+  if (i > 0 && v - lo < B) return mix(c, z[i - 1][2], .5 * (1 - (v - lo) / B));
+  return ZC[c];
+}
+/** The band as short arc pieces, each in the colour at its place. @param {Gauge} g @param {number} cx @param {number} cy @param {number} r @param {number} a0 @param {number} a1 @param {number} n */
+function band(g, cx, cy, r, a0, a1, n) {
+  let out = "";
+  for (let i = 0; i < n; i++) {
+    const s0 = a0 + (a1 - a0) * i / n, s1 = a0 + (a1 - a0) * (i + 1) / n + (i < n - 1 ? .01 : 0), [x0, y0] = pt(cx, cy, r, s0), [x1, y1] = pt(cx, cy, r, s1);
+    out += `<path class="band" d="M${f1(x0)} ${f1(y0)}A${r} ${r} 0 0 1 ${f1(x1)} ${f1(y1)}" style="stroke:${colorAt(g, g.min + (g.max - g.min) * (i + .5) / n)}${i && i < n - 1 ? ";stroke-linecap:butt" : ""}"/>`;   // round only at the two ends
+  }
+  return out;
+}
+/** The needle's tip, as on the House bank meter. @param {number} cx @param {number} cy @param {number} a @param {number} from @param {number} to @param {number} w */
+function tip(cx, cy, a, from, to, w) {
+  const ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux, P = (/** @type {number} */ d, /** @type {number} */ k) => `${f1(cx + ux * d + vx * k)},${f1(cy + uy * d + vy * k)}`;
+  return `<g class="needle"><polygon points="${P(from, w)} ${P(to, 1.2)} ${P(to, -1.2)} ${P(from, -w)}"/></g>`;
+}
+/** The value in the pill, coloured when it is in a warn or bad zone. @param {Gauge} g */
+const pill = g => `<span class="pill ${zoneOf(g) === "ok" ? "" : zoneOf(g)}">${has(g) ? num(g.v, g.d) : "–"}<small> ${esc(g.u)}</small></span>`;
+/** The rev counter: the House bank meter's look on a 270° dial, with ticks per 500 rpm. @param {Gauge} g */
 function tacho(g) {
-  const cx = 110, cy = 110, a0 = .75 * Math.PI, a1 = 2.25 * Math.PI;
+  const cx = 110, cy = 108, r = 82, a0 = .75 * Math.PI, a1 = 2.25 * Math.PI, A = (/** @type {number} */ v) => a0 + (a1 - a0) * frac(g, v);
+  const whole =(/** @type {number} */ rr) => { const [p, q] = pt(cx, cy, rr, a0), [u, w] = pt(cx, cy, rr, a1);
+    return `M${f1(p)} ${f1(q)}A${rr} ${rr} 0 1 1 ${f1(u)} ${f1(w)}`; };
   let ticks = "";
   for (let v = g.min; v <= g.max; v += 500) {
-    const a = a0 + (a1 - a0) * frac(g, v), big = v % 1000 === 0, [x0, y0] = pt(cx, cy, 88, a), [x1, y1] = pt(cx, cy, big ? 74 : 80, a);
+    const big = v % 1000 === 0, [x0, y0] = pt(cx, cy, r - 15, A(v)), [x1, y1] = pt(cx, cy, r - (big ? 26 : 21), A(v));
     ticks += `<line class="tk${big ? " big" : ""}" x1="${f1(x0)}" y1="${f1(y0)}" x2="${f1(x1)}" y2="${f1(y1)}"/>`;
-    if (big) { const [tx, ty] = pt(cx, cy, 62, a); ticks += `<text class="tl" x="${f1(tx)}" y="${f1(ty + 4)}">${v / 1000}</text>`; }
+    if (big) { const [tx, ty] = pt(cx, cy, r - 38, A(v)); ticks += `<text class="tl" x="${f1(tx)}" y="${f1(ty + 4.5)}">${v / 1000}</text>`; }
   }
-  let needle = "";
-  if (has(g)) { const [x, y] = pt(cx, cy, 80, a0 + (a1 - a0) * frac(g, +g.v)); needle = `<line class="ndl" x1="${cx}" y1="${cy}" x2="${f1(x)}" y2="${f1(y)}"/>`; }
-  return `<div class="tacho" role="img" aria-label="${esc(g.k)} ${has(g) ? num(g.v, 0) + " " + g.u : "unknown"}"><svg viewBox="0 0 220 214" aria-hidden="true">
-    <circle class="rim" cx="${cx}" cy="${cy}" r="100"/>${zones(g, cx, cy, 92, a0, a1)}${ticks}${needle}<circle class="hub" cx="${cx}" cy="${cy}" r="7"/>
-    <text class="tv ${zoneOf(g)}" x="${cx}" y="${cy + 62}">${has(g) ? num(g.v, 0) : "–"}</text><text class="tu" x="${cx}" y="${cy + 80}">rpm</text></svg></div>`;
+  return `<div class="meter big" role="img" aria-label="${esc(g.k)} ${has(g) ? num(g.v, 0) + " " + g.u : "unknown"}"><svg viewBox="0 0 220 196" aria-hidden="true">
+    <defs><linearGradient id="lTachoSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset=".6" class="g1"/></linearGradient></defs>
+    <path class="track" d="${whole(r)}"/><g class="glow">${band(g, cx, cy, r, a0, a1, 54)}</g>${band(g, cx, cy, r, a0, a1, 54)}
+    <path class="sheen" d="${whole(r - 4)}" stroke="url(#lTachoSheen)"/><path class="rim" d="${whole(r + 12)}"/>${ticks}
+    ${has(g) ? tip(cx, cy, A(+g.v), 16, r + 10, 5) : ""}<circle class="hub" cx="${cx}" cy="${cy}" r="5"/>
+    <text class="tu" x="${cx}" y="${cy + 46}">× 1000 rpm</text></svg>${pill(g)}</div>`;
 }
-/** A small half arc with the zones, a needle and the value. @param {Gauge} g */
-function halfArc(g) {
-  let needle = "";
-  if (has(g)) { const [x, y] = pt(60, 58, 46, Math.PI + Math.PI * frac(g, +g.v)); needle = `<line class="ndl" x1="60" y1="58" x2="${f1(x)}" y2="${f1(y)}"/><circle class="hub" cx="60" cy="58" r="4"/>`; }
-  return `<div class="ga${has(g) ? "" : " off"}" role="img" aria-label="${esc(g.k)} ${has(g) ? num(g.v, g.d) + " " + g.u : "unknown"}"><svg viewBox="0 0 120 66" aria-hidden="true">
-    ${arcPath(60, 58, 44, Math.PI, 2 * Math.PI, "trk")}${zones(g, 60, 58, 44, Math.PI, 2 * Math.PI)}${needle}</svg>
-    <b class="num ${zoneOf(g)}">${has(g) ? num(g.v, g.d) : "–"}<small> ${g.u}</small></b><span>${esc(g.k)}</span></div>`;
+/** A small meter, exactly the House bank meter's shape, with the value in its pill and the name under it. @param {Gauge} g @param {number} i */
+function halfArc(g, i) {
+  const cx = 62, cy = 64, r = 48, arc = (/** @type {number} */ rr) => `M ${cx - rr} ${cy} A ${rr} ${rr} 0 0 1 ${cx + rr} ${cy}`;
+  return `<div class="ga${has(g) ? "" : " off"}"><div class="meter" role="img" aria-label="${esc(g.k)} ${has(g) ? num(g.v, g.d) + " " + g.u : "unknown"}"><svg viewBox="0 0 124 76" aria-hidden="true">
+    <defs><linearGradient id="lGa${i}Sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g0"/><stop offset=".55" class="g1"/></linearGradient></defs>
+    <path class="track" d="${arc(r)}"/><g class="glow">${band(g, cx, cy, r, Math.PI, 2 * Math.PI, 30)}</g>${band(g, cx, cy, r, Math.PI, 2 * Math.PI, 30)}
+    <path class="sheen" d="${arc(r - 4)}" stroke="url(#lGa${i}Sheen)"/><path class="rim" d="${arc(r + 11)}"/>${has(g) ? tip(cx, cy, Math.PI * (1 + frac(g, +g.v)), 28, r + 10, 4.5) : ""}</svg>
+    ${pill(g)}</div><span>${esc(g.k)}</span></div>`;
 }
 // the warning lights always shown (off unless the engine sets them); any other light the engine sets is added
 const LIGHTS = ["Check engine", "Over temperature", "Low oil pressure", "Charge indicator", "Low system voltage", "Water in fuel", "Preheat indicator"];
@@ -226,7 +255,7 @@ function dataView(d) {
   const other = Object.entries(e.other || {}).filter(([, v]) => v != null && typeof v !== "object");
   return `<div class="u-maxw-720 card pad"><div class="hd u-p-0">${icon("engine")}<h3>Engine</h3><span class="muted num">${hours != null ? num(hours, 1) + " h" : "–"}</span></div>
     <p class="u-m-6-0-0 hint" id="lLive">${state}</p>
-    <div class="cockpit">${tacho(rpm)}<div class="gas">${G.map(halfArc).join("")}</div></div>
+    <div class="cockpit">${tacho(rpm)}<div class="gas">${G.map((g, i) => halfArc(g, i)).join("")}</div></div>
     <div class="lamps" id="lLamps">${lights}</div>
     <p class="u-m-8-0-0 hint">${y.fresh ? "Warning lights from the YDEN-02, live." : "Warning lights: no data from the YDEN-02 (off, or the engine's gateway is), so none are shown as on."}
       Values from the Orca Core. Coolant and oil pressure zones follow the alarm limits in Settings.</p>
