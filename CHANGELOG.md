@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Overview: Inverter switch in the Energy tile (off asks first), Raise anchor in the Anchor watch tile (Cancel the
+  default), the alternator's temperature; Engine log is Engine and fuel with a new icon and the estimated fuel left
+  (full tank at the last fill) on the tile and Diesel fuel; Energy: House bank, the packs as a filling battery with the
+  SOC and the cells as a plus/minus chart around their average, Read moved to Pack details; Control shows the
+  alternator's temperature
+
 ## 1.3
 
 ### 1.3.0 — 2026-11-08
