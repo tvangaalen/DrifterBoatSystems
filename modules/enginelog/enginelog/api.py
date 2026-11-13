@@ -5,7 +5,7 @@
     POST /api/<kind>/<id>                  change it
     POST /api/<kind>/<id>/delete           delete it (the page asks first)
     POST /api/alarms/<id>/delete           delete a logged engine alarm (the page asks first)
-    POST /api/settings                     {"tank_capacity_l": litres or null, "temp_high_c", "oil_low_bar"}
+    POST /api/settings                     {"tank_capacity_l": litres or null, "fuel_margin_pct", "temp_high_c", "oil_low_bar"}
 
 Wrong input answers 400 with a readable message; an unknown id 404.
 """

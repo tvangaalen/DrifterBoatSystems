@@ -321,7 +321,7 @@ class EngineLog:
         self.fuel = [{"id": "a1b2c3d4e5f6", "date": at(1)[:10], "engine_hours": 2315.0, "litres": 182.0, "amount": 301.95, "lat": 10.5, "lon": -20.25},
                      {"id": "b2c3d4e5f6a1", "date": at(17)[:10], "engine_hours": 2288.0, "litres": 205.0, "amount": None, "lat": 10.2, "lon": -20.6},
                      {"id": "c3d4e5f6a1b2", "date": at(38)[:10], "engine_hours": 2251.0, "litres": 160.0, "amount": 248.0, "lat": None, "lon": None}]
-        self.settings = {"tank_capacity_l": 400.0, "temp_high_c": 95.0, "oil_low_bar": 1.0}
+        self.settings = {"tank_capacity_l": 400.0, "fuel_margin_pct": 115.0, "temp_high_c": 95.0, "oil_low_bar": 1.0}
         self.alarms = [{"id": "f6a1b2c3d4e5", "name": "High coolant temperature", "detail": "97 °C (limit 95 °C)", "engine_hours": 2309.4,
                         "start": at(3)[:16] + ":05", "end": at(3)[:11] + "23:59:00"}]
         self.engine = {"connected": True, "error": None, "fresh": True, "running": True, "age_s": 0.4, "source": "3.0", "rpm": 1800, "temp_c": 80.0,

@@ -217,7 +217,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .tile .chev{color:var(--faint)}
 .tile .tlink{position:absolute;inset:0;border-radius:inherit;z-index:1}   /* the whole tile opens its page */
 .tile .tctl{position:relative;z-index:2}                                  /* a control in a tile stays usable above that link */
-.tile .tbtn{margin-top:12px;align-self:stretch}
+.tile .tbtn{margin-top:12px;align-self:stretch;flex-wrap:wrap;row-gap:0}.tile .tbtn small{flex-basis:100%;font-size:12px;font-weight:600}   /* a second line under the label */
 .mini:has(.badge.tmp){position:relative;overflow:visible}   /* a small badge on the box's top right corner (the alternator's temperature) */
 .mini .badge.tmp{position:absolute;top:-12px;right:-4px;font-size:10.5px;padding:1px 6px;background:var(--warnbg);color:var(--warn);border:2px solid var(--card)}
 .minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
@@ -399,6 +399,8 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .ptab tbody th{text-align:left;font-weight:500;color:var(--muted);width:72px}.ptab thead th{border-top:0;font-weight:650;vertical-align:middle}
 .ptab thead th:first-child{width:72px}.ptab thead .nm{display:inline-block;vertical-align:middle}.ptab thead .iconbtn{width:32px;height:32px;vertical-align:middle;margin-right:-6px}
 .ptab .hb{background:var(--card2)}.ptab tr.wrap th,.ptab tr.wrap td{white-space:normal}.ptab tr.two th small{display:block;font-size:11.5px;color:var(--faint)}.ptab-card>summary .muted{font-size:13px}.bankbox>.hd>b{font-size:16px}.ptab tr.strong td{font-weight:650}
+.ptab tr.ctl th small{display:block;font-size:11.5px;color:var(--faint)}.ptab tr.ctl td{overflow:visible;padding-top:7px;padding-bottom:7px}   /* the MOSFET switches and Set SOC */
+.ptab tr.ctl td .switch{display:inline-block;vertical-align:middle}.ptab tr.ctl td .btn{padding-left:8px;padding-right:8px}
 .ptab td.hi{color:var(--warn);font-weight:650}.ptab td.lo{color:var(--accent);font-weight:650}.ptab td.bal:after{content:" •";color:var(--warn)}
 .ptab-note{padding:6px 16px 12px}
 @media (max-width:520px){.ptab .wide{display:none}.ptab{font-size:12.5px}.ptab tbody th,.ptab thead th:first-child{width:70px}}

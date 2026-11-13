@@ -33,8 +33,12 @@ test("Battery discharge MOSFET off: default is Keep ON, and declining sends noth
   const posts: Posted[] = [];
   await setUp(page, { posts });
   await open(page, "#power", "#eViews [data-view=batt]");
-  const fet = page.locator("#bms-d-1");
+  await expect(page.locator("#eBatt .pack #bms-d-1, #eBatt .pack [data-soc]")).toHaveCount(0);     // not in the pack tiles:
+  await page.locator("#ePackFold summary").click();                                               // at the bottom of Pack details
+  await expect(page.locator("#ePackFold tbody tr").last()).toContainText("Set SOC");
+  const fet = page.locator("#ePackFold #bms-d-1");
   await expect(fet).toBeChecked();
+  await fet.scrollIntoViewIfNeeded();
   for (const decline of ["button", "Escape"]) {
     await fet.click({ force: true });
     await expect(dialog(page)).toContainText("Switch off discharge on Battery 1?");
@@ -96,6 +100,23 @@ test("Overview: Anchor up asks first, Cancel the default; confirming raises it",
   await raise.click();
   await page.locator("#dlgSheet button:not([data-default])").filter({ hasText: "Anchor up – stop watch" }).click();
   await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/anchor/api/command", { action: "raise" }]]);
+});
+
+test("Overview: Drop anchor & start watch, as Already lying to it with the advised chain; Cancel the default", async ({ page }) => {
+  const posts: Posted[] = [];
+  await setUp(page, { posts });
+  await open(page, "#overview", null);
+  const drop = page.locator("#ovDrop");                                  // the mock's anchor is up; its chain advice 43 m
+  await expect(drop).toContainText("43 m · radius 55 m");                // 43 + 10, rounded up to a multiple of 5
+  await drop.click();
+  await expect(dialog(page)).toContainText("Anchor 43 m ahead of the bow");
+  await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Cancel");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#dialog")).not.toHaveClass(/open/);
+  expect(posts).toEqual([]);
+  await drop.click();
+  await page.locator("#dlgSheet button:not([data-default])").filter({ hasText: "Drop anchor" }).click();
+  await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/anchor/api/command", { action: "drop", mode: "ahead", distance: 43, radius: 55 }]]);
 });
 
 test("Switch all systems off: default is Leave on, and declining sends nothing", async ({ page }) => {

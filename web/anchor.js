@@ -106,7 +106,8 @@ const m = {
       <div class="minis"><div class="mini"><div class="l">Depth</div><div class="n">${b.depth != null ? f1(b.depth) + " m" : "–"}</div></div>
       <div class="mini"><div class="l">Wind</div><div class="n">${b.tws != null ? f0(b.tws) + " kn" : "–"}</div></div>
       <div class="mini"><div class="l">GPS</div><div class="n ${s.gps_age == null || s.gps_age > 10 ? "warnc" : ""}">${s.gps_age == null ? "none" : s.gps_age < 5 ? "live" : ago(s.gps_age)}</div></div></div>
-      ${a ? `<button class="tctl tbtn btn sec" type="button" id="ovRaise">${icon("anchor")} Anchor up – stop watch</button>` : ""}`;
+      ${a ? `<button class="tctl tbtn btn sec" type="button" id="ovRaise">${icon("anchor")} Anchor up – stop watch</button>`
+        : `<button class="tctl tbtn btn sec" type="button" id="ovDrop" ${quickDrop(s) && b.pos ? "" : "disabled"}>${icon("anchor")} Drop anchor &amp; start watch${quickDrop(s) ? ` <small class="muted">${quickDrop(s).chain} m · radius ${quickDrop(s).radius} m</small>` : ""}</button>`}`;
   },
   mount(el) {
     el.innerHTML = `<div id="aDown"></div>
@@ -598,6 +599,21 @@ async function onClick(e) {
     if (r && await D.confirm({title: `Remove ${r.name}?`, text: "It comes back if it is seen again.", ok: "Remove", cancel: "Keep"})) cmd({action: "gps_forget", source: r.source}, `${r.name} removed`, b); return; }
 }
 const saveOrder = order => cmd({action: "settings", settings: {gps_sources: order}}, "GPS order saved");
+/** Drop from the Overview tile, as "Already lying to it": the anchor the advised chain length ahead of the bow, the
+ * alarm radius that length + 10 m, rounded up to a multiple of 5. Null without a chain advice (no depth or tide).
+ * @param {any} s @returns {{chain: number, radius: number} | null} */
+function quickDrop(s) {
+  const c = s && s.depth_plan && s.depth_plan.available ? s.depth_plan.chain : null;
+  return c != null && isFinite(+c) && +c > 0 ? {chain: Math.ceil(+c), radius: Math.ceil((+c + 10) / 5) * 5} : null;
+}
+document.addEventListener("click", async e => {
+  const b = /** @type {HTMLButtonElement | null} */ (/** @type {Element} */ (e.target).closest("#ovDrop")); if (!b) return;
+  const q = quickDrop(m.state.data); if (!q) return D.toast("No chain advice yet (needs the depth and the tide)", true);
+  if (!(await D.confirm({title: "Drop anchor and start the watch?", items: [`Anchor ${q.chain} m ahead of the bow (the advised chain)`, `Alarm radius ${q.radius} m`],
+    ok: "Drop anchor & start watch", cancel: "Cancel"}))) return;
+  if ($("aCtl")) $("aCtl").dataset.mode = "";
+  cmd({action: "drop", mode: "ahead", distance: q.chain, radius: q.radius}, "Anchor down — watch started", b);
+});
 // Anchor up on the Overview tile: it stops the watch, so it asks first (Cancel the default).
 document.addEventListener("click", async e => {
   const b = /** @type {HTMLButtonElement | null} */ (/** @type {Element} */ (e.target).closest("#ovRaise")); if (!b) return;

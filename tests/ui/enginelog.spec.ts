@@ -84,7 +84,7 @@ test("Engine log: dates as dd/mm/yyyy (or as chosen on System), typed or picked;
   await expect(page.locator("#lTemp")).toHaveValue("95"); await expect(page.locator("#lOil")).toHaveValue("1");
   await page.locator("#lOil").fill("0.8");
   await page.locator("#lTank").fill("380"); await page.locator("#lSetSave").click();
-  await expect.poll(() => posts.at(-1)?.body).toEqual({ tank_capacity_l: 380, temp_high_c: 95, oil_low_bar: 0.8 });
+  await expect.poll(() => posts.at(-1)?.body).toEqual({ tank_capacity_l: 380, fuel_margin_pct: 115, temp_high_c: 95, oil_low_bar: 0.8 });
   await open(page, "#system", null);
   await page.locator("[data-datefmt='yyyy-mm-dd']").click();
   await page.waitForLoadState();
@@ -156,14 +156,14 @@ test("Engine and fuel: Current data shows the engine as a cockpit, with the warn
 
 test("Engine and fuel: the fuel left, estimated from a full tank at the last fill, on the page and the Overview", async ({ page }) => {
   const errors = await setUp(page, { theme: "dark" });
-  // the mock: a 400 L tank, 6.05 L/h on average, 6.37 engine hours since the last fill -> 361 L, 60 h
+  // the mock: a 400 L tank, 6.05 L/h on average + the 15 % safety margin = 6.96 L/h, 6.37 engine hours since the last fill -> 356 L, 51 h
   await open(page, "#enginelog", null);
   await expect(page.locator("#lBody .estim")).toContainText("Estimated remaining");
-  await expect(page.locator("#lBody .estim .v")).toHaveText(/361\s*L\s*60\s*h/);
+  await expect(page.locator("#lBody .estim .v")).toHaveText(/356\s*L\s*51\s*h/);
   await open(page, "#overview", null);
   const tile = page.locator("#ovTiles .tile").filter({ has: page.locator("a[href='#enginelog']") });
   await expect(tile.locator("h3")).toHaveText("Engine and fuel");
-  await expect(tile).toContainText("Estimated remaining 361 L · 60 h");
+  await expect(tile).toContainText("Estimated remaining 356 L · 51 h");
   await expect(page.locator("#ovTiles .tile").filter({ has: page.locator("a[href='#power']") }).locator(".mini").nth(1)).toContainText("31 °C");   // the alternator's temperature
   expect(errors).toEqual([]);
 });

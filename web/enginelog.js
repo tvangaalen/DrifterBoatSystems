@@ -36,14 +36,16 @@ function engineHours(d) {
   return null;
 }
 /** The fuel left, estimated: the tank was full at the last fill (always assumed), since then the average use per engine
- * hour over the engine hours run (live, else the last reading). Null without a tank capacity or an average use.
- * @param {any} d @returns {{l: number, h: number, ran: number, cap: number} | null} */
+ * hour, made larger by the safety margin in Settings (115 % by default), over the engine hours run (live, else the last
+ * reading). Null without a tank capacity or an average use.
+ * @param {any} d @returns {{l: number, h: number, ran: number, cap: number, use: number, margin: number} | null} */
 function estimate(d) {
-  const s = d.stats || {}, cap = (d.settings || {}).tank_capacity_l, e = d.engine || {}, avg = s.avg_l_per_h;
+  const s = d.stats || {}, st = d.settings || {}, cap = st.tank_capacity_l, e = d.engine || {}, margin = st.fuel_margin_pct ?? 115;
+  const avg = s.avg_l_per_h ? s.avg_l_per_h * margin / 100 : null;
   if (!cap || !avg || s.last_hours == null) return null;
   const now = e.fresh && e.hours != null ? e.hours : e.last_hours != null ? e.last_hours : s.last_hours;
   const ran = Math.max(0, now - s.last_hours), l = Math.max(0, Math.min(cap, cap - ran * avg));
-  return {l, h: l / avg, ran, cap};
+  return {l, h: l / avg, ran, cap, use: avg, margin};
 }
 const estText = (/** @type {any} */ x) => `${num(x.l, 0)} L · ${num(x.h, 0)} h`;
 /** The estimate as a line in the Overview tile. @param {any} d */
@@ -92,7 +94,7 @@ const m = {
 function fuelView(d) {
   const s = d.stats, x = estimate(d);
   return `<div class="u-maxw-720 card pad">
-    <div class="estim"><div class="k"><b>Estimated remaining</b><small>${x ? `Tank full (${num(x.cap, 0)} L) at the last fill, ${num(x.ran, 1)} engine hours since, at ${num(s.avg_l_per_h, 1)} L/h` : esc(estWhy(d)[0].toUpperCase() + estWhy(d).slice(1))}</small></div>
+    <div class="estim"><div class="k"><b>Estimated remaining</b><small>${x ? `Tank full (${num(x.cap, 0)} L) at the last fill, ${num(x.ran, 1)} engine hours since, at ${num(x.use, 1)} L/h (average ${num(s.avg_l_per_h, 1)} L/h + ${num(x.margin - 100, 0)} % margin)` : esc(estWhy(d)[0].toUpperCase() + estWhy(d).slice(1))}</small></div>
       ${x ? `<div class="v num"><b>${num(x.l, 0)}<small> L</small></b><b>${num(x.h, 0)}<small> h</small></b></div>` : ""}</div>
     <div class="minis u-mt-12"><div class="mini"><div class="l">Last fill</div><div class="n">${s.last_litres != null ? num(s.last_litres, 0) + " L" : "–"}</div></div>
       <div class="mini"><div class="l">Since</div><div class="n">${s.last_date ? since(dayMs(s.last_date)) : "–"}</div></div>
@@ -303,16 +305,18 @@ function setView(d) {
   const st = d.settings || {}, cap = st.tank_capacity_l;
   return `<form class="u-maxw-720 card lform" id="lSetForm" novalidate><div class="hd">${icon("gear")}<h3>Settings</h3></div><div class="rows">
     <div class="row"><div class="k"><b>Fuel tank capacity</b><small>Litres; empty = not set</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lTank" min="1" max="10000" step="1" value="${cap ?? ""}"><span class="u">L</span></label></div>
+    <div class="row"><div class="k"><b>Remaining fuel safety margin</b><small>The average use is taken this much higher for the estimated fuel left, 100–200 %</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lMargin" min="100" max="200" step="1" value="${st.fuel_margin_pct ?? 115}"><span class="u">%</span></label></div>
     <div class="row"><div class="k"><b>High coolant temperature</b><small>Engine alarm at or above this, 60–130 °C</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lTemp" min="60" max="130" step="1" value="${st.temp_high_c ?? 95}"><span class="u">°C</span></label></div>
     <div class="row"><div class="k"><b>Low oil pressure</b><small>Engine alarm below this while running, 0.1–5 bar</small></div><label class="numf"><input class="field" type="number" inputmode="decimal" id="lOil" min="0.1" max="5" step="0.1" value="${st.oil_low_bar ?? 1}"><span class="u">bar</span></label></div>
     </div><div class="u-d-flex u-gap-8 u-mt-12"><button class="btn" type="submit" id="lSetSave">Save</button></div><p class="err" id="lSetErr" hidden></p></form>`;
 }
 async function saveSettings() {
-  const v = $("lTank").value.trim(), t = $("lTemp").value.trim(), o = $("lOil").value.trim(), err = $("lSetErr"); err.hidden = true;
-  const bad = v !== "" && !(+v >= 1 && +v <= 10000) ? "Fuel tank capacity: 1–10000 L" : !(t !== "" && +t >= 60 && +t <= 130) ? "High coolant temperature: 60–130 °C"
+  const v = $("lTank").value.trim(), t = $("lTemp").value.trim(), o = $("lOil").value.trim(), mg = $("lMargin").value.trim(), err = $("lSetErr"); err.hidden = true;
+  const bad = v !== "" && !(+v >= 1 && +v <= 10000) ? "Fuel tank capacity: 1–10000 L" : !(mg !== "" && +mg >= 100 && +mg <= 200) ? "Remaining fuel safety margin: 100–200 %"
+    : !(t !== "" && +t >= 60 && +t <= 130) ? "High coolant temperature: 60–130 °C"
     : !(o !== "" && +o >= 0.1 && +o <= 5) ? "Low oil pressure: 0.1–5 bar" : "";
   if (bad) { err.textContent = bad; err.hidden = false; return; }
-  try { await D.run(m, $("lSetSave"), () => D.api("enginelog", "/api/settings", {tank_capacity_l: v === "" ? null : +v, temp_high_c: +t, oil_low_bar: +o}), "Settings saved"); } catch (e) { err.textContent = e.message; err.hidden = false; }
+  try { await D.run(m, $("lSetSave"), () => D.api("enginelog", "/api/settings", {tank_capacity_l: v === "" ? null : +v, fuel_margin_pct: +mg, temp_high_c: +t, oil_low_bar: +o}), "Settings saved"); } catch (e) { err.textContent = e.message; err.hidden = false; }
 }
 
 // ------------------------------------------------------------------ forms

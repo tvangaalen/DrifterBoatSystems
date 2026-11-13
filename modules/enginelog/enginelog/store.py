@@ -18,9 +18,10 @@ from enginelog.schedule import clean_items
 
 ID_RE = re.compile(r"^[0-9a-f]{12}$")
 KINDS = ("fuel", "maintenance")
-# the fuel tank's capacity in litres (None: not set); the engine alarm limits (engine.py)
-SETTINGS = {"tank_capacity_l": None, "temp_high_c": 95.0, "oil_low_bar": 1.0}
-SETTING_LIMITS = {"tank_capacity_l": ("Fuel tank capacity", 1, 10000, False), "temp_high_c": ("High coolant temperature", 60, 130, True),
+# the fuel tank's capacity in litres (None: not set); the safety margin on the average use for the fuel left (%, the page
+# works the estimate out); the engine alarm limits (engine.py)
+SETTINGS = {"tank_capacity_l": None, "fuel_margin_pct": 115.0, "temp_high_c": 95.0, "oil_low_bar": 1.0}
+SETTING_LIMITS = {"tank_capacity_l": ("Fuel tank capacity", 1, 10000, False), "fuel_margin_pct": ("Safety margin", 100, 200, True), "temp_high_c": ("High coolant temperature", 60, 130, True),
                   "oil_low_bar": ("Low oil pressure", 0.1, 5, True)}
 
 

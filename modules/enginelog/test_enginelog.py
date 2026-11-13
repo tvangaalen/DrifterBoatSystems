@@ -100,7 +100,7 @@ class EngineLogTest(unittest.TestCase):
         self.assertEqual(self.post(f"/api/fuel/{e['id']}", {**FILL, "date": "2026-11-20", "engine_hours": 2320}).status_code, 200)
 
     def test_settings(self):
-        base = {"tank_capacity_l": None, "temp_high_c": 95.0, "oil_low_bar": 1.0}
+        base = {"tank_capacity_l": None, "fuel_margin_pct": 115.0, "temp_high_c": 95.0, "oil_low_bar": 1.0}
         self.assertEqual(self.c.get("/api/log", headers=TOKEN).json()["settings"], base)
         self.assertEqual(self.post("/api/settings", {"tank_capacity_l": 400}).json(), {**base, "tank_capacity_l": 400.0})
         self.assertEqual(Store(self.path).settings()["tank_capacity_l"], 400.0)
@@ -108,7 +108,9 @@ class EngineLogTest(unittest.TestCase):
         self.assertEqual(self.post("/api/settings", {"temp_high_c": 200}).status_code, 400)
         self.assertEqual(self.post("/api/settings", {"temp_high_c": None}).status_code, 400)
         self.assertEqual(self.post("/api/settings", {"tank_capacity_l": None, "temp_high_c": 90, "oil_low_bar": 0.8}).json(),
-                         {"tank_capacity_l": None, "temp_high_c": 90.0, "oil_low_bar": 0.8})
+                         {"tank_capacity_l": None, "fuel_margin_pct": 115.0, "temp_high_c": 90.0, "oil_low_bar": 0.8})
+        self.assertEqual(self.post("/api/settings", {"fuel_margin_pct": 125}).json()["fuel_margin_pct"], 125.0)   # the remaining fuel's safety margin
+        for bad in (99, 201, None): self.assertEqual(self.post("/api/settings", {"fuel_margin_pct": bad}).status_code, 400)
 
     def test_stats(self):
         self.assertIsNone(fuel_stats([])["avg_l_per_h"])

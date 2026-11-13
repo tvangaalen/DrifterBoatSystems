@@ -231,25 +231,28 @@ function renderBatt() {
       ${row("Alarms", P.map(b => alarms(b).length ? alarms(b).map(x => `<span class="badc">${esc(x)}</span>`).join("<br>") : `<span class="good">none</span>`), "–", "wrap")}
       ${row("SOC curve<small>charging</small>", curve("soc_charge_curve_percent"), "–", "two")}
       ${row("SOC curve<small>discharging</small>", curve("soc_discharge_curve_percent"), "–", "two")}
+      ${row("Charge<small>MOSFET</small>", P.map((b, i) => fet("c", names[i], b.charge_mosfet_on, "charge")), "–", "ctl")}
+      ${row("Discharge<small>MOSFET</small>", P.map((b, i) => fet("d", names[i], b.discharge_mosfet_on, "discharge")), "–", "ctl")}
+      ${row("SOC", P.map((b, i) => `<button class="btn sec sm" type="button" data-soc="${names[i].replace(/\D/g, "")}" ${cs.busy || !(b.state === "connected" || b.state === "reading") ? "disabled" : ""}>Set SOC</button>`), "–", "ctl")}
       </tbody></table></div><p class="hint ptab-note">Cells: highest orange, lowest blue, a dot when it balances. House: the house SOC and voltage, the sum of Ah left and current, the hottest pack, average and difference over all cells.
         SOC curve: what the average cell voltage means on the LiFePO4 charging and discharging curve (the values <i>Set SOC</i> offers).</p></details>`;
   };
+  /** A pack's charge or discharge MOSFET switch (in Pack details). @param {string} k "c" or "d" @param {string} name @param {boolean | null | undefined} on @param {string} what */
+  function fet(k, name, on, what) { const n = name.replace(/\D/g, ""), id = `bms-${k}-${n}`;
+    return D.sw(id, on, `aria-label="${esc(name)} ${what} MOSFET"` + (busy.has(id) || cs.busy || on == null ? " disabled" : ""), "onoff sm"); }
   const devs = (bal && bal.devices) || {};
   const balOf = n => Object.entries(devs).find(([k]) => k.replace(/\D/g, "") === n)?.[1];
-  // the overview (one iPhone screen): the start and bow batteries, then the house bank with a tile per pack (its balancer,
-  // MOSFET switches and Set SOC). Every line is always there, so a read in progress never changes a tile's height.
+  // the overview (one iPhone screen): the start and bow batteries, then the house bank with a tile per pack (its balancer;
+  // the MOSFET switches and Set SOC are at the bottom of Pack details). Every line is always there, so a read in progress
+  // never changes a tile's height.
   const pack = name => {
     const b = bms.batteries[name], n = name.replace(/\D/g, ""), cells = b.cells_mv || [], dv = balOf(n), v = (dv && dv.status) || {};
-    const live = b.state === "connected" || b.state === "reading";     // when it was read: the Read row of Pack details
     const bl = !dv ? ["", "no balancer"] : dv.stale ? ["warn", "bal stale"] : dv.error ? ["bad", "bal error"] : v.balance_active ? ["warn", `balancing${v.balance_position != null ? " " + v.balance_position : ""}`] : ["", "bal idle"];
-    const fet = (k, on, l, what) => `<div class="fet"><span>${l}</span>${D.sw(`bms-${k}-${n}`, on, `aria-label="${esc(name)} ${what} MOSFET"` + (busy.has(`bms-${k}-${n}`) || cs.busy || on == null ? " disabled" : ""), "onoff sm")}</div>`;
     const avg = cells.length ? cells.reduce((x, y) => x + y, 0) / cells.length / 1000 : null;
     const t = (b.temperatures_c || []).length ? Math.max(...b.temperatures_c) : null;
     return `<div class="card pack"><b>${esc(name[0] + name.slice(1).toLowerCase())}</b>${battSoc(b.state_of_charge_percent, name)}
       <b class="num">${num(b.pack_voltage_v, 2)} V</b><small>${num(b.current_a, 1)} A${t != null ? ` · ${num(t, 0)} °C` : ""}</small>
-      ${cellDev(cells, avg, b.cell_spread_mv)}<span class="badge ${bl[0]}">${esc(bl[1])}</span>
-      ${fet("c", b.charge_mosfet_on, "C", "charge")}${fet("d", b.discharge_mosfet_on, "D", "discharge")}
-      <button class="btn sec sm" type="button" data-soc="${n}" ${cs.busy || !live ? "disabled" : ""}>Set SOC</button></div>`;
+      ${cellDev(cells, avg, b.cell_spread_mv)}<span class="badge ${bl[0]}">${esc(bl[1])}</span></div>`;
   };
   const d = m.state.data, other = d ? ["house", "start", "bow"].map(k => { const b = d.storage[k], lab = k === "house" ? "House bank" : b.label;
     return `<div class="card other">${meter(b.soc, "eB" + k, lab, "sm")}<div class="k"><b>${esc(lab)}</b><small>${esc(b.battery_type || b.chemistry || (k === "house" ? "LiFePO4" : ""))}${b.capacity ? ` · ${num(b.capacity)} ${esc(b.capacity_unit || "Ah")}` : ""}</small></div>
