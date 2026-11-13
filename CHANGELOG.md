@@ -4,6 +4,8 @@
 
 - Anchor map: Map/Sat/Plain on the same row as Seamarks, Fit and Windy (narrower; on a phone the buttons drop their
   icons so all four fit)
+- Anchor watch: changing the GPS order works again (the order now holds devices, n<NAME>, which the settings check
+  dropped as not a number)
 
 ## 1.4
 
