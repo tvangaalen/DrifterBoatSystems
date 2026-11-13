@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Anchor map: Map/Sat/Plain on the same row as Seamarks, Fit and Windy (narrower; on a phone the buttons drop their
+  icons so all four fit)
+
 ## 1.4
 
 ### 1.4.0 — 2026-11-13
