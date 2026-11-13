@@ -25,7 +25,7 @@ from common import logs, pushover
 from common.net import check_bind, host_allowed, same_origin   # noqa: F401  (check_bind/host_allowed: also used by the tests)
 from common.web import QuietServer as Server, tls_context, use_tls
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 HERE = Path(__file__).resolve().parent
 sys.path.append(str(HERE / "tools"))              # tools/backup.py for "Backup keys and tokens"
 STATIC = HERE / "web"

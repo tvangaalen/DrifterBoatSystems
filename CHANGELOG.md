@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.4
+
+### 1.4.0 — 2026-11-13
 
 - Overview: Inverter switch in the Energy tile (off asks first), Raise anchor in the Anchor watch tile (Cancel the
   default), the alternator's temperature; Engine log is Engine and fuel with a new icon and the estimated fuel left
