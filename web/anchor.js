@@ -118,10 +118,10 @@ const m = {
       <div id="aWatch"><div class="grid g2l">
         <div class="stack">
           <div class="map no-swipe" id="aMap">
-            <div class="mapbtns"><div class="seg" id="aBase"><button type="button" data-base="osm" aria-pressed="true">Map</button><button type="button" data-base="satellite" aria-pressed="false">Sat</button><button type="button" data-base="plain" aria-pressed="false">Plain</button></div></div>
-            <div class="maprow"><button class="btn" type="button" id="aSea" aria-pressed="true">${icon("buoy")} Seamarks</button>
+            <div class="maptop"><div class="maprow"><button class="btn" type="button" id="aSea" aria-pressed="true">${icon("buoy")} Seamarks</button>
               <button class="btn" type="button" id="aFit" title="Fit circle and boat, and follow">${icon("anchor")} Fit</button>
               <button class="btn" type="button" id="aWindy" title="Weather forecast on Windy.com for the boat's position">${icon("wave")} Windy</button></div>
+              <div class="seg" id="aBase"><button type="button" data-base="osm" aria-pressed="true">Map</button><button type="button" data-base="satellite" aria-pressed="false">Sat</button><button type="button" data-base="plain" aria-pressed="false">Plain</button></div></div>
             <button class="mapinfo" type="button" id="aCreditsBtn" aria-label="Map credits" title="Map credits">i</button>
             <div class="movebar" id="aMovebar" hidden><div class="u-c-fg hint">Tap the map or nudge 1 m: <b id="aMoveOff">not moved yet</b></div>
               <div class="btns"><button class="btn sec sm" type="button" data-nudge="W" aria-label="West 1 m">←</button><button class="btn sec sm" type="button" data-nudge="N" aria-label="North 1 m">↑</button>
@@ -232,7 +232,7 @@ function initMap(lib) {
   ly.track = L.layerGroup().addTo(map); ly.ais = L.layerGroup().addTo(map);
   map.on("dragstart zoomstart", () => { if (!m._fitting) follow = false; });
   map.on("click", e => { if (draft) { draft = {lat: e.latlng.lat, lon: e.latlng.lng}; showDraft(); } });
-  L.DomEvent.disableClickPropagation(document.querySelector("#aMap .mapbtns")); L.DomEvent.disableClickPropagation(document.querySelector("#aMap .maprow")); L.DomEvent.disableClickPropagation($("aMovebar")); L.DomEvent.disableClickPropagation($("aCreditsBtn"));
+  L.DomEvent.disableClickPropagation(document.querySelector("#aMap .maptop")); L.DomEvent.disableClickPropagation($("aMovebar")); L.DomEvent.disableClickPropagation($("aCreditsBtn"));
   // Leaflet measures its box only on a window resize: hidden (another page or tab) it measures 0 x 0 and then draws from the
   // top-left corner. Measure again whenever the box itself changes size, which includes being shown again.
   new ResizeObserver(() => { const c = $("aMap");

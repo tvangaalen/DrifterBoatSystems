@@ -57,7 +57,7 @@ test("Anchor watch: Events is folded with a one-line summary and opens on a tap 
   expect(errors).toEqual([]);
 });
 
-test("Anchor map: Seamarks, Fit and Windy side by side at the top left, equally wide; zoom at the bottom left", async ({ page }) => {
+test("Anchor map: Seamarks, Fit and Windy side by side at the top left, equally wide, Map/Sat/Plain on the same row; zoom at the bottom left", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   const errors = await setUp(page, { theme: "dark" });
   await open(page, "#anchor", null);
@@ -67,7 +67,10 @@ test("Anchor map: Seamarks, Fit and Windy side by side at the top left, equally 
   const map = (await page.locator("#aMap").boundingBox())!;
   expect(new Set(box.map(b => Math.round(b!.y))).size).toBe(1);                         // one row
   expect(Math.max(...box.map(b => b!.width)) - Math.min(...box.map(b => b!.width))).toBeLessThan(1);   // equally wide
-  expect(box[2]!.x + box[2]!.width).toBeLessThanOrEqual(map.x + map.width);            // inside the map on a phone
+  const seg = (await page.locator("#aBase").boundingBox())!;                              // Map/Sat/Plain on the same row, at the right
+  expect(Math.abs(seg.y + seg.height / 2 - (box[0]!.y + box[0]!.height / 2))).toBeLessThan(4);
+  expect(seg.x).toBeGreaterThanOrEqual(box[2]!.x + box[2]!.width);
+  expect(seg.x + seg.width).toBeLessThanOrEqual(map.x + map.width);                      // all inside the map on a phone
   const zoom = (await page.locator("#aMap .leaflet-control-zoom").boundingBox())!;
   expect(zoom.y).toBeGreaterThan(map.y + map.height / 2);                                // the zoom buttons moved down
   expect(errors).toEqual([]);
