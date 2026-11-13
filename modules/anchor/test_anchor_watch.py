@@ -301,7 +301,51 @@ class AnchorWatchTest(unittest.TestCase):
         self.w.command({"action": "gps_forget", "source": "2"})
         self.assertNotIn("2", self.w.gps_seen); self.assertEqual(self.w.settings["gps_sources"], "254,127,3,4")
         self.assertNotIn("2", [r["source"] for r in self.w.gps_rows(self.s.t)])
-        self.assertTrue(any("removed from the list" in e["text"] for e in self.w.events))
+        self.assertTrue(any("moved to Deleted GPS sources" in e["text"] for e in self.w.events))
+        self.assertEqual([r["source"] for r in self.w.gps_rows(self.s.t, deleted=True)], ["2"])   # in Deleted GPS sources
+        self.w.command({"action": "gps_restore", "source": "2"})                                  # and back, last in the order
+        self.assertIn("2", self.w.gps_seen); self.assertEqual(self.w.settings["gps_sources"], "254,127,3,4,2")
+        self.assertEqual(self.w.gps_rows(self.s.t, deleted=True), [])
+        with self.assertRaises(ValueError): self.w.command({"action": "gps_restore", "source": "2"})
+
+    # ---- one device, one row: an NMEA 2000 device keeps its NAME when it claims another address
+    ONWA = "13871794938905718398"
+
+    def onwa_at(self, addr, seconds=3):
+        self.s.store.addr_to_name[addr] = self.ONWA
+        self.s.store.name_info[self.ONWA] = {"manufacturer": "Onwa Marine", "modelID": "KS200A+"}   # as the Core's device list gives it
+        for _ in range(seconds): self.s.boat(LAT, LON, src=addr, frozen=False); self.w.tick(self.s.t); self.s.t += 1
+
+    def test_a_gps_that_changes_address_is_one_device(self):
+        self.w.command({"action": "settings", "settings": {"gps_sources": "254,5,127"}})   # the Onwa was 5 when the order was made
+        self.w.gps_seen.update({"5": {"name": "5 (Onwa Marine KS200A+)", "first": 10, "last": 20}, "6": {"name": "6 (Onwa Marine KS200A+)", "first": 30, "last": 40}})
+        self.s.t += 11
+        self.onwa_at("3")                                   # now it claimed address 3
+        dev = "n" + self.ONWA
+        self.assertEqual([k for k in self.w.gps_seen if "Onwa" in self.w.gps_seen[k]["name"]], [dev])   # 5, 6 and 3 are one device
+        self.assertEqual((self.w.gps_seen[dev]["first"], self.w.gps_seen[dev]["addr"]), (10, "3"))
+        self.assertEqual(self.w.settings["gps_sources"], f"254,{dev},127")                 # it keeps its place in the order
+        rows = [r for r in self.w.gps_rows(self.s.t) if r["source"] == dev]
+        self.assertEqual((len(rows), rows[0]["addr"], rows[0]["name"], rows[0]["listed"]), (1, "3", "Onwa Marine KS200A+", True))
+        del self.s.store.values["sensors"]["navigation.position.3.latitude"]; del self.s.store.values["sensors"]["navigation.position.3.longitude"]
+        self.s.t += 11
+        self.onwa_at("8")                                   # and moves again: still the same row, still used by its place
+        self.assertEqual(len([r for r in self.w.gps_rows(self.s.t) if "Onwa" in r["name"]]), 1)
+        self.assertEqual(self.w.boat["pos"]["source"], "8")
+
+    def test_a_deleted_gps_stays_deleted_but_is_a_last_resort(self):
+        self.w.command({"action": "settings", "settings": {"gps_sources": "254,127"}})
+        self.s.t += 11
+        self.onwa_at("3"); dev = "n" + self.ONWA
+        for k in [k for k in self.s.store.values["sensors"] if k.startswith("navigation.position.3.")]: del self.s.store.values["sensors"][k]
+        self.s.t += 11; self.w.tick(self.s.t)
+        self.w.command({"action": "gps_forget", "source": dev})
+        self.assertNotIn(dev, [r["source"] for r in self.w.gps_rows(self.s.t)])
+        self.onwa_at("4")                                   # seen again on another address: stays in Deleted, no new row
+        self.assertNotIn(dev, self.w.gps_seen); self.assertEqual(self.w.gps_deleted[dev]["addr"], "4")
+        self.assertNotIn("Onwa Marine KS200A+", [r["name"] for r in self.w.gps_rows(self.s.t)])
+        self.assertEqual(self.w.boat["pos"]["source"], "4")                                # the only live GPS: still used
+        self.assertEqual([r["status"] for r in self.w.gps_rows(self.s.t, deleted=True)], ["in_use"])
 
     def test_nmea_port_setting(self):
         self.assertEqual(self.w.settings["nmea_port"], 10110)

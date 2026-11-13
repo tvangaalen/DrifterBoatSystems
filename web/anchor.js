@@ -118,8 +118,8 @@ const m = {
       <div id="aWatch"><div class="grid g2l">
         <div class="stack">
           <div class="map no-swipe" id="aMap">
-            <div class="mapbtns"><div class="seg" id="aBase"><button type="button" data-base="osm" aria-pressed="true">Map</button><button type="button" data-base="satellite" aria-pressed="false">Sat</button><button type="button" data-base="plain" aria-pressed="false">Plain</button></div>
-              <button class="btn" type="button" id="aSea" aria-pressed="true">Seamarks</button>
+            <div class="mapbtns"><div class="seg" id="aBase"><button type="button" data-base="osm" aria-pressed="true">Map</button><button type="button" data-base="satellite" aria-pressed="false">Sat</button><button type="button" data-base="plain" aria-pressed="false">Plain</button></div></div>
+            <div class="maprow"><button class="btn" type="button" id="aSea" aria-pressed="true">${icon("buoy")} Seamarks</button>
               <button class="btn" type="button" id="aFit" title="Fit circle and boat, and follow">${icon("anchor")} Fit</button>
               <button class="btn" type="button" id="aWindy" title="Weather forecast on Windy.com for the boat's position">${icon("wave")} Windy</button></div>
             <button class="mapinfo" type="button" id="aCreditsBtn" aria-label="Map credits" title="Map credits">i</button>
@@ -213,7 +213,8 @@ function loadLeaflet() {
 function initMap(lib) {
   L = lib;
   // the credits are on the GPS & links view; the map only has an info button that opens them
-  map = L.map("aMap", {zoomControl: true, attributionControl: false, tap: true, maxZoom: 21, zoomSnap: 0.05}).setView([39, 1.5], 9);
+  map = L.map("aMap", {zoomControl: false, attributionControl: false, tap: true, maxZoom: 21, zoomSnap: 0.05}).setView([39, 1.5], 9);
+  L.control.zoom({position: "bottomleft"}).addTo(map);     // the top left holds Seamarks, Fit and Windy
   L.control.scale({imperial: false, position: "bottomleft"}).addTo(map);
   const tl = (l, ext, maxN, attr) => L.tileLayer(`api/anchor/tiles/${l}/{z}/{x}/{y}.${ext}`, {maxZoom: 21, maxNativeZoom: maxN, attribution: attr});
   layers.osm = tl("osm", "png", 19, '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>');
@@ -231,7 +232,7 @@ function initMap(lib) {
   ly.track = L.layerGroup().addTo(map); ly.ais = L.layerGroup().addTo(map);
   map.on("dragstart zoomstart", () => { if (!m._fitting) follow = false; });
   map.on("click", e => { if (draft) { draft = {lat: e.latlng.lat, lon: e.latlng.lng}; showDraft(); } });
-  L.DomEvent.disableClickPropagation(document.querySelector("#aMap .mapbtns")); L.DomEvent.disableClickPropagation($("aMovebar")); L.DomEvent.disableClickPropagation($("aCreditsBtn"));
+  L.DomEvent.disableClickPropagation(document.querySelector("#aMap .mapbtns")); L.DomEvent.disableClickPropagation(document.querySelector("#aMap .maprow")); L.DomEvent.disableClickPropagation($("aMovebar")); L.DomEvent.disableClickPropagation($("aCreditsBtn"));
   // Leaflet measures its box only on a window resize: hidden (another page or tab) it measures 0 x 0 and then draws from the
   // top-left corner. Measure again whenever the box itself changes size, which includes being shown again.
   new ResizeObserver(() => { const c = $("aMap");
@@ -458,7 +459,8 @@ function tideCard(s) {
 // ---------------------------------------------------------------- GPS & links view
 function renderGps(s) {
   const rows = s.gps_rows || [], use = rows.find(r => r.status === "in_use"), pos = (s.boat || {}).pos;
-  const held = r => r.status === "in_use" && pos && pos.hold && String(pos.source) === String(r.source);   // in use outranks hold in the server's row status
+  const held = r => r.status === "in_use" && pos && pos.hold && String(pos.source) === String(r.addr);   // in use outranks hold in the server's row status
+  const del = s.gps_deleted || [];
   const status = (on, ok, bad, note) => !on ? `<span class="warnc">Not set up</span><small>${note}</small>` : bad ? `<span class="badc">Problem</span><small>${esc(bad)}</small>` : `<span class="good">OK</span><small>${ok}</small>`;
   const ps = s.push || {}, al = s.alive || {}, na = s.net_ais || {}, nf = s.nfl || {}, nm = s.nmea || {}, mins = +s.settings.alive_minutes;
   $("aGps").innerHTML = `<div class="grid g2"><div class="stack">
@@ -466,10 +468,13 @@ function renderGps(s) {
       <div class="rows"><div class="row"><span class="hint">${use ? `In use: <b>${esc(use.name)}</b>${held(use) ? ' <span class="badge warn">hold</span>' : ""}${use.sats ? " · " + use.sats + " sats" : ""}${use.hdop != null ? " · HDOP " + use.hdop : ""}` : '<span class="badc">No usable GPS</span>'} · tried from top to bottom; changes are saved at once</span></div>
       ${rows.map((r, i) => { const [cls, txt] = GPS_ST[held(r) ? "in_use_hold" : r.status] || GPS_ST.inactive, act = !["inactive", "never"].includes(r.status);
         const det = act ? [r.sats ? r.sats + " sats" : "", r.hdop != null ? "HDOP " + r.hdop : ""].filter(Boolean).join(" · ") : r.last_seen != null ? "last seen " + ago(r.last_seen) + " ago" : "";
-        return `<div class="row gpsrow"><span class="gnum">${i + 1}</span><div class="u-flex-1 k"><b>${esc(r.name)}</b><small>source ${esc(r.source)} · <span class="${cls ? cls === "ok" ? "good" : cls === "warn" ? "warnc" : "badc" : ""}">${txt}</span>${det ? " · " + esc(det) : ""}</small></div>
+        return `<div class="row gpsrow"><span class="gnum">${i + 1}</span><div class="u-flex-1 k"><b>${esc(r.name)}</b><small>${r.addr ? `address ${esc(r.addr)} · ` : ""}<span class="${cls ? cls === "ok" ? "good" : cls === "warn" ? "warnc" : "badc" : ""}">${txt}</span>${det ? " · " + esc(det) : ""}</small></div>
           <div class="u-fw-nowrap btns">${act ? "" : `<button class="btn sec sm" type="button" data-forget="${esc(r.source)}" aria-label="Remove ${esc(r.name)}">✕</button>`}
           <button class="btn sec sm" type="button" data-gmove="${i}" data-d="-1" aria-label="Move ${esc(r.name)} up" ${i ? "" : "disabled"}>▲</button><button class="btn sec sm" type="button" data-gmove="${i}" data-d="1" aria-label="Move ${esc(r.name)} down" ${i < rows.length - 1 ? "" : "disabled"}>▼</button></div></div>`; }).join("") || `<div class="empty">No GPS seen yet</div>`}
-      <div class="row"><span class="hint">A GPS whose position has not changed for 60 s is skipped as frozen (the Orca Core's own GPS, 254, keeps its fix while the boat lies still and moves it on after about 10 m: shown as hold). A phone with GPS2IP shows up as Network GPS and is skipped when it is more than 100 m from the other GPS. Only a GPS that is not active can be removed; it comes back when it is seen again.</span></div></div></div>
+      <div class="row"><span class="hint">A GPS whose position has not changed for 60 s is skipped as frozen (the Orca Core's own GPS, 254, keeps its fix while the boat lies still and moves it on after about 10 m: shown as hold). A phone with GPS2IP shows up as Network GPS and is skipped when it is more than 100 m from the other GPS. Each device is listed once, whatever address it has on the NMEA 2000 network. Only a GPS that is not active can be removed: it goes to Deleted GPS sources, off this list and out of the order (used only when no other GPS is left), until it is restored there.</span></div>
+      <details class="lfold gpsdel" id="aGpsDel" ${($("aGpsDel") || {}).open ? "open" : ""}><summary><b>Deleted GPS sources</b><span class="muted">${del.length}</span>${icon("chev", "i chev")}</summary>
+        ${del.map(r => `<div class="row gpsrow"><div class="u-flex-1 k"><b>${esc(r.name)}</b><small>${r.addr ? `address ${esc(r.addr)} · ` : ""}${["inactive", "never"].includes(r.status) ? (r.last_seen != null ? "last seen " + ago(r.last_seen) + " ago" : "not seen") : '<span class="good">active</span>'}</small></div>
+          <button class="btn sec sm" type="button" data-grestore="${esc(r.source)}" aria-label="Restore ${esc(r.name)}">${icon("refresh")} Restore</button></div>`).join("") || `<div class="empty">None deleted</div>`}</details></div></div>
     <div class="card"><div class="hd"><h3>AIS targets</h3><span class="muted">${(s.ais || []).length}</span></div><div class="rows">
       ${(s.ais || []).slice().sort((x, y) => x.dist - y.dist).slice(0, 40).map(t => `<div class="row"><div class="k"><b>${esc(t.name || t.mmsi)}</b><small>${esc(t.mmsi)}${t.length ? ` · ${f0(t.length)} m` : ""} · ${t.src === "local" ? "own receiver" : "internet, " + ago(t.age) + " old"}</small></div>
         <span class="v">${f0(t.dist)} m<small>${f0(t.bearing)}°${t.sog != null ? ` · ${t.sog} kn` : ""}</small></span></div>`).join("") || `<div class="empty">No AIS targets within 600 m</div>`}</div></div></div>
@@ -596,7 +601,9 @@ async function onClick(e) {
   if (b.dataset.gmove) { const rows = m.state.data.gps_rows, i = +b.dataset.gmove, j = i + +b.dataset.d; if (j < 0 || j >= rows.length) return;
     const src = rows.map(r => r.source); [src[i], src[j]] = [src[j], src[i]]; [rows[i], rows[j]] = [rows[j], rows[i]]; renderGps(m.state.data); return saveOrder(src.join(",")); }
   if (b.dataset.forget) { const r = (m.state.data.gps_rows || []).find(x => x.source === b.dataset.forget);
-    if (r && await D.confirm({title: `Remove ${r.name}?`, text: "It comes back if it is seen again.", ok: "Remove", cancel: "Keep"})) cmd({action: "gps_forget", source: r.source}, `${r.name} removed`, b); return; }
+    if (r && await D.confirm({title: `Remove ${r.name}?`, text: "It moves to Deleted GPS sources: off this list and out of the order, used only when no other GPS is left. You can restore it there.", ok: "Remove", cancel: "Keep"})) cmd({action: "gps_forget", source: r.source}, `${r.name} moved to Deleted GPS sources`, b); return; }
+  if (b.dataset.grestore) { const r = (m.state.data.gps_deleted || []).find(x => x.source === b.dataset.grestore);
+    return cmd({action: "gps_restore", source: b.dataset.grestore}, `${r ? r.name : "GPS"} restored, last in the order`, b); }
 }
 const saveOrder = order => cmd({action: "settings", settings: {gps_sources: order}}, "GPS order saved");
 // Drop from the Overview tile, as "Already lying to it": a pop-up with the anchor's distance ahead of the bow (30 m) and

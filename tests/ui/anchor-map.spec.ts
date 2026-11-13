@@ -56,3 +56,38 @@ test("Anchor watch: Events is folded with a one-line summary and opens on a tap 
   await expect(page.locator("#aLog")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("Anchor map: Seamarks, Fit and Windy side by side at the top left, equally wide; zoom at the bottom left", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  const errors = await setUp(page, { theme: "dark" });
+  await open(page, "#anchor", null);
+  const btns = page.locator("#aMap .maprow .btn");
+  await expect(btns).toHaveText([/Seamarks/, /Fit/, /Windy/]);
+  const box = await Promise.all([0, 1, 2].map(i => btns.nth(i).boundingBox()));
+  const map = (await page.locator("#aMap").boundingBox())!;
+  expect(new Set(box.map(b => Math.round(b!.y))).size).toBe(1);                         // one row
+  expect(Math.max(...box.map(b => b!.width)) - Math.min(...box.map(b => b!.width))).toBeLessThan(1);   // equally wide
+  expect(box[2]!.x + box[2]!.width).toBeLessThanOrEqual(map.x + map.width);            // inside the map on a phone
+  const zoom = (await page.locator("#aMap .leaflet-control-zoom").boundingBox())!;
+  expect(zoom.y).toBeGreaterThan(map.y + map.height / 2);                                // the zoom buttons moved down
+  expect(errors).toEqual([]);
+});
+
+test("GPS sources: each device once with its address; Deleted GPS sources folded, Restore puts one back", async ({ page }) => {
+  const posts: { url: string; body: any }[] = [];
+  const errors = await setUp(page, { theme: "dark", posts });
+  await open(page, "#anchor", "#aViews [data-aview=gps]");
+  const rows = page.locator("#aGps .gpsrow");
+  await expect(rows.first()).toContainText("Orca Core 2"); await expect(rows.first()).toContainText("address 254");
+  await expect(page.locator("#aGpsDel")).not.toHaveAttribute("open", "");
+  await expect(page.locator("#aGpsDel summary")).toContainText("1");
+  await page.locator("#aGpsDel summary").click();
+  await page.locator("[data-grestore]").click();
+  await expect.poll(() => posts.at(-1)?.body).toEqual({ action: "gps_restore", source: "n1000000000000000002" });
+  await page.locator('[data-forget="300"]').click();                                       // removing asks first, Keep the default
+  await expect(page.locator("#dlgSheet")).toContainText("Deleted GPS sources");
+  await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Keep");
+  await page.keyboard.press("Escape");
+  expect(posts.filter(p => p.body.action === "gps_forget")).toEqual([]);
+  expect(errors).toEqual([]);
+});

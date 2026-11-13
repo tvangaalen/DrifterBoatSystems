@@ -179,6 +179,13 @@ class Power:
         return 200, {"ok": True}
 
 
+# made-up GPS devices: each once (by its NMEA 2000 NAME), with the address it has now; one in Deleted GPS sources
+GPS_ROWS = [{"source": "254", "addr": "254", "name": "Orca Core 2", "status": "in_use", "sats": 11, "hdop": 0.8, "last_seen": None, "listed": True},
+            {"source": "n1000000000000000001", "addr": "2", "name": "B&G ZG100", "status": "active", "sats": 9, "hdop": 1.1, "last_seen": None, "listed": False},
+            {"source": "300", "addr": "300", "name": "Network GPS 192.0.2.30", "status": "inactive", "sats": None, "hdop": None, "last_seen": 3600, "listed": False}]
+GPS_DELETED = [{"source": "n1000000000000000002", "addr": "5", "name": "Mock Marine AIS GPS", "status": "inactive", "sats": None, "hdop": None, "last_seen": 86400, "listed": False}]
+
+
 class Anchor:
     def __init__(self):
         self.anchor = None; self.alarms = {}; self.silenced = 0; self.events = [{"t": time.time() - 600, "text": "Anchor watch started (mock)", "kind": "info"}]
@@ -190,7 +197,7 @@ class Anchor:
                          "col_swing_light": "#d1009a", "col_swing_dark": "#ff3bd4",
                          "push_sound_drag": "persistent", "push_prio_gps": 1, "push_sound_gps": "", "push_prio_core": 1, "push_sound_core": "", "push_prio_depth": 1, "push_sound_depth": "",
                          "push_prio_wind": 1, "push_sound_wind": "", "push_prio_ais": 1, "push_sound_ais": "", "push_prio_cleared": 0, "push_sound_cleared": ""}
-        self.track = []; self.gen = 1; self.forgotten = set(); self.pending_mock = False
+        self.track = []; self.gen = 1; self.forgotten = set(); self.restored = set(); self.pending_mock = False
 
     def pos(self):
         a = (time.time() - T0) / 60
@@ -202,10 +209,8 @@ class Anchor:
         out = {"time": now, "core": {"connected": True, "last_error": None, "last_message_age": 0.4},
                "ais_stream": {"connected": True, "last_error": None, "last_message_age": 3.0},
                "boat": {"pos": {**p, "sats": 11, "hdop": 0.8, "hold": int(now // 120) % 2 == 1}, "heading": (now * 2) % 360, "depth": 6.4, "tws": 12.3, "twd": 230, "sog": 0.3, "depth_offset": 0.4, "depth_offset_src": "sounder"},
-               "gps_rows": [r for r in [{"source": "254", "name": "Orca Core", "status": "in_use", "sats": 11, "hdop": 0.8, "last_seen": None, "listed": True},
-                            {"source": "2", "name": "B&G ZG100", "status": "active", "sats": 9, "hdop": 1.1, "last_seen": None, "listed": False},
-                            {"source": "net-192.0.2.30", "name": "Network GPS (mock phone)", "status": "inactive", "sats": None, "hdop": None, "last_seen": 3600, "listed": False}]
-                            if r["source"] not in self.forgotten],
+               "gps_rows": [r for r in GPS_ROWS if r["source"] not in self.forgotten] + [r for r in GPS_DELETED if r["source"] in self.restored],
+               "gps_deleted": [r for r in GPS_DELETED if r["source"] not in self.restored] + [{**r, "listed": False} for r in GPS_ROWS if r["source"] in self.forgotten],
                "gps_default": "254", "track_start": self.track[0][0] if self.track else None,
                "own_candidate": {"mmsi": "000000002", "name": "MOCK OWN BOAT", "dist": 4.0},
                "anchor": self.anchor, "settings": self.settings,
@@ -242,7 +247,8 @@ class Anchor:
         elif a == "mock_alarm": self.alarms["drag"] = "Boat 52 m from the anchor (radius 40 m)"
         elif a == "mock_pending": self.pending_mock = True
         elif a == "clear_track": self.track = []; self.gen += 1; self.events.append({"t": now, "text": "New track started (old track and max swing deleted)", "kind": "info"})
-        elif a == "gps_forget": self.forgotten.add(c["source"])
+        elif a == "gps_forget": self.forgotten.add(c["source"]); self.restored.discard(c["source"])
+        elif a == "gps_restore": self.restored.add(c["source"]); self.forgotten.discard(c["source"])
         elif a in ("push_test", "push_alarm_test", "push_alarm_stop", "alive_check", "net_ais_check", "nfl_send"): self.events.append({"t": now, "text": f"{a} (mock)", "kind": "info"})
         elif a == "mock_clear": self.alarms.clear()
 

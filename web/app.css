@@ -350,7 +350,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .map .leaflet-bar a,.map .leaflet-bar a:hover,.map .leaflet-bar a:focus,.map .leaflet-bar a.leaflet-disabled{background:var(--card);color:var(--fg);border-color:var(--line)}
 .map .leaflet-bar a.leaflet-disabled{color:var(--muted)}
 .map .leaflet-control-scale-line{background:color-mix(in srgb,var(--card) 80%,transparent);color:var(--fg);border-color:var(--fg)}
-.mapbtns{position:absolute;z-index:500;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.mapbtns{position:absolute;z-index:500;right:10px;top:58px;display:flex;flex-direction:column;gap:6px}
 .mapbtns .btn{min-height:40px;padding:0 12px;background:var(--card);color:var(--fg);box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .mapbtns .btn[aria-pressed="true"]{background:var(--accent);color:var(--onaccent)}
 .boaticon{color:var(--accent)}
@@ -362,6 +362,10 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 
 /* ---------- anchor watch ---------- */
 .hero .herobig{font-size:30px;font-weight:750;letter-spacing:-.02em;white-space:nowrap}.hero .herobig small{font-size:15px;color:var(--muted);font-weight:600}
+/* Seamarks, Fit and Windy side by side at the map's top left, all as wide as the widest (the user's choice of 2026-11-13) */
+.maprow{position:absolute;z-index:500;left:10px;top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.maprow .btn{min-height:40px;padding:0 7px;gap:4px;white-space:nowrap;background:var(--card);color:var(--fg);box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.maprow .btn[aria-pressed="true"]{background:var(--accent);color:var(--onaccent)}
 .mapbtns .seg{background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,.18)}.mapbtns .seg button{min-height:34px;padding:0 9px;font-size:13px}
 .movebar{position:absolute;z-index:600;left:10px;right:10px;bottom:22px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .movebar .btns{margin-top:8px;align-items:center}

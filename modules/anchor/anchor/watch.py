@@ -58,7 +58,9 @@ class AnchorWatch:
         self.pos_seen = {}                 # (kind, source) -> (lat, lon, time the value last changed)
         self.frozen = set()                # sources whose position stopped changing (FROZEN_S)
         self.gps_list = []                 # every position source, for the page
-        self.gps_seen = {}                 # every GPS source ever seen: src -> {"name", "first", "last"} (kept in the state file)
+        self.gps_seen = {}                 # every GPS device ever seen: device -> {"name", "first", "last", "addr"} (kept in the state file)
+        self.gps_deleted = {}              # GPS devices the user removed from the list: device -> the same record (kept in the state file)
+        self.addr_names = {}               # N2K address -> 64-bit NAME, copied from the Store once a tick (the stream thread updates it)
         self.away = set()                  # network GPS far from every other active GPS: not used
         self.nmea_on = False               # network GPS listener running (off with --no-nmea, e.g. test servers)
         self.netgps = NetGPS(store, on_event=lambda text, kind: self.event(text, kind=kind), on_new=self.net_gps_new)
@@ -87,6 +89,7 @@ class AnchorWatch:
         self.anchor = d.get("anchor"); self.max_dist = d.get("max_dist", 0.0)
         self.track = deque(d.get("track", [])); self.events.extend(d.get("events", [])); self.last_depth = d.get("last_depth")
         self.gps_seen = {str(k): v for k, v in (d.get("gps_seen") or {}).items() if isinstance(v, dict)}
+        self.gps_deleted = {str(k): v for k, v in (d.get("gps_deleted") or {}).items() if isinstance(v, dict)}
         self.nfl_sent = d.get("nfl_sent") if isinstance(d.get("nfl_sent"), dict) else None
         if isinstance(d.get("core_boot"), (int, float)): self.core_boot = d["core_boot"]
         if isinstance(d.get("net_gps"), dict):
@@ -96,7 +99,7 @@ class AnchorWatch:
     def save(self):
         with self.lock:
             d = {"settings": self.settings, "anchor": self.anchor, "max_dist": self.max_dist,
-                 "track": list(self.track), "events": list(self.events), "last_depth": self.last_depth, "gps_seen": self.gps_seen,
+                 "track": list(self.track), "events": list(self.events), "last_depth": self.last_depth, "gps_seen": self.gps_seen, "gps_deleted": self.gps_deleted,
                  "nfl_sent": self.nfl.sent if self.nfl is not None else self.nfl_sent, "core_boot": self.core_boot,
                  "net_gps": dict(self.netgps.sources)}
             self.dirty = False
@@ -111,11 +114,15 @@ class AnchorWatch:
         now = now or time.time()
         with self.store.lock:
             sensors = dict(self.store.values["sensors"]); connected = self.store.status["sensors"]["connected"]
+            self.addr_names = {str(k): str(v) for k, v in self.store.addr_to_name.items()}
             ais = dict(self.store.values["ais"]) if self.settings["min_ais_dist"] > 0 else None
         with self.lock:
             s = self.settings
-            prefs = [x.strip() for x in str(s["gps_sources"]).split(",") if x.strip()]
             srcs = position_sources(sensors, now); gsrcs = position_sources(sensors, now, "gnss")
+            # the preferred order is by device; read_boat works with the addresses those devices have now
+            prefs = []
+            for dev in [x.strip() for x in str(s["gps_sources"]).split(",") if x.strip()]:
+                prefs += [a for a in self.addrs_of(dev, srcs) if a not in prefs]
             held = {}
             for kind, d in (("position", srcs), ("gnss", gsrcs)):
                 for src, c in d.items():
@@ -196,14 +203,18 @@ class AnchorWatch:
             if boat["depth"] is not None:
                 if not self.last_depth or now - self.last_depth["t"] >= 60: self.dirty = True       # persisted about once a minute
                 self.last_depth = {"d": boat["depth"], "t": now, "lat": pos["lat"] if pos else None, "lon": pos["lon"] if pos else None}
-            self.gps_list = [{"source": src, "name": self.source_name(src), "sats": c["sats"], "hdop": c["hdop"],
+            self.gps_list = [{"source": src, "device": self.dev_id(src), "name": self.source_name(src), "sats": c["sats"], "hdop": c["hdop"],
                               "age": round(c["age"], 1), "frozen": src in frozen, "raw": src in raw, "hold": src in soon, "away": src in away, "in_use": bool(pos and pos["source"] == src)}
                              for src, c in sorted(srcs.items(), key=lambda kv: (kv[0] != CORE_SOURCE, int(kv[0])))]
             for src, c in srcs.items():
                 if c["age"] > FRESH_S: continue
-                g = self.gps_seen.get(src)
-                if g is None: g = self.gps_seen[src] = {"name": self.source_name(src), "first": round(now), "last": round(now)}; self.dirty = True
+                dev = self.dev_id(src)
+                if dev != src: self.merge_old_gps(src, dev)
+                book = self.gps_deleted if dev in self.gps_deleted else self.gps_seen     # a deleted device stays deleted
+                g = book.get(dev)
+                if g is None: g = book[dev] = {"name": self.source_name(src), "first": round(now), "last": round(now), "addr": src}; self.dirty = True
                 if now - g["last"] >= 60: g["last"] = round(now); self.dirty = True     # persisted about once a minute
+                if g.get("addr") != src: g["addr"] = src; self.dirty = True
                 name = self.source_name(src)
                 if name != g["name"] and name != str(src): g["name"] = name; self.dirty = True
             self.core_down_since = None if connected else (self.core_down_since or now)
@@ -348,23 +359,76 @@ class AnchorWatch:
                               hold_before=self.hold_since is not None)
                 self.event(f"Orca Core restarted at {datetime.fromtimestamp(boot).strftime('%H:%M')}", now)
 
-    def gps_rows(self, now):
-        """Every GPS source ever seen, in the order they are tried (gps_sources first, then the others as read_boat
-        tries them), with its status: in_use, active, hold, raw (own GNSS fix), frozen, inactive or never (not seen)."""
+    def gps_rows(self, now, deleted=False):
+        """Every GPS device ever seen, once each (by its NMEA 2000 NAME: its address may change), in the order they are
+        tried (gps_sources first, then the others as read_boat tries them), with its status: in_use, active, hold, raw
+        (own GNSS fix), frozen, inactive or never (not seen). `deleted`: the devices the user removed from the list instead."""
         prefs = [x.strip() for x in str(self.settings["gps_sources"]).split(",") if x.strip()]
-        live = {g["source"]: g for g in self.gps_list if g["age"] <= FRESH_S}
-        rest = sorted((s for s in set(self.gps_seen) | set(live) if s not in prefs),
-                      key=lambda s: (s not in live, -(self.gps_seen.get(s, {}).get("last") or 0)))
+        live = {}
+        for g in self.gps_list:
+            if g["age"] <= FRESH_S and (g["device"] not in live or g["in_use"]): live[g["device"]] = g
+        if deleted:
+            order = sorted(self.gps_deleted, key=lambda d: (d not in live, -(self.gps_deleted[d].get("last") or 0)))
+        else:
+            rest = sorted((d for d in set(self.gps_seen) | set(live) if d not in prefs and d not in self.gps_deleted),
+                          key=lambda d: (d not in live, -(self.gps_seen.get(d, {}).get("last") or 0)))
+            order = [d for d in prefs if d not in self.gps_deleted] + rest
+        book = self.gps_deleted if deleted else self.gps_seen
         rows = []
-        for i, src in enumerate(prefs + rest):
-            g, seen = live.get(src), self.gps_seen.get(src)
+        for dev in order:
+            g, seen = live.get(dev), book.get(dev)
             if g: status = "in_use" if g["in_use"] else "away" if g.get("away") else "frozen" if g["frozen"] else "hold" if g["hold"] else "raw" if g["raw"] else "active"
             else: status = "inactive" if seen else "never"
-            rows.append({"source": src, "name": (g or {}).get("name") or (seen or {}).get("name") or self.source_name(src), "status": status,
+            addr = g["source"] if g else (seen or {}).get("addr") or (dev if not dev.startswith("n") else None)
+            rows.append({"source": dev, "addr": addr, "name": self.gps_label(addr, (seen or {}).get("name")), "status": status,
                          "sats": g["sats"] if g and g["sats"] is not None and 0 < g["sats"] < 100 else None,   # 253-255 = not available (NMEA 2000)
                          "hdop": g["hdop"] if g else None,
-                         "last_seen": None if g or not seen else round(now - seen["last"]), "listed": src in prefs})
+                         "last_seen": None if g or not seen else round(now - seen["last"]), "listed": dev in prefs})
         return rows
+
+    # ---- GPS devices: an NMEA 2000 device keeps its 64-bit NAME when it claims another address, so the list and the
+    # preferred order follow the NAME; 254 (the Core's own GPS), network GPS and devices without a known NAME use their source
+    def dev_id(self, src):
+        if src == CORE_SOURCE or self.netgps.is_net(src): return src
+        name = self.addr_names.get(str(src))
+        return f"n{name}" if name else src
+
+    def addrs_of(self, dev, srcs=None):
+        """The addresses a device has now (the freshest first; an old address can still point at the same NAME)."""
+        if not dev.startswith("n"): return [dev]
+        a = [k for k, v in self.addr_names.items() if f"n{v}" == dev]
+        return sorted(a, key=lambda k: srcs[k]["age"] if srcs and k in srcs else 1e9)
+
+    def gps_label(self, addr, stored=None):
+        """A GPS device's name for the list, without the address in front (the row shows the address apart)."""
+        if addr == CORE_SOURCE: return "Orca Core 2"
+        name = self.source_name(addr) if addr else (stored or "")
+        if addr and name == str(addr) and stored: name = stored
+        return re.sub(r"^\d+ \((.*)\)$", r"\1", name) or str(addr)
+
+    def merge_old_gps(self, src, dev):
+        """A device's records kept by address before 1.x (or before its NAME was known) join the device: the entry under its
+        present address, and an inactive entry under another address with the same name (the same device, an old address).
+        In the preferred order the device takes the place of the first such address."""
+        prefs = [x.strip() for x in str(self.settings["gps_sources"]).split(",") if x.strip()]
+        label = self.gps_label(src)
+        olds = [k for k in list(self.gps_seen) + list(self.gps_deleted) if k != dev and not k.startswith("n") and k != CORE_SOURCE
+                and not self.netgps.is_net(k) and (k == src or (self.gps_label(None, (self.gps_seen.get(k) or self.gps_deleted.get(k) or {}).get("name")) == label
+                                                               and not any(g["source"] == k and g["age"] <= FRESH_S for g in self.gps_list)))]
+        if not olds and src not in prefs: return
+        for k in olds:
+            old = self.gps_seen.pop(k, None) or self.gps_deleted.pop(k, None) or {}
+            book = self.gps_deleted if dev in self.gps_deleted else self.gps_seen
+            g = book.setdefault(dev, {"name": old.get("name", ""), "first": old.get("first", 0), "last": old.get("last", 0), "addr": src})
+            g["first"] = min(g.get("first") or old.get("first", 0), old.get("first") or g.get("first", 0))
+            g["last"] = max(g.get("last") or 0, old.get("last") or 0)
+        new = []
+        for x in prefs:
+            y = dev if x in olds or x == src else x
+            if y not in new: new.append(y)
+        if new != prefs or olds:
+            self.settings["gps_sources"] = ",".join(new); self.dirty = True
+            log.info("GPS %s: merged %s into one device", label, ", ".join(sorted(set(olds) | ({src} & set(prefs)))) or src)
 
     def net_gps_new(self, ip, src):
         self.event(f"Network GPS from {ip} (NMEA over the LAN) is source {src}"); self.dirty = True
@@ -484,19 +548,27 @@ class AnchorWatch:
                 err = self.netais.reload()
                 if err: raise ValueError(f"Internet AIS is not set up: {err}")
                 self.event("Internet AIS: key re-read, reconnecting", now)
-            elif act == "gps_forget":
+            elif act == "gps_forget":      # into Deleted GPS sources: off the list and out of the order (still a last resort)
                 src = str(c.get("source", "")).strip()
                 if not src: raise ValueError("No GPS given")
-                if any(g["source"] == src and g["age"] <= FRESH_S for g in self.gps_list):
-                    raise ValueError(f"GPS {self.source_name(src)} is active: only a GPS that is not active can be removed")
-                name = (self.gps_seen.get(src) or {}).get("name") or self.source_name(src)
-                self.gps_seen.pop(src, None); self.netgps.forget(src)
+                if any((g["device"] == src or g["source"] == src) and g["age"] <= FRESH_S for g in self.gps_list):
+                    raise ValueError(f"GPS {self.gps_label(self.addrs_of(src)[0] if self.addrs_of(src) else None, (self.gps_seen.get(src) or {}).get('name'))} is active: only a GPS that is not active can be removed")
+                rec = self.gps_seen.pop(src, None) or {"name": self.source_name(src), "first": round(now), "last": round(now), "addr": src}
+                self.gps_deleted[src] = {**rec, "deleted": round(now)}
                 prefs = [x.strip() for x in str(s["gps_sources"]).split(",") if x.strip()]
                 if src in prefs: s["gps_sources"] = ",".join(p for p in prefs if p != src)
+                addrs = [a for a in self.addrs_of(src) if a] or [rec.get("addr") or src]
                 with self.store.lock:
-                    for k in [k for k in self.store.values["sensors"] if k.startswith("navigation.") and k.split(".")[2:3] == [src]]:
+                    for k in [k for k in self.store.values["sensors"] if k.startswith("navigation.") and k.split(".")[2] in addrs]:
                         del self.store.values["sensors"][k]
-                self.event(f"GPS {name} removed from the list (it comes back if it is seen again)", now); self.dirty = True
+                self.event(f"GPS {self.gps_label(None, rec.get('name'))} moved to Deleted GPS sources", now); self.dirty = True
+            elif act == "gps_restore":      # back from Deleted GPS sources: on the list again, last in the order
+                src = str(c.get("source", "")).strip()
+                if src not in self.gps_deleted: raise ValueError("That GPS is not in Deleted GPS sources")
+                rec = self.gps_deleted.pop(src); rec.pop("deleted", None); self.gps_seen[src] = rec
+                prefs = [x.strip() for x in str(s["gps_sources"]).split(",") if x.strip()]
+                if src not in prefs: s["gps_sources"] = ",".join(prefs + [src])
+                self.event(f"GPS {self.gps_label(None, rec.get('name'))} restored to the list (last in the order)", now); self.dirty = True
             elif act == "nfl_send":
                 if self.nfl is None: raise ValueError("noforeignland.com tracking is not available")
                 err = self.nfl.reload()
@@ -522,7 +594,7 @@ class AnchorWatch:
                           "last_message_age": now - sa["last_message"] if sa["last_message"] else None}
         with self.lock:
             b = self.boat; pos = b["pos"]; a = self.anchor
-            out = {"time": now, "core": core, "ais_stream": ais_stream, "boat": b, "gps_list": self.gps_list, "gps_rows": self.gps_rows(now), "gps_default": DEFAULT_GPS, "anchor": a, "settings": self.settings,
+            out = {"time": now, "core": core, "ais_stream": ais_stream, "boat": b, "gps_list": self.gps_list, "gps_rows": self.gps_rows(now), "gps_deleted": self.gps_rows(now, deleted=True), "gps_default": DEFAULT_GPS, "anchor": a, "settings": self.settings,
                    "alarms": [{"id": k, "text": self.ALARM_TEXT[k], "detail": v.get("detail", ""), "since": v["since"]} for k, v in self.alarms.items()],
                    "pending": {k: now - t for k, t in self.pending.items() if k not in self.alarms},
                    "sounding": self.sounding(now), "silenced_until": self.silenced_until if self.alarms else 0,
