@@ -34,6 +34,9 @@
   always clear of the pill
 - Overview: Drop anchor & start watch opens a pop-up with the anchor's distance ahead of the bow (30 m) and the alarm
   radius (50 m), both to change; Engine and fuel: the views Diesel fuel and Current data are now Diesel and Dashboard
+- Anchor watch: GPS sources are devices (by their NMEA 2000 NAME), so a GPS that changes address is listed once and
+  keeps its place in the order; removing one moves it to a folded Deleted GPS sources list (still a last resort) with
+  Restore; the map's Seamarks, Fit and Windy side by side at the top left, equally wide
 
 ## 1.3
 
