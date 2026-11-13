@@ -380,7 +380,8 @@ class AnchorWatch:
             if g: status = "in_use" if g["in_use"] else "away" if g.get("away") else "frozen" if g["frozen"] else "hold" if g["hold"] else "raw" if g["raw"] else "active"
             else: status = "inactive" if seen else "never"
             addr = g["source"] if g else (seen or {}).get("addr") or (dev if not dev.startswith("n") else None)
-            rows.append({"source": dev, "addr": addr, "name": self.gps_label(addr, (seen or {}).get("name")), "status": status,
+            stored = (seen or {}).get("name")     # inactive: the name it had when seen (the Core can mix up an address its device left)
+            rows.append({"source": dev, "addr": addr, "name": self.gps_label(addr if g or not stored else None, stored), "status": status,
                          "sats": g["sats"] if g and g["sats"] is not None and 0 < g["sats"] < 100 else None,   # 253-255 = not available (NMEA 2000)
                          "hdop": g["hdop"] if g else None,
                          "last_seen": None if g or not seen else round(now - seen["last"]), "listed": dev in prefs})
