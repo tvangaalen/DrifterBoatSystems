@@ -37,6 +37,8 @@
 - Anchor watch: GPS sources are devices (by their NMEA 2000 NAME), so a GPS that changes address is listed once and
   keeps its place in the order; removing one moves it to a folded Deleted GPS sources list (still a last resort) with
   Restore; the map's Seamarks, Fit and Windy side by side at the top left, equally wide
+- Anchor watch: an inactive GPS device keeps the name it had when seen (the Orca Core can mix up an address its device
+  left)
 
 ## 1.3
 
