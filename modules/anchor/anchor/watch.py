@@ -505,6 +505,14 @@ class AnchorWatch:
                         if f != v: raise ValueError("NMEA port must be a whole number")
                         lo, hi = SETTING_LIMITS[k]
                         if not lo <= v <= hi: raise ValueError(f"NMEA port must be between {lo} and {hi}")
+                    elif k == "gps_sources":
+                        # addresses or devices (n<NAME>); an address whose device is known is stored as that device
+                        v_ = []
+                        for x in (x.strip() for x in str(v).split(",")):
+                            if not re.fullmatch(r"n?\d+", x): continue
+                            x = x if x.startswith("n") else self.dev_id(x)
+                            if x not in v_: v_.append(x)
+                        v = ",".join(v_)
                     elif isinstance(DEFAULTS[k], str): v = ",".join(x.strip() for x in str(v).split(",") if x.strip().isdigit())
                     else:
                         lo, hi = SETTING_LIMITS[k]; v = float(v)

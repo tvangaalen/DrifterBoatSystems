@@ -333,6 +333,14 @@ class AnchorWatchTest(unittest.TestCase):
         self.assertEqual(len([r for r in self.w.gps_rows(self.s.t) if "Onwa" in r["name"]]), 1)
         self.assertEqual(self.w.boat["pos"]["source"], "8")
 
+    def test_the_order_can_be_changed_with_devices(self):
+        self.onwa_at("3"); dev = "n" + self.ONWA
+        self.w.command({"action": "settings", "settings": {"gps_sources": f"{dev},254,127"}})     # as the page's ▲/▼ send it
+        self.assertEqual(self.w.settings["gps_sources"], f"{dev},254,127")
+        self.assertEqual([r["source"] for r in self.w.gps_rows(self.s.t)][:3], [dev, "254", "127"])
+        self.w.command({"action": "settings", "settings": {"gps_sources": "254,3,x,127,3"}})      # an address of a known device
+        self.assertEqual(self.w.settings["gps_sources"], f"254,{dev},127")
+
     def test_a_deleted_gps_stays_deleted_but_is_a_last_resort(self):
         self.w.command({"action": "settings", "settings": {"gps_sources": "254,127"}})
         self.s.t += 11
