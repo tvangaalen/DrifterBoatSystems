@@ -28,6 +28,10 @@
   advised chain ahead and a radius of chain + 10 m rounded up to 5; asks first); Engine and fuel: a remaining fuel
   safety margin setting (115 % by default) on the average use; Energy, Batteries: the charge/discharge switches and Set
   SOC moved to the bottom of Pack details
+- Overview: the Energy tile without the battery type line, the alternator's temperature small after its power (fits a
+  phone); the Engine and fuel tile with Estimated remaining big under the title, Last refuel small, and a Maintenance
+  box with a wrench and how many schedule items are due; Energy, Batteries: longer, thicker needles on the small meters,
+  always clear of the pill
 
 ## 1.3
 
