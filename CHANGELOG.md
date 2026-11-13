@@ -32,6 +32,8 @@
   phone); the Engine and fuel tile with Estimated remaining big under the title, Last refuel small, and a Maintenance
   box with a wrench and how many schedule items are due; Energy, Batteries: longer, thicker needles on the small meters,
   always clear of the pill
+- Overview: Drop anchor & start watch opens a pop-up with the anchor's distance ahead of the bow (30 m) and the alarm
+  radius (50 m), both to change; Engine and fuel: the views Diesel fuel and Current data are now Diesel and Dashboard
 
 ## 1.3
 
