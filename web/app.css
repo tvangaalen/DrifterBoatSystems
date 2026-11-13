@@ -218,8 +218,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .tile .tlink{position:absolute;inset:0;border-radius:inherit;z-index:1}   /* the whole tile opens its page */
 .tile .tctl{position:relative;z-index:2}                                  /* a control in a tile stays usable above that link */
 .tile .tbtn{margin-top:12px;align-self:stretch;flex-wrap:wrap;row-gap:0}.tile .tbtn small{flex-basis:100%;font-size:12px;font-weight:600}   /* a second line under the label */
-.mini:has(.badge.tmp){position:relative;overflow:visible}   /* a small badge on the box's top right corner (the alternator's temperature) */
-.mini .badge.tmp{position:absolute;top:-12px;right:-4px;font-size:10.5px;padding:1px 6px;background:var(--warnbg);color:var(--warn);border:2px solid var(--card)}
+.mini .n small.tmp{font-size:10.5px;font-weight:650;color:var(--warn);margin-left:3px;letter-spacing:-.01em}.mini .n.tight{font-size:13px}.mini .n.tight2{font-size:12px}.mini .n.tight3{font-size:11px}   /* a long alternator value with its temperature */   /* the alternator's temperature after its power */
 .minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
 .minis.m4{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .minis.m4 .mini{padding:8px;display:flex;flex-direction:column;justify-content:space-between;gap:2px}
@@ -603,7 +602,7 @@ details.repfold{margin:4px 16px 12px}details.repfold .mdreport{padding:0 0 4px} 
 .itags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}.itags span{font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--accentbg);color:var(--accent)}
 .ticks{display:flex;flex-direction:column}.ticks .ssys{margin-top:10px}
 .tick{display:flex;align-items:center;gap:10px;min-height:40px;font-size:14px;cursor:pointer}.tick input{width:20px;height:20px;flex:none;accent-color:var(--accent)}
-.tile .line b.est{color:var(--fg)}   /* Engine and fuel tile: the estimated fuel left */
+.tile .big .nw{white-space:nowrap}.mini .n .mwr{width:15px;height:15px;vertical-align:-2px}   /* Engine and fuel tile: the maintenance wrench */
 .estim{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:12px;background:var(--accentbg)}
 .estim .k{display:flex;flex-direction:column;min-width:0}.estim .k small{color:var(--muted);font-size:12px}
 .estim .v{display:flex;gap:14px;flex:none}.estim .v b{font-size:22px;font-weight:750}.estim .v small{font-size:13px;color:var(--muted);font-weight:600}

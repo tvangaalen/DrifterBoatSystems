@@ -163,8 +163,11 @@ test("Engine and fuel: the fuel left, estimated from a full tank at the last fil
   await open(page, "#overview", null);
   const tile = page.locator("#ovTiles .tile").filter({ has: page.locator("a[href='#enginelog']") });
   await expect(tile.locator("h3")).toHaveText("Engine and fuel");
-  await expect(tile).toContainText("Estimated remaining 356 L · 51 h");
-  await expect(page.locator("#ovTiles .tile").filter({ has: page.locator("a[href='#power']") }).locator(".mini").nth(1)).toContainText("31 °C");   // the alternator's temperature
+  await expect(tile.locator(".big")).toHaveText("Estimated remaining 356 L – 51 h");              // big, under the title
+  await expect(tile.locator(".line").first()).toContainText("Last refuel");
+  await expect(tile.locator(".mini").nth(2)).toHaveText(/Maintenance\s*2/);                        // the mock: 2 schedule items due
+  await expect(tile.locator(".mini").nth(2).locator(".n")).toHaveClass(/badc/);
+  await expect(page.locator("#ovTiles .tile").filter({ has: page.locator("a[href='#power']") }).locator(".mini").nth(1).locator(".n")).toHaveText("0 W31°");   // the alternator's temperature, small after its power
   expect(errors).toEqual([]);
 });
 

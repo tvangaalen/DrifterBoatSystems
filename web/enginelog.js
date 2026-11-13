@@ -50,8 +50,15 @@ function estimate(d) {
 const estText = (/** @type {any} */ x) => `${num(x.l, 0)} L · ${num(x.h, 0)} h`;
 /** The estimate as a line in the Overview tile. @param {any} d */
 const estWhy = (/** @type {any} */ d) => !(d.settings || {}).tank_capacity_l ? "set the tank capacity in Settings" : "after two fills";
-const estLine = (/** @type {any} */ d) => { const x = estimate(d);
-  return `<div class="line">Estimated remaining ${x ? `<b class="est num">${estText(x)}</b>` : `– (${estWhy(d)})`}</div>`; };
+
+/** The Overview tile's maintenance box: a wrench with how many schedule items are due now (red), else due soon (orange),
+ * else OK (green); "–" without a schedule. @param {any} d */
+function maintMini(d) {
+  const S = /** @type {any[]} */ (d.schedule || []); if (!S.length) return `<div class="n">–</div>`;
+  const due = S.filter(x => x.state === "due").length, soon = S.filter(x => x.state === "soon").length;
+  const [c, t, title] = due ? ["badc", String(due), `${due} due now`] : soon ? ["warnc", String(soon), `${soon} due soon`] : ["good", "OK", "nothing due"];
+  return `<div class="n ${c}" title="${title}">${icon("wrench", "i mwr")} ${t}</div>`;
+}
 
 const m = {
   id: "enginelog", title: "Engine and fuel", short: "Engine", icon: "enginefuel", background: 120000,
@@ -60,13 +67,13 @@ const m = {
   enter() { view = "fuel"; },      // from the Overview or the navigation: always Diesel fuel
   tile() {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
-    const f = d.fuel[0], mt = d.maintenance[0], s = d.stats;
-    return `<div class="u-fs-22 big">${f ? `${num(f.litres, 0)} L` : "No fills yet"}</div>
-      ${estLine(d)}
-      <div class="line">${f ? esc(dmy(f.date)) : "Log the next fill on the Engine and fuel page"}${d.engine && d.engine.running ? ` · engine running, ${num(d.engine.rpm, 0)} rpm` : ""}</div>
-      <div class="minis"><div class="mini"><div class="l">Engine hours</div><div class="n">${f ? num(f.engine_hours, 0) + " h" : "–"}</div></div>
+    const f = d.fuel[0], s = d.stats, e = d.engine || {}, x = estimate(d);
+    const hours = e.fresh && e.hours != null ? e.hours : e.last_hours != null ? e.last_hours : f ? f.engine_hours : null;
+    return `<div class="u-fs-22 big">Estimated remaining ${x ? `<span class="nw">${estText(x).replace(" · ", " – ")}</span>` :`– <small>(${esc(estWhy(d))})</small>`}</div>
+      <div class="line">${f ? `Last refuel ${esc(dmy(f.date))} – ${num(f.litres, 0)} L` : "No fills yet: log the next one on the Engine and fuel page"}</div>
+      <div class="minis"><div class="mini"><div class="l">Engine hours</div><div class="n">${hours != null ? num(hours, 0) + " h" : "–"}</div></div>
       <div class="mini"><div class="l">Avg use</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) + " L/h" : "–"}</div></div>
-      <div class="mini"><div class="l">Maintenance</div><div class="n">${mt ? esc(dmy(mt.date)) : "–"}</div></div></div>`;
+      <div class="mini"><div class="l">Maintenance</div>${maintMini(d)}</div></div>`;
   },
   mount(el) {
     el.innerHTML = `<div id="lDown"></div>

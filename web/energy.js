@@ -104,8 +104,12 @@ function meter(soc, id, label = "House bank", cls = "") {
   if (s != null) {
     const a = Math.PI * (1 - s / 100), ux = Math.cos(a), uy = -Math.sin(a), vx = -uy, vy = ux;
     const P = (d, w) => `${f(cx + ux * d + vx * w)},${f(cy + uy * d + vy * w)}`;
-    const i = cls === "sm" ? 39 : 28;   // the small one's pill is relatively larger: its needle starts further out
-    needle = `<g class="needle"><polygon points="${P(i, 4.5)} ${P(r + 10, 1.2)} ${P(r + 10, -1.2)} ${P(i, -4.5)}"/></g>`;   // only the tip: clear of the pill
+    if (cls === "sm") {     // the small ones (Batteries): longer and thicker, starting as close to the middle as the pill allows
+      const w = 6, i = clearOfPill(cx, cy, ux, uy, vx, vy, w, r + 13, 1.3, String(Math.round(s)).length);
+      needle = `<g class="needle"><polygon points="${P(i, w)} ${P(r + 13, 1.3)} ${P(r + 13, -1.3)} ${P(i, -w)}"/></g>`;
+    } else {
+      needle = `<g class="needle"><polygon points="${P(28, 4.5)} ${P(r + 10, 1.2)} ${P(r + 10, -1.2)} ${P(28, -4.5)}"/></g>`;   // only the tip: clear of the pill
+    }
   }
   return `<div class="meter${cls ? " " + cls : ""}" role="img" aria-label="${esc(label)} ${s == null ? "unknown" : num(s) + " %"}"><svg viewBox="0 0 124 76" aria-hidden="true">
     <defs><linearGradient id="${id}Band" x1="0" x2="1"><stop offset="0" class="s0"/><stop offset=".5" class="s1"/><stop offset="1" class="s2"/></linearGradient>
@@ -113,6 +117,23 @@ function meter(soc, id, label = "House bank", cls = "") {
     <path class="track" d="${arc(r)}"/><path class="band glow" d="${arc(r)}" stroke="url(#${id}Band)"/><path class="band" d="${arc(r)}" stroke="url(#${id}Band)"/>
     <path class="sheen" d="${arc(r - 4)}" stroke="url(#${id}Sheen)"/><path class="rim" d="${arc(r + 11)}"/>${needle}</svg>
     <span class="pill">${num(s)}<small>%</small></span></div>`;
+}
+
+/** Where a small meter's needle may start: the nearest distance from the middle at which the whole needle (its base, half
+ * width `w`, narrowing to `tipW` at `end`) stays at least 3 units out of the pill. The pill is HTML (.meter.sm .pill: 3 px
+ * from the bottom, 12 px text, 7 px padding) on an 88 px wide drawing of 124 units, so its box is worked out in drawing
+ * units from its digits.
+ * @param {number} cx @param {number} cy @param {number} ux @param {number} uy @param {number} vx @param {number} vy
+ * @param {number} w @param {number} end @param {number} tipW @param {number} digits */
+function clearOfPill(cx, cy, ux, uy, vx, vy, w, end, tipW, digits) {
+  const k = 124 / 88, m = 3, half = (digits * 7.4 + 21) / 2 * k + m, y1 = 76 - 3 * k + m, y0 = 76 - 22 * k - m;
+  const out = (/** @type {number} */ d, /** @type {number} */ o) => { const x = cx + ux * d + vx * o, y = cy + uy * d + vy * o; return !(x > cx - half && x < cx + half && y > y0 && y < y1); };
+  for (let d = 14; d < end - 8; d += .5) {
+    let ok = true;
+    for (let t = 0; t <= 1 && ok; t += .05) ok = out(d, w * (2 * t - 1)) && out(d + (end - d) * t, w + (tipW - w) * t) && out(d + (end - d) * t, -(w + (tipW - w) * t));
+    if (ok) return d;
+  }
+  return end - 8;
 }
 
 // ------------------------------------------------------------------ Now
@@ -127,14 +148,16 @@ const NOSW = `<span class="sw-gap"></span>`;   // in place of a switch: keeps th
  * @param {any} d @param {string} id the meter's id @param {boolean} title */
 function bankBody(d, id, title) {
   const h = d.storage.house, s = d.sources, t = d.totals;
-  const state = h.current > 0.3 ? "charging" : h.current < -0.3 ? "discharging" : "idle";
   const alt = s.alternator || {}, cm = d.combimaster || {}, inv = "ov-inverter";
   const invOn = on(cm.inverter_enabled);
+  // the alternator's power with its temperature after it: a long one gets a smaller font, so it fits a phone-wide box
+  const altW = alt.power != null && isFinite(+alt.power) && Math.abs(+alt.power) >= 1000 ? `${(+alt.power / 1000).toFixed(1)} kW` : W(alt.power);   // kW with 1 decimal here
+  const altT = alt.temperature != null ? `<small class="tmp">${num(alt.temperature, 0)}°</small>` : "", altLen = altW.length + (altT ? num(alt.temperature, 0).length + 1 : 0);
   return `<div class="meter-row"><div>${title ? `<div class="u-fs-22 big">House bank</div>` : ""}<div class="big">${flowW(h.power)}</div>
       <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A${h.temperature != null ? ` · ${num(h.temperature, 1)} °C` : ""}</div>
-      <div class="line">${esc(h.battery_type || h.chemistry || "LiFePO4")}${h.capacity ? ` · ${num(h.capacity)} ${esc(h.capacity_unit || "Ah")}` : ""} · ${state}</div></div>${meter(h.soc, id)}</div>
+      </div>${meter(h.soc, id)}</div>
     <div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
-      <div class="mini"><div class="l">Alternator</div>${alt.temperature != null ? `<span class="badge plain tmp">${num(alt.temperature, 0)} °C</span>` : ""}<div class="n">${W(alt.power)}</div></div>
+      <div class="mini"><div class="l">Alternator</div><div class="n${altLen > 9 ? " tight3" : altLen > 8 ? " tight2" : altLen > 7 ? " tight" : ""}">${altW}${altT}</div></div>
       <div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
       <div class="mini"><div class="l">DC load</div><div class="n">${outW(t.consumer_power)}</div></div></div>
     ${h.soc == null ? `<div class="u-mt-8"><span class="badge warn wrap">SOC: ${esc(h.soc_source || "no fresh DALY data")}</span></div>` : ""}
