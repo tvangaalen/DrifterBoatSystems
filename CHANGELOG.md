@@ -24,6 +24,10 @@
 - Engine and fuel, Maintenance: a maintenance schedule for the Yanmar 4JH80 and its KM4A marine gear (Yanmar's periodic
   maintenance schedule), with what is due or due soon on top and all items folded; a maintenance entry ticks the items
   it did, and Log on an item opens one with it ticked
+- Overview: Drop anchor & start watch on the Anchor watch tile while the anchor is up (as Already lying to it, the
+  advised chain ahead and a radius of chain + 10 m rounded up to 5; asks first); Engine and fuel: a remaining fuel
+  safety margin setting (115 % by default) on the average use; Energy, Batteries: the charge/discharge switches and Set
+  SOC moved to the bottom of Pack details
 
 ## 1.3
 
