@@ -62,9 +62,9 @@ function maintMini(d) {
 
 const m = {
   id: "enginelog", title: "Engine and fuel", short: "Engine", icon: "enginefuel", background: 120000,
-  get every() { return view === "data" ? 2000 : 30000; },      // Current data: live; the lists: slowly
+  get every() { return view === "data" ? 2000 : 30000; },      // Dashboard: live; the lists: slowly
   async load() { m.state.data = await D.api("enginelog", "/api/log"); },
-  enter() { view = "fuel"; },      // from the Overview or the navigation: always Diesel fuel
+  enter() { view = "fuel"; },      // from the Overview or the navigation: always Diesel
   tile() {
     const d = m.state.data; if (!d) return `<div class="line">${esc(m.state.err.message)}</div>`;
     const f = d.fuel[0], s = d.stats, e = d.engine || {}, x = estimate(d);
@@ -77,7 +77,7 @@ const m = {
   },
   mount(el) {
     el.innerHTML = `<div id="lDown"></div>
-      <div class="u-m-4-0-14 u-maxw-460 seg" id="lViews"><button type="button" data-lview="fuel">Diesel fuel</button><button type="button" data-lview="maintenance">Maintenance</button><button type="button" data-lview="data">Current data</button><button type="button" data-lview="settings">Settings</button></div>
+      <div class="u-m-4-0-14 u-maxw-460 seg" id="lViews"><button type="button" data-lview="fuel">Diesel</button><button type="button" data-lview="maintenance">Maintenance</button><button type="button" data-lview="data">Dashboard</button><button type="button" data-lview="settings">Settings</button></div>
       <div id="lBody"></div>`;
     el.addEventListener("click", onClick);
     el.addEventListener("input", e => { if (edit && e.target.id) edit.touched.add(e.target.id); });
@@ -207,7 +207,7 @@ function alarmView(d) {
     <p class="u-m-8-0-0 hint">The alarms come from the YDEN-02, which passes the engine's own warning lights (the Orca Core does not). Logged: every warning light the engine sets (oil pressure, system voltage and charge only while running), and high coolant temperature and low oil pressure while running (limits in Settings). While the YDEN-02 is off, no alarms are logged.</p></div>`;
 }
 
-// ---- Current data: the engine's live values (Orca Core) as a cockpit: a big rev counter, the rest as half arcs around
+// ---- Dashboard: the engine's live values (Orca Core) as a cockpit: a big rev counter, the rest as half arcs around
 // it, and the engine's warning lights (YDEN-02). Zones: coolant and oil pressure from the alarm limits in Settings.
 const pt = (/** @type {number} */ cx, /** @type {number} */ cy, /** @type {number} */ r, /** @type {number} */ a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
 const f1 = (/** @type {number} */ v) => v.toFixed(1);

@@ -102,21 +102,21 @@ test("Overview: Anchor up asks first, Cancel the default; confirming raises it",
   await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/anchor/api/command", { action: "raise" }]]);
 });
 
-test("Overview: Drop anchor & start watch, as Already lying to it with the advised chain; Cancel the default", async ({ page }) => {
+test("Overview: Drop anchor & start watch asks the distance ahead (30 m) and the radius (50 m), both to change; Cancel the default", async ({ page }) => {
   const posts: Posted[] = [];
   await setUp(page, { posts });
   await open(page, "#overview", null);
-  const drop = page.locator("#ovDrop");                                  // the mock's anchor is up; its chain advice 43 m
-  await expect(drop).toContainText("43 m · radius 55 m");                // 43 + 10, rounded up to a multiple of 5
+  const drop = page.locator("#ovDrop");                                  // the mock's anchor is up
   await drop.click();
-  await expect(dialog(page)).toContainText("Anchor 43 m ahead of the bow");
+  await expect(page.locator("#qdAhead")).toHaveValue("30"); await expect(page.locator("#qdRad")).toHaveValue("50");
   await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Cancel");
   await page.keyboard.press("Escape");
   await expect(page.locator("#dialog")).not.toHaveClass(/open/);
   expect(posts).toEqual([]);
   await drop.click();
+  await page.locator("#qdAhead").fill("35"); await page.locator("#qdRad").fill("60");
   await page.locator("#dlgSheet button:not([data-default])").filter({ hasText: "Drop anchor" }).click();
-  await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/anchor/api/command", { action: "drop", mode: "ahead", distance: 43, radius: 55 }]]);
+  await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/anchor/api/command", { action: "drop", mode: "ahead", distance: 35, radius: 60 }]]);
 });
 
 test("Switch all systems off: default is Leave on, and declining sends nothing", async ({ page }) => {

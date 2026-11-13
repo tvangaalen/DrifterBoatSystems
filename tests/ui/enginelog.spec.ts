@@ -129,11 +129,11 @@ test("Maintenance schedule: what is due on top, all items folded; Log opens a ne
   expect(errors).toEqual([]);
 });
 
-test("Engine and fuel: Current data shows the engine as a cockpit, with the warning lights", async ({ page }) => {
+test("Engine and fuel: Dashboard shows the engine as a cockpit, with the warning lights", async ({ page }) => {
   const errors = await setUp(page, { theme: "dark" });
   await open(page, "#enginelog", "#lViews [data-lview=data]");
   const views = page.locator("#lViews button");
-  await expect(views.nth(2)).toHaveText("Current data"); await expect(views.nth(3)).toHaveText("Settings");   // left of Settings
+  await expect(views.nth(0)).toHaveText("Diesel"); await expect(views.nth(2)).toHaveText("Dashboard"); await expect(views.nth(3)).toHaveText("Settings");   // left of Settings
   await expect(page.locator("#lBody .cockpit > .meter.big")).toHaveAttribute("aria-label", "Engine speed 1800 rpm");
   const arcs = page.locator("#lBody .ga .meter");
   await expect(arcs).toHaveCount(6);

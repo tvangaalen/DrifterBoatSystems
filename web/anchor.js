@@ -107,7 +107,7 @@ const m = {
       <div class="mini"><div class="l">Wind</div><div class="n">${b.tws != null ? f0(b.tws) + " kn" : "–"}</div></div>
       <div class="mini"><div class="l">GPS</div><div class="n ${s.gps_age == null || s.gps_age > 10 ? "warnc" : ""}">${s.gps_age == null ? "none" : s.gps_age < 5 ? "live" : ago(s.gps_age)}</div></div></div>
       ${a ? `<button class="tctl tbtn btn sec" type="button" id="ovRaise">${icon("anchor")} Anchor up – stop watch</button>`
-        : `<button class="tctl tbtn btn sec" type="button" id="ovDrop" ${quickDrop(s) && b.pos ? "" : "disabled"}>${icon("anchor")} Drop anchor &amp; start watch${quickDrop(s) ? ` <small class="muted">${quickDrop(s).chain} m · radius ${quickDrop(s).radius} m</small>` : ""}</button>`}`;
+        : `<button class="tctl tbtn btn sec" type="button" id="ovDrop" ${b.pos ? "" : "disabled"}>${icon("anchor")} Drop anchor &amp; start watch</button>`}`;
   },
   mount(el) {
     el.innerHTML = `<div id="aDown"></div>
@@ -599,20 +599,19 @@ async function onClick(e) {
     if (r && await D.confirm({title: `Remove ${r.name}?`, text: "It comes back if it is seen again.", ok: "Remove", cancel: "Keep"})) cmd({action: "gps_forget", source: r.source}, `${r.name} removed`, b); return; }
 }
 const saveOrder = order => cmd({action: "settings", settings: {gps_sources: order}}, "GPS order saved");
-/** Drop from the Overview tile, as "Already lying to it": the anchor the advised chain length ahead of the bow, the
- * alarm radius that length + 10 m, rounded up to a multiple of 5. Null without a chain advice (no depth or tide).
- * @param {any} s @returns {{chain: number, radius: number} | null} */
-function quickDrop(s) {
-  const c = s && s.depth_plan && s.depth_plan.available ? s.depth_plan.chain : null;
-  return c != null && isFinite(+c) && +c > 0 ? {chain: Math.ceil(+c), radius: Math.ceil((+c + 10) / 5) * 5} : null;
-}
+// Drop from the Overview tile, as "Already lying to it": a pop-up with the anchor's distance ahead of the bow (30 m) and
+// the alarm radius (50 m), both to change; Cancel is the default.
 document.addEventListener("click", async e => {
   const b = /** @type {HTMLButtonElement | null} */ (/** @type {Element} */ (e.target).closest("#ovDrop")); if (!b) return;
-  const q = quickDrop(m.state.data); if (!q) return D.toast("No chain advice yet (needs the depth and the tide)", true);
-  if (!(await D.confirm({title: "Drop anchor and start the watch?", items: [`Anchor ${q.chain} m ahead of the bow (the advised chain)`, `Alarm radius ${q.radius} m`],
-    ok: "Drop anchor & start watch", cancel: "Cancel"}))) return;
+  const v = await D.sheet(`<h3 id="dlgTitle">Drop anchor and start the watch?</h3><p>As <i>Already lying to it</i>: the anchor lies ahead of the bow.</p>
+    <div class="rows"><div class="row"><span class="k">Anchor ahead of the bow</span><label class="numf"><input class="field" type="number" id="qdAhead" min="0" max="2000" step="1" value="30" inputmode="decimal"><span class="u">m</span></label></div>
+    <div class="row"><span class="k">Alarm radius</span><label class="numf"><input class="field" type="number" id="qdRad" min="5" max="2000" step="1" value="50" inputmode="decimal"><span class="u">m</span></label></div></div>
+    <div class="acts"><button class="btn" data-value="ok">Drop anchor &amp; start watch</button><button class="btn sec" data-value="cancel" data-default>Cancel</button></div>`, "#qdAhead");
+  if (v !== "ok") return;
+  const dist = +$("qdAhead").value, rad = +$("qdRad").value;
+  if (!($("qdAhead").value !== "" && dist >= 0 && dist <= 2000) || !(rad >= 5 && rad <= 2000)) return D.toast("Distance 0–2000 m, radius 5–2000 m", true);
   if ($("aCtl")) $("aCtl").dataset.mode = "";
-  cmd({action: "drop", mode: "ahead", distance: q.chain, radius: q.radius}, "Anchor down — watch started", b);
+  cmd({action: "drop", mode: "ahead", distance: dist, radius: rad}, "Anchor down — watch started", b);
 });
 // Anchor up on the Overview tile: it stops the watch, so it asks first (Cancel the default).
 document.addEventListener("click", async e => {
