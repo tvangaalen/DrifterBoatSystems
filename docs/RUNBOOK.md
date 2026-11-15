@@ -136,6 +136,6 @@ System → Alerts shows whether it is ready and has *Send test*. It never restar
    (the app's certificate from the CA).
 5. In an **elevated** PowerShell in `C:\Drifter`: `powershell -NoProfile -ExecutionPolicy Bypass -File
    tools\install_service.ps1` (asks for your Windows password: the service runs as your account), then
-   `tools\create_shortcut.ps1` for the desktop icon and `add_firewall_rule.cmd` (the app, TCP 8100, Private profile; network GPS
-   on 10110 needs Python allowed on the Private profile, which Windows asks the first time).
+   `tools\create_shortcut.ps1` for the desktop icon and `add_firewall_rule.cmd` (Run as administrator: the app TCP 8100, network GPS
+   TCP/UDP 10110 and the YDEN-02's UDP 1456, on every network profile, from the boat's LAN and Teleport only).
 6. `py -3.12 tools\verify_live.py`.

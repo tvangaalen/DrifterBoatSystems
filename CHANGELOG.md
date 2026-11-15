@@ -6,6 +6,9 @@
   icons so all four fit)
 - Anchor watch: changing the GPS order works again (the order now holds devices, n<NAME>, which the settings check
   dropped as not a number)
+- Firewall: add_firewall_rule.cmd opens the app (8100), network GPS (10110) and the YDEN-02 (UDP 1456) on every network
+  profile, from the LAN and Teleport only, so a router update that makes Windows call the network Public no longer locks
+  the iPhone out
 
 ## 1.4
 
