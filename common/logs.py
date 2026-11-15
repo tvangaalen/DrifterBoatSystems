@@ -5,7 +5,7 @@ import logging, sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from common.timefmt import STAMP
+from common.timefmt import STAMP, follow_windows_tz
 
 FORMAT = "%(asctime)s %(levelname)s %(message)s"
 
@@ -23,4 +23,5 @@ def setup(logger: logging.Logger | None = None, file=None, keep: int = 5, max_by
     if sys.stderr: hs.append(logging.StreamHandler())
     for h in hs: h.setFormatter(fmt); logger.addHandler(h)
     logger.setLevel(level)
+    follow_windows_tz()   # every server sets up its log: its clock follows a change of Windows' time zone
     return logger

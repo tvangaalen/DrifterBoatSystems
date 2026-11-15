@@ -32,6 +32,23 @@ class TimeAndLogTest(unittest.TestCase):
         t = time.mktime((2026, 11, 2, 15, 4, 5, 0, 0, -1))
         self.assertEqual((timefmt.hm(t), timefmt.hms(t), timefmt.stamp(t)), ("15:04", "15:04:05", "2026-11-02 15:04:05"))
 
+    def test_follows_a_change_of_windows_time_zone(self):
+        calls = []
+        zone = lambda: b"UTC+1"   # noqa: E731
+        self.assertEqual(timefmt.refresh_if_changed(b"", zone, lambda: calls.append(1)), b"UTC+1")      # the first look: no re-read
+        self.assertEqual(timefmt.refresh_if_changed(b"UTC+1", zone, lambda: calls.append(1)), b"UTC+1")  # unchanged
+        self.assertEqual(calls, [])
+        self.assertEqual(timefmt.refresh_if_changed(b"UTC+1", lambda: b"UTC+2", lambda: calls.append(1)), b"UTC+2")
+        self.assertEqual(calls, [1])                                                                       # changed: read again
+        self.assertEqual(timefmt.refresh_if_changed(b"UTC+2", lambda: b"", lambda: calls.append(1)), b"UTC+2")   # unreadable: keep
+        if sys.platform == "win32":
+            self.assertTrue(timefmt._windows_zone())
+            import ctypes, os, time
+            before = time.strftime("%H:%M", time.localtime(0))
+            with mock.patch.dict(os.environ, {"TZ": "XYZ-13"}):              # the C runtime is the one Python's clock uses
+                ctypes.cdll.ucrtbase._tzset(); self.assertEqual(time.strftime("%H:%M", time.localtime(0)), "13:00")
+            ctypes.cdll.ucrtbase._tzset(); self.assertEqual(time.strftime("%H:%M", time.localtime(0)), before)
+
     def test_rotating_file(self):
         with tempfile.TemporaryDirectory() as d:
             lg = logging.getLogger("test-common"); lg.propagate = False
