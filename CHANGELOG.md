@@ -14,6 +14,9 @@
 - Set SOC (all and per battery) works again; anchor map always square; Arm/Disarm camera now on the Overview's BoatGuard
   tile; engine hours at the last refuel; anchor drag push priority a setting (emergency by default); washer tile last on
   the Overview
+- Back-up and restore on the System page: the keys and tokens and the engine log, by hand and daily at a set time (03:00
+  by default) into dated folders in a folder of choice, the newest 30 kept; a restore backs up the current files first
+  and restarts what uses them. Never the energy history database
 
 ## 1.4
 

@@ -81,22 +81,33 @@ needs it, and it prints the service restart or environment rebuild it never does
 
 A changed address of a module (`config.json` → `modules.<name>.url`) needs a gateway restart.
 
-## 6. Back-up of the keys and tokens
+## 6. Back-up and restore (keys, tokens and the engine log)
 
-Only on request: System → **Backup keys and tokens** copies the keys that cannot be made again without the services
-themselves — `anchor\pushover.json`, `anchor\nfl.json`, `guard\pushover.json`, `guard\ezviz_token.json`,
-`washer\viomi_config.json` (the list is `backup.files` in `modules.json`) — to **`C:\DrifterBackups`**, in the
-same folders as in `C:\DrifterData`, replacing the previous copy. Nothing runs on a schedule, and positions, the track
-and the MasterVolt history are not copied (the user's choice). Press it after a key changed (a new EZVIZ login, new
-Pushover or noforeignland.com keys). The System page says when it last copied them. By hand on the PC:
-`py -3.12 C:\Drifter\tools\backup.py`.
+System → **Back-up** copies the keys that cannot be made again without the services themselves — the shared
+`pushover.json`, `anchor\pushover.json`, `anchor\nfl.json`, `guard\pushover.json`, `guard\ezviz_token.json`,
+`washer\viomi_config.json`, `gateway\pushover.json` (`backup.keys` in `modules.json`) — and the engine log
+(`enginelog\log.json`: maintenance, fuel fills, engine alarms; `backup.maintenance`). Never the MasterVolt history
+database (too big), the track or the anchor state. Each back-up is a new folder `drifter-backup-YYYYMMDD-HHMMSS` in the
+chosen folder (default **`C:\DrifterBackups`**; a network share works too), with the files in the same layout as in
+`C:\DrifterData` and a `manifest.json`.
 
-- Copy to Google Drive: add `C:\DrifterBackups` once in **Google Drive for desktop** → Settings → *My Computer* →
-  *Add folder*; it is then copied whenever you are logged on.
-- **Restore** a key file: copy it from `C:\DrifterBackups\<module>\` to `C:\DrifterData\<module>\`, then *Restart* that
-  module: it reads its keys at start. If the key itself expired (EZVIZ session, Pushover keys), make a new one instead:
-  in `C:\Drifter\modules\guard`, `.venv\Scripts\python.exe -m guard login` or `-m guard pushover`; for the others the
-  module's `*.example.json` shows the format.
+- **When:** *Back up now*, and daily at the time set on the card (03:00 by default). A back-up missed while the PC was off
+  is made once at the next start. The newest 30 (*Keep*) are kept; only `drifter-backup-*` folders are ever removed.
+  The card shows the last back-up (red when it failed, orange when a file was missing) and the next one. Settings:
+  `C:\DrifterData\gateway\backup.json`.
+- **By hand on the PC:** `py -3.12 C:\Drifter\tools\backup.py` (back up now), `... backup.py list`,
+  `... backup.py restore <name> [all|keys|maintenance]` (then restart the modules it names on the System page).
+- **Restore** in the app: choose the back-up and what (keys and engine log, keys only, engine log only), *Restore…*,
+  confirm. The current files are backed up first (*before a restore* in the list), so a restore can be undone by
+  restoring that one. Only files that differ are written; BoatGuard, the anchor watch, the washer and the engine log
+  restart when theirs changed (a module that refuses, e.g. the anchor watch during an alarm, is named: restart it
+  later). Do it with the engine off: the engine log saves the engine hours while it runs.
+- If a key itself expired (EZVIZ session, Pushover keys), make a new one instead: in `C:\Drifter\modules\guard`,
+  `.venv\Scripts\python.exe -m guard login` or `-m guard pushover`; for the others the module's `*.example.json`
+  shows the format.
+- Copy to Google Drive: add the back-up folder once in **Google Drive for desktop** → Settings → *My Computer* →
+  *Add folder*; it is then copied whenever you are logged on. The older single copy from before 2026-11-19 stays in
+  `C:\DrifterBackups\<module>\` (copy it back by hand, then *Restart* that module).
 
 ## 6a. Alerts
 
