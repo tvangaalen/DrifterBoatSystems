@@ -40,6 +40,7 @@ class Guard:
         self.enabled = st.get("enabled", True)
         self.last_seen = st.get("last_seen") or clock()  # unknown history: give a full grace period
         self.unguarded_sent = st.get("unguarded_sent", False)  # "left the boat with monitoring off" sent for this departure
+        self.held = st.get("held", False)  # disarmed by hand while the phone was away: not armed again until it is back
         self.present: bool | None = None
         self.router_ok: bool | None = None
         self.router_down: tuple[float, str, float] | None = None  # (since, kind, last logged) during an outage
@@ -54,7 +55,7 @@ class Guard:
 
     def save(self) -> None:
         save_json(self.state_path, {"armed_by_us": self.armed_by_us, "last_seen": self.last_seen, "enabled": self.enabled,
-                                    "unguarded_sent": self.unguarded_sent})
+                                    "unguarded_sent": self.unguarded_sent, "held": self.held})
 
     def notify(self, event: str, message: str, priority: int | None = None, title: str | None = None,
                sound: str | None = None, force: bool = False, **extra) -> None:
@@ -96,13 +97,13 @@ class Guard:
             if seen is None: return  # router unreadable: never arm or disarm on missing data
             if seen & self.phones:
                 if self.present is not True: log.info("phone on board")
-                self.present, self.last_seen, self.unguarded_sent = True, now, False; self.save()
+                self.present, self.last_seen, self.unguarded_sent, self.held = True, now, False, False; self.save()
                 if self.armed_by_us and self.cfg.get("disarm_on_return", True): self._apply(False, "Phone back on board.")
                 return
             gone = now - self.last_seen
             if self.present is not False: log.info("phone not on Wi-Fi; arming after %d s away", self.cfg["away_after_s"])
             self.present = False
-            if gone < self.cfg["away_after_s"] or self.armed_by_us: return
+            if gone < self.cfg["away_after_s"] or self.armed_by_us or self.held: return
             if self.enabled:
                 log.info("phone gone for %d s", gone); self._apply(True, f"Phone off the boat Wi-Fi since {self.hm(self.last_seen)}.")
             elif not self.unguarded_sent:
@@ -142,6 +143,25 @@ class Guard:
             self.save()
             log.info("monitoring %s (app)", "ON" if on else "OFF")
             if not on and self.armed_by_us: self._apply(False, "Monitoring turned off on the BoatGuard page.")
+
+    def set_camera(self, armed: bool) -> dict:
+        """Arm or disarm the camera by hand (the app's Overview). Armed by hand, it stays armed until disarmed by hand
+        (BoatGuard only disarms what it armed itself). Disarmed by hand while the phone is away, BoatGuard does not arm it
+        again until the phone is back on board. Raises RuntimeError when the camera can't be reached."""
+        with self.lock:
+            if self.test_running: raise ValueError("the camera test is running")
+            try: self.camera.set_armed(armed)
+            except Exception as e:
+                log.error("could not %s camera by hand: %s", "arm" if armed else "disarm", e)
+                raise RuntimeError(f"could not {'arm' if armed else 'disarm'} the camera: {e}") from e
+            if armed: self.held = False
+            else:
+                self.armed_by_us = False
+                self.held = self.present is False  # away: stay disarmed until the phone is back
+            self.save(); self.expect_camera(armed)
+            log.info("camera %s (by hand in the app)%s", "ARMED" if armed else "disarmed",
+                     "; not armed again until the phone is back" if self.held else "")
+            return {"armed": armed, "held": self.held}
 
     def test(self) -> dict:
         """Arm, read back, disarm, read back. Refused while BoatGuard has the camera armed for real."""
@@ -246,11 +266,11 @@ class Guard:
 
     def status(self) -> dict:
         aa = self.cfg["away_after_s"]
-        arm_at = self.last_seen + aa if self.enabled and self.present is False and not self.armed_by_us else None
+        arm_at = self.last_seen + aa if self.enabled and self.present is False and not self.armed_by_us and not self.held else None
         return {"enabled": self.enabled, "present": self.present, "router_ok": self.router_ok, "router_error": self.router_error,
                 "router_down_since": self.router_down[0] if self.router_down else None, "last_poll": self.last_poll,
                 "last_seen": self.last_seen, "away_after_s": aa, "poll_s": self.cfg.get("poll_s", 30), "now": self.clock(),
-                "armed_by_us": self.armed_by_us, "arm_at": arm_at, "test_running": self.test_running,
+                "armed_by_us": self.armed_by_us, "held": self.held, "arm_at": arm_at, "test_running": self.test_running,
                 "limits": {k: list(v) for k, v in self.SETTINGS.items()},
                 "notifications": bool(self.notifier and self.notifier.configured),
                 "sounds": {e: self.cfg.get("sounds", {}).get(e, "") for e in EVENTS}, "sound_options": SOUNDS, "events": EVENTS,

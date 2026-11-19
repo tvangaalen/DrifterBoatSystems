@@ -61,6 +61,15 @@ def create_app(guard, log_path: Path, token: str | None = None) -> FastAPI:
         try: return {"sent": guard.notify_test(str(b.get("event")), str(b.get("sound", "")), b.get("priority"))}
         except ValueError as e: return JSONResponse({"error": str(e)}, 400)
 
+    @app.post("/api/camera")
+    async def camera(request: Request):
+        b = await body(request)
+        if isinstance(b, JSONResponse): return b
+        if not isinstance(b, dict) or not isinstance(b.get("armed"), bool): return JSONResponse({"error": "armed must be true or false"}, 400)
+        try: return guard.set_camera(b["armed"])
+        except ValueError as e: return JSONResponse({"error": str(e)}, 409)
+        except RuntimeError as e: return JSONResponse({"error": str(e)}, 503)
+
     @app.post("/api/test")
     async def test(request: Request):
         b = await body(request)

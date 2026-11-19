@@ -28,7 +28,7 @@ function display(d) {
 const offline = () => m.state.err && !m.state.err.down && m.state.err.status === 503;   // controller up, washer not answering
 
 const m = {
-  id: "washer", title: "Washer", short: "Washer", icon: "washer", every: 5000, background: 10000,
+  id: "washer", title: "Washer", short: "Washer", icon: "washer", every: 5000, background: 10000, ovLast: true,   // its Overview tile comes last
   async load() {
     const d = await D.api("washer", "/api/status");
     if (!pending) { m.state.data = d; lastGood = d; lastSeen = Date.now(); }

@@ -6,6 +6,7 @@ const PRIO_HINT = {"-2": "No alert: only listed in the Pushover app", "-1": "No 
   "1": "Sounds even during Pushover quiet hours"};
 const label = s => s === "" ? "App default" : s === "none" ? "Silent" : s === "vibrate" ? "Vibrate only" : s[0].toUpperCase() + s.slice(1);
 let dirty = false, built = false, logLines = [], logT = 0, tickT = null, view = "mon";     // view: "mon" Monitoring, "set" Settings
+let camBusy = false;                                                                  // the Overview's Arm/Disarm button is sending
 
 const m = {
   id: "guard", title: "BoatGuard", short: "Guard", icon: "guard", every: 4000, background: 8000,
@@ -42,7 +43,8 @@ const m = {
     return `<div class="tile-row"><div><div class="u-fs-22 big ${tone}">${esc(h.title)}</div><div class="line">${esc(h.sub || (s.enabled ? "Monitoring on" : ""))}</div></div></div>
       <div class="minis"><div class="mini"><div class="l">Phone</div><div class="n ${s.present == null ? "" : s.present ? "good" : "badc"}">${s.present == null ? "–" : s.present ? "On board" : "Away"}</div></div>
       <div class="mini"><div class="l">Camera</div><div class="n ${cam.armed ? "badc" : ""}">${cam.armed == null ? "–" : cam.armed ? "Armed" : "Disarmed"}</div></div>
-      <div class="mini"><div class="l">Battery</div><div class="n">${cam.battery == null ? "–" : cam.battery + "%"}</div></div></div>`;
+      <div class="mini"><div class="l">Battery</div><div class="n">${cam.battery == null ? "–" : cam.battery + "%"}</div></div></div>
+      <button class="tctl tbtn btn sec" type="button" id="ovCam" aria-pressed="${!!cam.armed}" data-on="${cam.armed ? 1 : 0}" ${camBusy || s.test_running ? "disabled" : ""}>${icon("cam")} ${cam.armed ? "Disarm" : "Arm"} camera now</button>`;
   },
   mount(el) {
     el.innerHTML = `<div id="gDown"></div>
@@ -173,7 +175,20 @@ async function save(ev) {
   try { await D.run(m, $("gSave"), () => D.api("guard", "/api/settings", body), "Settings saved"); dirty = false; } catch (e) {}
 }
 /** @type {[RegExp, string][]} */
-const MARK = [[/camera ARMED$/, "bad"], [/camera disarmed$/, "good"], [/test OK/, "good"]];
+// The Arm/Disarm button at the bottom of the Overview tile (as the Inverter's). Arming is sent at once; disarming takes the
+// boat's protection away, so it asks first (Keep it armed the default). Disarmed while the phone is away, BoatGuard does not
+// arm it again until the phone is back on board (the server decides that).
+document.addEventListener("click", async e => {
+  const el = /** @type {HTMLButtonElement | null} */ (/** @type {Element} */ (e.target).closest("#ovCam")); if (!el) return;
+  const want = el.dataset.on !== "1", away = (m.state.data || {}).present === false;
+  if (!want && !(await D.confirm({title: "Disarm the camera?", text: away ? "The phone is away: BoatGuard will not arm it again until the phone is back on board." : "",
+    ok: "Disarm", cancel: "Keep it armed", danger: true}))) return;
+  camBusy = true; el.disabled = true;                                // the BoatGuard page may not be built yet: no m.render() here
+  try { await D.run(null, null, () => D.api("guard", "/api/camera", {armed: want}), `Camera ${want ? "armed" : "disarmed"}`); } catch (x) {}
+  finally { camBusy = false; await D.poll(m, true); }
+});
+/** @type {[RegExp, string][]} */
+const MARK = [[/camera ARMED( \(by hand in the app\))?$/, "bad"], [/camera disarmed( \(by hand in the app\))?/, "good"], [/test OK/, "good"]];
 function renderLog() {
   const box = $("gLog"); if (!box) return;
   let last = "", html = "";

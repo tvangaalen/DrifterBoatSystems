@@ -13,7 +13,7 @@ const SET = [   // [key, label, hint, min, max, step, unit, group]; bools have n
   ["max_wind_kn", "Wind alarm", "True wind speed, 0 = off", 0, 150, 1, "kn", "Alarms"],
   ["min_ais_dist", "AIS proximity alarm", "While anchored, 0 = off", 0, 2000, 1, "m", "Alarms"],
   ["pc_sound", "Beep on the watch PC", "While an alarm sounds", , , , , "Alarms"],
-  ["push_alerts", "Phone alerts (Pushover)", "Anchor drag is an emergency alert that repeats until acknowledged", , , , , "Alarms"],
+  ["push_alerts", "Phone alerts (Pushover)", "Anchor drag is an emergency alert that repeats until acknowledged (unless set otherwise below)", , , , , "Alarms"],
   ["alive_minutes", "Still-alive check", "Alert from outside after this long without a sign of life, 0 = off", 0, 1440, 5, "min", "Alarms"],
   ["loa", "Length over all", "For chain formulas that use LOA", 0, 100, 0.1, "m", "Boat"],
   ["draught", "Draught", "Keel below the waterline; shows the clearance, 0 = off", 0, 10, 0.05, "m", "Boat"],
@@ -33,10 +33,10 @@ const card = d => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(d / 45
 const f0 = v => v == null ? "–" : String(Math.round(v)), f1 = v => v == null ? "–" : (+v).toFixed(1), f2 = v => v == null ? "–" : (+v).toFixed(2);
 const ago = s => s == null ? "–" : s < 60 ? Math.round(s) + " s" : s < 3600 ? Math.round(s / 60) + " min" : (s / 3600).toFixed(1) + " h";
 const cssv = n => getComputedStyle(document.body).getPropertyValue(n).trim();
-// Priority and sound per push alert (settings push_prio_<key> / push_sound_<key>); anchor drag is always an emergency.
-const PUSH_EV = {drag: ["Anchor drag", "Repeats until acknowledged in Pushover"], gps: "GPS position lost", core: "No data from Orca Core", depth: "Shallow water",
+// Priority and sound per push alert (settings push_prio_<key> / push_sound_<key>); only anchor drag may be an emergency (its default).
+const PUSH_EV = {drag: ["Anchor drag", "Emergency (the default) repeats until acknowledged in Pushover"], gps: "GPS position lost", core: "No data from Orca Core", depth: "Shallow water",
   wind: "Wind limit", ais: "AIS target close", cleared: ["Alarm cleared", "When an alarm condition has ended"]};
-const pushPrefs = v => Object.fromEntries(Object.keys(PUSH_EV).map(k => [k, {on: v[`push_on_${k}`] !== false, priority: k === "drag" ? 2 : v[`push_prio_${k}`] ?? 1, sound: v[`push_sound_${k}`] ?? ""}]));
+const pushPrefs = v => Object.fromEntries(Object.keys(PUSH_EV).map(k => [k, {on: v[`push_on_${k}`] !== false, priority: v[`push_prio_${k}`] ?? (k === "drag" ? 2 : 1), sound: v[`push_sound_${k}`] ?? ""}]));
 const COLS = [["track", "Track"], ["limit", "Anchor circle"], ["swing", "Max swing"]];   // map colours, per light and dark
 /** A map colour for the theme in use: the user's choice (Settings) in light and dark; Night keeps its own reds.
  * @param {string} name track, limit or swing */
@@ -482,7 +482,7 @@ function renderGps(s) {
       <div class="row"><span class="k">Orca Core</span><span class="v">${s.core.connected ? `<span class="good">Connected</span><small>last data ${ago(s.core.last_message_age)} ago</small>` : `<span class="badc">Not connected</span><small>${esc(s.core.last_error || "")}</small>`}</span></div>
       <div class="row"><span class="k">AIS (Core)</span><span class="v">${aisDown(s) ? `<span class="warnc">Down</span><small>${s.ais_stream.last_message_age != null ? "last data " + ago(s.ais_stream.last_message_age) + " ago" : "no data yet"}</small>` : '<span class="good">Connected</span>'}</span></div>
       <div class="row col"><div class="u-d-flex u-jc-between u-gap-8"><span class="k">Push alerts (Pushover)</span><span class="v">${status(ps.configured, ps.last_sent ? "last sent " + hm(ps.last_sent) : "ready", ps.last_error, "pushover.json on the watch PC")}</span></div>
-        <span class="hint">Anchor drag = emergency alert that repeats every 30 s (up to 3 h) until acknowledged in Pushover; GPS/Core lost, depth and wind = high priority.</span>
+        <span class="hint">Anchor drag = emergency alert that repeats every 30 s (up to 3 h) until acknowledged in Pushover (its priority is a setting, emergency by default); GPS/Core lost, depth and wind = high priority.</span>
         <div class="btns"><button class="btn sec sm" data-act="push_test" type="button">Send test</button><button class="btn sec sm" id="aAlarmTest" type="button">Test alarm</button><button class="btn sec sm" data-act="push_alarm_stop" type="button">Stop test alarm</button></div></div>
       <div class="row col"><div class="u-d-flex u-jc-between u-gap-8"><span class="k">Still-alive check</span><span class="v">${!al.configured ? status(false, "", "", "still_alive.json on the watch PC") : !mins ? "Off" : status(true, `pings every ${Math.round((al.every_s || 300) / 60)} min${al.last_ok ? ", last " + hm(al.last_ok) : ""}`, al.last_error)}</span></div>
         ${al.note ? `<span class="hint warnc">To do: ${esc(al.note)}</span>` : ""}<div class="btns"><button class="btn sec sm" data-act="alive_check" type="button">Ping now</button></div></div>
@@ -514,7 +514,7 @@ function renderSettings(s) {
   const group = g => SET.filter(x => x[7] === g).map(field).join("");
   box.innerHTML = `<form id="aSetForm" novalidate><div class="grid g2">
     <div class="stack"><div class="card"><div class="hd"><h3>Alarms</h3></div><div class="rows">${group("Alarms")}</div></div>
-      <div class="card"><div class="hd"><h3>Push alerts</h3></div><div class="rows">${D.notifyRows("as-push-", PUSH_EV, pushPrefs(v), {fixed: {drag: 2}, test: true})}</div></div>
+      <div class="card"><div class="hd"><h3>Push alerts</h3></div><div class="rows">${D.notifyRows("as-push-", PUSH_EV, pushPrefs(v), {maxOf: {drag: 2}, test: true})}</div></div>
       <div class="card"><div class="hd"><h3>Boat</h3></div><div class="rows">
         <div class="row"><div class="k"><b>My MMSI</b><small>Never shown as an AIS target; 9 digits or empty</small></div><input class="u-w-130 field" id="as-own_mmsi" inputmode="numeric" maxlength="9" value="${esc(v.own_mmsi)}"></div>
         <div id="aMmsiSug">${sug}</div>${group("Boat")}</div></div></div>
@@ -551,6 +551,9 @@ async function save() {
     if (p.sound !== cur[`push_sound_${k}`]) out[`push_sound_${k}`] = p.sound;
     if (p.priority !== undefined && p.priority !== cur[`push_prio_${k}`]) out[`push_prio_${k}`] = p.priority;
   }
+  if (out.push_prio_drag !== undefined && out.push_prio_drag < 2 && (cur.push_prio_drag ?? 2) === 2 && !(await D.confirm({title: "Anchor drag no longer an emergency?",
+    text: "The alert then arrives once, like the others, instead of repeating until you acknowledge it. It can be missed while you sleep.",
+    ok: "Change it", cancel: "Keep it an emergency", danger: true}))) return;
   if (out.push_on_drag === false && !(await D.confirm({title: "Switch off the anchor drag push alert?", text: "A dragging anchor then no longer reaches your phone. The alarm still sounds on this page and on the watch PC.",
     ok: "Switch it off", cancel: "Keep it on", danger: true}))) return;
   try { await D.run(m, $("aSetSave"), () => D.api("anchor", "/api/command", {action: "settings", settings: out}), "Settings saved"); setDirty = false; setBuilt = false; } catch (e) {}
@@ -588,9 +591,9 @@ async function onClick(e) {
   if (b.id === "aRaise") { if (await D.confirm({title: "Anchor up?", text: "This stops the watch.", ok: "Anchor up – stop watch", cancel: "Keep watching", danger: true})) { $("aCtl").dataset.mode = ""; setMove(false); cmd({action: "raise"}, "Anchor up — watch stopped", b); } return; }
   if (b.id === "aAlarmTest") { if (await D.confirm({title: "Send a real test alarm?", text: "Your phone rings every 30 s until you tap Acknowledge in Pushover or press Stop test alarm (at most 10 minutes).", ok: "Send test alarm", cancel: "Cancel"}))
     cmd({action: "push_alarm_test"}, "Test alarm sent", b); return; }
-  if (b.dataset.ntest) {      // one alert's test, with the sound and priority shown; anchor drag = the real emergency test alarm
+  if (b.dataset.ntest) {      // one alert's test, with the sound and priority shown; anchor drag as an emergency = the real emergency test alarm
     const k = b.dataset.ntest, ch = D.notifyChoice("as-push-", k);
-    if (k !== "drag") return cmd({action: "push_test", key: k, ...ch}, "Test push sent", b);
+    if (k !== "drag" || ch.priority !== 2) return cmd({action: "push_test", key: k, ...ch}, "Test push sent", b);
     if (await D.confirm({title: "Send a real test alarm?", text: "Your phone rings every 30 s until you tap Acknowledge in Pushover or press Stop test alarm (at most 10 minutes).", ok: "Send test alarm", cancel: "Cancel"}))
       cmd({action: "push_alarm_test", sound: ch.sound}, "Test alarm sent", b);
     return;

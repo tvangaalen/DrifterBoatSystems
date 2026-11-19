@@ -170,7 +170,11 @@ class Power:
                                "markdown": f"# Battery health ({days} days, mock)\n\n## Verdict\n- **Battery 1**: OK\n- **Battery 2**: OK\n- **Battery 3**: cell 3 a little high\n\n| Battery | Resistance | Cycles |\n|---|---|---|\n| 1 | 0.42 mΩ | 87 |\n| 2 | 0.45 mΩ | 86 |\n| 3 | 0.51 mΩ | 85 |\n\nNot from real data: `mock`."}
             threading.Thread(target=done, daemon=True).start(); return 200, self.report
         elif "/set-soc-" in path or path.startswith("/api/bms/set-all-soc/"):
-            time.sleep(1); return 200, {"ok": True, "path": path, "percent": body.get("percent")}
+            # like MasterVolt's SocValueReq: a body must hold the percent ({} is a 422); no value is JSON null
+            if body is not None and not (isinstance(body, dict) and isinstance(body.get("percent"), (int, float)) and 0 <= body["percent"] <= 100):
+                return 422, {"detail": [{"type": "missing", "loc": ["body", "percent"], "msg": "Field required", "input": body}]}
+            if path.endswith("value") and body is None: return 400, {"detail": "Missing percent"}
+            time.sleep(1); return 200, {"ok": True, "path": path, "percent": (body or {}).get("percent")}
         elif path.endswith(("/charge", "/discharge")):
             n = int(path.split("/")[3]); self.mos[n]["c" if path.endswith("/charge") else "d"] = bool(body["enabled"]); time.sleep(1)
         elif path.startswith("/api/bms/set-all/"):
@@ -195,7 +199,7 @@ class Anchor:
                          "loa": 11.5, "min_ais_dist": 0.0, "pos_format": "dmm", "draught": 1.6, "transducer_depth": 0.4, "nmea_port": 10110,
                          "col_track_light": "#d1009a", "col_track_dark": "#ff3bd4", "col_limit_light": "#1b8a4b", "col_limit_dark": "#47c07a",
                          "col_swing_light": "#d1009a", "col_swing_dark": "#ff3bd4",
-                         "push_sound_drag": "persistent", "push_prio_gps": 1, "push_sound_gps": "", "push_prio_core": 1, "push_sound_core": "", "push_prio_depth": 1, "push_sound_depth": "",
+                         "push_prio_drag": 2, "push_sound_drag": "persistent", "push_prio_gps": 1, "push_sound_gps": "", "push_prio_core": 1, "push_sound_core": "", "push_prio_depth": 1, "push_sound_depth": "",
                          "push_prio_wind": 1, "push_sound_wind": "", "push_prio_ais": 1, "push_sound_ais": "", "push_prio_cleared": 0, "push_sound_cleared": ""}
         self.track = []; self.gen = 1; self.forgotten = set(); self.restored = set(); self.pending_mock = False
 
@@ -277,6 +281,10 @@ class Guard:
             if body.get("poll_s", 0) > body.get("away_after_s", 1e9): return 400, {"error": "poll_s may not exceed away_after_s"}
             self.cfg.update(body); return 200, self.status()
         if path == "/api/notify-test": return 200, {"sent": True}
+        if path == "/api/camera":                     # by hand from the Overview: armed by hand is not armed by BoatGuard
+            if not isinstance(body, dict) or not isinstance(body.get("armed"), bool): return 400, {"error": "armed must be true or false"}
+            self.armed = body["armed"]; self.log.append(f"{datetime.now():%Y-%m-%d %H:%M:%S} INFO camera {'ARMED' if self.armed else 'disarmed'} (by hand in the app)")
+            return 200, {"armed": self.armed, "held": False}
         if path == "/api/test":
             self.test = True
             def done(): time.sleep(4); self.test = False; self.last_test = {"ok": True, "finished": time.time()}

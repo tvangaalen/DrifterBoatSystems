@@ -21,6 +21,18 @@ test("Anchor watch map: resized while hidden, the boat is still in the middle", 
   expect(errors).toEqual([]);
 });
 
+test("Anchor map: always square, as wide as its column but never taller than the screen leaves room for", async ({ page }) => {
+  const errors = await setUp(page, { theme: "dark" });
+  for (const [w, h] of [[390, 844], [820, 1180], [1180, 820], [1600, 1000]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await open(page, "#anchor", null);
+    await expect.poll(async () => { const b = await page.locator("#aMap").boundingBox(); return b ? Math.abs(b.width - b.height) : 99; }).toBeLessThan(1.5);
+    const b = (await page.locator("#aMap").boundingBox())!;
+    expect(b.height, `${w} x ${h}`).toBeLessThanOrEqual(Math.max(300, h - 170) + 1);
+  }
+  expect(errors).toEqual([]);
+});
+
 test("Anchor map: no credits on the map, its info button opens them on GPS & links; Holding stays at the top", async ({ page }) => {
   const errors = await setUp(page, { theme: "dark" });
   await open(page, "#anchor", null);

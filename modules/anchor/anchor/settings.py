@@ -46,9 +46,10 @@ DEFAULTS = {
     "own_mmsi": "",           # "My MMSI": this boat's AIS, never shown as a target; empty = hide any target within 10 m of our GPS
     "pc_sound": True,         # beep on this PC while an alarm sounds
     "push_alerts": True,      # send alarms to the phone through Pushover (the shared keys, else pushover.json)
-    # sound (a Pushover sound, "" = the app's default) and priority (-2..1) per push alert; anchor drag is always emergency
+    # sound (a Pushover sound, "" = the app's default) and priority (-2..1) per push alert; anchor drag -2..2, emergency (2) by
+    # default (the user's choice of 2026-11-19; it was always emergency before) and the only alert that may be one
     "push_on_drag": True, "push_on_gps": True, "push_on_core": True, "push_on_depth": True, "push_on_wind": True, "push_on_ais": True, "push_on_cleared": True,
-    "push_sound_drag": "persistent",
+    "push_prio_drag": 2, "push_sound_drag": "persistent",
     "push_prio_gps": 1, "push_sound_gps": "", "push_prio_core": 1, "push_sound_core": "",
     "push_prio_depth": 1, "push_sound_depth": "", "push_prio_wind": 1, "push_sound_wind": "",
     "push_prio_ais": 1, "push_sound_ais": "", "push_prio_cleared": 0, "push_sound_cleared": "",

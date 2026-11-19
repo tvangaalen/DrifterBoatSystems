@@ -55,7 +55,8 @@ class Pushover:
     def configured(self): return self.cfg is not None
 
     def alarm(self, key, title, message, when, priority=None, sound=None):
-        p = 2 if key == "drag" else min(1, self.PRIORITY.get(key, 1) if priority is None else int(priority))   # only drag is an emergency
+        # only drag may be an emergency (its own setting, emergency by default); every other alert is at most high (1)
+        p = max(-2, min(2, 2 if priority is None else int(priority))) if key == "drag" else min(1, self.PRIORITY.get(key, 1) if priority is None else int(priority))
         self.q.put(("send", key, {"title": title, "message": message, "priority": p, "timestamp": int(when), **({"sound": sound} if sound else {})}))
 
     def cleared(self, key, title, message, when, priority=0, sound=None):

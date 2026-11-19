@@ -844,7 +844,7 @@ async function setSoc(target, btn) {
       <button class="btn sm" id="socManualSet" type="button">Set</button></div></div><p class="err" id="socErr" hidden></p>
     <div class="acts"><button class="btn sec" data-value="cancel" data-default>Cancel</button></div>`);
   if (!v || v === "cancel") return;
-  let mode = v, body = {};
+  let mode = v, body = null;       // no value: JSON null (the server reads {} as a value without its percent: 422)
   if (v.startsWith("manual:")) { mode = "value"; body = {percent: +v.slice(7)}; }
   const path = target === "all" ? `/api/bms/set-all-soc/${mode}` : `/api/bms/${target}/set-soc-${mode}`;
   try { await D.run(null, btn, () => D.api("power", path, body), `SOC written to ${who}`); } catch (e) {}

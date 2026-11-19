@@ -281,7 +281,7 @@ class AnchorWatch:
                              f"wind {b['tws']:.0f} kn" if b.get("tws") is not None else "") if x]
         msg = (detail or self.ALARM_TEXT[aid]) + "." + (" " + ", ".join(extra) + "." if extra else "")
         s = self.settings
-        self.notifier.alarm(aid, f"\u2693 {self.ALARM_TEXT[aid]}", msg, now, priority=2 if aid == "drag" else s.get(f"push_prio_{aid}", 1),
+        self.notifier.alarm(aid, f"\u2693 {self.ALARM_TEXT[aid]}", msg, now, priority=s.get(f"push_prio_{aid}", 2 if aid == "drag" else 1),
                             sound=s.get(f"push_sound_{aid}", ""))
 
     def _push_cleared(self, aid, now):
@@ -492,6 +492,10 @@ class AnchorWatch:
                     elif k.startswith("push_sound_"):
                         v = str(v)
                         if v not in pushover.SOUNDS: raise ValueError(f"Unknown Pushover sound {v!r}")
+                    elif k == "push_prio_drag":
+                        if isinstance(v, bool) or not isinstance(v, (int, float)) or v != int(v) or not -2 <= v <= 2:
+                            raise ValueError("Anchor drag's priority must be -2, -1, 0, 1 or 2 (emergency)")
+                        v = int(v)
                     elif k.startswith("push_prio_"):
                         if isinstance(v, bool) or not isinstance(v, (int, float)) or v != int(v) or not -2 <= v <= 1:
                             raise ValueError("A push alert's priority must be -2, -1, 0 or 1 (only anchor drag is an emergency)")
@@ -540,10 +544,11 @@ class AnchorWatch:
                 key = c.get("key")
                 if key is None:
                     self.notifier.test(); self.event("Test push sent to Pushover", now)
-                else:      # one alert (not anchor drag: that one is the emergency test alarm)
+                else:      # one alert; anchor drag only when it is not an emergency (that one is the emergency test alarm)
                     text = {**self.ALARM_TEXT, "cleared": "Alarm cleared"}.get(key)
-                    if text is None or key == "drag": raise ValueError(f"No test for {key!r}" + (" (anchor drag: use the test alarm)" if key == "drag" else ""))
-                    snd, pr = c.get("sound", self.settings.get(f"push_sound_{key}", "")), c.get("priority", self.settings.get(f"push_prio_{key}", 1))
+                    if text is None: raise ValueError(f"No test for {key!r}")
+                    snd, pr = c.get("sound", self.settings.get(f"push_sound_{key}", "")), c.get("priority", self.settings.get(f"push_prio_{key}", 2 if key == "drag" else 1))
+                    if key == "drag" and pr == 2: raise ValueError("Anchor drag as an emergency: use the test alarm")
                     if snd not in pushover.SOUNDS: raise ValueError(f"Unknown Pushover sound {snd!r}")
                     if isinstance(pr, bool) or pr not in (-2, -1, 0, 1): raise ValueError("Priority must be -2, -1, 0 or 1")
                     self.notifier.test(f"\u2693 Test: {text}", priority=pr, sound=snd); self.event(f"Test push \"{text}\" sent to Pushover", now)

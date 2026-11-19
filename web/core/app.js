@@ -143,7 +143,8 @@ function renderOverview() {
     el.dataset.built = "1";
     el.innerHTML = `<div class="grid g2" id="ovTiles"></div>`;
   }
-  $("ovTiles").innerHTML = mods.map(m => {
+  // the navigation's order, except a page with `ovLast` (the washer: the user's choice of 2026-11-19), whose tile comes last
+  $("ovTiles").innerHTML = [...mods.filter(m => !m.ovLast), ...mods.filter(m => m.ovLast)].map(m => {
     let body = `<div class="line muted">Loading…</div>`;
     try { if (m.tile && (m.state.data || m.state.err)) body = m.tile(); } catch (e) { body = `<div class="err">${esc(e.message)}</div>`; }
     const b = m.badge ? m.badge() : null;

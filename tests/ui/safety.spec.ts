@@ -51,6 +51,26 @@ test("Battery discharge MOSFET off: default is Keep ON, and declining sends noth
   expect(posts).toEqual([]);
 });
 
+test("Set all SOC: Cancel the default; a curve or 100% sends no value (JSON null), a manual value its percent", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { posts });
+  await open(page, "#power", "#eViews [data-view=batt]");
+  const all = page.locator("[data-soc=all]");
+  await all.click();
+  await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Cancel");
+  await page.keyboard.press("Escape"); await expect(page.locator("#dialog")).not.toHaveClass(/open/);
+  expect(posts).toEqual([]);
+  await all.click();
+  await page.locator("#dlgSheet [data-value='100']").click();
+  await expect(page.locator("#toast")).toContainText("SOC written to all batteries");     // the server (and the mock) refuse {}
+  expect(posts.map(p => [p.url, p.body])).toEqual([["/api/power/api/bms/set-all-soc/100", null]]);
+  await expect(all).toBeEnabled();
+  await all.click();
+  await page.locator("#socManual").fill("80"); await page.locator("#socManualSet").click();
+  await expect.poll(() => posts.map(p => [p.url, p.body]).at(-1)).toEqual(["/api/power/api/bms/set-all-soc/value", { percent: 80 }]);
+  expect(errors).toEqual([]);
+});
+
 test("Overview: the Inverter button at the bottom of the tile; off asks first (Keep Inverter ON the default), on is sent at once", async ({ page }) => {
   const posts: Posted[] = [];
   await setUp(page, { posts });
@@ -74,6 +94,55 @@ test("Overview: the Inverter button at the bottom of the tile; off asks first (K
   await page.keyboard.press("Escape");
   await expect(page.locator("#dialog")).not.toHaveClass(/open/);
   expect(posts).toEqual([]);
+});
+
+test("Overview: the BoatGuard tile's Arm camera now is sent at once; Disarm asks first (Keep it armed the default); the washer's tile is last", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { posts });
+  await open(page, "#overview", null);
+  await expect(page.locator("#ovTiles > .tile").last().locator("a.tlink")).toHaveAttribute("href", "#washer");
+  const cam = page.locator("#ovCam");
+  await expect(cam).toHaveText("Arm camera now");                          // the mock's camera is disarmed
+  await cam.click();
+  await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/guard/api/camera", { armed: true }]]);
+  await expect(page).toHaveURL(/#overview$/);                               // the button does not open the page under it
+  await page.route(/\/api\/guard\/api\/status/, async r => {                // now it reads back armed, the phone away
+    const b = fixture("guard_api_status.json"); b.camera.armed = true; b.present = false;
+    await r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(b) });
+  });
+  await expect(cam).toHaveText("Disarm camera now", { timeout: 15_000 });
+  posts.length = 0;
+  await cam.click();
+  await expect(dialog(page)).toContainText("Disarm the camera?");
+  await expect(dialog(page)).toContainText("not arm it again until the phone is back");
+  await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Keep it armed");
+  await expect(page.locator("#dlgSheet [data-default]")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#dialog")).not.toHaveClass(/open/);
+  expect(posts).toEqual([]);
+  await cam.click(); await page.locator("#dlgSheet button:not([data-default])").filter({ hasText: "Disarm" }).click();
+  await expect.poll(() => posts.map(p => [p.url, p.body])).toEqual([["/api/guard/api/camera", { armed: false }]]);
+  expect(errors).toEqual([]);
+});
+
+test("Anchor drag push: Emergency by default, its priority can be changed (asks first, Keep it an emergency); the others never Emergency", async ({ page }) => {
+  const posts: Posted[] = [];
+  const errors = await setUp(page, { posts });
+  await open(page, "#anchor", "#aViews [data-aview=settings]");
+  await expect(page.locator("#as-push-pri-drag")).toHaveValue("2");
+  await expect(page.locator("#as-push-pri-gps option[value='2']")).toHaveCount(0);
+  await page.locator("#as-push-pri-drag").selectOption("1");
+  await page.locator("[data-ntest=drag]").click();                                   // not an emergency now: a normal test push
+  await expect.poll(() => posts.at(-1)?.body).toMatchObject({ action: "push_test", key: "drag", priority: 1 });
+  const n = posts.length;
+  await page.locator("#aSetSave").click();
+  await expect(dialog(page)).toContainText("Anchor drag no longer an emergency?");
+  await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Keep it an emergency");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(300); expect(posts.length).toBe(n);                      // declined: nothing saved
+  await page.locator("#aSetSave").click(); await page.locator("#dlgSheet button:not([data-default])").filter({ hasText: "Change it" }).click();
+  await expect.poll(() => (posts.at(-1)?.body as any)?.settings).toMatchObject({ push_prio_drag: 1 });
+  expect(errors).toEqual([]);
 });
 
 test("Overview: Anchor up asks first, Cancel the default; confirming raises it", async ({ page }) => {

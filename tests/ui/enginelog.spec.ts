@@ -160,11 +160,12 @@ test("Engine and fuel: the fuel left, estimated from a full tank at the last fil
   await open(page, "#enginelog", null);
   await expect(page.locator("#lBody .estim")).toContainText("Estimated remaining");
   await expect(page.locator("#lBody .estim .v")).toHaveText(/356\s*L\s*51\s*h/);
+  await expect(page.locator("#lBody .mini").first()).toHaveText(/Last fill\s*182 L\s*2,?315 h/);              // with the engine hours of that fill
   await open(page, "#overview", null);
   const tile = page.locator("#ovTiles .tile").filter({ has: page.locator("a[href='#enginelog']") });
   await expect(tile.locator("h3")).toHaveText("Engine and fuel");
   await expect(tile.locator(".big")).toHaveText("Estimated remaining 356 L – 51 h");              // big, under the title
-  await expect(tile.locator(".line").first()).toContainText("Last refuel");
+  await expect(tile.locator(".line").first()).toHaveText(/^Last refuel .+ – 182 L – 2,?315 h$/);           // date, litres and engine hours
   await expect(tile.locator(".mini").nth(2)).toHaveText(/Maintenance\s*2/);                        // the mock: 2 schedule items due
   await expect(tile.locator(".mini").nth(2).locator(".n")).toHaveClass(/badc/);
   await expect(page.locator("#ovTiles .tile").filter({ has: page.locator("a[href='#power']") }).locator(".mini").nth(1).locator(".n")).toHaveText("0 W31°");   // the alternator's temperature, small after its power

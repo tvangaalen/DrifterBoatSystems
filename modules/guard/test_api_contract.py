@@ -106,6 +106,31 @@ class ApiContract:
         self.guard.armed_by_us = False; self.guard.test_running = True
         self.assertEqual(self.post("/api/test", {}), (409, {"error": "test already running"}))
 
+    def test_camera_by_hand(self):
+        self.guard.tick()                                                                   # phone on board
+        self.assertEqual(self.post("/api/camera", {"armed": True}), (200, {"armed": True, "held": False}))
+        self.assertEqual(self.cam.calls, [True]); self.assertFalse(self.guard.armed_by_us)  # armed by hand: not BoatGuard's to undo
+        self.t[0] += 60; self.guard.tick(); self.assertEqual(self.cam.calls, [True])          # on board: stays armed
+        self.assertTrue(self.get("/api/status")[1]["camera"]["armed"])
+        self.assertEqual(self.post("/api/camera", {"armed": False}), (200, {"armed": False, "held": False}))
+        self.seen[0] = set(); self.t[0] += 10; self.guard.tick(); self.t[0] += 301; self.guard.tick()
+        self.assertEqual(self.cam.calls, [True, False, True]); self.assertTrue(self.guard.armed_by_us)   # away: BoatGuard arms
+        # disarmed by hand while away: not armed again until the phone is back, also after a restart
+        self.assertEqual(self.post("/api/camera", {"armed": False}), (200, {"armed": False, "held": True}))
+        self.assertFalse(self.guard.armed_by_us)
+        self.t[0] += 600; self.guard.tick(); self.assertEqual(self.cam.calls, [True, False, True, False])
+        j = self.get("/api/status")[1]; self.assertEqual((j["held"], j["arm_at"]), (True, None))
+        self.assertTrue(json.loads((self.dir / "state.json").read_text())["held"])
+        self.seen[0] = {PHONE}; self.t[0] += 30; self.guard.tick(); self.assertFalse(self.guard.held)   # back on board: ends the hold
+        self.seen[0] = set(); self.t[0] += 30; self.guard.tick(); self.t[0] += 301; self.guard.tick()
+        self.assertEqual(self.cam.calls[-1], True)                                          # the next departure arms again
+        for bad in ({}, {"armed": "yes"}, {"armed": 1}):
+            self.assertEqual(self.post("/api/camera", bad), (400, {"error": "armed must be true or false"}))
+        self.cam.fail = "cloud down"
+        self.assertEqual(self.post("/api/camera", {"armed": True}), (503, {"error": "could not arm the camera: cloud down"}))
+        self.cam.fail = None; self.guard.test_running = True
+        self.assertEqual(self.post("/api/camera", {"armed": True}), (409, {"error": "the camera test is running"}))
+
     def test_requests_refused(self):
         self.assertEqual(self.post("/api/enabled", {"enabled": False}, ctype="text/plain"), (415, {"error": "json only"}))
         self.assertEqual(self.post("/api/enabled", "{not json"), (400, {"error": "invalid JSON"}))

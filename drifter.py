@@ -58,7 +58,7 @@ ROUTES = {
     ],
     "guard": [  # BoatGuard
         ("GET", r"/api/(status|log)"),
-        ("POST", r"/api/(enabled|settings|notify-test|test)"),
+        ("POST", r"/api/(enabled|settings|notify-test|test|camera)"),   # camera: arm/disarm by hand (Overview tile)
     ],
     "washer": [  # VIOMI W1 controller
         ("GET", r"/api/(status|schedule|start-check)"),

@@ -715,18 +715,24 @@ class PushHooksTest(unittest.TestCase):
         self.w.command({"action": "push_test", "key": "depth", "sound": "siren", "priority": -1})
         self.assertEqual(self.n.calls[-1], ("test", "\u2693 Test: Shallow water", -1, "siren"))
         self.w.command({"action": "push_alarm_test", "sound": "echo"}); self.assertEqual(self.n.calls[-1], ("test_alarm", "echo"))
-        for bad in ({"key": "drag"}, {"key": "nope"}, {"key": "gps", "sound": "boom"}, {"key": "gps", "priority": 2}):
+        self.w.command({"action": "push_test", "key": "drag", "sound": "siren", "priority": 1})          # drag not as an emergency: a normal test
+        self.assertEqual(self.n.calls[-1], ("test", "⚓ Test: Anchor drag", 1, "siren"))
+        for bad in ({"key": "drag"}, {"key": "drag", "priority": 2}, {"key": "nope"}, {"key": "gps", "sound": "boom"}, {"key": "gps", "priority": 2}):
             with self.assertRaises(ValueError): self.w.command({"action": "push_test", **bad})
 
     def test_priority_and_sound_from_the_settings(self):
         self.w.command({"action": "settings", "settings": {"push_sound_drag": "siren", "push_prio_cleared": -1, "push_sound_cleared": "bike"}})
         self.drag(30); self.s.run(1, lat=LAT, lon=LON)
-        self.assertEqual(self.n.kw, [{"priority": 2, "sound": "siren"}, {"priority": -1, "sound": "bike"}])   # drag stays an emergency
+        self.assertEqual(self.n.kw, [{"priority": 2, "sound": "siren"}, {"priority": -1, "sound": "bike"}])   # drag: emergency by default
+        self.n.kw.clear(); self.n.calls.clear()
+        self.w.command({"action": "settings", "settings": {"push_prio_drag": 1}})                       # drag's own priority
+        self.drag(30); self.s.run(1, lat=LAT, lon=LON)
+        self.assertEqual(self.n.kw[0], {"priority": 1, "sound": "siren"})
         self.n.kw.clear(); self.n.calls.clear()
         self.w.command({"action": "settings", "settings": {"push_on_drag": False}})
         self.drag(30); self.s.run(1, lat=LAT, lon=LON)
         self.assertEqual([c for c in self.n.calls if c[0] in ("alarm", "cleared")], [])                # switched off: no push
-        for bad in ({"push_prio_gps": 2}, {"push_prio_gps": True}, {"push_sound_gps": "boom"}):
+        for bad in ({"push_prio_gps": 2}, {"push_prio_gps": True}, {"push_sound_gps": "boom"}, {"push_prio_drag": 3}, {"push_prio_drag": 1.5}):
             with self.assertRaises(ValueError): self.w.command({"action": "settings", "settings": bad})
 
 
@@ -777,11 +783,13 @@ class PushoverTest(unittest.TestCase):
     def test_shared_keys_win_and_only_drag_is_an_emergency(self):
         shared = Path(self.dir.name, "shared.json"); shared.write_text(json.dumps({"app_token": "s" * 30, "user_key": "t" * 30}), encoding="utf-8")
         p = Pushover(self.f, None, start=False, shared=shared); p.BACKOFF_S = (0, 0, 0); self.p = p
-        p.alarm("gps", "GPS", "lost", 1000, priority=2, sound="bike"); p.alarm("drag", "Drag", "x", 1000, priority=-2, sound="siren")
-        self.run_queue([{"status": 1}, {"status": 1, "receipt": "R"}])
-        a, b = self.posts[0][1], self.posts[1][1]
-        self.assertEqual((a["token"], a["user"], a["priority"], a["sound"]), ("s" * 30, "t" * 30, 1, "bike"))
+        p.alarm("gps", "GPS", "lost", 1000, priority=2, sound="bike"); p.alarm("drag", "Drag", "x", 1000, priority=2, sound="siren")
+        p.alarm("drag", "Drag", "x", 1000, priority=-1); p.alarm("drag", "Drag", "x", 1000, priority=5)
+        self.run_queue([{"status": 1}, {"status": 1, "receipt": "R"}, {"status": 1}, {"status": 1, "receipt": "R2"}])
+        a, b, c, d = (x[1] for x in self.posts)
+        self.assertEqual((a["token"], a["user"], a["priority"], a["sound"]), ("s" * 30, "t" * 30, 1, "bike"))   # gps: never an emergency
         self.assertEqual((b["priority"], b["sound"]), (2, "siren"))
+        self.assertEqual((c["priority"], "retry" in c, d["priority"]), (-1, False, 2))                 # drag: its own setting, at most 2
 
     def test_gps_lost_is_high_priority_not_emergency(self):
         self.p.alarm("gps", "GPS", "lost", 1000); self.run_queue([{"status": 1}])

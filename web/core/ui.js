@@ -17,16 +17,17 @@ export const PRIORITY_LABEL = {"-2": "Lowest", "-1": "Quiet", "0": "Normal", "1"
 export const soundLabel = s => s === "" ? "App default" : s === "none" ? "Silent" : s[0].toUpperCase() + s.slice(1);
 /**
  * Rows with an on/off switch (when the notification has "on"), a sound and a priority select per notification. `events`: {key: title or [title, hint]}; `prefs`: {key: {priority, sound}};
- * `fixed`: {key: priority} for a notification whose priority cannot be changed (shown as text); priorities offered: -2..`max`;
+ * `fixed`: {key: priority} for a notification whose priority cannot be changed (shown as text); priorities offered: -2..`max`,
+ * or -2..`maxOf[key]` for one notification (anchor drag may be an emergency, the others not);
  * `test`: a Test button per notification (`data-ntest` = its key), which the page sends with the sound and priority shown.
  */
-/** @param {string} prefix @param {Record<string, string|string[]>} events @param {Record<string, {on?: boolean, priority: number, sound: string}>} prefs @param {{max?: number, fixed?: Record<string, number>, test?: boolean}} [opts] */
+/** @param {string} prefix @param {Record<string, string|string[]>} events @param {Record<string, {on?: boolean, priority: number, sound: string}>} prefs @param {{max?: number, maxOf?: Record<string, number>, fixed?: Record<string, number>, test?: boolean}} [opts] */
 export function notifyRows(prefix, events, prefs, opts = {}) {
   const max = opts.max ?? 1, fixed = opts.fixed || {};
   return Object.entries(events).map(([e, t]) => {
-    const [title, hint] = Array.isArray(t) ? t : [t, ""], p = prefs[e] || {priority: 0, sound: ""};
+    const [title, hint] = Array.isArray(t) ? t : [t, ""], p = prefs[e] || {priority: 0, sound: ""}, top = (opts.maxOf || {})[e] ?? max;
     const prio = e in fixed ? `<span class="u-flex-1 hint">${esc(PRIORITY_LABEL[fixed[e]])} (fixed)</span>`
-      : `<select class="u-flex-1 field" id="${prefix}pri-${e}" aria-label="Priority for ${esc(title)}">${Object.entries(PRIORITY_LABEL).filter(([v]) => +v <= max)
+      : `<select class="u-flex-1 field" id="${prefix}pri-${e}" aria-label="Priority for ${esc(title)}">${Object.entries(PRIORITY_LABEL).filter(([v]) => +v <= top)
         .map(([v, l]) => `<option value="${v}" ${+v === p.priority ? "selected" : ""}>${l}</option>`).join("")}</select>`;
     return `<div class="row col"><div class="u-d-flex u-jc-between u-gap-10 u-ai-center"><div class="k"><b>${esc(title)}</b>${hint ? `<small>${esc(hint)}</small>` : ""}</div>
       ${"on" in p ? sw(`${prefix}on-${e}`, p.on !== false, `aria-label="${esc(title)} on or off"`) : ""}</div>

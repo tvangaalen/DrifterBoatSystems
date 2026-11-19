@@ -218,6 +218,7 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 .tile .tlink{position:absolute;inset:0;border-radius:inherit;z-index:1}   /* the whole tile opens its page */
 .tile .tctl{position:relative;z-index:2}                                  /* a control in a tile stays usable above that link */
 .tile .tbtn{margin-top:12px;align-self:stretch;flex-wrap:wrap;row-gap:0}.tile .tbtn small{flex-basis:100%;font-size:12px;font-weight:600}   /* a second line under the label */
+.mini .n small.hrs{font-size:11px;font-weight:650;color:var(--muted);margin-left:4px}   /* the engine hours at the last fill */
 .mini .n small.tmp{font-size:10.5px;font-weight:650;color:var(--warn);margin-left:3px;letter-spacing:-.01em}.mini .n.tight{font-size:13px}.mini .n.tight2{font-size:12px}.mini .n.tight3{font-size:11px}   /* a long alternator value with its temperature */   /* the alternator's temperature after its power */
 .minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
 .minis.m4{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
@@ -340,8 +341,9 @@ select.field{padding-right:30px;-webkit-appearance:none;appearance:none;backgrou
 @media (min-width:820px){.toast{bottom:28px}}
 
 /* map */
-.map{height:56vh;min-height:300px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--card2);position:relative;isolation:isolate;z-index:0}
-@media (min-width:1024px){.map{height:calc(100vh - 210px);min-height:420px}}
+/* the anchor map is always square (the user's choice of 2026-11-19): as wide as its column, but never taller than the screen
+   leaves room for, then narrower and centred */
+.map{aspect-ratio:1/1;width:100%;max-width:max(300px,calc(100svh - 170px));margin-inline:auto;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--card2);position:relative;isolation:isolate;z-index:0}
 .map .leaflet-tile-pane{filter:var(--map-filter)}
 .map.leaflet-container{background:var(--card2);font:inherit}
 .map .leaflet-control-attribution{background:color-mix(in srgb,var(--card) 80%,transparent);color:var(--muted);font-size:10px}

@@ -70,7 +70,7 @@ const m = {
     const f = d.fuel[0], s = d.stats, e = d.engine || {}, x = estimate(d);
     const hours = e.fresh && e.hours != null ? e.hours : e.last_hours != null ? e.last_hours : f ? f.engine_hours : null;
     return `<div class="u-fs-22 big">Estimated remaining ${x ? `<span class="nw">${estText(x).replace(" · ", " – ")}</span>` :`– <small>(${esc(estWhy(d))})</small>`}</div>
-      <div class="line">${f ? `Last refuel ${esc(dmy(f.date))} – ${num(f.litres, 0)} L` : "No fills yet: log the next one on the Engine and fuel page"}</div>
+      <div class="line">${f ? `Last refuel ${esc(dmy(f.date))} – ${num(f.litres, 0)} L${f.engine_hours != null ? ` – ${num(f.engine_hours, 0)} h` : ""}` : "No fills yet: log the next one on the Engine and fuel page"}</div>
       <div class="minis"><div class="mini"><div class="l">Engine hours</div><div class="n">${hours != null ? num(hours, 0) + " h" : "–"}</div></div>
       <div class="mini"><div class="l">Avg use</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) + " L/h" : "–"}</div></div>
       <div class="mini"><div class="l">Maintenance</div>${maintMini(d)}</div></div>`;
@@ -103,7 +103,7 @@ function fuelView(d) {
   return `<div class="u-maxw-720 card pad">
     <div class="estim"><div class="k"><b>Estimated remaining</b><small>${x ? `Tank full (${num(x.cap, 0)} L) at the last fill, ${num(x.ran, 1)} engine hours since, at ${num(x.use, 1)} L/h (average ${num(s.avg_l_per_h, 1)} L/h + ${num(x.margin - 100, 0)} % margin)` : esc(estWhy(d)[0].toUpperCase() + estWhy(d).slice(1))}</small></div>
       ${x ? `<div class="v num"><b>${num(x.l, 0)}<small> L</small></b><b>${num(x.h, 0)}<small> h</small></b></div>` : ""}</div>
-    <div class="minis u-mt-12"><div class="mini"><div class="l">Last fill</div><div class="n">${s.last_litres != null ? num(s.last_litres, 0) + " L" : "–"}</div></div>
+    <div class="minis u-mt-12"><div class="mini"><div class="l">Last fill</div><div class="n">${s.last_litres != null ? num(s.last_litres, 0) + " L" + (s.last_hours != null ? `<small class="hrs">${num(s.last_hours, 0)} h</small>` : "") : "–"}</div></div>
       <div class="mini"><div class="l">Since</div><div class="n">${s.last_date ? since(dayMs(s.last_date)) : "–"}</div></div>
       <div class="mini"><div class="l">Fills</div><div class="n">${s.fills}</div></div></div>
     <div class="minis m4 u-mt-12"><div class="mini"><div class="l">Avg L/h</div><div class="n">${s.avg_l_per_h != null ? num(s.avg_l_per_h, 1) : "–"}</div></div>
