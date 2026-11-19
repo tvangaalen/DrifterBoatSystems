@@ -11,6 +11,9 @@
   the iPhone out
 - Servers follow a change of Windows' time zone without a restart (BoatGuard said 'since 10:41' for 11:41 after the zone
   went to UTC+2 on 2026-11-13)
+- Set SOC (all and per battery) works again; anchor map always square; Arm/Disarm camera now on the Overview's BoatGuard
+  tile; engine hours at the last refuel; anchor drag push priority a setting (emergency by default); washer tile last on
+  the Overview
 
 ## 1.4
 
