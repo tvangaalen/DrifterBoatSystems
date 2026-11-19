@@ -81,11 +81,30 @@ class GatewayTest(unittest.TestCase):
     def test_post_needs_marker_header(self):
         code, _ = self.req("POST", "/api/guard/api/test", {}); self.assertEqual(code, 403); self.assertEqual(Recorder.seen, [])
 
-    def test_backup_keys_only_on_the_live_gateway(self):
-        code, _ = self.req("POST", "/api/backup-keys", {}); self.assertEqual(code, 403)            # the app's header is required
-        code, data = self.post("/api/backup-keys")                                              # supervise is off here: never copies
-        self.assertEqual(code, 409); self.assertIn(b"live app", data)
-        j = json.loads(self.req("GET", "/api/systems")[1]); self.assertEqual(j["backup"]["count"], 7)
+    def test_backup_only_on_the_live_gateway(self):
+        code, _ = self.req("POST", "/api/backup/now", {}); self.assertEqual(code, 403)             # the app's header is required
+        for what in ("now", "settings", "restore"):                                             # supervise is off here: never copies
+            code, data = self.post(f"/api/backup/{what}"); self.assertEqual(code, 409); self.assertIn(b"live app", data)
+        self.assertEqual(self.post("/api/backup-keys")[0], 404)
+        j = json.loads(self.req("GET", "/api/systems")[1]); self.assertIsNone(j["backup"])
+
+    def test_backup_routes(self):
+        import tempfile, backup
+        tmp = drifter.Path(tempfile.mkdtemp()); (tmp / "data" / "enginelog").mkdir(parents=True)
+        (tmp / "data" / "enginelog" / "log.json").write_text("{}")
+        bk = backup.Backups(tmp / "data", [], ["enginelog/log.json"], tmp / "data" / "gateway" / "backup.json", tmp / "dest")
+        cfg = drifter.load_config(drifter.Path("does-not-exist.json")); cfg.update(bind="127.0.0.1", port=0)
+        gw = drifter.serve(cfg, backups=bk); threading.Thread(target=gw.serve_forever, daemon=True).start()
+        port, self.port = self.port, gw.server_address[1]
+        try:
+            code, data = self.post("/api/backup/now"); r = json.loads(data)
+            self.assertEqual((code, r["copied"]), (200, ["enginelog/log.json"]))
+            self.assertEqual(self.post("/api/backup/settings", {"keep": 0})[0], 400)
+            code, data = self.post("/api/backup/settings", {"at": "04:00"}); self.assertEqual(json.loads(data)["settings"]["at"], "04:00")
+            j = json.loads(self.req("GET", "/api/systems")[1])["backup"]
+            self.assertEqual((j["at"], j["backups"][0]["name"]), ("04:00", r["name"]))
+            self.assertEqual(self.post("/api/backup/restore", {"name": "nope"})[0], 400)
+        finally: gw.shutdown(); gw.server_close(); self.port = port
 
     def test_post_needs_json(self):
         code, _ = self.req("POST", "/api/guard/api/test", None, {"X-Drifter-Request": "1", "Content-Type": "text/plain"}); self.assertEqual(code, 415)

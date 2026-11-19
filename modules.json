@@ -3,8 +3,9 @@
   "live": "C:\\Drifter",
   "data": "C:\\DrifterData",
   "backup": {"dest": "C:\\DrifterBackups",
-             "files": ["pushover.json", "anchor\\pushover.json", "anchor\\nfl.json", "guard\\pushover.json", "guard\\ezviz_token.json", "washer\\viomi_config.json", "gateway\\pushover.json"],
-             "_comment": "tools/backup.py: the System page's button Backup keys and tokens copies these files (relative to data) to dest; nothing runs on a schedule"},
+             "keys": ["pushover.json", "anchor\\pushover.json", "anchor\\nfl.json", "guard\\pushover.json", "guard\\ezviz_token.json", "washer\\viomi_config.json", "gateway\\pushover.json"],
+             "maintenance": ["enginelog\\log.json"],
+             "_comment": "tools/backup.py: what a back-up holds (relative to data): the keys and tokens, and the engine log (maintenance, fuel fills, engine alarms). dest is the default folder; the folder, the daily time and how many to keep are set on the System page (data\\gateway\\backup.json). Never the MasterVolt history database."},
   "modules": {
     "gateway": {
       "name": "Drifter app", "port": 8100, "dir": ".", "runtime_in_code": true,

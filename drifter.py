@@ -27,7 +27,7 @@ from common.web import QuietServer as Server, tls_context, use_tls
 
 VERSION = "1.4.0"
 HERE = Path(__file__).resolve().parent
-sys.path.append(str(HERE / "tools"))              # tools/backup.py for "Backup keys and tokens"
+sys.path.append(str(HERE / "tools"))              # tools/backup.py: back-up and restore (System page)
 STATIC = HERE / "web"
 log = logging.getLogger("drifter")
 
@@ -339,16 +339,15 @@ def web_build(root: Path = STATIC) -> str:
     return h.hexdigest()[:10]
 
 
-def backup_info() -> dict | None:
-    """Where "Backup keys and tokens" copies to and when it last did (tools/backup.py), for the System page."""
-    try:
-        import backup
-        c = backup.config(); return {"dest": str(c["dest"]), "count": len(c["files"]), "last": backup.last_copy(c["dest"], c["files"])}
+def backup_info(bk) -> dict | None:
+    """The back-up settings, the last and next back-up and the back-ups there are (tools/backup.py), for the System page."""
+    if bk is None: return None
+    try: return bk.info()
     except Exception as e:                                # the page must never fail because of this
         log.warning("back-up info: %s", e); return None
 
 
-def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
+def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None, bk=None):
     extra_hosts = list(cfg.get("allowed_hosts") or [])
     systems = {m: {"name": mv["name"], "classic": mv.get("classic")} for m, mv in cfg["modules"].items()}
 
@@ -387,7 +386,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
             if path == "/api/systems":
                 with up.lock: st = {m: dict(v) for m, v in up.status.items()}
                 return self._json({"version": VERSION, "build": web_build(), "systems": systems, "upstream": st,
-                                   "supervisor": sup.snapshot() if sup else {"enabled": False}, "backup": backup_info(),
+                                   "supervisor": sup.snapshot() if sup else {"enabled": False}, "backup": backup_info(bk),
                                    "alerts": dog.status() if dog else None})
             if path == "/": path = "/index.html"
             f = (STATIC / path.lstrip("/")).resolve()
@@ -415,7 +414,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
             if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json": return self._json({"error": "json only"}, 415)
             if path == "/api/supervisor/restart": return self._restart()
             if path == "/api/supervisor/shutdown": return self._shutdown()
-            if path == "/api/backup-keys": return self._backup_keys()
+            if path in ("/api/backup/now", "/api/backup/settings", "/api/backup/restore"): return self._backup(path.rsplit("/", 1)[1])
             if path == "/api/alerts/test": return self._alert_test()
             if path in ("/api/alerts/keys", "/api/alerts/prefs"): return self._alert_set(path.rsplit("/", 1)[1])
             if not (path.startswith("/api/") and path.count("/") >= 2 and path.split("/")[2] in up.mods): return self._json({"error": "not found"}, 404)
@@ -448,15 +447,22 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
             except ValueError as e: return self._json({"error": str(e)}, 400)
             return self._json({"ok": True, "result": r})
 
-        def _backup_keys(self):
-            """The System page's "Backup keys and tokens": copies the key files to the back-up folder (tools/backup.py).
-            Only where the gateway runs the live system (supervise on): a mock or test gateway never copies real keys."""
-            if not cfg.get("supervise"): return self._json({"error": "only on the boat PC's live app"}, 409)
-            import backup
-            c = backup.config(); r = backup.copy_keys(backup.M.DATA, c["files"], c["dest"])
-            log.info("keys and tokens copied to %s: %d of %d%s", r["dest"], len(r["copied"]), len(c["files"]),
-                     "".join(f"; {m['file']} not copied ({m['error']})" for m in r["missing"]))
-            return self._json({"ok": not r["missing"], **r}, 200 if r["copied"] else 500)
+        def _backup(self, what: str):
+            """The System page's back-up: Back up now, its settings (folder, daily time, how many to keep) and Restore
+            (tools/backup.py). Only where the gateway runs the live system (supervise on) or the mock's own scratch copy:
+            a test gateway never touches real keys."""
+            if bk is None: return self._json({"error": "only on the boat PC's live app"}, 409)
+            try: body = json.loads(self._body or b"{}")
+            except ValueError: return self._json({"error": "invalid JSON"}, 400)
+            if not isinstance(body, dict): return self._json({"error": "invalid JSON"}, 400)
+            try:
+                if what == "now":
+                    r = bk.run("by hand"); return self._json(r, 500 if r["error"] else 200)
+                if what == "settings": return self._json({"ok": True, "settings": bk.set_settings(body)})
+                return self._json(bk.restore(body.get("name"), body.get("what", "all")))
+            except ValueError as e: return self._json({"error": str(e)}, 400)
+            except Exception as e:
+                log.warning("back-up %s failed: %s", what, e); return self._json({"error": str(e)}, 500)
 
         def _shutdown(self):
             """Switch all systems off: every module server stops, then the gateway itself (see serve)."""
@@ -486,7 +492,7 @@ def make_handler(cfg: dict, up: Upstreams, sup=None, dog=None):
     return H
 
 
-def serve(cfg: dict, supervisor=None) -> Server:
+def serve(cfg: dict, supervisor=None, backups=None) -> Server:
     check_bind(cfg["bind"])
     up = Upstreams(cfg)
     if supervisor is None and cfg.get("supervise"):
@@ -496,7 +502,10 @@ def serve(cfg: dict, supervisor=None) -> Server:
         data = Path(os.environ.get("DRIFTER_DATA") or "C:/DrifterData")
         key = cfg.get("alerts_pushover") or data / "gateway" / "pushover.json"
         dog = Watchdog(supervisor, key, shared=cfg.get("pushover_shared") or data / pushover.SHARED_NAME); dog.start()
-    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor, dog))
+    if backups is None and cfg.get("supervise") and supervisor is not None:   # the live gateway: the real files, daily
+        import backup
+        backups = backup.Backups.live(restart=supervisor.restart); backups.start()
+    srv = Server((cfg["bind"], int(cfg["port"])), make_handler(cfg, up, supervisor, dog, backups))
     scheme = "http"
     if cfg.get("certfile"): use_tls(srv, tls_context(cfg["certfile"], cfg["keyfile"])); scheme = "https"
     log.info("Drifter Boat Systems %s on %s://%s:%d/", VERSION, scheme, cfg["bind"], cfg["port"])

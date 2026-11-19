@@ -59,8 +59,22 @@
 <label class="switch"><input type="checkbox" role="switch" id="saon-back" checked="" aria-label="System back on or off"><i></i></label></div>
 <div class="u-d-flex u-gap-6"><select class="u-flex-1 field" id="sasnd-back" aria-label="Sound for System back"><option value="" selected="">App default</option><option value="pushover">Pushover</option><option value="bike">Bike</option><option value="bugle">Bugle</option><option value="cashregister">Cashregister</option><option value="classical">Classical</option><option value="cosmic">Cosmic</option><option value="falling">Falling</option><option value="gamelan">Gamelan</option><option value="incoming">Incoming</option><option value="intermission">Intermission</option><option value="magic">Magic</option><option value="mechanical">Mechanical</option><option value="pianobar">Pianobar</option><option value="siren">Siren</option><option value="spacealarm">Spacealarm</option><option value="tugboat">Tugboat</option><option value="alien">Alien</option><option value="climb">Climb</option><option value="persistent">Persistent</option><option value="echo">Echo</option><option value="updown">Updown</option><option value="vibrate">Vibrate</option><option value="none">Silent</option></select><select class="u-flex-1 field" id="sapri-back" aria-label="Priority for System back"><option value="0" selected="">Normal</option><option value="1">High</option><option value="-2">Lowest</option><option value="-1">Quiet</option></select><button class="btn sec" type="button" data-ntest="back" aria-label="Send a test of System back">Test</button></div></div>
 <div class="row"><span></span><button class="btn sec" type="button" id="sysAlertSave">Save alerts</button></div></div></div></div>
-<div id="sysBackupWrap"><h2 class="sec">Keys and tokens</h2><div class="card pad"><button class="btn sec" type="button" id="sysBackup">Backup keys and tokens</button>
-<p class="u-m-10-2-0 hint">Copies the Pushover, noforeignland.com, EZVIZ and washer keys (6 files) to C:\DrifterBackups on the boat PC,
- replacing the previous copy. Last copied 30/10 16:28.</p></div></div>
+<div id="sysBackupWrap" data-built="1"><h2 class="sec">Back-up</h2><div class="card"><div class="rows">
+<div class="row col"><span class="hint">The keys and tokens (Pushover, noforeignland.com, EZVIZ, washer: 7 files) and the engine log (maintenance, fuel fills, engine alarms), each time in a new dated folder. Never the energy history database.</span>
+<span class="hint" id="sysBkSt">Last back-up 00:00 (daily). Next 03/11 00:00.</span>
+<div><button class="btn sec" type="button" id="sysBackup">Back up now</button></div></div>
+<label class="row col"><span class="k"><b>Folder</b><small>On the boat PC, or a network share (\\server\share\…)</small></span>
+<input class="field" id="sysBkDest" type="text" maxlength="200" spellcheck="false" autocapitalize="off" value="C:\DrifterBackups"></label>
+<div class="row"><div class="k"><b>Daily back-up</b><small>Missed while the PC was off: made at its next start</small></div><label class="switch"><input type="checkbox" role="switch" id="sysBkDaily" checked=""><i></i></label></div>
+<div class="row"><span class="k"><b>At</b><small>24-hour, HH:MM</small></span>
+<label class="numf"><input class="field" id="sysBkAt" type="text" inputmode="numeric" maxlength="5" aria-label="Daily back-up at" value="03:00"></label></div>
+<div class="row"><span class="k"><b>Keep</b><small>The newest back-ups (1–365); older ones are removed</small></span>
+<label class="numf"><input class="field" id="sysBkKeep" type="number" inputmode="numeric" min="1" max="365" step="1" aria-label="Back-ups to keep" value="30"></label></div>
+<div class="row"><span></span><button class="btn sec" type="button" id="sysBkSave">Save back-up settings</button></div>
+<div class="row col"><span class="k"><b>Restore</b><small>The current files are backed up first, so a restore can be undone; the systems that use them restart</small></span>
+<select class="field" id="sysBkPick" aria-label="Back-up to restore" data-names="drifter-backup-20261101-030000,drifter-backup-20261031-142000"><option value="drifter-backup-20261101-030000">00:00 · daily · 7 keys + engine log</option><option value="drifter-backup-20261031-142000">01/11 11:20 · by hand · 7 keys + engine log</option></select>
+<div class="u-d-flex u-gap-8"><select class="u-flex-1 field" id="sysBkWhat" aria-label="What to restore"><option value="all">Keys and engine log</option><option value="keys">Keys and tokens only</option><option value="maintenance">Engine log only</option></select>
+<button class="btn sec" type="button" id="sysBkRestore">Restore…</button></div></div>
+</div></div></div>
 <h2 class="sec">Install on iPhone or iPad</h2><div class="card pad"><p class="u-m-0 hint">Open this page in Safari → Share → <b>Add to Home Screen</b>. It then opens full screen like an app. The phone or tablet must trust the boat's own certificate authority (Mastervolt Local CA) once.</p></div>
 <p class="u-ta-center u-m-18-0 hint" id="sysVer">Drifter Boat Systems v0.19.0</p></section>

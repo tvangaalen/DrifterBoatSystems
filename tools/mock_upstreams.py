@@ -457,5 +457,12 @@ if __name__ == "__main__":
         if OFF:
             cfg["port"] = int(cfg["port"]) + OFF
             for mod in cfg["modules"].values(): host, port = mod["url"].rsplit(":", 1); mod["url"] = f"{host}:{int(port) + OFF}"
-        drifter.serve(cfg, supervisor=fake).serve_forever()
+        # Back-up and restore on made-up files in the temp folder: never the real keys or engine log.
+        import backup
+        for rel in ("pushover.json", "anchor/pushover.json", "guard/ezviz_token.json", "enginelog/log.json"):
+            (tmp / "data" / rel).parent.mkdir(parents=True, exist_ok=True); (tmp / "data" / rel).write_text('{"mock": true}', encoding="utf-8")
+        bk = backup.Backups(tmp / "data", ["pushover.json", "anchor/pushover.json", "guard/ezviz_token.json"], ["enginelog/log.json"],
+                            tmp / "data" / "gateway" / "backup.json", tmp / "backups", restart=fake.restart)
+        bk.run("daily"); bk.start()
+        drifter.serve(cfg, supervisor=fake, backups=bk).serve_forever()
     threading.Event().wait()

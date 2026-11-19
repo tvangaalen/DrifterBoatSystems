@@ -217,12 +217,48 @@ async function saveAlerts(btn) {
   refreshSystem(true);
 }
 
-// "Backup keys and tokens": the gateway copies the key files to the back-up folder on the boat PC (tools/backup.py), only
-// when the user presses it. The card says where to and when it last happened.
+// Back-up and restore (tools/backup.py through the gateway): the keys and tokens and the engine log, to a folder on the boat
+// PC, by hand and daily at a set time; a restore backs up the current files first. The card is built once (a poll never
+// wipes a choice being made); the poll only updates the status line and the list of back-ups.
+const BK_WHAT = [["all", "Keys and engine log"], ["keys", "Keys and tokens only"], ["maintenance", "Engine log only"]];
+const BK_REASON = {"by hand": "by hand", "daily": "daily", "before restore": "before a restore"};
+function bkStatus(b) {
+  const l = b.last;
+  const last = !l ? "No back-up made yet."
+    : l.error ? `<span class="badc">Last back-up ${esc(dayTime(l.t))} failed: ${esc(l.error)}</span>`
+    : l.missing && l.missing.length ? `<span class="warn">Last back-up ${esc(dayTime(l.t))} (${esc(BK_REASON[l.reason] || l.reason)}): ${esc(l.missing.join(", "))} not found.</span>`
+    : `Last back-up ${esc(dayTime(l.t))} (${esc(BK_REASON[l.reason] || l.reason)}).`;
+  return `${last} ${b.next ? `Next ${esc(dayTime(b.next))}.` : "No daily back-up."}`;
+}
+function bkOptions(b) {
+  return b.backups.length ? b.backups.map(x => `<option value="${esc(x.name)}">${esc(dayTime(x.t))} · ${esc(BK_REASON[x.reason] || x.reason)} · ${x.keys} keys${x.maintenance ? " + engine log" : ""}</option>`).join("")
+    : `<option value="">No back-ups in this folder</option>`;
+}
 function backupCard(b) {
-  return `<h2 class="sec">Keys and tokens</h2><div class="card pad"><button class="btn sec" type="button" id="sysBackup">Backup keys and tokens</button>
-    <p class="u-m-10-2-0 hint">Copies the Pushover, noforeignland.com, EZVIZ and washer keys (${esc(b.count)} files) to ${esc(b.dest)} on the boat PC,
-    replacing the previous copy. ${b.last ? `Last copied ${esc(dayTime(b.last))}.` : "Not copied yet."}</p></div>`;
+  return `<h2 class="sec">Back-up</h2><div class="card"><div class="rows">
+    <div class="row col"><span class="hint">The keys and tokens (Pushover, noforeignland.com, EZVIZ, washer: ${esc(b.keys)} files) and the engine log (maintenance, fuel fills, engine alarms), each time in a new dated folder. Never the energy history database.</span>
+      <span class="hint" id="sysBkSt">${bkStatus(b)}</span>
+      <div><button class="btn sec" type="button" id="sysBackup">Back up now</button></div></div>
+    <label class="row col"><span class="k"><b>Folder</b><small>On the boat PC, or a network share (\\\\server\\share\\…)</small></span>
+      <input class="field" id="sysBkDest" type="text" maxlength="200" spellcheck="false" autocapitalize="off" value="${esc(b.dest)}"></label>
+    <div class="row"><div class="k"><b>Daily back-up</b><small>Missed while the PC was off: made at its next start</small></div>${sw("sysBkDaily", b.daily)}</div>
+    <div class="row"><span class="k"><b>At</b><small>24-hour, HH:MM</small></span>
+      <label class="numf"><input class="field" id="sysBkAt" type="text" inputmode="numeric" maxlength="5" aria-label="Daily back-up at" value="${esc(b.at)}"></label></div>
+    <div class="row"><span class="k"><b>Keep</b><small>The newest back-ups (${b.keep_limits[0]}–${b.keep_limits[1]}); older ones are removed</small></span>
+      <label class="numf"><input class="field" id="sysBkKeep" type="number" inputmode="numeric" min="${b.keep_limits[0]}" max="${b.keep_limits[1]}" step="1" aria-label="Back-ups to keep" value="${esc(b.keep)}"></label></div>
+    <div class="row"><span></span><button class="btn sec" type="button" id="sysBkSave">Save back-up settings</button></div>
+    <div class="row col"><span class="k"><b>Restore</b><small>The current files are backed up first, so a restore can be undone; the systems that use them restart</small></span>
+      <select class="field" id="sysBkPick" aria-label="Back-up to restore">${bkOptions(b)}</select>
+      <div class="u-d-flex u-gap-8"><select class="u-flex-1 field" id="sysBkWhat" aria-label="What to restore">${BK_WHAT.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("")}</select>
+        <button class="btn sec" type="button" id="sysBkRestore" ${b.backups.length ? "" : "disabled"}>Restore…</button></div></div>
+  </div></div>`;
+}
+function backupRefresh(b) {
+  $("sysBkSt").innerHTML = bkStatus(b);
+  const pick = /** @type {HTMLSelectElement} */ ($("sysBkPick")), names = b.backups.map(x => x.name).join();
+  if (pick.dataset.names !== names) { const v = pick.value; pick.innerHTML = bkOptions(b); pick.dataset.names = names; if (b.backups.some(x => x.name === v)) pick.value = v; }
+  const rb = /** @type {HTMLButtonElement} */ ($("sysBkRestore"));
+  if (!rb.classList.contains("busy")) rb.disabled = !b.backups.length;
 }
 async function renderSystem(el) {
   el.innerHTML = `<h2 class="sec">Display</h2><div class="card pad">${themeSeg()}<p class="u-m-10-2-0 hint">Auto follows the device (light or dark). Night is dim red on black, to keep your night vision. Remembered on this device.</p>
@@ -244,7 +280,9 @@ async function renderSystem(el) {
       if (standalone) location.href = `log.html#${l.dataset.log}`; else window.open(`log.html#${l.dataset.log}`, `drifter-log-${l.dataset.log}`);
     }
     if (e.target.closest("#sysOff")) switchAllOff(e.target.closest("#sysOff"));
-    if (e.target.closest("#sysBackup")) backupKeys(e.target.closest("#sysBackup"));
+    if (e.target.closest("#sysBackup")) backupNow(e.target.closest("#sysBackup"));
+    if (e.target.closest("#sysBkSave")) backupSave(e.target.closest("#sysBkSave"));
+    if (e.target.closest("#sysBkRestore")) backupRestore(e.target.closest("#sysBkRestore"));
     if (e.target.closest("#sysAlertTest")) alertTest(e.target.closest("#sysAlertTest"));
     const nt = e.target.closest("#sysAlertRows [data-ntest]"); if (nt) alertTest(nt, nt.dataset.ntest);
     if (e.target.closest("#sysAlertSave")) saveAlerts(e.target.closest("#sysAlertSave"));
@@ -277,14 +315,15 @@ async function refreshSystem(rebuild = false) {
   $("sysOffWrap").hidden = !sup; $("sysOff").disabled = !!(sup && sup.shutdown && sup.shutdown.state === "running");
   if (sup && sup.events.length) $("sysEvSum").textContent = `last ${dayTime(sup.events[sup.events.length - 1].t)}`;
   if (sup) $("sysEvents").innerHTML = sup.events.slice().reverse().slice(0, 30).map(e => `<div class="${e.kind === "bad" ? "bad" : e.kind === "warn" ? "warn" : ""}"><time>${esc(dayTime(e.t))}</time><span class="msg"><b>${esc(e.module)}</b> ${esc(e.text)}</span></div>`).join("");
-  const busy = $("sysBackup") && $("sysBackup").disabled;           // never replace the button while it is copying
   const aw = $("sysAlertsWrap"), al = sup && sysInfo.alerts;      // built once: a poll never wipes a key being typed or a choice
   if (aw && (!al || rebuild || !aw.dataset.built)) { aw.innerHTML = al ? alertsCard(al) : ""; aw.dataset.built = al ? "1" : ""; }
   else if (aw && al) {
     $("sysPushSt").innerHTML = alertsStatus(al); $("sysAlertTest").disabled = !al.configured;
     const k = al.shared || {}; $("sysPushTok").placeholder = k.app_token || "30 letters and digits"; $("sysPushUsr").placeholder = k.user_key || "30 letters and digits";
   }
-  if ($("sysBackupWrap") && !busy) $("sysBackupWrap").innerHTML = sup && sysInfo.backup ? backupCard(sysInfo.backup) : "";
+  const bw = $("sysBackupWrap"), bk = sup && sysInfo.backup;        // built once, like the alerts
+  if (bw && (!bk || rebuild || !bw.dataset.built)) { bw.innerHTML = bk ? backupCard(bk) : ""; bw.dataset.built = bk ? "1" : ""; if (bk) $("sysBkPick").dataset.names = bk.backups.map(x => x.name).join(); }
+  else if (bw && bk) backupRefresh(bk);
   $("sysVer").textContent = `Drifter Boat Systems ${sysInfo ? "v" + sysInfo.version : ""}`;
 }
 async function restartModule(name, btn) {
@@ -303,8 +342,31 @@ async function alertTest(btn, event = null) {
   refreshSystem();
 }
 
-async function backupKeys(btn) {
-  try { await run(null, btn, () => sysPost("api/backup-keys", {}), r => `${(r.copied || []).length} files copied to ${r.dest || "the back-up folder"}`); } catch (e) {}
+async function backupNow(btn) {
+  try { await run(null, btn, () => sysPost("api/backup/now", {}), r => `${(r.copied || []).length} files backed up to ${r.dest}\\${r.name}`); } catch (e) {}
+  refreshSystem();
+}
+async function backupSave(btn) {
+  const at = $("sysBkAt").value.trim(), keep = Number($("sysBkKeep").value);
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(at)) { toast("At: a time as HH:MM, 24-hour (like 03:00)", true); return; }
+  const body = {dest: $("sysBkDest").value.trim(), daily: $("sysBkDaily").checked, at, keep};
+  try { await run(null, btn, () => sysPost("api/backup/settings", body), "Back-up settings saved"); } catch (e) { return; }
+  refreshSystem(true);
+}
+async function backupRestore(btn) {
+  const b = sysInfo && sysInfo.backup, name = $("sysBkPick").value, what = $("sysBkWhat").value;
+  const x = b && b.backups.find(y => y.name === name); if (!x) return;
+  const items = [];
+  if (what !== "maintenance") items.push(`The keys and tokens in it (${x.keys} files) replace the current ones; BoatGuard, the anchor watch and the washer restart if theirs changed.`);
+  if (what !== "keys") items.push(x.maintenance ? "The engine log replaces the current one: maintenance, fuel fills and engine alarms entered since are not in it. The engine log restarts." : "This back-up has no engine log.");
+  if (!(await confirm({title: `Restore the back-up of ${dayTime(x.t)}?`, items, note: "The current files are backed up first (listed as before a restore), so you can go back. Best with the engine off.",
+    ok: "Restore", cancel: "Cancel", danger: true}))) return;
+  try {
+    await run(null, btn, () => sysPost("api/backup/restore", {name, what}), r => {
+      const n = (r.not_restarted || []).map(m => `${m.module} (${m.error})`);
+      return `${r.restored.length ? `${r.restored.length} files restored` : "Nothing differed: nothing restored"}${r.restarted.length ? `; restarting ${r.restarted.join(", ")}` : ""}${n.length ? `. Not restarted: ${n.join(", ")}: restart it above when you can` : ""}`;
+    });
+  } catch (e) {}
   refreshSystem();
 }
 

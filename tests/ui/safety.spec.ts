@@ -211,13 +211,45 @@ test("Restart a module: Cancel is the default", async ({ page }) => {
   expect(posts).toEqual([]);
 });
 
-test("Backup keys and tokens sends one request and says what it copied", async ({ page }) => {
+test("Back-up: Back up now and Save send one request each; Restore asks first (Cancel the default)", async ({ page }) => {
   const posts: Posted[] = [];
   await setUp(page, { posts });
+  await page.route(/\/api\/backup\/(now|restore)$/, route => {
+    const url = new URL(route.request().url()), body = route.request().postDataJSON();
+    posts.push({ url: url.pathname, body });
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(url.pathname.endsWith("now")
+      ? { name: "drifter-backup-20261119-120000", dest: "C:\\DrifterBackups", copied: ["a", "b"], missing: [], error: null, ok: true }
+      : { name: body.name, restored: ["enginelog/log.json"], unchanged: [], restarted: ["enginelog"], not_restarted: [], before: "drifter-backup-20261119-120100" }) });
+  });
   await open(page, "#system", null);
+  await expect(page.locator("#sysBkSt")).toContainText("Last back-up");
+  await expect(page.locator("#sysBkSt")).toContainText("Next");
   await page.locator("#sysBackup").click();
-  await expect(page.locator("#toast")).toContainText("files copied");
-  expect(posts.map(p => p.url)).toEqual(["/api/backup-keys"]);
+  await expect(page.locator("#toast")).toContainText("2 files backed up to C:\\DrifterBackups\\drifter-backup-20261119-120000");
+
+  await page.locator("#sysBkAt").fill("3:00");
+  await page.locator("#sysBkSave").click();
+  await expect(page.locator("#toast")).toContainText("HH:MM");
+  await page.locator("#sysBkAt").fill("04:30");
+  await page.locator("#sysBkKeep").fill("14");
+  await page.locator("#sysBkSave").click();
+  await expect(page.locator("#toast")).toContainText("Back-up settings saved");
+
+  await page.locator("#sysBkWhat").selectOption("maintenance");
+  await page.locator("#sysBkRestore").click();
+  await expect(dialog(page)).toContainText("Restore the back-up of");
+  await expect(dialog(page)).toContainText("The engine log replaces the current one");
+  await expect(dialog(page)).not.toContainText("keys and tokens in it");
+  await expect(page.locator("#dlgSheet [data-default]")).toHaveText("Cancel");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#dialog")).not.toHaveClass(/open/);
+  expect(posts.map(p => p.url)).toEqual(["/api/backup/now", "/api/backup/settings"]);
+  expect(posts[1].body).toEqual({ dest: "C:\\DrifterBackups", daily: true, at: "04:30", keep: 14 });
+
+  await page.locator("#sysBkRestore").click();
+  await page.locator("#dlgSheet button", { hasText: "Restore" }).click();
+  await expect(page.locator("#toast")).toContainText("1 files restored; restarting enginelog");
+  expect(posts[2]).toEqual({ url: "/api/backup/restore", body: { name: "drifter-backup-20261101-030000", what: "maintenance" } });
 });
 
 test("Alerts: Send test sends one request", async ({ page }) => {
