@@ -96,6 +96,21 @@ test("Overview: the Inverter button at the bottom of the tile; off asks first (K
   expect(posts).toEqual([]);
 });
 
+test("Overview: the Energy tile's Charger box turns green with a plug while shore power is connected", async ({ page }) => {
+  await setUp(page);
+  await open(page, "#overview", null);
+  const box = page.locator(".tile .minis .mini").filter({ hasText: "Charger" });
+  await expect(box).toHaveCount(1);
+  await expect(box).not.toHaveClass(/shore/);                               // the mock has no shore power
+  await page.route(/\/api\/power\/api\/energy$/, async r => {
+    const b = fixture("power_api_energy.json"); Object.assign(b.sources.shore, { connected: true, voltage: 231.4, current: 4.2, power: 970, input_frequency: 50 });
+    await r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(b) });
+  });
+  await expect(box).toHaveClass(/shore/, { timeout: 10_000 });
+  await expect(box).toHaveAttribute("title", "Shore power connected, 231 V");
+  await expect(box.locator("svg use")).toHaveAttribute("href", "#i-plug");
+});
+
 test("Overview: the BoatGuard tile's Arm camera now is sent at once; Disarm asks first (Keep it armed the default); the washer's tile is last", async ({ page }) => {
   const posts: Posted[] = [];
   const errors = await setUp(page, { posts });

@@ -150,13 +150,15 @@ function bankBody(d, id, title) {
   const h = d.storage.house, s = d.sources, t = d.totals;
   const alt = s.alternator || {}, cm = d.combimaster || {}, inv = "ov-inverter";
   const invOn = on(cm.inverter_enabled);
+  // on the Overview tile, shore power connected marks the Charger box green with a plug (the user's choice of mockup 6, 2026-11-24)
+  const sh = s.shore || {}, shore = !!sh.connected;
   // the alternator's power with its temperature after it: a long one gets a smaller font, so it fits a phone-wide box
   const altW = alt.power != null && isFinite(+alt.power) && Math.abs(+alt.power) >= 1000 ? `${(+alt.power / 1000).toFixed(1)} kW` : W(alt.power);   // kW with 1 decimal here
   const altT = alt.temperature != null ? `<small class="tmp">${num(alt.temperature, 0)}°</small>` : "", altLen = altW.length + (altT ? num(alt.temperature, 0).length + 1 : 0);
   return `<div class="meter-row"><div>${title ? `<div class="u-fs-22 big">House bank</div>` : ""}<div class="big">${flowW(h.power)}</div>
       <div class="line">${num(h.voltage, 2)} V · ${num(h.current, 1)} A${h.temperature != null ? ` · ${num(h.temperature, 1)} °C` : ""}</div>
       </div>${meter(h.soc, id)}</div>
-    <div class="minis m4"><div class="mini"><div class="l">Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
+    <div class="minis m4"><div class="mini${shore ? " shore" : ""}"${shore ? ` title="Shore power connected${sh.voltage ? `, ${num(sh.voltage, 0)} V` : ""}"` : ""}><div class="l">${shore ? icon("plug") : ""}Charger</div><div class="n">${W((s.charger_house || {}).power)}</div></div>
       <div class="mini"><div class="l">Alternator</div><div class="n${altLen > 9 ? " tight3" : altLen > 8 ? " tight2" : altLen > 7 ? " tight" : ""}">${altW}${altT}</div></div>
       <div class="mini"><div class="l">Solar</div><div class="n">${W(s.solar.power)}</div></div>
       <div class="mini"><div class="l">DC load</div><div class="n">${outW(t.consumer_power)}</div></div></div>
