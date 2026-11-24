@@ -19,6 +19,7 @@
   and restarts what uses them. Never the energy history database
 - Batteries: the % in the meters' pill is readable in light mode again (a card's grey small text was winning over the
   pill's colour)
+- Overview: the Energy tile's Charger box turns green with a plug while shore power is connected
 
 ## 1.4
 
